@@ -78,24 +78,25 @@
 <script src="data.js"></script>
 <script>
   const S = window.SITE, P = window.PROJECTS;
+  const $ = id => document.getElementById(id);
 
   // Hero
-  h_kicker.textContent = S.hero.kicker;
-  h_title.innerHTML = S.hero.title;
-  h_lede.textContent = S.hero.lede;
-  h_pills.innerHTML = S.hero.pills.map(t => `<span class="pill">${t}</span>`).join("");
+  $("h-kicker").textContent = S.hero.kicker;
+  $("h-title").innerHTML = S.hero.title;
+  $("h-lede").textContent = S.hero.lede;
+  $("h-pills").innerHTML = S.hero.pills.map(t => `<span class="pill">${t}</span>`).join("");
 
   // 自我介绍
-  a_name.textContent = S.author.name;
-  a_role.textContent = S.author.role;
-  a_blurb.textContent = S.author.blurb;
-  a_facts.innerHTML = S.author.facts.map(f => `<span>${f}</span>`).join("");
-  a_site.href = S.author.site; a_site.textContent = S.author.siteLabel;
-  f_site.href = S.author.site;
+  $("a-name").textContent = S.author.name;
+  $("a-role").textContent = S.author.role;
+  $("a-blurb").textContent = S.author.blurb;
+  $("a-facts").innerHTML = S.author.facts.map(f => `<span>${f}</span>`).join("");
+  $("a-site").href = S.author.site; $("a-site").textContent = S.author.siteLabel;
+  $("f-site").href = S.author.site;
 
   // 微信二维码（图片不存在时显示提示文字）
   if (S.contact && S.contact.wechatQR) {
-    f_contact.innerHTML = `
+    $("f-contact").innerHTML = `
       <div style="margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:10px">
         <img src="${S.contact.wechatQR}" alt="微信二维码"
              style="width:130px;height:130px;border-radius:12px;border:1px solid var(--line);background:#fff;object-fit:contain;padding:6px"
@@ -107,7 +108,7 @@
   }
 
   // 项目卡片
-  proj_grid.innerHTML = P.map(p => {
+  $("proj-grid").innerHTML = P.map(p => {
     const tags = p.tags.map(t => `<span>${t}</span>`).join("");
     if (!p.url) {
       return `<div class="card soon">
@@ -123,7 +124,7 @@
   }).join("");
 
   // 思考卡片
-  thought_grid.innerHTML = S.thoughts.map(t => `
+  $("thought-grid").innerHTML = S.thoughts.map(t => `
     <a class="tcard" href="${t.href}">
       <div class="ck">${t.kicker}</div>
       <h3>${t.title}</h3><p>${t.desc}</p>
