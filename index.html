@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>好玩的东西 · 项目 · 思考</title>
+<meta name="description" content="可亲手体验的产品 Demo、关于 AI 组织架构与开发流程的思考，以及自我介绍。" />
+<meta property="og:title" content="好玩的东西 · 项目 · 思考" />
+<meta property="og:description" content="可亲手体验的产品 Demo + 关于 AI 的思考。" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="#projects">项目</a>
+      <a href="#thoughts">思考</a>
+      <a href="#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap">
+  <div class="kicker" id="h-kicker"></div>
+  <h1 id="h-title"></h1>
+  <p class="lede" id="h-lede"></p>
+  <div class="meta" id="h-pills"></div>
+</header>
+
+<!-- 自我介绍 -->
+<section class="intro wrap" id="about">
+  <div class="intro-card">
+    <div class="who">
+      <div class="name" id="a-name"></div>
+      <div class="role" id="a-role"></div>
+      <p id="a-blurb"></p>
+      <div class="ln" id="a-facts"></div>
+    </div>
+    <a class="btn btn-primary" id="a-site" href="#" target="_blank" rel="noopener"></a>
+  </div>
+</section>
+
+<!-- 项目卡片墙 -->
+<section class="wrap" id="projects">
+  <div class="section-head">
+    <h2>项目 Demo</h2>
+    <span class="note">点开任意一张，亲手体验</span>
+  </div>
+  <div class="grid" id="proj-grid"></div>
+</section>
+
+<!-- 思考 -->
+<section class="wrap" id="thoughts">
+  <div class="section-head">
+    <h2>一些思考</h2>
+    <span class="note">关于把 AI 真正用进组织与流程</span>
+  </div>
+  <div class="thoughts" id="thought-grid"></div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="big">与其用一页文档说服你，不如让你亲手点几下</div>
+    <p>这里的东西会持续增加。欢迎体验，也欢迎转发。</p>
+    <p style="margin-top:14px"><a id="f-site" href="#" target="_blank" rel="noopener">个人网站 ↗</a></p>
+    <div id="f-contact"></div>
+    <hr class="hair" style="margin:32px auto;max-width:200px">
+    <p class="disc">说明：项目均为可点击产品原型（Demo），用于演示与可行性探讨，非生产系统——
+       无真实后端、支付、物流与 AI 模型，数据为演示用途。</p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+  const S = window.SITE, P = window.PROJECTS;
+
+  // Hero
+  h_kicker.textContent = S.hero.kicker;
+  h_title.innerHTML = S.hero.title;
+  h_lede.textContent = S.hero.lede;
+  h_pills.innerHTML = S.hero.pills.map(t => `<span class="pill">${t}</span>`).join("");
+
+  // 自我介绍
+  a_name.textContent = S.author.name;
+  a_role.textContent = S.author.role;
+  a_blurb.textContent = S.author.blurb;
+  a_facts.innerHTML = S.author.facts.map(f => `<span>${f}</span>`).join("");
+  a_site.href = S.author.site; a_site.textContent = S.author.siteLabel;
+  f_site.href = S.author.site;
+
+  // 微信二维码（图片不存在时显示提示文字）
+  if (S.contact && S.contact.wechatQR) {
+    f_contact.innerHTML = `
+      <div style="margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:10px">
+        <img src="${S.contact.wechatQR}" alt="微信二维码"
+             style="width:130px;height:130px;border-radius:12px;border:1px solid var(--line);background:#fff;object-fit:contain;padding:6px"
+             onerror="this.style.display='none';document.getElementById('qr-tip').style.display='block'">
+        <span id="qr-tip" style="display:none;font-size:12.5px;color:var(--ink-soft)">
+          （把微信二维码图片存为 <b>assets/wechat-qr.png</b> 即可显示）</span>
+        <span style="font-size:13px;color:var(--ink-soft)">${S.contact.wechatNote}</span>
+      </div>`;
+  }
+
+  // 项目卡片
+  proj_grid.innerHTML = P.map(p => {
+    const tags = p.tags.map(t => `<span>${t}</span>`).join("");
+    if (!p.url) {
+      return `<div class="card soon">
+        <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
+        <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
+        <div class="tags">${tags}</div><div class="go">即将上线</div></div>`;
+    }
+    return `<a class="card" href="project.html?id=${p.id}">
+      <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
+      <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
+      <div class="tags">${tags}</div>
+      <div class="go">查看 · 亲手体验 →</div></a>`;
+  }).join("");
+
+  // 思考卡片
+  thought_grid.innerHTML = S.thoughts.map(t => `
+    <a class="tcard" href="${t.href}">
+      <div class="ck">${t.kicker}</div>
+      <h3>${t.title}</h3><p>${t.desc}</p>
+      <div class="go">阅读 →</div></a>`).join("");
+</script>
+</body>
+</html>

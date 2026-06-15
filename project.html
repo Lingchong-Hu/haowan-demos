@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>项目 · 好玩的东西</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="index.html#projects">项目</a>
+      <a href="index.html#thoughts">思考</a>
+      <a href="index.html#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<main class="proj wrap" id="root"></main>
+
+<footer>
+  <div class="wrap">
+    <p><a href="index.html">← 回到全部项目</a></p>
+    <hr class="hair" style="margin:24px auto;max-width:200px">
+    <p class="disc">可点击产品原型（Demo），用于演示与可行性探讨，非生产系统。数据为演示用途。</p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+  const id = new URLSearchParams(location.search).get("id");
+  const p = (window.PROJECTS || []).find(x => x.id === id);
+  const root = document.getElementById("root");
+
+  if (!p) {
+    root.innerHTML = `<a class="back" href="index.html">← 回到全部项目</a>
+      <h2>没找到这个项目</h2>
+      <p style="margin-top:12px;color:var(--ink-soft)">链接可能有误，回首页看看全部项目吧。</p>`;
+  } else {
+    document.title = p.title + " · 好玩的东西";
+    const tags = p.tags.map(t => `<span class="tag">${t}</span>`).join("");
+    const blocks = p.sections.map(s =>
+      `<div class="block"><div class="label">${s.label}</div>${s.html}</div>`).join("");
+
+    const preview = p.url ? `
+      <div class="preview">
+        <div class="phone"><div class="phone-screen">
+          <div class="phone-notch"></div>
+          <div class="phone-load"><span class="dot"></span>正在载入实时 Demo…</div>
+          <iframe loading="lazy" title="${p.title} Demo" src="${p.url}"
+                  onload="this.previousElementSibling.style.display='none'"></iframe>
+        </div></div>
+        <div class="cta">
+          <a class="btn btn-primary" href="${p.url}" target="_blank" rel="noopener">全屏体验 ↗</a>
+          <button class="btn btn-ghost" onclick="copyLink('${p.url}')">复制链接</button>
+        </div>
+        <p class="hint">${p.phoneHint || "建议在手机 / 微信中打开"}</p>
+      </div>` : `
+      <div class="preview"><div class="phone"><div class="phone-screen">
+        <div class="phone-load">即将上线</div></div></div></div>`;
+
+    root.innerHTML = `
+      <a class="back" href="index.html">← 全部项目</a>
+      <div class="proj-head">
+        <div class="kicker">Project ${p.no} · ${p.kicker}</div>
+        <h2>${p.title}</h2>
+        <div class="sub">${p.subtitle}</div>
+      </div>
+      <div class="tagrow">${tags}</div>
+      <div class="proj-grid">
+        <div class="blocks">${blocks}</div>
+        ${preview}
+      </div>`;
+  }
+
+  function copyLink(u){
+    const abs = new URL(u, location.href).href;   // 相对路径转完整可分享地址
+    navigator.clipboard?.writeText(abs).then(() => {
+      event.target.textContent = "已复制 ✓";
+      setTimeout(() => event.target.textContent = "复制链接", 1600);
+    });
+  }
+</script>
+</body>
+</html>

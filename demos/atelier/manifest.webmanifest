@@ -1,0 +1,17 @@
+{
+  "name": "ATELIER · 私人造型",
+  "short_name": "ATELIER",
+  "description": "高端时尚个人造型平台 · 演示",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#F6F2EA",
+  "theme_color": "#211B16",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
