@@ -2,12 +2,24 @@
    好玩的东西 · 展示站 共享样式
    编辑部美学：思源宋体 + Fraunces，暖色，kicker + 衬线标题 + 发丝线
    ════════════════════════════════════════════════════════════════ */
+/* 自托管 Fraunces（拉丁标题字，国内可访问，不依赖 Google） */
+@font-face{
+  font-family:'Fraunces';
+  font-style:normal;
+  font-weight:400 600;
+  font-display:swap;
+  src:url('fonts/fraunces-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,
+    U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+}
 :root{
   --bg:#f7f3ee; --bg-2:#efe8df; --ink:#2b2622; --ink-soft:#6b6058;
   --line:#ded3c6; --accent:#b4542e; --accent-soft:#c98a5a;
   --sage:#5f7060; --gold:#a9842f; --card:#fffdfa;
-  --serif:'Noto Serif SC',serif; --sans:'Noto Sans SC',sans-serif;
-  --display:'Fraunces','Noto Serif SC',serif;
+  /* CJK 用系统字体栈：思源若已装则用，否则回退到 苹方/雅黑/宋体，零网络下载 */
+  --serif:'Source Han Serif SC','Noto Serif SC','Songti SC',STSong,SimSun,serif;
+  --sans:-apple-system,BlinkMacSystemFont,'PingFang SC','Microsoft YaHei','Noto Sans SC','Source Han Sans SC',sans-serif;
+  --display:'Fraunces','Source Han Serif SC','Noto Serif SC','Songti SC',serif;
   --maxw:1080px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
@@ -91,6 +103,23 @@ a{color:inherit}
 .tcard h3{font-size:20px;margin-bottom:8px}
 .tcard p{font-size:14px;color:#4a423b}
 .tcard .go{margin-top:14px;font-size:13.5px;color:var(--accent);font-weight:500}
+
+/* ── 联系 / 留下想法 ── */
+.contact-card{margin-top:28px;background:var(--card);border:1px solid var(--line);
+     border-radius:16px;padding:32px 34px;box-shadow:0 16px 40px -30px rgba(60,40,25,.35)}
+.contact-card .c-intro{font-size:16px;color:#4a423b;max-width:640px}
+.c-row{display:flex;justify-content:space-between;align-items:center;gap:30px;margin-top:22px;flex-wrap:wrap}
+.c-methods{display:flex;flex-direction:column;gap:12px}
+.c-line{display:flex;align-items:center;gap:12px}
+.c-k{font-size:12px;font-weight:500;letter-spacing:.18em;color:var(--accent);min-width:42px}
+.c-v{font-size:15.5px;color:var(--ink)}
+.c-copy{font-family:var(--sans);font-size:15px;color:var(--ink);background:var(--bg-2);
+     border:1px solid var(--line);border-radius:8px;padding:7px 14px;cursor:pointer;transition:border-color .2s}
+.c-copy:hover{border-color:var(--accent-soft)}
+.c-cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.wx-qr{width:128px;height:128px;border-radius:12px;border:1px solid var(--line);
+     background:#fff;object-fit:contain;padding:6px;flex-shrink:0}
+@media(max-width:560px){.c-row{flex-direction:column;align-items:flex-start}}
 
 /* ════════ 详情页 (project.html) ════════ */
 .proj{padding:40px 0 72px}

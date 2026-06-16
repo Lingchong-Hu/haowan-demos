@@ -7,9 +7,7 @@
 <meta name="description" content="可亲手体验的产品 Demo、关于 AI 组织架构与开发流程的思考，以及自我介绍。" />
 <meta property="og:title" content="好玩的东西 · 项目 · 思考" />
 <meta property="og:description" content="可亲手体验的产品 Demo + 关于 AI 的思考。" />
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;700&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,400&display=swap" rel="stylesheet">
+<!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
 <link rel="stylesheet" href="assets/style.css" />
 </head>
 <body>
@@ -21,6 +19,7 @@
       <a href="#projects">项目</a>
       <a href="#thoughts">思考</a>
       <a href="#about">关于</a>
+      <a href="#contact">联系</a>
     </div>
   </div>
 </nav>
@@ -63,12 +62,20 @@
   <div class="thoughts" id="thought-grid"></div>
 </section>
 
+<!-- 联系 / 留下想法 -->
+<section class="wrap" id="contact">
+  <div class="section-head">
+    <h2>联系 · 留下你的想法</h2>
+    <span class="note">想合作、想做点什么、或有具体需求都欢迎</span>
+  </div>
+  <div class="contact-card" id="contact-card"></div>
+</section>
+
 <footer>
   <div class="wrap">
     <div class="big">与其用一页文档说服你，不如让你亲手点几下</div>
     <p>这里的东西会持续增加。欢迎体验，也欢迎转发。</p>
     <p style="margin-top:14px"><a id="f-site" href="#" target="_blank" rel="noopener">个人网站 ↗</a></p>
-    <div id="f-contact"></div>
     <hr class="hair" style="margin:32px auto;max-width:200px">
     <p class="disc">说明：项目均为可点击产品原型（Demo），用于演示与可行性探讨，非生产系统——
        无真实后端、支付、物流与 AI 模型，数据为演示用途。</p>
@@ -94,18 +101,35 @@
   $("a-site").href = S.author.site; $("a-site").textContent = S.author.siteLabel;
   $("f-site").href = S.author.site;
 
-  // 微信二维码（图片不存在时显示提示文字）
-  if (S.contact && S.contact.wechatQR) {
-    $("f-contact").innerHTML = `
-      <div style="margin-top:24px;display:flex;flex-direction:column;align-items:center;gap:10px">
-        <img src="${S.contact.wechatQR}" alt="微信二维码"
-             style="width:130px;height:130px;border-radius:12px;border:1px solid var(--line);background:#fff;object-fit:contain;padding:6px"
-             onerror="this.style.display='none';document.getElementById('qr-tip').style.display='block'">
-        <span id="qr-tip" style="display:none;font-size:12.5px;color:var(--ink-soft)">
-          （把微信二维码图片存为 <b>assets/wechat-qr.png</b> 即可显示）</span>
-        <span style="font-size:13px;color:var(--ink-soft)">${S.contact.wechatNote}</span>
-      </div>`;
+  // 联系 / 留下想法
+  const c = S.contact || {};
+  const formBtn = c.formUrl
+    ? `<a class="btn btn-primary" href="${c.formUrl}" target="_blank" rel="noopener">${c.formLabel || "留下需求"} →</a>`
+    : `<span class="btn btn-primary" style="opacity:.55;cursor:default">${c.formLabel || "留下需求"}（即将开放）</span>`;
+  const emailBtn = c.email
+    ? `<a class="btn btn-ghost" href="mailto:${c.email}?subject=关于你的项目，我有个想法">发邮件 ✉</a>` : "";
+  const qr = c.wechatQR
+    ? `<img class="wx-qr" src="${c.wechatQR}" alt="微信二维码"
+         onerror="this.style.display='none'">` : "";
+  $("contact-card").innerHTML = `
+    <p class="c-intro">${c.intro || ""}</p>
+    <div class="c-row">
+      <div class="c-methods">
+        <div class="c-line"><span class="c-k">微信</span>
+          <button class="c-copy" onclick="copyText('${c.wechatId}', this)">${c.wechatId}　复制</button></div>
+        ${c.email ? `<div class="c-line"><span class="c-k">邮箱</span><span class="c-v">${c.email}</span></div>` : ""}
+        <div class="c-cta">${formBtn}${emailBtn}</div>
+      </div>
+      ${qr}
+    </div>`;
+
+  function copyText(t, el){
+    navigator.clipboard?.writeText(t).then(() => {
+      const old = el.textContent; el.textContent = "已复制 ✓";
+      setTimeout(() => el.textContent = old, 1600);
+    });
   }
+  window.copyText = copyText;
 
   // 项目卡片
   $("proj-grid").innerHTML = P.map(p => {
