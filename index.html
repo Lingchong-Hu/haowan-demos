@@ -108,6 +108,10 @@
     : `<span class="btn btn-primary" style="opacity:.55;cursor:default">${c.formLabel || "留下需求"}（即将开放）</span>`;
   const emailBtn = c.email
     ? `<a class="btn btn-ghost" href="mailto:${c.email}?subject=关于你的项目，我有个想法">发邮件 ✉</a>` : "";
+  const linkedinLine = c.linkedin
+    ? `<div class="c-line"><span class="c-k">LinkedIn</span>
+        <a class="c-v" href="${c.linkedin}" target="_blank" rel="noopener"
+           style="color:var(--accent);text-decoration:none">查看主页 ↗</a></div>` : "";
   const qr = c.wechatQR
     ? `<img class="wx-qr" src="${c.wechatQR}" alt="微信二维码"
          onerror="this.style.display='none'">` : "";
@@ -118,6 +122,7 @@
         <div class="c-line"><span class="c-k">微信</span>
           <button class="c-copy" onclick="copyText('${c.wechatId}', this)">${c.wechatId}　复制</button></div>
         ${c.email ? `<div class="c-line"><span class="c-k">邮箱</span><span class="c-v">${c.email}</span></div>` : ""}
+        ${linkedinLine}
         <div class="c-cta">${formBtn}${emailBtn}</div>
       </div>
       ${qr}

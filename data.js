@@ -47,13 +47,15 @@ window.SITE = {
 
   // 联系 / 留下想法
   // ▸ wechatId：填你的微信号（主推，手机/电脑都能复制后搜索添加）
-  // ▸ email：填长期邮箱（school 邮箱 10 月过期，建议换个人邮箱）
+  // ▸ email：填长期邮箱（school 邮箱 10 月过期，已换个人 Gmail）
+  // ▸ linkedin：领英主页链接；留空则整行隐藏
   // ▸ formUrl：去 腾讯问卷(wj.qq.com) 或 金数据(jinshuju.net) 建个表单，把链接填这里；留空则按钮显示「即将开放」
   // ▸ wechatQR：可选——把微信二维码图片存为 assets/wechat-qr.png 就会额外显示一张图
   contact: {
     intro: "看完有什么想法、想做的，或者有具体需求——欢迎直接找我，或者留下你的需求，我会一条条看。",
-    wechatId: "在这里填你的微信号",
-    email: "在这里填长期邮箱",
+    wechatId: "Linchhlc2001",
+    email: "hulingchong302@gmail.com",
+    linkedin: "https://www.linkedin.com/in/lingchong-hu",
     formUrl: "",
     formLabel: "说说你的想法 / 留下需求",
     wechatQR: "assets/wechat-qr.png"
