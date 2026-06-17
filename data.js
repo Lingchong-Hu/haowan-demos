@@ -29,18 +29,18 @@ window.SITE = {
     siteLabel: "个人网站 ↗"
   },
 
-  // 思考类页面（文案后续补充，先占位）
+  // 思考类页面
   thoughts: [
     {
       kicker: "Thinking · 组织",
       title: "AI 时代的组织架构",
-      desc: "当 agent 成为团队成员，团队该怎么搭？角色、权责、人与 AI 的协作边界——一些正在成形的思考。",
+      desc: "代码变便宜后，胜负手是「需求洞察 + 完整交付」的结合——而这两样几乎从不长在同一个人身上。为什么律所的结构，恰好是这个时代最对的答案。",
       href: "thoughts/ai-org.html"
     },
     {
       kicker: "Thinking · 流程",
-      title: "AI 原生的开发流程",
-      desc: "从需求到上线，用 AI 重写每一环：规格即代码、demo 优先、人来把关有后果的那一步。",
+      title: "可问责的开发流程",
+      desc: "用 AI 把交付做快，用两道机制把它做得可问责：没有验收标准的任务不进场，不能为代码答话就不放行。",
       href: "thoughts/dev-process.html"
     }
   ],
