@@ -70,6 +70,141 @@
 
     <p>我们卖的，就是那个稀缺的东西：一个合伙人听懂你要什么、替你的结果负责；背后是被证明过、能独立扛起完整产品、能在市场变动时快速响应的精英架构师。你买的，是把洞察安全、快速、完整地变成产品的那份确定性。</p>
 
+    <h2>看一个 case 在我们这儿怎么跑</h2>
+    <p>道理讲完，不如点一遍。下面是两个真实形态的需求——一个传统、一个更 AI——你可以亲手把它走完整个流程：从找上门，到匹配架构师、完整交付、独立验证，再到长期负责。</p>
+
+    <div class="caseflow" id="caseflow">
+      <div class="cf-tabs">
+        <button class="cf-tab is-on" data-case="resale">👜 二手奢侈品寄卖</button>
+        <button class="cf-tab" data-case="design">🏠 AI 室内设计</button>
+      </div>
+      <p class="cf-client" id="cf-client"></p>
+      <div class="cf-steps" id="cf-steps"></div>
+      <div class="cf-stage" id="cf-stage"></div>
+      <div class="cf-nav">
+        <button class="cf-btn" id="cf-prev">← 上一步</button>
+        <span class="cf-progress" id="cf-progress"></span>
+        <button class="cf-btn cf-primary" id="cf-next">下一步 →</button>
+      </div>
+    </div>
+    <script>
+    (function(){
+      var DATA = {
+        resale: {
+          client: '客户：周姐 · 做了 12 年的奢侈品买手 / 鉴定师',
+          stages: [
+            { label:'需求找到我', title:'需求找到我', kind:'normal',
+              lead:'周姐说：「想做个二手包包寄卖的小程序。」',
+              detail:'合伙人听懂的<b>真需求</b>：国内二手奢侈品不缺货、不缺买家，缺的是「敢信」——假货泛滥、没人敢托付。周姐真正要做的，是把她 12 年攒下的<b>鉴定 know-how 和卖家信任</b>，变成一套别人抄不走的「可信寄卖闭环」。合伙人对「信任」这个结果负责。' },
+            { label:'匹配架构师', title:'我寻找合适的架构师承接', kind:'normal',
+              lead:'这个 case 的要害：多专家协同鉴定流 + 真品与库存强绑定防串货 + 卖家分账。',
+              detail:'不是随便派人——匹配【架构师 A：做过交易 / 履约系统 + 图像识别接入】。分工清楚：<b>架构师对交付负责，合伙人始终对周姐负责</b>，问责不转移。' },
+            { label:'完整交付', title:'需求满足 · 完整产品', kind:'normal',
+              lead:'架构师独立扛起完整产品：寄卖小程序 + 鉴定工作台（图像 AI 初筛 + 人工复核）+ 库存溯源 + 动态定价 + 卖家分账后台。',
+              detail:'交付的是能扛真实寄卖量、每一件货都和鉴定结论强绑定、数据多了不串货的<b>完整产品</b>——不是一个能跑的 demo。' },
+            { label:'独立验证', title:'找 testing 团队验证', kind:'testing',
+              lead:'独立 testing 团队，专挑「一旦出错就砸招牌 / 赔钱」的地方验：',
+              checklist:['鉴定结论流转：判真判假绝不能张冠李戴、绝不能被绕过','真品与库存绑定：不同卖家的同款货会不会串、退货回流会不会丢','卖家分账：成交价、佣金、税费分账分毫不能错（这是卖家的钱）'] },
+            { label:'交付上线', title:'验证完成 · 交付上线', kind:'normal',
+              lead:'全部通过，周姐的寄卖业务上线开张。',
+              detail:'交付物清单 + <b>具名负责人</b>写清楚——出任何问题，找谁一目了然。' },
+            { label:'长期维护', title:'根据需求持续长期维护', kind:'loop',
+              lead:'关系不结束。周姐的生意在长，系统跟着长：',
+              loopItems:['想从「包」扩到「腕表 / 首饰」→ 各品类鉴定流快速接入','鉴定师忙不过来 → 引入 AI 辅助鉴定提效、人工只复核','想做跨境货源 / 直播带货 → 同一个团队接着改'],
+              tail:'生意变了，你不用重新找人、重新解释——<b>同一个对你负责的团队接着改</b>。' }
+          ]
+        },
+        design: {
+          client: '客户：阿哲 · 做了 8 年家装设计，开过两家工作室',
+          stages: [
+            { label:'需求找到我', title:'需求找到我', kind:'normal',
+              lead:'阿哲说：「想做个 AI 一键出装修效果图的工具。」',
+              detail:'合伙人听懂的<b>真需求</b>：装修信息极不对称——设计费贵、效果图和落地差距大、业主买家具全靠逛。阿哲的洞察别人没有：<b>什么样的方案能落地、每个风格对应哪些买得到的家具、预算怎么卡</b>。他要的不是一个出图玩具，是「拍张照 → 出能落地的方案 → 里面每件家具可下单」的产品。合伙人对「能落地」这个结果负责。' },
+            { label:'匹配架构师', title:'我寻找合适的架构师承接', kind:'normal',
+              lead:'这个 case 的要害是 AI 特有的：生成方案得<b>保住原户型结构</b>（不能把承重墙 P 没了）、家具得能<b>匹配到真实可买的商品</b>。',
+              detail:'匹配【架构师 B：做过生成式视觉 + 商品检索匹配】——不是随便找个会调画图 API 的人。架构师对交付负责，合伙人对阿哲负责。' },
+            { label:'完整交付', title:'需求满足 · 完整产品', kind:'normal',
+              lead:'架构师独立扛起：拍照生成多风格方案 + 户型结构保持 + 家具识别与真实商品匹配（带多档预算）+ 一键购物清单 + 商家后台。',
+              detail:'交付的是一个<b>方案能落地、家具点得动、下得了单</b>的完整产品，不是 demo 里出图好看、一到真房型就乱变的玩具。' },
+            { label:'独立验证', title:'找 testing 团队验证', kind:'testing',
+              lead:'AI 产品最见功夫的一步——独立验证它「好看」之外还「靠谱」：',
+              checklist:['结构保真：生成方案会不会擅自改户型、把门窗 / 承重墙 P 没了','家具匹配：清单里的家具是不是真买得到、链接对不对、尺寸搭不搭','报价可信：预算估算会不会离谱（标着 5 千实际 5 万）','边界测试：拍糊了 / 拍到人脸 / 空房间，会乱编还是老实提示重拍'] },
+            { label:'交付上线', title:'验证完成 · 交付上线', kind:'normal',
+              lead:'过了线才上线，阿哲把它挂进工作室获客。',
+              detail:'交付物 + <b>具名负责人</b>写清楚。业主自己先玩出方案，到店转化高一截。' },
+            { label:'长期维护', title:'根据需求持续长期维护', kind:'loop',
+              lead:'AI 产品上线 ≠ 完事，它得跟着市场和模型一起长：',
+              loopItems:['想接入合作家具品牌的实时库存 / 分销 → 快速对接','底层生成模型升级 → 重新评测结构保真度再切换，不盲目换','出了新风格 / 新户型没覆盖 → 补样本、补测试'],
+              tail:'风格会变、模型会更新、户型会刁钻——<b>同一个团队持续校准，你才敢一直用</b>。' }
+          ]
+        }
+      };
+
+      var ck='resale', si=0, open=false, gate=null;
+      function $(id){ return document.getElementById(id); }
+      function stages(){ return DATA[ck].stages; }
+
+      function render(){
+        var ss = stages(), s = ss[si];
+        $('cf-client').textContent = DATA[ck].client;
+        $('cf-steps').innerHTML = ss.map(function(st,i){
+          return '<div class="cf-step '+(i===si?'cur':'')+' '+(i<si?'done':'')+'" data-i="'+i+'">'
+            + '<span class="cf-dot">'+(i<si?'✓':(i+1))+'</span>'
+            + '<span class="cf-step-label">'+st.label+'</span></div>';
+        }).join('');
+
+        var html = '<h4>'+s.title+'</h4><p class="cf-lead">'+s.lead+'</p>';
+        if(s.checklist){ html += '<ul class="cf-check">'+s.checklist.map(function(c){return '<li>'+c+'</li>';}).join('')+'</ul>'; }
+        if(s.loopItems){ html += '<ul class="cf-check cf-loop">'+s.loopItems.map(function(c){return '<li>'+c+'</li>';}).join('')+'</ul>'; }
+        if(s.tail){ html += '<div class="cf-detail" style="display:block">'+s.tail+'</div>'; }
+        if(s.detail){
+          html += '<button class="cf-toggle" id="cf-tg">'+(open?'▾ 收起':'▸ 点开看：合伙人 / 架构师视角')+'</button>'
+            + '<div class="cf-detail" id="cf-dt" style="display:'+(open?'block':'none')+'">'+s.detail+'</div>';
+        }
+        if(s.kind==='testing'){
+          if(gate==='back'){
+            html += '<div class="cf-gate">→ 打回架构师，修好再验。<b>门槛是真的</b>——没过就不放行，无论 AI 写得多漂亮。</div>'
+              + '<div class="cf-branch"><button class="cf-btn cf-primary" id="cf-refix">已修复，重新验证</button></div>';
+          } else {
+            html += '<div class="cf-branch">'
+              + '<button class="cf-btn cf-ok" id="cf-pass">✅ 通过验证 → 交付</button>'
+              + '<button class="cf-btn cf-no" id="cf-back">❌ 发现问题 → 打回</button></div>';
+          }
+        }
+        $('cf-stage').innerHTML = html;
+
+        var last = si === ss.length-1;
+        $('cf-prev').disabled = si===0;
+        $('cf-next').style.display = (s.kind==='testing' && gate!=='pass') ? 'none' : '';
+        $('cf-next').disabled = last;
+        $('cf-next').textContent = last ? '全程走完 ✓' : '下一步 →';
+        $('cf-progress').textContent = (si+1)+' / '+ss.length;
+        bind();
+      }
+
+      function go(i){ si = Math.max(0, Math.min(stages().length-1, i)); open=false; gate=null; render(); }
+
+      function bind(){
+        var steps = $('cf-steps').querySelectorAll('.cf-step');
+        for(var i=0;i<steps.length;i++){ (function(el){ el.onclick=function(){ go(+el.getAttribute('data-i')); }; })(steps[i]); }
+        var tg=$('cf-tg'); if(tg) tg.onclick=function(){ open=!open; render(); };
+        var pass=$('cf-pass'); if(pass) pass.onclick=function(){ gate=null; go(si+1); };
+        var back=$('cf-back'); if(back) back.onclick=function(){ gate='back'; render(); };
+        var rf=$('cf-refix'); if(rf) rf.onclick=function(){ gate=null; render(); };
+      }
+
+      $('cf-prev').onclick=function(){ go(si-1); };
+      $('cf-next').onclick=function(){ if(si<stages().length-1) go(si+1); };
+      var tabs=document.querySelectorAll('#caseflow .cf-tab');
+      for(var t=0;t<tabs.length;t++){ (function(tab){ tab.onclick=function(){
+        for(var x=0;x<tabs.length;x++) tabs[x].classList.remove('is-on');
+        tab.classList.add('is-on'); ck=tab.getAttribute('data-case'); si=0; open=false; gate=null; render();
+      }; })(tabs[t]); }
+
+      render();
+    })();
+    </script>
+
     <blockquote><p>代码很便宜，担保很贵，速度更贵。<br>demo 谁都能做——抢得下市场的完整产品，要有人扛。</p></blockquote>
 
     <p>你有需求，你有客户，你有这个时代最值钱的洞察。你缺的，只是一个能替你把它快速、完整地变成产品，并且负责到底的地方。</p>
