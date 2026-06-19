@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>可问责的开发流程 · 互动版 · 好玩的东西</title>
+<meta name="description" content="边玩边读：扳一扳、拖一拖、点一点，亲手验证我们怎么用 AI 把交付做快，又用两道机制 + 一套自我纠错，让每份交付都有人能为它负责。" />
+<!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+/* ════════ 互动版（explorable）局部样式，全部 scoped 在 .play 下 ════════ */
+.play{ --crk:#c0392b; --std:#3f7d5a; --amb:#bd8126; }
+.play b,.play strong{font-weight:600}   /* 强调统一用 600 半粗，避免 CJK 在 700 下的合成粗体过重 */
+.play-hero{padding:30px 0 8px;max-width:760px;margin:0 auto}
+.play-hero h1{font-size:clamp(30px,5.4vw,48px);margin:6px 0 10px}
+.play-hero .dek{font-size:18px;color:var(--ink-soft);font-family:var(--serif);line-height:1.7}
+.play-hero .scroll-hint{margin-top:18px;font-size:13px;color:var(--accent);letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:8px}
+.play-hero .scroll-hint .ar{animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+.play-sec{max-width:760px;margin:0 auto;padding:46px 0}
+.play-sec + .play-sec{border-top:1px solid var(--line)}
+.sec-lede{font-size:19px;line-height:1.85;color:#3f3832;font-family:var(--serif);margin-bottom:26px}
+.sec-lede b{font-weight:600;color:var(--ink)}
+
+/* reveal on scroll —— 默认完全可见；只有 JS 正常运行才「武装→渐入」，JS 一挂内容照样全显示 */
+.reveal{transition:opacity .7s ease,transform .7s ease}
+.reveal.armed{opacity:0;transform:translateY(22px)}
+.reveal.armed.in{opacity:1;transform:none}
+
+/* ── 通用 widget 外框 ── */
+.widget{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px 26px 28px;box-shadow:0 22px 50px -34px rgba(60,40,25,.45)}
+.w-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.w-head h3{font-size:21px;font-family:var(--serif)}
+.w-tag{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#fff;
+  background:var(--accent);border-radius:999px;padding:5px 12px;white-space:nowrap}
+
+/* ── range 通用样式 ── */
+.play input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+  background:var(--bg-2);outline:none;cursor:pointer}
+.play input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:24px;height:24px;border-radius:50%;background:var(--accent);border:3px solid #fff;
+  box-shadow:0 3px 8px -1px rgba(120,50,20,.5);cursor:grab}
+.play input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.08)}
+.play input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;cursor:grab}
+
+/* ════ widget 1 · 拆颗粒度 ════ */
+.grain-slider-row{display:flex;align-items:center;gap:14px}
+.grain-slider-row input{flex:1}
+.g-end{font-size:13px;color:var(--ink-soft);font-weight:500;white-space:nowrap}
+.grain-count{text-align:center;font-family:var(--display);font-size:18px;color:var(--accent);margin:14px 0 4px}
+.grain-blocks{display:flex;flex-wrap:wrap;gap:10px;margin:16px 0 4px;min-height:104px;align-items:stretch}
+.blk{border-radius:12px;padding:14px 16px;transition:all .2s}
+.blk.box{flex:1 1 100%;background:linear-gradient(135deg,#2b2622,#43352b);color:#e8ddd0;
+  border:1px solid #2b2622;box-shadow:inset 0 0 44px rgba(0,0,0,.4)}
+.blk.box .blk-t{font-size:16px;font-weight:600;color:#fff}
+.blk.box .blk-d{font-size:13px;margin-top:8px;color:#cbbaa9;line-height:1.6}
+.blk.unit{flex:1 1 150px;border:1.5px solid var(--line);background:var(--bg)}
+.blk.unit.big{border-style:dashed}
+.blk.unit.ok{border-color:var(--std);background:#f1f7f3}
+.blk-t{font-size:14px;font-weight:600}
+.blk-note{font-size:11.5px;color:var(--amb);margin-top:8px;line-height:1.5}
+.blk-crit{font-size:11.5px;color:var(--std);font-weight:600;margin-top:8px;line-height:1.5}
+.blk-badges{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.blk-badges span{font-size:10.5px;font-weight:600;color:var(--std);background:#e3f0e7;border-radius:999px;padding:3px 8px}
+.grain-bug{margin-top:16px;font-size:14.5px;line-height:1.7;padding:13px 16px;border-radius:12px;
+  background:var(--bg-2);color:#473f38}
+.grain-bug.crash{background:#fbe6e2;color:var(--crk)}
+.grain-bug.warn{background:#fdf7e9;color:#8a6a1e}
+.grain-bug.good{background:#e3f0e7;color:var(--std)}
+.grain-bug b{font-weight:600}
+.grain-caption{margin-top:18px;font-size:15.5px;line-height:1.8;color:#473f38;min-height:48px}
+.grain-caption b{color:var(--accent)}
+
+/* ════ widget 2 · 三问知情门槛 ════ */
+.q-list{display:flex;flex-direction:column;gap:13px;margin-bottom:22px}
+.qrow{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--bg);transition:border-color .2s}
+.qrow.on{border-color:var(--std)}
+.q-txt{font-size:14.5px;line-height:1.5}
+.q-txt b{font-weight:600;display:block;margin-bottom:3px}
+.q-txt span{font-size:12.5px;color:var(--ink-soft)}
+.switch{display:inline-flex;align-items:center;gap:9px;background:none;border:0;cursor:pointer;
+  font-family:var(--sans);padding:4px;flex-shrink:0}
+.sw-track{position:relative;width:46px;height:26px;border-radius:999px;background:var(--bg-2);
+  border:1px solid var(--line);transition:background .2s}
+.sw-knob{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .2s}
+.switch.on .sw-track{background:var(--std);border-color:var(--std)}
+.switch.on .sw-knob{left:22px}
+.sw-label{font-size:12.5px;font-weight:600;color:var(--ink-soft);min-width:42px;text-align:left}
+.switch.on .sw-label{color:var(--std)}
+.gate{text-align:center;padding:22px;border-radius:14px;border:1.5px solid var(--line);transition:all .25s}
+.gate.gap{background:#fdf7e9;border-color:var(--amb)}
+.gate.open{background:#e9f3ec;border-color:var(--std);animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.gate-i{font-size:30px;line-height:1}
+.gate-t{font-family:var(--display);font-size:20px;font-weight:600;margin:6px 0 8px}
+.gate.gap .gate-t{color:#8a6a1e}
+.gate.open .gate-t{color:var(--std)}
+.gate-d{font-size:14px;line-height:1.7;color:#473f38;max-width:460px;margin:0 auto}
+.gate-d b{color:#8a6a1e;font-weight:600}
+.gate.open .gate-d b{color:var(--std)}
+
+/* ════ widget 3 · 后果分级旋钮 ════ */
+.conseq-slider-row{display:flex;align-items:center;gap:14px}
+.conseq-slider-row input{flex:1}
+.conseq-stops{display:flex;justify-content:space-between;gap:6px;margin:12px 2px 22px}
+.conseq-stops span{font-size:11px;color:var(--ink-soft);text-align:center;flex:1;line-height:1.3;transition:all .2s}
+.conseq-stops span.on{color:var(--accent);font-weight:600;transform:scale(1.06)}
+.conseq-level{display:flex;align-items:center;gap:14px;padding:16px 18px;border:1px solid var(--line);
+  border-radius:12px;background:var(--bg);margin-bottom:20px}
+.cl-icon{font-size:30px;line-height:1}
+.cl-name{font-family:var(--display);font-size:19px;font-weight:600}
+.cl-rev{font-size:12.5px;color:var(--ink-soft);margin-top:2px}
+.meter{margin-bottom:14px}
+.meter-top{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.meter-top b{font-variant-numeric:tabular-nums}
+.meter-track{height:14px;border-radius:999px;background:var(--bg-2);overflow:hidden}
+.meter-fill{height:100%;border-radius:999px;transition:width .15s ease}
+.meter-fill.rigor{background:linear-gradient(90deg,#c98a5a,#b4542e)}
+.meter-fill.speed{background:linear-gradient(90deg,#7c9b86,#5f7060)}
+.backstop{font-size:14px;color:#473f38;margin:8px 0 0;padding:12px 16px;background:var(--bg-2);border-radius:10px}
+.backstop b{color:var(--accent)}
+.conseq-caption{margin-top:18px;font-size:15.5px;line-height:1.8;color:#473f38;min-height:48px}
+.conseq-caption b{color:var(--accent)}
+
+/* ════ widget 4 · 复盘画廊 ════ */
+.gal-cards{display:flex;gap:12px;flex-wrap:wrap}
+.gal-card{flex:1;min-width:180px;text-align:left;border:1.5px solid var(--line);border-radius:14px;
+  padding:16px 18px;background:var(--bg);cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.gal-card:hover{border-color:var(--accent-soft);transform:translateY(-2px)}
+.gal-card.on{border-color:var(--accent);background:var(--card);box-shadow:0 14px 32px -22px rgba(150,60,25,.6)}
+.gal-card .gc-emoji{font-size:24px}
+.gal-card .gc-title{font-family:var(--display);font-size:16px;font-weight:600;margin:6px 0 0;line-height:1.4}
+.gal-detail{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg-2);
+  padding:20px 22px;animation:fadeUp .35s ease}
+.pm-row{margin-bottom:14px}
+.pm-k{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.08em;margin-bottom:6px}
+.pm-surface .pm-k{color:var(--ink-soft)}
+.pm-surface p{font-size:14px;color:var(--ink-soft);text-decoration:line-through;text-decoration-color:#c9b6a6}
+.pm-cause .pm-k{color:var(--crk)}
+.pm-cause p{font-size:14.5px;line-height:1.75;color:#3f3832}
+.pm-cause p b,.pm-surface p b{font-weight:600}
+.pm-rule{margin-top:6px;border-left:3px solid var(--accent);background:var(--card);
+  border-radius:0 12px 12px 0;padding:14px 16px}
+.pm-rk{display:block;font-size:12px;font-weight:600;color:var(--accent);margin-bottom:6px}
+.pm-rule p{font-size:14.5px;line-height:1.7;color:var(--ink)}
+.gal-more{margin-top:18px;font-size:14px;line-height:1.7;color:var(--ink-soft)}
+.gal-more b{color:var(--ink);font-weight:600}
+.gal-more-note{font-size:12.5px;opacity:.8}
+
+/* ── 结尾 ── */
+.play-close{max-width:760px;margin:0 auto;padding:48px 0 12px;text-align:center;border-top:1px solid var(--line)}
+.recap{max-width:560px;margin:0 auto 30px;text-align:left;border:1px solid var(--line);
+  border-radius:16px;background:var(--card);padding:22px 24px}
+.recap-h{font-family:var(--display);font-size:17px;font-weight:600;color:var(--accent);text-align:center;margin-bottom:16px}
+.recap-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.recap-list li{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:13.5px;line-height:1.6;
+  padding-bottom:12px;border-bottom:1px solid var(--line)}
+.recap-list li:last-child{border-bottom:0;padding-bottom:0}
+.rc-q{flex:1;min-width:180px;color:var(--ink-soft);font-style:italic}
+.rc-q::after{content:"→";margin:0 8px;color:var(--accent);font-style:normal;font-weight:600}
+.rc-a{flex:1;min-width:160px;font-weight:600;color:var(--ink)}
+.play-close blockquote{margin:0 auto 28px;max-width:560px;font-family:var(--serif);
+  font-size:19px;line-height:1.8;color:var(--ink)}
+.play-close blockquote b{color:var(--accent)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects">项目</a>
+      <a href="../index.html#thoughts">思考</a>
+      <a href="../index.html#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<main class="play">
+
+  <header class="play-hero wrap">
+    <a class="back" href="../index.html#thoughts">← 全部思考</a>
+    <div class="mode-toggle">
+      <a href="dev-process.html">📖 原文</a>
+      <a href="dev-process-play.html" class="is-active">✦ 互动版</a>
+    </div>
+    <div class="kicker">Thinking · 流程 · 边玩边读</div>
+    <h1>可问责的开发流程</h1>
+    <p class="dek">不用读一长篇——扳一扳、拖一拖、点一点，亲手验证：我们怎么用 AI 把交付做快，
+      又用两道机制 + 一套自我纠错，让每一份交付都有人能为它负责。</p>
+    <div class="scroll-hint"><span class="ar">↓</span> 往下滚，每一段都能玩</div>
+  </header>
+
+  <!-- 1 · 拆颗粒度 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">用 AI 做开发，最常见的翻车不是「AI 不够强」，而是把
+      <b>一整包模糊需求丢给 AI、然后对产出失去掌控</b>——代码能跑，却没人说得清它怎么实现的。
+      拿一个具体功能开刀：「<b>下单结算</b>」。拖动颗粒度，看它怎么从一个谁都说不清的黑箱，
+      变成一组能被单独验证的模块：</p>
+
+    <div class="widget w-grain">
+      <div class="w-head"><span class="w-tag">拖一拖</span><h3>拿「下单结算」开刀：拆到能被单独验证</h3></div>
+      <div class="grain-slider-row">
+        <span class="g-end">整包丢给 AI</span>
+        <input type="range" id="grainRange" min="0" max="100" value="8" aria-label="需求颗粒度" />
+        <span class="g-end">拆到可验证</span>
+      </div>
+      <div class="grain-count" id="grainCount"></div>
+      <div class="grain-blocks" id="grainBlocks"></div>
+      <div class="grain-bug" id="grainBug"></div>
+      <p class="grain-caption" id="grainCaption"></p>
+    </div>
+  </section>
+
+  <!-- 2 · 三问知情门槛 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">第二道机制不是去「挑 AI 的错」——AI 写的东西，没问题才是常态。
+      它要确保的是：<b>交付前，有一名工程师真正掌握了这块代码的内容</b>。怎么算掌握？当场讲清三件事。
+      讲不清，不是扣分——而是<b>正好找到一处该补的知情盲区</b>，补上再放行。自己扳扳看：</p>
+
+    <div class="widget w-gate">
+      <div class="w-head"><span class="w-tag">扳开关</span><h3>把这块讲清楚，才放行</h3></div>
+      <div class="q-list">
+        <div class="qrow" id="qrow1">
+          <div class="q-txt"><b>① 它具体做了什么、怎么实现的？</b><span>接收什么、做了什么、产出什么——讲清这块的行为与实现思路</span></div>
+          <button class="switch" id="q1" type="button" aria-pressed="false">
+            <span class="sw-track"><span class="sw-knob"></span></span><span class="sw-label">还讲不清</span></button>
+        </div>
+        <div class="qrow" id="qrow2">
+          <div class="q-txt"><b>② 关键决策为什么这么选？</b><span>这么写依据什么前提、做了哪些取舍（为什么不是别的方案）</span></div>
+          <button class="switch" id="q2" type="button" aria-pressed="false">
+            <span class="sw-track"><span class="sw-knob"></span></span><span class="sw-label">还讲不清</span></button>
+        </div>
+        <div class="qrow" id="qrow3">
+          <div class="q-txt"><b>③ 它的边界在哪、覆盖了哪些情况？</b><span>设计时顾及了哪些场景、适用到哪、哪些留待以后处理</span></div>
+          <button class="switch" id="q3" type="button" aria-pressed="false">
+            <span class="sw-track"><span class="sw-knob"></span></span><span class="sw-label">还讲不清</span></button>
+        </div>
+      </div>
+      <div class="gate" id="gate"></div>
+    </div>
+  </section>
+
+  <!-- 3 · 后果分级旋钮 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">这道门槛不是一刀切。我们按<b>后果分级</b>来调：可秒回退的小改动，门槛轻、靠快速回滚兜底；
+      触及数据、计费、权限、迁移这种不可逆的部分，要求更高的知情和交叉核对。
+      <b>速度和稳妥，是同一个旋钮的两端。</b>拖动后果，看门槛怎么自动配：</p>
+
+    <div class="widget w-conseq">
+      <div class="w-head"><span class="w-tag">拧旋钮</span><h3>速度与稳妥：同一个旋钮的两端</h3></div>
+      <div class="conseq-slider-row">
+        <span class="g-end">影响小</span>
+        <input type="range" id="conseqRange" min="0" max="100" value="10" aria-label="改动后果" />
+        <span class="g-end">不可逆</span>
+      </div>
+      <div class="conseq-stops" id="conseqStops">
+        <span data-s="0">🎨<br>改文案</span><span data-s="1">➕<br>加小功能</span><span data-s="2">⚙️<br>核心逻辑</span><span data-s="3">🔑<br>权限·接口</span><span data-s="4">💳<br>支付·迁移</span>
+      </div>
+      <div class="conseq-level" id="conseqLevel"></div>
+      <div class="meter">
+        <div class="meter-top"><span>知情门槛 · 交叉核对</span><b id="rigorVal">18</b></div>
+        <div class="meter-track"><div class="meter-fill rigor" id="rigorFill"></div></div>
+      </div>
+      <div class="meter">
+        <div class="meter-top"><span>轻快放行的空间</span><b id="speedVal">90</b></div>
+        <div class="meter-track"><div class="meter-fill speed" id="speedFill"></div></div>
+      </div>
+      <p class="backstop" id="backstop"></p>
+      <p class="conseq-caption" id="conseqCaption"></p>
+    </div>
+  </section>
+
+  <!-- 4 · 复盘画廊 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">我们把「自我纠错」当成一项明确的工作，不是出了事才反应。每当一项交付出现
+      非预期的返工或缺陷，我们不止于修好它，而是追问<b>机制层面的原因</b>，
+      并把结论固化成一条流程规则，让同类问题不再发生。点开看几则复盘：</p>
+
+    <div class="widget w-gallery">
+      <div class="w-head"><span class="w-tag">点开看看</span><h3>把失败，复盘成机制</h3></div>
+      <div class="gal-cards" id="pmCards"></div>
+      <div class="gal-detail" id="pmDetail"></div>
+      <p class="gal-more">我们持续在做的，是把团队里<b>交付最稳定的成员</b>的实际做法，
+        系统地萃取成全队可复用的方法，再用新出现的失败不断校准它。
+        <br><span class="gal-more-note">（往 POSTMORTEMS 数组里加一条，就多一则复盘。）</span></p>
+    </div>
+  </section>
+
+  <!-- 结尾 -->
+  <section class="play-close wrap reveal">
+    <div class="recap">
+      <div class="recap-h">你的顾虑 → 我们的机制</div>
+      <ul class="recap-list">
+        <li><span class="rc-q">「你们是不是拿 AI 瞎糊？」</span><span class="rc-a">没有验收标准的任务，不进场</span></li>
+        <li><span class="rc-q">「发出来的东西有人真懂吗？」</span><span class="rc-a">不能为代码答话，就不放行</span></li>
+        <li><span class="rc-q">「出了 bug 有人能扛吗？」</span><span class="rc-a">每份交付都有具名负责人</span></li>
+        <li><span class="rc-q">「小团队会不会一直踩坑？」</span><span class="rc-a">把失败复盘成规则，持续校准</span></li>
+      </ul>
+    </div>
+    <blockquote>我们用 AI 把交付做<b>快</b>；用这套机制，把交付做得<b>可问责</b>。<br>两者缺一，我们都不接你的活。</blockquote>
+    <a class="btn btn-primary" href="../index.html#contact">把你的需求讲给我们 →</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap"><p><a href="../index.html">← 回到首页</a> &nbsp;·&nbsp; <a href="dev-process.html">读纯文字原文 📖</a></p></div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+
+  /* ════ widget 1 · 拆颗粒度（以「下单结算」为例）════ */
+  (function(){
+    var r = $("grainRange");
+    // 「下单结算」拆到位后的可验证单元，每个都带一句明确验收
+    var UNITS = [
+      { name:"校验库存",            crit:"库存为 0 时，下单被明确拒绝" },
+      { name:"计算金额",            crit:"优惠 + 运费算出的总价 = 预期值" },
+      { name:"扣减库存（防超卖）",  crit:"并发同时下单，绝不卖超" },
+      { name:"生成订单",            crit:"金额 / 商品快照 / 状态都正确落库" },
+      { name:"发起支付",            crit:"支付失败时，订单不被计为已付" }
+    ];
+    function stageOf(t){ return t < 0.16 ? 0 : t < 0.46 ? 1 : 2; }
+    function chunk(name, note){
+      return '<div class="blk unit big"><div class="blk-t">' + name + '</div>' +
+        '<div class="blk-note">还太大：' + note + '，说不清怎么单独验它</div></div>';
+    }
+    function bug(cls, html){ var b = $("grainBug"); b.className = "grain-bug " + cls; b.innerHTML = html; }
+    function cap(html){ $("grainCaption").innerHTML = html; }
+    function render(){
+      var st = stageOf(r.value / 100);
+      var blocks = $("grainBlocks");
+      if (st === 0){
+        $("grainCount").textContent = "整包丢给 AI · 没有任何可对照的预期";
+        blocks.innerHTML = '<div class="blk box"><div class="blk-t">📦 「做一个下单结算」整包丢给 AI</div>' +
+          '<div class="blk-d">AI 一路自洽地写出一大坨能跑的代码——但你说不清它怎么算价、会不会超卖、哪步先哪步后</div></div>';
+        bug("crash", "🐛 线上出现「超卖」→ 在整坨结算代码里翻找，不知是库存、并发还是建单哪一步出的问题");
+        cap("<b>把整个功能丢给 AI = 黑箱。</b>能跑，但没人能为它的每一步负责，出错只能猜——这正是用 AI 最常见的翻车方式。");
+      } else if (st === 1){
+        $("grainCount").textContent = "粗拆成 2 块 · 每块还是太大，验不了";
+        blocks.innerHTML =
+          chunk("下单流程", "校验 + 计价 + 扣库存 + 建单，全挤在一块") +
+          chunk("支付流程", "发起 + 回调 + 对账，也挤在一块");
+        bug("warn", "🐛 线上出现「超卖」→ 缩到「下单流程」这块了，但它仍是一大段，还得在里面慢慢找");
+        cap("拆开了点，但「下单流程」「支付流程」还是太大。标准不是「尽量小」，而是「<b>小到这一块能被单独验证</b>」——说不清怎么验，就继续拆。");
+      } else {
+        $("grainCount").textContent = "拆成 " + UNITS.length + " 个单元 · 每个都带一句明确验收";
+        blocks.innerHTML = UNITS.map(function(u){
+          return '<div class="blk unit ok"><div class="blk-t">' + u.name + '</div>' +
+            '<div class="blk-crit">✓ 验收：' + u.crit + '</div></div>';
+        }).join("");
+        bug("good", "🐛 线上出现「超卖」→ <b>直接定位到「扣减库存」单元</b>，它的验收「并发不超卖」没通过，修它一个就行");
+        cap("<b>拆到每个单元都带一句验收标准、一个具名负责人。</b>每块能被单独验证、单独问责——这，才是「模块化」真正的意义。");
+      }
+    }
+    r.addEventListener("input", render);
+    render();
+  })();
+
+  /* ════ widget 2 · 三问知情门槛 ════ */
+  (function(){
+    var qs = [$("q1"), $("q2"), $("q3")];
+    var rows = [$("qrow1"), $("qrow2"), $("qrow3")];
+    function paint(b, on){
+      b.classList.toggle("on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+      b.querySelector(".sw-label").textContent = on ? "讲得清" : "还讲不清";
+    }
+    function render(){
+      var answered = 0;
+      qs.forEach(function(b, i){
+        var on = b.classList.contains("on");
+        if (on) answered++;
+        rows[i].classList.toggle("on", on);
+      });
+      var gate = $("gate");
+      if (answered === 3){
+        gate.className = "gate open";
+        gate.innerHTML = '<div class="gate-i">✅</div><div class="gate-t">讲清楚了 · 可放行</div>' +
+          '<div class="gate-d">交付的东西背后，站着一个<b>真正掌握它的人</b>。真出问题，他能立刻定位、能解释、能修——而不是「AI 当时这么写的，我们得重新研究」。</div>';
+      } else {
+        gate.className = "gate gap";
+        gate.innerHTML = '<div class="gate-i">🔎</div><div class="gate-t">还有 ' + (3 - answered) + ' 处讲不清</div>' +
+          '<div class="gate-d">这不是扣分——而是正好暴露了 <b>' + (3 - answered) + '</b> 个知情盲区。花几分钟把这块补明白，就能放行。</div>';
+      }
+    }
+    qs.forEach(function(b){
+      b.addEventListener("click", function(){
+        paint(b, !b.classList.contains("on"));
+        render();
+      });
+    });
+    render();
+  })();
+
+  /* ════ widget 3 · 后果分级旋钮 ════ */
+  (function(){
+    var r = $("conseqRange");
+    var STOPS = [
+      { icon:"🎨", name:"改个文案 / 颜色",   rev:"可秒回退",   rigor:18, back:"出问题一键回滚" },
+      { icon:"➕", name:"加一个小功能",      rev:"容易回退",   rigor:40, back:"快速回滚兜底" },
+      { icon:"⚙️", name:"改核心业务逻辑",    rev:"回退有成本", rigor:64, back:"回滚 + 重点验证" },
+      { icon:"🔑", name:"动权限 / 对外接口", rev:"较难回退",   rigor:84, back:"同行交叉核对 + 重点验证" },
+      { icon:"💳", name:"动支付 / 数据迁移", rev:"不可逆",     rigor:100, back:"迁移前演练 + 回滚预案 + 多重交叉核对" }
+    ];
+    var stopEls = $("conseqStops").querySelectorAll("span");
+    function idxOf(t){ return t < 0.2 ? 0 : t < 0.42 ? 1 : t < 0.62 ? 2 : t < 0.84 ? 3 : 4; }
+    function render(){
+      var t = r.value / 100;
+      var k = idxOf(t), s = STOPS[k];
+      $("conseqLevel").innerHTML = '<span class="cl-icon">' + s.icon + '</span>' +
+        '<div><div class="cl-name">' + s.name + '</div><div class="cl-rev">可逆性：' + s.rev + '</div></div>';
+      var speed = clamp(108 - s.rigor, 8, 100);
+      $("rigorFill").style.width = s.rigor + "%"; $("rigorVal").textContent = s.rigor;
+      $("speedFill").style.width = speed + "%";  $("speedVal").textContent = speed;
+      $("backstop").innerHTML = "兜底方式：<b>" + s.back + "</b>";
+      Array.prototype.forEach.call(stopEls, function(el){
+        el.classList.toggle("on", +el.getAttribute("data-s") === k);
+      });
+      var cap = $("conseqCaption");
+      if (s.rigor < 40){
+        cap.innerHTML = "小改动门槛轻——靠「出事一键回滚」兜底，所以<b>敢快</b>。";
+      } else if (s.rigor < 80){
+        cap.innerHTML = "改动越要害，门槛越高——开始要求把<b>那三问</b>答清、加重点验证。";
+      } else {
+        cap.innerHTML = "<b>触及不可逆的部分（数据 / 计费 / 权限 / 迁移），门槛拉满 + 交叉核对。</b>同一个旋钮按后果调——不一刀切地慢，也不一刀切地赌。";
+      }
+    }
+    r.addEventListener("input", render);
+    render();
+  })();
+
+  /* ════ widget 4 · 复盘画廊（数据驱动，加复盘=加一条）════ */
+  var POSTMORTEMS = [
+    {
+      emoji:"🏗️", title:"一次性把整套架构交给 AI 实现",
+      surface:"是不是 AI 不够强？",
+      cause:"任务进场时<b>没有为每个单元写下验收标准</b>。AI 一路自洽地往下写，却没有任何一处可供对照的预期，问题因此连环累积——后续调试花掉了远超预期的时间。",
+      rule:"机制一：任务进场即带验收标准。没有写下「做完算什么样」的任务，不进入开发。（这条规则，正是这次复盘的直接产物。）"
+    },
+    {
+      emoji:"🧩", title:"一段 AI 代码合并后，才在使用中暴露薄弱点",
+      surface:"运气不好、踩到边角 case？",
+      cause:"合并前<b>没人被要求当场说清「它最可能在哪里出问题」</b>——薄弱点其实一直都在，只是没人去指出来。",
+      rule:"机制二：交付前必须能为代码答话，三问答不出，就不放行。"
+    },
+    {
+      emoji:"🔁", title:"同一类 bug 修了又犯",
+      surface:"是不是不够仔细？",
+      cause:"每次都<b>只修了表象，没有追到机制层面的原因</b>，于是同类问题换个地方又一次发生。",
+      rule:"复盘必须产出一条可复用的流程规则，否则这次「修复」不算完成。"
+    }
+  ];
+  (function(){
+    var cardsEl = $("pmCards"), detailEl = $("pmDetail"), cur = 0;
+    function renderCards(){
+      cardsEl.innerHTML = POSTMORTEMS.map(function(e, i){
+        return '<button type="button" class="gal-card' + (i === cur ? " on" : "") + '" data-i="' + i + '">' +
+          '<div class="gc-emoji">' + e.emoji + '</div>' +
+          '<div class="gc-title">' + e.title + '</div></button>';
+      }).join("");
+      Array.prototype.forEach.call(cardsEl.querySelectorAll(".gal-card"), function(b){
+        b.addEventListener("click", function(){ cur = +b.getAttribute("data-i"); renderCards(); renderDetail(); });
+      });
+    }
+    function renderDetail(){
+      var e = POSTMORTEMS[cur];
+      detailEl.innerHTML =
+        '<div class="pm-row pm-surface"><span class="pm-k">表面上看</span><p>' + e.surface + '</p></div>' +
+        '<div class="pm-row pm-cause"><span class="pm-k">机制层面的真因</span><p>' + e.cause + '</p></div>' +
+        '<div class="pm-rule"><span class="pm-rk">⮕ 固化成一条规则</span><p>' + e.rule + '</p></div>';
+    }
+    renderCards(); renderDetail();
+  })();
+
+  /* ════ 滚动渐入（渐进增强：无 JS / 无 IO 时内容默认全可见）════ */
+  (function(){
+    var els = document.querySelectorAll(".reveal");
+    if (!("IntersectionObserver" in window)) return;     // 不支持就保持可见，绝不隐藏
+    Array.prototype.forEach.call(els, function(el){ el.classList.add("armed"); });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { threshold: 0.1 });
+    Array.prototype.forEach.call(els, function(el){ io.observe(el); });
+  })();
+})();
+</script>
+</body>
+</html>

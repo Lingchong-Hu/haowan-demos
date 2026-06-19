@@ -152,12 +152,15 @@
       <div class="go">查看 · 亲手体验 →</div></a>`;
   }).join("");
 
-  // 思考卡片
-  $("thought-grid").innerHTML = S.thoughts.map(t => `
-    <a class="tcard" href="${t.href}">
+  // 思考卡片（有 play 字段则默认进互动版，并显示角标）
+  $("thought-grid").innerHTML = S.thoughts.map(t => {
+    const badge = t.play ? `<span class="play-badge">✦ 互动版</span>` : "";
+    const go = t.play ? "边玩边读 →" : "阅读 →";
+    return `<a class="tcard" href="${t.play || t.href}">
       <div class="ck">${t.kicker}</div>
-      <h3>${t.title}</h3><p>${t.desc}</p>
-      <div class="go">阅读 →</div></a>`).join("");
+      <h3>${t.title}${badge}</h3><p>${t.desc}</p>
+      <div class="go">${go}</div></a>`;
+  }).join("");
 </script>
 </body>
 </html>

@@ -35,13 +35,16 @@ window.SITE = {
       kicker: "Thinking · 组织",
       title: "AI 时代的组织架构",
       desc: "代码变便宜后，胜负手是「需求洞察 + 完整交付」的结合——而这两样几乎从不长在同一个人身上。为什么律所的结构，恰好是这个时代最对的答案。",
-      href: "thoughts/ai-org.html"
+      href: "thoughts/ai-org.html",
+      // play：互动版（explorable）。卡片默认进互动版，并显示「✦ 互动版」角标；无此字段则只进 href 原文。
+      play: "thoughts/ai-org-play.html"
     },
     {
       kicker: "Thinking · 流程",
       title: "可问责的开发流程",
       desc: "用 AI 把交付做快，用两道机制把它做得可问责：没有验收标准的任务不进场，不能为代码答话就不放行。",
-      href: "thoughts/dev-process.html"
+      href: "thoughts/dev-process.html",
+      play: "thoughts/dev-process-play.html"
     }
   ],
 

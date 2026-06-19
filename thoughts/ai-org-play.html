@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI 时代的组织架构 · 互动版 · 好玩的东西</title>
+<meta name="description" content="边滚边玩：拖一拖、拧一拧，亲手验证为什么 AI 时代胜负手是「需求洞察 + 完整交付」，以及为什么律所的结构恰好是对的答案。" />
+<!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+/* ════════ 互动版（explorable）局部样式，全部 scoped 在 .play 下 ════════ */
+.play{ --crk:#c0392b; --std:#3f7d5a; --amb:#bd8126; }
+.play b,.play strong{font-weight:600}   /* 强调统一用 600 半粗，避免 CJK 在 700 下的合成粗体过重 */
+.play-hero{padding:30px 0 8px;max-width:760px;margin:0 auto}
+.play-hero h1{font-size:clamp(30px,5.4vw,48px);margin:6px 0 10px}
+.play-hero .dek{font-size:18px;color:var(--ink-soft);font-family:var(--serif);line-height:1.7}
+.play-hero .scroll-hint{margin-top:18px;font-size:13px;color:var(--accent);letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:8px}
+.play-hero .scroll-hint .ar{animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+.play-sec{max-width:760px;margin:0 auto;padding:46px 0}
+.play-sec + .play-sec{border-top:1px solid var(--line)}
+.sec-lede{font-size:19px;line-height:1.85;color:#3f3832;font-family:var(--serif);margin-bottom:26px}
+.sec-lede b{font-weight:600;color:var(--ink)}
+.sec-foot{margin-top:22px;font-size:15.5px;line-height:1.8;color:#473f38;
+  padding:15px 20px;background:var(--bg-2);border-radius:12px}
+.sec-foot b{color:var(--accent);font-weight:600}
+
+/* reveal on scroll —— 默认完全可见；只有 JS 正常运行才「武装→渐入」，JS 一挂内容照样全显示 */
+.reveal{transition:opacity .7s ease,transform .7s ease}
+.reveal.armed{opacity:0;transform:translateY(22px)}
+.reveal.armed.in{opacity:1;transform:none}
+
+/* ── 通用 widget 外框 ── */
+.widget{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px 26px 28px;box-shadow:0 22px 50px -34px rgba(60,40,25,.45)}
+.w-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.w-head h3{font-size:21px;font-family:var(--serif)}
+.w-tag{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#fff;
+  background:var(--accent);border-radius:999px;padding:5px 12px;white-space:nowrap}
+
+/* ── range 通用样式 ── */
+.play input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+  background:var(--bg-2);outline:none;cursor:pointer}
+.play input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:24px;height:24px;border-radius:50%;background:var(--accent);border:3px solid #fff;
+  box-shadow:0 3px 8px -1px rgba(120,50,20,.5);cursor:grab}
+.play input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.08)}
+.play input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;cursor:grab}
+
+/* ════ widget 1 · 时间滑块 ════ */
+.time-slider-row{display:flex;align-items:center;gap:14px}
+.time-slider-row input{flex:1}
+.t-end{font-size:13px;color:var(--ink-soft);font-weight:500;white-space:nowrap}
+.time-year{text-align:center;font-family:var(--display);font-size:20px;color:var(--accent);margin:14px 0 22px}
+.cost-block{margin:8px 0 22px}
+.cb-label{font-size:13.5px;color:var(--ink-soft);margin-bottom:8px}
+.cost-bar{position:relative;height:34px;background:var(--bg-2);border-radius:9px;overflow:hidden}
+.cost-fill{height:100%;width:92%;border-radius:9px;
+  background:linear-gradient(90deg,#d4642e,#a9842f);transition:width .12s ease}
+.cost-val{position:absolute;top:50%;right:14px;transform:translateY(-50%);
+  font-size:13px;font-weight:600;color:var(--ink)}
+.moat-track{margin-top:8px}
+.mt-label{font-size:13.5px;color:var(--ink-soft);margin-bottom:10px}
+.mt-zones{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:30px}
+.mz{text-align:center;font-size:15px;color:var(--ink-soft);padding:16px 8px;border-radius:12px;
+  border:1.5px dashed var(--line);transition:all .2s}
+.mz b{font-weight:600}
+.mz.on{color:#fff;background:var(--accent);border-style:solid;border-color:var(--accent);
+  box-shadow:0 10px 26px -14px rgba(150,60,25,.7)}
+.mt-marker{position:absolute;top:0;left:6%;transform:translateX(-50%);
+  font-size:13px;font-weight:600;color:var(--accent);white-space:nowrap;transition:left .12s ease}
+.time-caption{margin-top:22px;font-size:15.5px;line-height:1.8;color:#473f38;min-height:48px}
+
+/* ════ widget 2 · 能力分配器 ════ */
+.alloc-stage.two{animation:fadeUp .5s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.person{text-align:center;font-size:18px;font-family:var(--display);margin-bottom:6px;transition:color .2s}
+.person.strain{color:var(--crk)}
+.alloc-slider-row{display:flex;align-items:center;gap:12px;margin:14px 0 22px;font-size:12.5px;color:var(--ink-soft)}
+.alloc-slider-row input{flex:1}
+.skill-bars{display:flex;flex-direction:column;gap:16px}
+.sb-top{display:flex;justify-content:space-between;font-size:14px;margin-bottom:7px}
+.sb-top span:last-child{font-weight:600;font-variant-numeric:tabular-nums}
+.sb-track{position:relative;height:18px;background:var(--bg-2);border-radius:999px;overflow:visible}
+.sb-fill{height:100%;border-radius:999px;transition:width .12s ease,background .2s}
+.sb-fill.ins{background:linear-gradient(90deg,#c98a5a,#b4542e)}
+.sb-fill.exe{background:linear-gradient(90deg,#7c9b86,#5f7060)}
+.sb-fill.low{background:#cf7d6a !important;filter:saturate(.7)}
+.sb-line{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ink);opacity:.55;z-index:2}
+.sb-line::after{content:"顶尖线";position:absolute;top:-17px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:var(--ink-soft);white-space:nowrap}
+.alloc-msg{margin:22px 0 18px;font-size:15.5px;line-height:1.75;color:#473f38;min-height:24px}
+.alloc-msg b{color:var(--crk);font-weight:600}
+.split-btn{width:100%;justify-content:center}
+.role-cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:560px){.role-cards{grid-template-columns:1fr}}
+.role-card{border:1px solid var(--line);border-radius:14px;padding:18px;background:var(--bg)}
+.role-card.partner{border-color:var(--accent-soft)}
+.role-card.architect{border-color:var(--sage)}
+.rc-emoji{font-size:26px}
+.rc-name{font-family:var(--display);font-size:19px;font-weight:600;margin-top:4px}
+.rc-skill{font-size:12.5px;font-weight:600;letter-spacing:.04em;margin:8px 0 10px}
+.partner .rc-skill{color:var(--accent)}
+.architect .rc-skill{color:var(--sage)}
+.role-card p{font-size:13.5px;color:#4a423b;margin-top:12px;line-height:1.7}
+.role-card .sb-track{height:14px}
+.weld{margin:20px 0 16px;text-align:center;font-size:16px;line-height:1.8;color:#3f3832;
+  padding:16px 18px;background:var(--bg-2);border-radius:12px}
+.weld b{color:var(--accent);font-weight:600}
+.reset-btn{font-size:13px;padding:8px 16px}
+
+/* ════ widget 3 · 压力测试（招牌）════ */
+.knobs{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px}
+@media(max-width:620px){.knobs{grid-template-columns:1fr}}
+.knobs label{display:flex;flex-direction:column;gap:8px;font-size:13.5px;font-weight:500;color:var(--ink)}
+.knobs label b{align-self:flex-end;font-variant-numeric:tabular-nums;color:var(--accent);font-size:13px}
+.stress-panels{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media(max-width:620px){.stress-panels{grid-template-columns:1fr}}
+.spanel{border:1.5px solid var(--line);border-radius:14px;padding:16px;background:var(--bg);
+  transition:border-color .2s,background .2s}
+.spanel.is-warn{border-color:var(--amb)}
+.spanel.is-crash{border-color:var(--crk);background:#fbeeec;animation:shake .35s linear}
+@keyframes shake{0%,100%{transform:translate(0,0)}20%{transform:translate(-4px,2px)}
+  40%{transform:translate(4px,-2px)}60%{transform:translate(-3px,1px)}80%{transform:translate(3px,-1px)}}
+.sp-head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:12px}
+.sp-title{font-size:14.5px;font-weight:600;font-family:var(--serif)}
+.sp-chip{font-size:11.5px;font-weight:600;padding:4px 10px;border-radius:999px;white-space:nowrap;
+  background:var(--bg-2);color:var(--ink-soft)}
+.sp-chip.ok{background:#e3f0e7;color:var(--std)}
+.sp-chip.warn{background:#f6ecd6;color:var(--amb)}
+.sp-chip.crash{background:#f6dcd7;color:var(--crk)}
+.sp-health{height:7px;border-radius:999px;background:var(--bg-2);overflow:hidden;margin-bottom:12px}
+.sp-health-fill{height:100%;width:100%;border-radius:999px;background:var(--std);transition:width .18s ease,background .2s}
+.sp-health-fill.warn{background:var(--amb)}
+.sp-health-fill.crash{background:var(--crk)}
+.sp-screen{position:relative;height:96px;border-radius:10px;background:var(--card);border:1px solid var(--line);
+  display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;
+  color:var(--ink-soft);overflow:hidden;padding:10px}
+.sp-screen.ok{color:var(--std)}
+.sp-screen.warn{color:var(--amb);background:#fdf7e9}
+.sp-screen.crash{color:var(--crk);background:#fbe6e2;font-weight:600;
+  text-shadow:1.5px 0 #f0b3a8,-1.5px 0 #c98}
+.sp-screen.crash::before{content:"";position:absolute;inset:0;
+  background:repeating-linear-gradient(115deg,transparent 0 16px,rgba(192,57,43,.13) 16px 17px)}
+.sp-screen .big{font-size:18px}
+.sp-log{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:6px;min-height:54px}
+.sp-log li{font-size:12.5px;line-height:1.5;padding:6px 10px;border-radius:8px;
+  background:var(--bg-2);color:var(--ink-soft);animation:popIn .25s ease}
+.sp-log li.err{background:#f6dcd7;color:var(--crk)}
+.sp-log li.good{background:#e3f0e7;color:var(--std)}
+@keyframes popIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.stress-caption{margin-top:20px;font-size:15px;line-height:1.75;color:#473f38;text-align:center}
+.stress-caption b{color:var(--accent)}
+
+/* ════ widget 4 · 例子画廊 ════ */
+.gal-cards{display:flex;gap:12px;flex-wrap:wrap}
+.gal-card{flex:1;min-width:200px;text-align:left;border:1.5px solid var(--line);border-radius:14px;
+  padding:16px 18px;background:var(--bg);cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.gal-card:hover{border-color:var(--accent-soft);transform:translateY(-2px)}
+.gal-card.on{border-color:var(--accent);background:var(--card);
+  box-shadow:0 14px 32px -22px rgba(150,60,25,.6)}
+.gal-card .gc-emoji{font-size:24px}
+.gal-card .gc-title{font-family:var(--display);font-size:17px;font-weight:600;margin:6px 0 4px}
+.gal-card .gc-bench{font-size:12px;color:var(--sage);font-weight:500}
+.gal-detail{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg-2);
+  padding:20px 22px;animation:fadeUp .35s ease}
+.gd-bench{font-size:12.5px;font-weight:600;color:var(--sage);letter-spacing:.02em;margin-bottom:14px}
+.gd-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:560px){.gd-cols{grid-template-columns:1fr;gap:16px}}
+.gd-k{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.gd-col.insight .gd-k{color:var(--accent)}
+.gd-col.deliver .gd-k{color:var(--sage)}
+.gd-col p{font-size:14px;line-height:1.75;color:#3f3832}
+.gd-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.gd-tags span{font-size:11.5px;font-weight:500;padding:4px 11px;border-radius:999px;
+  background:var(--card);border:1px solid var(--line);color:var(--ink-soft)}
+.gal-more{margin-top:18px;font-size:14px;line-height:1.7;color:var(--ink-soft)}
+.gal-more-note{font-size:12.5px;opacity:.8}
+
+/* ── 结尾 ── */
+.play-close{max-width:760px;margin:0 auto;padding:48px 0 12px;text-align:center;border-top:1px solid var(--line)}
+.play-close blockquote{margin:0 auto 28px;max-width:560px;font-family:var(--serif);font-style:italic;
+  font-size:19px;line-height:1.8;color:var(--ink)}
+.play-close blockquote b{color:var(--accent);font-style:normal}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects">项目</a>
+      <a href="../index.html#thoughts">思考</a>
+      <a href="../index.html#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<main class="play">
+
+  <header class="play-hero wrap">
+    <a class="back" href="../index.html#thoughts">← 全部思考</a>
+    <div class="mode-toggle">
+      <a href="ai-org.html">📖 原文</a>
+      <a href="ai-org-play.html" class="is-active">✦ 互动版</a>
+    </div>
+    <div class="kicker">Thinking · 组织 · 边玩边读</div>
+    <h1>AI 时代的组织架构</h1>
+    <p class="dek">不用读完一长篇——拖一拖、拧一拧，亲手验证：当代码变便宜，胜负手前移到哪里，
+      以及为什么律所那套结构，恰好是这个时代最对的答案。</p>
+    <div class="scroll-hint"><span class="ar">↓</span> 往下滚，每一段都能玩</div>
+  </header>
+
+  <!-- 1 · 时间滑块 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">十年前，能不能把一个产品 <b>做出来</b> 本身就是壁垒。
+      今天 AI 把"造东西"的成本打到地板——<b>做得出来不再是壁垒，是起点。</b>
+      胜负手，往前移了一格。亲手拖动时间看看：</p>
+
+    <div class="widget w-time">
+      <div class="w-head"><span class="w-tag">拖一拖</span><h3>胜负手，往前移了一格</h3></div>
+      <div class="time-slider-row">
+        <span class="t-end">十年前</span>
+        <input type="range" id="timeRange" min="0" max="100" value="12" aria-label="时间" />
+        <span class="t-end">今天</span>
+      </div>
+      <div class="time-year" id="timeYear"></div>
+
+      <div class="cost-block">
+        <div class="cb-label">造一个产品的成本</div>
+        <div class="cost-bar"><div class="cost-fill" id="costFill"></div><span class="cost-val" id="costVal"></span></div>
+      </div>
+
+      <div class="moat-track">
+        <div class="mt-label">这一刻，胜负手在哪？</div>
+        <div class="mt-zones">
+          <div class="mt-marker" id="mtMarker">◆ 胜负手</div>
+          <div class="mz" id="mzMake">能不能<b>做出来</b></div>
+          <div class="mz" id="mzDone">谁更<b>快</b> + 更<b>完整</b></div>
+        </div>
+      </div>
+
+      <p class="time-caption" id="timeCaption"></p>
+    </div>
+  </section>
+
+  <!-- 2 · 能力分配器 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">这个时代真正稀缺的，是两样东西的结合：<b>对真实需求的洞察</b>，
+      和<b>把它快速、完整落地的能力</b>。而这两样，几乎从不长在同一个人身上。
+      不信？给一个人分分看——怎么分，都顶不满两边。</p>
+
+    <div class="widget w-alloc">
+      <div class="w-head"><span class="w-tag">分一分</span><h3>把两种能力，塞进一个人</h3></div>
+
+      <div class="alloc-stage" id="allocOne">
+        <div class="person" id="person">🧠 一个人的全部精力</div>
+        <div class="alloc-slider-row">
+          <span>更偏 执行 ←</span>
+          <input type="range" id="allocRange" min="0" max="100" value="50" aria-label="精力分配" />
+          <span>→ 更偏 需求洞察</span>
+        </div>
+        <div class="skill-bars">
+          <div class="sb">
+            <div class="sb-top"><span>需求洞察</span><span id="insVal">50</span></div>
+            <div class="sb-track"><div class="sb-fill ins" id="insFill"></div><div class="sb-line" style="left:80%"></div></div>
+          </div>
+          <div class="sb">
+            <div class="sb-top"><span>执行落地</span><span id="exeVal">50</span></div>
+            <div class="sb-track"><div class="sb-fill exe" id="exeFill"></div><div class="sb-line" style="left:80%"></div></div>
+          </div>
+        </div>
+        <p class="alloc-msg" id="allocMsg"></p>
+        <button class="btn btn-primary split-btn" id="splitBtn">拆成两个角色，再看一次 →</button>
+      </div>
+
+      <div class="alloc-stage two" id="allocTwo" hidden>
+        <div class="role-cards">
+          <div class="role-card partner">
+            <div class="rc-emoji">🤝</div>
+            <div class="rc-name">合伙人</div>
+            <div class="rc-skill">需求洞察 · 拉满</div>
+            <div class="sb-track"><div class="sb-fill ins" style="width:100%"></div><div class="sb-line" style="left:80%"></div></div>
+            <p>握着需求窗口、听得懂客户真正要什么，并替整个结果负责。</p>
+          </div>
+          <div class="role-card architect">
+            <div class="rc-emoji">🛠️</div>
+            <div class="rc-name">精英架构师</div>
+            <div class="rc-skill">执行落地 · 拉满</div>
+            <div class="sb-track"><div class="sb-fill exe" style="width:100%"></div><div class="sb-line" style="left:80%"></div></div>
+            <p>一个人扛起过去一整个团队才扛得动的完整产品。</p>
+          </div>
+        </div>
+        <div class="weld">各自登峰，再用「<b>问责</b>」焊死成一个对你负责的整体。<br>这，就是<b>律所存在了一百年的结构</b>。</div>
+        <button class="btn btn-ghost reset-btn" id="resetBtn">← 再试试塞进一个人</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · 压力测试（招牌）-->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">你能 vibe 出一个 demo。但客户要的不是 demo，是一个
+      <b>不崩、不出错、数据多了不卡死、市场变了能快速改对</b>的完整产品。
+      从 demo 到完整产品，中间隔着一整条深渊。把三个旋钮往上拧——看谁先裂开。</p>
+
+    <div class="widget w-stress">
+      <div class="w-head"><span class="w-tag">拧三个旋钮</span><h3>压力测试：vibe 的 demo vs 完整产品</h3></div>
+      <div class="knobs">
+        <label>用户暴涨 <input type="range" id="kUsers" min="0" max="100" value="8" /><b id="kUsersV">8</b></label>
+        <label>数据变多 <input type="range" id="kData" min="0" max="100" value="8" /><b id="kDataV">8</b></label>
+        <label>市场突变 <input type="range" id="kMarket" min="0" max="100" value="8" /><b id="kMarketV">8</b></label>
+      </div>
+      <div class="stress-panels">
+        <div class="spanel demo" id="demoPanel">
+          <div class="sp-head"><span class="sp-title">🧪 自己 vibe 的 demo</span><span class="sp-chip" id="demoChip">运行中</span></div>
+          <div class="sp-health"><div class="sp-health-fill" id="demoHealth"></div></div>
+          <div class="sp-screen" id="demoScreen"></div>
+          <ul class="sp-log" id="demoLog"></ul>
+        </div>
+        <div class="spanel product" id="prodPanel">
+          <div class="sp-head"><span class="sp-title">🏛️ 我们的完整产品</span><span class="sp-chip ok" id="prodChip">稳定运行</span></div>
+          <div class="sp-health"><div class="sp-health-fill ok" id="prodHealth"></div></div>
+          <div class="sp-screen ok" id="prodScreen"></div>
+          <ul class="sp-log" id="prodLog"></ul>
+        </div>
+      </div>
+      <p class="stress-caption" id="stressCaption">三个旋钮还在低位。往上拧，差距才出来。</p>
+    </div>
+  </section>
+
+  <!-- 4 · 例子画廊 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">所以你需要的，从来不是"找个人写代码"。你需要的是：把你最值钱的需求洞察，
+      <b>接到一个能保证完整、保证快速、并替结果负责到底的执行端上。</b>具体长什么样？点开看看：</p>
+
+    <div class="widget w-gallery">
+      <div class="w-head"><span class="w-tag">点开看看</span><h3>把洞察，接到能担保的执行端</h3></div>
+      <div class="gal-cards" id="galCards"></div>
+      <div class="gal-detail" id="galDetail"></div>
+      <p class="gal-more">这样的需求还有很多 —— 我们的标准：<b>海外已验证 · 国内蓝海 · 体现你独有的洞察 · 不烂大街</b>。
+        <br><span class="gal-more-note">（往 EXAMPLES 数组里加一条，就多一个例子。）</span></p>
+    </div>
+  </section>
+
+  <!-- 结尾 -->
+  <section class="play-close wrap reveal">
+    <blockquote>代码很便宜，<b>担保很贵，速度更贵</b>。<br>demo 谁都能做——抢得下市场的完整产品，要有人扛。</blockquote>
+    <a class="btn btn-primary" href="../index.html#contact">把你的需求讲给我们 →</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap"><p><a href="../index.html">← 回到首页</a> &nbsp;·&nbsp; <a href="ai-org.html">读纯文字原文 📖</a></p></div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+
+  /* ════ widget 1 · 时间滑块 ════ */
+  (function(){
+    var r = $("timeRange");
+    function render(){
+      var t = r.value / 100;                         // 0 = 十年前, 1 = 今天
+      var year = Math.round(2015 + t * 10);
+      $("timeYear").textContent = year + (t < 0.18 ? " · 十年前" : t > 0.82 ? " · 今天" : " · 这些年");
+      // 成本：从 92% 暴跌到 7%
+      var cost = 92 - t * 85;
+      $("costFill").style.width = cost + "%";
+      $("costVal").textContent = t < 0.3 ? "极高 · 会写的人稀缺" : t < 0.7 ? "在下降…" : "地板价 · 谁都能做";
+      // 胜负手 marker：从 zone1 滑到 zone2
+      $("mtMarker").style.left = (6 + t * 88) + "%";
+      var nowPhase = t >= 0.5;
+      $("mzMake").classList.toggle("on", !nowPhase);
+      $("mzDone").classList.toggle("on", nowPhase);
+      $("timeCaption").innerHTML = nowPhase
+        ? "<b>今天。</b>AI 把造东西打到地板价。做得出来不再是壁垒，只是起点——谁更快、用更<b>完整</b>的产品响应真实需求，谁赢。"
+        : "<b>十年前。</b>会写、能写完的人稀缺，光是“做得出来”就足够赢。做得出来本身，就是壁垒。";
+    }
+    r.addEventListener("input", render);
+    render();
+  })();
+
+  /* ════ widget 2 · 能力分配器 ════ */
+  (function(){
+    var r = $("allocRange"), LINE = 80;
+    function render(){
+      var ins = +r.value;          // 需求洞察 = 滑块值
+      var exe = 100 - ins;         // 执行 = 余下
+      $("insVal").textContent = ins;
+      $("exeVal").textContent = exe;
+      $("insFill").style.width = ins + "%";
+      $("exeFill").style.width = exe + "%";
+      $("insFill").classList.toggle("low", ins < LINE);
+      $("exeFill").classList.toggle("low", exe < LINE);
+      var bothTop = ins >= LINE && exe >= LINE;   // 永远 false（最多一边）
+      $("person").classList.toggle("strain", !bothTop);
+      var msg;
+      if (ins >= LINE)      msg = "洞察顶尖了，可执行只剩 <b>" + exe + "</b>——交付端塌了。";
+      else if (exe >= LINE) msg = "执行顶尖了，可洞察只剩 <b>" + ins + "</b>——听不懂客户真正要什么。";
+      else                  msg = "想两边都拿手？结果<b>两边都不顶尖</b>。顾此失彼。";
+      $("allocMsg").innerHTML = "😣 " + msg + " &nbsp;两样能力同时过线，硬塞进一个人 —— <b>做不到</b>。";
+    }
+    r.addEventListener("input", render);
+    render();
+    $("splitBtn").addEventListener("click", function(){
+      $("allocOne").hidden = true; $("allocTwo").hidden = false;
+    });
+    $("resetBtn").addEventListener("click", function(){
+      $("allocTwo").hidden = true; $("allocOne").hidden = false; render();
+    });
+  })();
+
+  /* ════ widget 3 · 压力测试（招牌）════ */
+  (function(){
+    var ku = $("kUsers"), kd = $("kData"), km = $("kMarket"), T = 45;
+    function li(cls, txt){ return '<li class="' + cls + '">' + txt + '</li>'; }
+    function render(){
+      var u = +ku.value, d = +kd.value, m = +km.value;
+      $("kUsersV").textContent = u; $("kDataV").textContent = d; $("kMarketV").textContent = m;
+
+      // demo 健康度
+      var oU = u > T ? (u - T) * 1.35 : 0,
+          oD = d > T ? (d - T) * 1.25 : 0,
+          oM = m > T ? (m - T) * 1.6  : 0;
+      var demoH = clamp(100 - oU - oD - oM, 0, 100);
+      var prodH = clamp(100 - (oU + oD + oM) * 0.085, 80, 100);
+
+      // demo 日志
+      var dl = "";
+      if (u > T) dl += li("err", "💥 高并发：502 Bad Gateway，服务器被打挂");
+      if (d > T) dl += li("err", "💥 数据膨胀：查询超时，列表页白屏");
+      if (m > T) dl += li("err", "💥 市场变了：写死的逻辑改不动，只能推倒重写");
+      if (!dl)   dl = li("", "🟢 没什么压力时，看起来一切都好");
+      $("demoLog").innerHTML = dl;
+
+      // 产品日志
+      var pl = "";
+      if (u > T) pl += li("good", "✓ 自动扩容，高并发稳稳顶住");
+      if (d > T) pl += li("good", "✓ 早做了索引与分页，数据再多也秒开");
+      if (m > T) pl += li("good", "✓ 架构留了扩展点，一周内改对、已适配新市场");
+      if (!pl)   pl = li("good", "✓ 余量充足，随时准备扛压");
+      $("prodLog").innerHTML = pl;
+
+      // demo 面板状态
+      var dp = $("demoPanel"), ds = $("demoScreen"), dc = $("demoChip"), dh = $("demoHealth");
+      dh.style.width = demoH + "%";
+      dp.classList.remove("is-warn","is-crash"); ds.className = "sp-screen";
+      dh.className = "sp-health-fill"; dc.className = "sp-chip";
+      if (demoH < 40){
+        dp.classList.add("is-crash"); ds.classList.add("crash"); dh.classList.add("crash"); dc.classList.add("crash");
+        dc.textContent = "崩溃 💥"; ds.innerHTML = '<span class="big">💥 系统崩溃</span>';
+      } else if (demoH < 72){
+        dp.classList.add("is-warn"); ds.classList.add("warn"); dh.classList.add("warn"); dc.classList.add("warn");
+        dc.textContent = "告警 ⚠️"; ds.innerHTML = "⚠️ 开始报错、卡顿…撑不住了";
+      } else {
+        ds.classList.add("ok"); dc.textContent = "运行中"; ds.innerHTML = "🟢 风平浪静时，一切正常";
+      }
+
+      // 产品面板状态（始终稳）
+      var ps = $("prodScreen"), pc = $("prodChip"), ph = $("prodHealth");
+      ph.style.width = prodH + "%";
+      pc.textContent = (u + d + m) > 200 ? "稳定运行 · 满载" : "稳定运行";
+      ps.innerHTML = (u + d + m) > 120 ? "🟢 压力拉满，依然稳如往常" : "🟢 稳如往常";
+
+      // 总结
+      var sc = $("stressCaption");
+      if (demoH < 40) sc.innerHTML = "同样的风浪，<b>vibe 的 demo 当场裂开，完整产品稳住</b>。这就是「担保」长出价值的地方——你买的，是抗住真实世界的那份确定性。";
+      else if (demoH < 72) sc.innerHTML = "压力一上来，demo 已经开始报错——而完整产品还有大把余量。<b>继续往上拧。</b>";
+      else sc.innerHTML = "三个旋钮还在低位，差距还没出来。<b>把它们往上拧到 60、80 试试。</b>";
+    }
+    [ku, kd, km].forEach(function(k){ k.addEventListener("input", render); });
+    render();
+  })();
+
+  /* ════ widget 4 · 例子画廊（数据驱动，加例子=加一条）════ */
+  var EXAMPLES = [
+    {
+      emoji:"👜", title:"二手奢侈品鉴定寄卖", bench:"对标 The RealReal（美股已验证）",
+      insight:"国内中产囤了大量闲置大牌，但“怕买到假货”死死锁住了二手流通。客户独有的洞察是：真正的壁垒不是又一个交易平台，是“<b>可信鉴定 + 一口价托管寄卖</b>”——把信任本身做成产品。",
+      deliver:"一周内交付可点闭环：寄件 → 多重鉴定流水 → AI 估价 → 托管上架 → 成交结算；鉴定状态机 + 全程防纠纷留痕，从第一天就替“真假”这件事担保。",
+      tags:["海外验证","国内蓝海","信任即壁垒"]
+    },
+    {
+      emoji:"🏠", title:"AI 室内设计", bench:"对标 Collov / Decoratly",
+      insight:"装修决策最痛的是“想象不出效果就不敢下单”。客户的洞察：先用 AI 把“<b>我家这间房</b>”实时变成多套可落地风格，再把效果图一键接到供应链清单——让所见即所购。",
+      deliver:"交付：上传户型/实拍 → 多风格实时生成 → 可替换单品的可购清单 → 报价。生成质量与供应链对接都做完整，而不是只出一张好看的图就完事。",
+      tags:["海外验证","刚需高客单","所见即所购"]
+    }
+    /* ── 加例子：复制上面一段，改 emoji / title / bench / insight / deliver / tags ── */
+  ];
+  (function(){
+    var cardsEl = $("galCards"), detailEl = $("galDetail"), cur = 0;
+    function renderCards(){
+      cardsEl.innerHTML = EXAMPLES.map(function(e, i){
+        return '<button class="gal-card' + (i === cur ? ' on' : '') + '" data-i="' + i + '">' +
+          '<div class="gc-emoji">' + e.emoji + '</div>' +
+          '<div class="gc-title">' + e.title + '</div>' +
+          '<div class="gc-bench">' + e.bench + '</div></button>';
+      }).join("");
+      Array.prototype.forEach.call(cardsEl.querySelectorAll(".gal-card"), function(b){
+        b.addEventListener("click", function(){ cur = +b.getAttribute("data-i"); renderCards(); renderDetail(); });
+      });
+    }
+    function renderDetail(){
+      var e = EXAMPLES[cur];
+      detailEl.innerHTML =
+        '<div class="gd-bench">' + e.bench + '</div>' +
+        '<div class="gd-cols">' +
+          '<div class="gd-col insight"><div class="gd-k">客户独有的洞察</div><p>' + e.insight + '</p></div>' +
+          '<div class="gd-col deliver"><div class="gd-k">我们怎么快速 + 可担保地交付</div><p>' + e.deliver + '</p></div>' +
+        '</div>' +
+        '<div class="gd-tags">' + e.tags.map(function(t){ return '<span>' + t + '</span>'; }).join("") + '</div>';
+    }
+    renderCards(); renderDetail();
+  })();
+
+  /* ════ 滚动渐入（渐进增强：无 JS / 无 IO 时内容默认全可见）════ */
+  (function(){
+    var els = document.querySelectorAll(".reveal");
+    if (!("IntersectionObserver" in window)) return;     // 不支持就保持可见，绝不隐藏
+    Array.prototype.forEach.call(els, function(el){ el.classList.add("armed"); });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { threshold: 0.1 });
+    Array.prototype.forEach.call(els, function(el){ io.observe(el); });
+  })();
+})();
+</script>
+</body>
+</html>
