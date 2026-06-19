@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>全部 Demo · 好玩的东西</title>
+<meta name="description" content="全部可亲手体验的 AI 产品交互原型，按行业筛选。" />
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="index.html#projects">精选</a>
+      <a href="demos.html">全部 Demo</a>
+      <a href="index.html#thoughts">思考</a>
+      <a href="index.html#about">关于</a>
+      <a href="index.html#contact">联系</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap" style="padding-bottom:18px">
+  <div class="kicker">全部 Demo · 可亲手体验</div>
+  <h1>全部 Demo</h1>
+  <p class="lede" id="lede"></p>
+</header>
+
+<section class="wrap" style="padding-top:0">
+  <div class="filter-bar" id="filter"></div>
+  <div class="grid" id="grid"></div>
+  <p class="note" id="empty" style="display:none;text-align:center;margin-top:30px">这个分类下暂时没有 Demo。</p>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><a href="index.html">← 回到首页</a></p>
+    <hr class="hair" style="margin:24px auto;max-width:200px">
+    <p class="disc">说明：项目均为可点击产品原型（Demo），用于演示与可行性探讨，非生产系统——
+       无真实后端、支付、物流与 AI 模型，数据为演示用途。</p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+  const P = (window.PROJECTS || []);
+  const $ = id => document.getElementById(id);
+
+  $("lede").textContent = `${P.length} 个可点开就玩的 AI 产品交互原型，按行业筛选。每个都附程序逻辑、商业模式与市场分析，方便判断现实可行性。`;
+
+  // 行业 chip（保持 cat 首次出现顺序，带计数）
+  const cats = [];
+  P.forEach(p => { if (p.cat && !cats.includes(p.cat)) cats.push(p.cat); });
+  const count = c => P.filter(p => p.cat === c).length;
+  const chip = (label, val, n) =>
+    `<button class="chip${val === 'all' ? ' active' : ''}" data-cat="${val}">${label}<span class="chip-n">${n}</span></button>`;
+  $("filter").innerHTML =
+    chip("全部", "all", P.length) + cats.map(c => chip(c, c, count(c))).join("");
+
+  // 卡片（结构与首页一致，加 data-cat 供筛选）
+  $("grid").innerHTML = P.map(p => {
+    const tags = p.tags.map(t => `<span>${t}</span>`).join("");
+    if (!p.url) {
+      return `<div class="card soon" data-cat="${p.cat || ''}">
+        <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
+        <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
+        <div class="tags">${tags}</div><div class="go">即将上线</div></div>`;
+    }
+    return `<a class="card" href="project.html?id=${p.id}" data-cat="${p.cat || ''}">
+      <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
+      <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
+      <div class="tags">${tags}</div>
+      <div class="go">查看 · 亲手体验 →</div></a>`;
+  }).join("");
+
+  // 筛选
+  const cards = [...document.querySelectorAll('#grid .card')];
+  $("filter").addEventListener('click', e => {
+    const btn = e.target.closest('.chip');
+    if (!btn) return;
+    const cat = btn.dataset.cat;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === btn));
+    let shown = 0;
+    cards.forEach(card => {
+      const ok = cat === 'all' || card.dataset.cat === cat;
+      card.style.display = ok ? '' : 'none';
+      if (ok) shown++;
+    });
+    $("empty").style.display = shown ? 'none' : 'block';
+  });
+</script>
+</body>
+</html>

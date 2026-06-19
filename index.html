@@ -16,7 +16,8 @@
   <div class="wrap">
     <a class="brand" href="index.html">好玩的东西</a>
     <div class="nav-links">
-      <a href="#projects">项目</a>
+      <a href="#projects">精选</a>
+      <a href="demos.html">全部 Demo</a>
       <a href="#thoughts">思考</a>
       <a href="#about">关于</a>
       <a href="#contact">联系</a>
@@ -44,13 +45,16 @@
   </div>
 </section>
 
-<!-- 项目卡片墙 -->
+<!-- 精选项目 -->
 <section class="wrap" id="projects">
   <div class="section-head">
-    <h2>项目 Demo</h2>
-    <span class="note">点开任意一张，亲手体验</span>
+    <h2>精选项目</h2>
+    <span class="note">挑几个最有代表性的，点开就玩</span>
   </div>
   <div class="grid" id="proj-grid"></div>
+  <div class="more-row">
+    <a class="btn btn-primary" href="demos.html">查看全部 <span id="proj-total">—</span> 个 Demo →</a>
+  </div>
 </section>
 
 <!-- 思考 -->
@@ -136,8 +140,10 @@
   }
   window.copyText = copyText;
 
-  // 项目卡片
-  $("proj-grid").innerHTML = P.map(p => {
+  // 精选项目卡片（只渲染 featured；全部在 demos.html）
+  $("proj-total").textContent = P.length;
+  const featured = P.filter(p => p.featured);
+  $("proj-grid").innerHTML = (featured.length ? featured : P).map(p => {
     const tags = p.tags.map(t => `<span>${t}</span>`).join("");
     if (!p.url) {
       return `<div class="card soon">
