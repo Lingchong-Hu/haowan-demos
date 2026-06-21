@@ -210,8 +210,31 @@ async function showResult(v, fromLink){
   );
   stage.appendChild(stepsBox);
 
+  // 🎚 「假如每月多存」杠杆：实时投影健康分（纯本地沙盘，不改上面的结果）
+  const maxExtra = Math.max(2000, Math.round(v.income*0.4/500)*500);
+  const extraVal = GG.el('span',{style:{fontWeight:'800', color:'var(--accent)'}}, '¥0');
+  const proj = GG.el('div',{style:{fontSize:'15px', fontWeight:'600'}});
+  function updateProj(extra){
+    const nt = analyze(Object.assign({}, v, {expense: Math.max(0, v.expense - extra)})).total;
+    const d = nt - R.total;
+    GG.clear(proj);
+    proj.appendChild(document.createTextNode('财务健康分 '+R.total+' → '));
+    proj.appendChild(GG.el('span',{style:{fontWeight:'800', color: d>=0?'#2e9e7b':'#e8543f', fontSize:'22px'}}, String(nt)));
+    proj.appendChild(GG.el('span',{class:'small muted', style:{marginLeft:'8px'}}, d>0?('+'+d+' 分'):(d<0?(d+' 分'):'持平')));
+  }
+  updateProj(0);
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'16px', marginBottom:'16px'}},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🎚 假如每月多存一点'),
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'baseline', marginBottom:'6px'}},
+      GG.el('span',{class:'small muted'}, '每月少花、多存'), extraVal),
+    GG.el('input',{type:'range', min:'0', max:String(maxExtra), step:'500', value:'0',
+      style:{width:'100%', accentColor:'var(--accent)', cursor:'pointer'},
+      onInput:e=>{ const x=+e.target.value; extraVal.textContent='¥'+GG.fmt(x); updateProj(x); }}),
+    GG.el('div',{style:{marginTop:'12px'}}, proj),
+    GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}}, '拖一拖看每月多存一点，健康分能到多少（仅测算，不改上面的结果）。')
+  ));
+
   // ✨ 连了 key 才追加的 AI 理财点评（异步加载，评分/下一步已在本地完成）
-  stage.appendChild(GG.el('div',{style:{height:'16px'}}));
   mountAdvice(stage, v, R);
 
   // 分享卡

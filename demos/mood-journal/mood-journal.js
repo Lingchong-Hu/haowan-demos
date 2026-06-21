@@ -300,6 +300,26 @@ function renderSummary(){
   main.appendChild(GG.el('div',{class:'section-t'}, '情绪曲线'));
   main.appendChild(GG.el('div',{class:'card pad', html: curveSVG()}));
 
+  // 情绪分布（5 档计数，纯本地）
+  const bins = [
+    {lab:'😄 很好', min:75, c:0, col:'#3aa17e'},
+    {lab:'🙂 还行', min:59, c:0, col:'#6cb98f'},
+    {lab:'😐 一般', min:44, c:0, col:'var(--accent)'},
+    {lab:'🙁 偏低', min:28, c:0, col:'#e0a050'},
+    {lab:'😣 很差', min:0,  c:0, col:'#d2705a'},
+  ];
+  entries.forEach(e=>{ (bins.find(b=> e.score>=b.min)).c++; });
+  const maxC = Math.max(1, ...bins.map(b=>b.c));
+  const distRows = bins.map(b=> GG.el('div',{style:{display:'grid', gridTemplateColumns:'72px 1fr 26px', gap:'10px', alignItems:'center', margin:'7px 0'}},
+    GG.el('span',{class:'small'}, b.lab),
+    GG.el('div',{style:{height:'14px', borderRadius:'7px', background:'var(--accent-soft)', overflow:'hidden'}},
+      GG.el('i',{style:{display:'block', height:'100%', width:(b.c/maxC*100)+'%', background:b.col, borderRadius:'7px', transition:'width .45s'}})),
+    GG.el('span',{class:'small muted', style:{textAlign:'right'}}, String(b.c))));
+  main.appendChild(GG.el('div',{class:'section-t'}, '情绪分布'));
+  main.appendChild(GG.el('div',{class:'card pad'},
+    distRows[0], distRows[1], distRows[2], distRows[3], distRows[4],
+    GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}}, '每条记录按情绪分落入对应档位的次数。')));
+
   // 触发词云
   main.appendChild(GG.el('div',{class:'section-t'}, '触发词云'));
   const cloudCard = GG.el('div',{class:'card pad'});

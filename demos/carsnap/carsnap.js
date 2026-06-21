@@ -6,6 +6,34 @@ let main;
 
 const PRICE_LABEL = {1:'15 万内', 2:'15~25 万', 3:'25~40 万', 4:'40 万+'};
 
+/* 契合雷达图（纯本地：你的需求画像 vs 某台车的能力，7 轴） */
+function radarSVG(needArr, carArr, labels){
+  const W=280, H=250, cx=140, cy=122, R=84, n=labels.length;
+  const ang = i => -Math.PI/2 + i/n*Math.PI*2;
+  const pt = (i,val)=>{ const r=R*GG.clamp(val/5,0,1), a=ang(i); return [cx+r*Math.cos(a), cy+r*Math.sin(a)]; };
+  let grid='';
+  for(let g=1; g<=4; g++){ const rr=R*g/4; let p='';
+    for(let i=0;i<n;i++){ const a=ang(i); p+=`${(cx+rr*Math.cos(a)).toFixed(1)},${(cy+rr*Math.sin(a)).toFixed(1)} `; }
+    grid+=`<polygon points="${p.trim()}" fill="none" stroke="#ececef" stroke-width="1"/>`; }
+  let spokes='', labs='';
+  for(let i=0;i<n;i++){ const a=ang(i);
+    spokes+=`<line x1="${cx}" y1="${cy}" x2="${(cx+R*Math.cos(a)).toFixed(1)}" y2="${(cy+R*Math.sin(a)).toFixed(1)}" stroke="#ececef" stroke-width="1"/>`;
+    const lx=cx+(R+15)*Math.cos(a), ly=cy+(R+15)*Math.sin(a);
+    const anchor = Math.abs(Math.cos(a))<0.3 ? 'middle' : (Math.cos(a)>0?'start':'end');
+    labs+=`<text x="${lx.toFixed(1)}" y="${(ly+4).toFixed(1)}" font-size="11" fill="#8a8a93" text-anchor="${anchor}">${labels[i]}</text>`; }
+  const poly = arr => { let p=''; for(let i=0;i<n;i++){ const [x,y]=pt(i,arr[i]); p+=`${x.toFixed(1)},${y.toFixed(1)} `; } return p.trim(); };
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="display:block;max-width:320px;margin:0 auto">
+    ${grid}${spokes}${labs}
+    <polygon points="${poly(needArr)}" fill="#9a9aa3" fill-opacity="0.16" stroke="#9a9aa3" stroke-width="1.6"/>
+    <polygon points="${poly(carArr)}" fill="var(--accent)" fill-opacity="0.22" stroke="var(--accent)" stroke-width="2"/>
+  </svg>`;
+}
+function legendDot(color, label){
+  return GG.el('div',{class:'row', style:{gap:'6px', alignItems:'center'}},
+    GG.el('span',{style:{width:'12px', height:'12px', borderRadius:'3px', background:color, display:'inline-block', flex:'none'}}),
+    GG.el('span',{class:'small'}, label));
+}
+
 /* 车身侧影 SVG（颜色随车；body 微调车顶高度，参考 whips 的画法但自建） */
 function carSVG(color, body){
   const tall = (body==='SUV'||body==='MPV');
@@ -280,6 +308,23 @@ async function showResult(answers, fromLink){
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}}, GG.el('h1',{style:{fontSize:'24px'}}, '🔑 给你挑了这几台')));
   stage.appendChild(GG.el('div',{style:{margin:'0 0 10px'}}, GG.llm.badge(!!ctx._ai)));
   stage.appendChild(profile);
+
+  // 契合雷达：你的需求画像 vs Top1 推荐车能力（纯本地数据可视化）
+  if(top.length){
+    const top1car = top[0].car;
+    const maxNeed = Math.max(1, ...AXES.map(a=> ctx.need[a]||0));
+    const needArr = AXES.map(a=> (ctx.need[a]||0)/maxNeed*5);   // 归一到 0~5 与车能力同尺度
+    const carArr  = AXES.map(a=> top1car.axes[a]||0);
+    stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '契合雷达 · 你的需求 vs '+top1car.name),
+      GG.el('div',{html: radarSVG(needArr, carArr, AXES)}),
+      GG.el('div',{class:'row', style:{justifyContent:'center', gap:'18px', marginTop:'6px'}},
+        legendDot('#9a9aa3','你的需求'), legendDot('var(--accent)', top1car.name+' 能力')),
+      GG.el('p',{class:'small muted', style:{margin:'10px 0 0', textAlign:'center'}},
+        '蓝色越贴近灰色边缘，说明这台车越接住你最看重的几项。')
+    ));
+  }
+
   stage.appendChild(list);
   stage.appendChild(GG.resultCard(SLUG, GG.el('div',{class:'center muted small'}, '截图 / 分享你的荐车结果 ↓'), shareSpec));
   stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},

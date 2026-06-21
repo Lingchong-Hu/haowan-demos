@@ -29,6 +29,29 @@ function chips(car){
     [car.body, car.size, car.vibe, car.power, car.price].map(t=>GG.el('span',{class:'chip',style:{cursor:'default'}}, t)));
 }
 
+/* 3 台横向对比表（纯本地）：命中用户主导偏好的格子高亮 */
+function compareTable(top3, tendencies){
+  const hit = new Set(tendencies.map(t=>t.val));
+  const gridCols = '58px repeat('+top3.length+',1fr)';
+  const headRow = GG.el('div',{style:{display:'grid', gridTemplateColumns:gridCols, gap:'6px', alignItems:'end'}},
+    GG.el('span',{class:'small muted'}, ''),
+    ...top3.map(r=>GG.el('span',{class:'small', style:{fontWeight:'700', textAlign:'center', lineHeight:'1.2'}}, r.car.name)));
+  const rows = [headRow];
+  DIMS.forEach(d=>{
+    const cells = top3.map(r=>{
+      const v = r.car[d], on = hit.has(v);
+      return GG.el('span',{class:'small', style:{textAlign:'center', padding:'5px 4px', borderRadius:'8px',
+        background: on?'var(--accent-soft)':'transparent', color: on?'var(--accent)':'var(--ink-2)', fontWeight: on?'700':'500'}}, v);
+    });
+    rows.push(GG.el('div',{style:{display:'grid', gridTemplateColumns:gridCols, gap:'6px', alignItems:'center'}},
+      GG.el('span',{class:'small muted'}, DIM_LABEL[d]), ...cells));
+  });
+  return GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '3 台横向对比'),
+    GG.el('div',{class:'stack', style:{gap:'7px'}}, ...rows),
+    GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '高亮 = 命中你右滑里反复出现的偏好。'));
+}
+
 /* ---------- 引擎 ---------- */
 function recommend(likes, dislikes){
   // 倾向权重：喜欢 +1，讨厌 -0.6
@@ -311,6 +334,7 @@ async function showResult(liked, disliked, fromLink){
       GG.el('p',{style:{margin:'0', fontSize:'15px', color:'var(--ink-2)', lineHeight:'1.7'}}, insight)));
   }
   stage.appendChild(list);
+  if(top3.length>1) stage.appendChild(compareTable(top3, tendencies));
   stage.appendChild(GG.resultCard(SLUG, GG.el('div',{class:'center muted small'}, '截图分享你的本命车 ↓'), shareSpec));
   stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
     GG.el('button',{class:'btn', onClick:()=>{ location.hash=''; start(); }}, '↻ 换一组滑法')
