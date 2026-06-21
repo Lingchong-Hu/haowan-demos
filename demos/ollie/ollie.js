@@ -5,7 +5,34 @@ const SLUG='ollie';
 const {INGREDIENTS, RECIPES} = window.OLLIE;
 const MAX_MISSING = 2;            // 最多额外缺 1~2 样
 const LABEL = {};                 // key -> {label, emoji}
-INGREDIENTS.forEach(g=>g.items.forEach(it=> LABEL[it.key]=it));
+const BY_LABEL = {};              // label -> {label, emoji}（AI 返回的是名称而非 key）
+INGREDIENTS.forEach(g=>g.items.forEach(it=>{ LABEL[it.key]=it; BY_LABEL[it.label]=it; }));
+function resolveIng(x){ return LABEL[x] || BY_LABEL[x] || {label:String(x), emoji:''}; }
+
+/* ---------- AI 通路（连了 key 让模型现想能做的菜，没连退回本地菜谱库匹配） ---------- */
+const OLLIE_SYS = '你是家常菜助手。用户给出冰箱里现有的食材，你给出几道现在就能做、或只差一两样的家常菜。只输出严格 JSON：{"dishes":[{"name":"菜名","emoji":"一个食物emoji","minutes":分钟数,"blurb":"一句话简介","uses":["用到的、用户现有的食材"],"extra":["还需额外补的食材，最多2样，没有就[]"],"steps":["步骤",3到5条]}]}。优先用用户现有食材；extra 最多 2 项；给 3 到 6 道；全部简体中文。';
+
+async function getDishes(useAI){
+  if(useAI && selected.size){
+    try{
+      const sel = [...selected].map(k=> (LABEL[k]||{}).label || k);
+      const obj = await GG.llm.json(OLLIE_SYS, '冰箱里现有：'+sel.join('、'), {max_tokens:1600});
+      const dishes = normalizeDishes(obj);
+      if(dishes.length){ dishes._ai = true; return dishes; }
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  return cook();
+}
+function normalizeDishes(obj){
+  const arr = Array.isArray(obj && obj.dishes) ? obj.dishes : [];
+  return arr.slice(0,8).map(d=>({
+    r:{ name:String(d.name||''), emoji:d.emoji||'🍽️', minutes:parseInt(d.minutes,10)||10,
+        blurb:String(d.blurb||''), steps:(Array.isArray(d.steps)?d.steps:[]).map(String).filter(Boolean) },
+    have:(Array.isArray(d.uses)?d.uses:[]).map(String).filter(Boolean),
+    missing:(Array.isArray(d.extra)?d.extra:[]).map(String).filter(Boolean).slice(0,2)
+  })).filter(d=>d.r.name)
+    .sort((a,b)=> a.missing.length-b.missing.length);
+}
 
 let main;
 const selected = new Set();        // 已勾选的食材 key
@@ -42,6 +69,7 @@ function pick(){
     GG.el('h1', null, '冰箱里有什么？'),
     GG.el('p', null, '勾选你现在手头有的食材，我就告诉你现在能做哪些菜——只用你选的，最多帮你补 1~2 样。')
   ));
+  main.appendChild(GG.llm.bar());
 
   // 实时计数 + 出菜按钮
   const counter = GG.el('div',{class:'small muted center', style:{marginTop:'4px'}});
@@ -91,7 +119,7 @@ async function run(){
 
 function ingTag(key, mode){
   // mode: 'have'（你选的，高亮）/ 'miss'（还差）
-  const it = LABEL[key] || {label:key, emoji:''};
+  const it = resolveIng(key);
   const base = {padding:'5px 11px', borderRadius:'999px', fontSize:'13px',
     display:'inline-flex', alignItems:'center', gap:'4px'};
   if(mode==='have'){
@@ -108,22 +136,26 @@ async function showResult(fromLink){
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
 
+  const useAI = GG.llm.connected();
+  let dishes;
   if(!fromLink){
-    await GG.thinking(stage, [
+    const think = GG.thinking(stage, [
       '翻看你冰箱里的 '+selected.size+' 样食材…',
-      '比对菜谱所需配料…',
+      useAI ? 'AI 现想能配出的菜…' : '比对菜谱所需配料…',
       '剔掉缺一堆料的菜…',
       '排出现在最该做的几道…'
-    ], 1500);
+    ], useAI?1900:1500);
+    const [d] = await Promise.all([getDishes(useAI), think]); dishes = d;
+  } else {
+    dishes = await getDishes(useAI);
   }
-
-  const dishes = cook();
   const nowCount = dishes.filter(d=> d.missing.length===0).length;
   const selLabels = [...selected].map(k=> LABEL[k] ? LABEL[k].label : k);
 
   GG.clear(stage);
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
     GG.el('h1',{style:{fontSize:'24px'}}, '🍳 你冰箱能做的菜')));
+  stage.appendChild(GG.el('div',{style:{margin:'0 0 6px'}}, GG.llm.badge(!!dishes._ai)));
 
   // 概览卡
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', background:`linear-gradient(160deg,var(--accent-soft),#fff 60%)`}},

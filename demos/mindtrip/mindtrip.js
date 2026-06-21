@@ -16,6 +16,29 @@ const SLOT_NAMES = ['上午','中午','下午','晚上'];
 // 类型 → 小圆点颜色（地图图钉描边/行程小标用）
 const TYPE_COLOR = { 美食:'#e0922b', 历史:'#9b5cc2', 自然:'#2e9e7b', 购物:'#c2569b', 亲子:'#3a7bd5' };
 
+/* ---------- AI 旅行贴士（行程与地图仍由本地引擎排，连了 key 再叠加一段个性化贴士） ---------- */
+const MT_SYS = '你是熟悉当地的向导。根据用户的城市行程（每天的落脚点），给一段实用、个性化的旅行贴士。只输出严格 JSON：{"tips":["贴士(交通/吃什么/最佳时段/避坑等，要具体)",4到6条]}。全部简体中文、具体、别空话。';
+function aiTipsBlock(userText){
+  const out = GG.el('div',{class:'card pad', style:{display:'none', marginTop:'4px', background:'#fbfbf9'}});
+  let loaded=false, busy=false;
+  const btn = GG.el('button',{class:'btn', onClick:async()=>{
+    if(busy) return;
+    if(loaded){ out.style.display = out.style.display==='none'?'block':'none'; return; }
+    busy=true; const old=btn.textContent; btn.textContent='AI 生成中…'; out.style.display='block';
+    GG.clear(out); out.appendChild(GG.el('div',{class:'muted small'}, 'AI 正在写旅行贴士…'));
+    try{
+      const r = await GG.llm.json(MT_SYS, userText, {max_tokens:800});
+      GG.clear(out);
+      out.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'0'}}, 'AI 旅行贴士'));
+      out.appendChild(GG.el('ul',{style:{margin:'4px 0 0', paddingLeft:'20px', lineHeight:'1.8'}},
+        (Array.isArray(r.tips)?r.tips:[]).map(t=>GG.el('li',null,String(t)))));
+      loaded=true; btn.textContent='✦ 收起贴士';
+    }catch(e){ GG.clear(out); out.appendChild(GG.el('div',{class:'muted small'}, GG.llm.errMsg(e))); btn.textContent=old; }
+    busy=false;
+  }}, '✨ AI 旅行贴士');
+  return GG.el('div',{style:{marginTop:'16px'}}, GG.el('div',{class:'center'}, btn), out);
+}
+
 let main;
 // 当前选择
 let sel = { city:'kyoto', days:3, pace:'medium', interests:['美食','自然'] };
@@ -193,6 +216,7 @@ function intro(){
     GG.el('h1', null, '说说你的旅行偏好'),
     GG.el('p', null, '选目的地与节奏、勾上感兴趣的方向，我来排出逐时行程，并把每个落脚点画到地图上。')
   ));
+  main.appendChild(GG.llm.bar());
 
   const form = GG.el('div',{class:'stack', style:{marginTop:'8px'}});
 
@@ -328,6 +352,13 @@ async function showResult(fromLink){
     listBox.appendChild(dayCard);
   });
   stage.appendChild(listBox);
+
+  // 连了 AI：在本地行程之上叠加一段个性化旅行贴士
+  if(GG.llm.connected()){
+    const userText = `城市：${cityName}\n行程：`+
+      itinerary.days.map(d=>'Day'+d.day+'：'+d.items.map(it=>it.poi.name).join('→')).join('；');
+    stage.appendChild(aiTipsBlock(userText));
+  }
 
   // 分享卡：每天亮点
   const shareSpec = {

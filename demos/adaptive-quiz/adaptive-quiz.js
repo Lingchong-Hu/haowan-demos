@@ -9,6 +9,24 @@ const START_LEVEL = 3;    // 起始难度（中等）
 const MIN_L=1, MAX_L=5;
 let main;
 
+/* ---------- AI 通路（连了 key 可输入任意主题，AI 按当前难度现场出题；否则用本地题库） ---------- */
+function aqSys(topic, level){
+  return '你是出题老师。就主题「'+topic+'」出一道四选一单选题，难度等级 '+level+'/5（1 最易、5 最难），'+
+    '题目真实准确、有区分度，四个选项里只有一个正确。只输出严格 JSON：'+
+    '{"q":"题干","options":["A","B","C","D"],"answer":正确选项下标0到3}。全部简体中文。';
+}
+async function genQuestion(topic, level, asked){
+  const avoid = [...asked].slice(-6).join(' / ');
+  const o = await GG.llm.json(aqSys(topic, level),
+    '难度 '+level+'/5。'+(avoid?('不要重复这些题：'+avoid+'。'):'')+'现在出一道。', {max_tokens:600});
+  const options = (Array.isArray(o.options)?o.options:[]).map(String).filter(Boolean).slice(0,4);
+  const q = String(o.q||'');
+  if(!q || options.length<2) throw new Error('bad');
+  let answer = parseInt(o.answer,10); if(isNaN(answer)||answer<0||answer>=options.length) answer=0;
+  asked.add(q);
+  return { q, options, answer, level };
+}
+
 /* 星级显示当前难度 */
 function stars(level){
   return '★'.repeat(level) + '☆'.repeat(MAX_L-level);
@@ -32,7 +50,25 @@ function intro(){
     GG.el('h1', null, '自适应测验：题目跟着你变难'),
     GG.el('p', null, `从「中等」难度起步，答对一题就升级、答错就降级——难度始终在追你的真实水平。答满 ${TOTAL} 题，给你一个预测分和难度轨迹。`)
   ));
-  main.appendChild(GG.el('div',{class:'section-t'}, '选一个科目开始'));
+  main.appendChild(GG.llm.bar());
+
+  // ✨ AI 任意主题出题
+  const topicInput = GG.el('input',{class:'field', type:'text',
+    placeholder:'输入任意主题让 AI 出题，如：宋词 / 机器学习 / 红楼梦'});
+  topicInput.addEventListener('keydown', e=>{ if(e.key==='Enter') goAI(); });
+  function goAI(){
+    const t = topicInput.value.trim();
+    if(!t){ GG.toast('先输入一个主题'); topicInput.focus(); return; }
+    if(!GG.llm.connected()){ GG.toast('先连接 AI 才能用任意主题出题'); return; }
+    play(null, t);
+  }
+  main.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'10px'}},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 出题（任意主题）'),
+    topicInput,
+    GG.el('button',{class:'btn primary block', style:{marginTop:'12px'}, onClick:goAI}, '用 AI 给我出题 →')
+  ));
+
+  main.appendChild(GG.el('div',{class:'section-t'}, '或选一个内置科目'));
   const grid = GG.el('div',{class:'stack'});
   Object.keys(QUIZ).forEach(key=>{
     const s = QUIZ[key];
@@ -69,9 +105,11 @@ function drawQuestion(bank, level, usedIdx){
   return -1;
 }
 
-function play(subjKey){
-  const subj = QUIZ[subjKey];
-  const bank = subj.bank;
+function play(subjKey, aiTopic){
+  const ai = !!aiTopic;
+  const subj = ai ? {name:aiTopic, emoji:'🧠', bank:[]} : QUIZ[subjKey];
+  const bank = subj.bank || [];
+  const asked = new Set();
   let level = START_LEVEL;
   const usedIdx = new Set();
   const trace = [];   // 每题：{level(题目难度), correct(bool)}
@@ -79,7 +117,7 @@ function play(subjKey){
 
   GG.clear(main);
   const head = GG.el('div',{class:'hero', style:{paddingBottom:'4px'}},
-    GG.el('h1',{style:{fontSize:'22px'}}, subj.emoji+' '+subj.name+' · 自适应测验'));
+    GG.el('h1',{style:{fontSize:'22px'}}, subj.emoji+' '+subj.name+' · 自适应测验'+(ai?'（AI 出题）':'')));
   main.appendChild(head);
 
   // 顶部状态条：进度 + 当前难度（醒目，体现“难度在变”）
@@ -105,20 +143,32 @@ function play(subjKey){
     }
   }
 
-  function nextQuestion(){
-    if(qNum>=TOTAL){
-      GG.encodeState({subj:subjKey, trace, correct:trace.filter(t=>t.correct).length});
-      showResult(subjKey, trace, trace.filter(t=>t.correct).length, false);
-      return;
-    }
+  function finishQuiz(){
+    const key = ai ? ('ai:'+aiTopic) : subjKey;
+    GG.encodeState({subj:key, trace, correct:trace.filter(t=>t.correct).length});
+    showResult(key, trace, trace.filter(t=>t.correct).length, false);
+  }
+  async function nextQuestion(){
+    if(qNum>=TOTAL){ finishQuiz(); return; }
     renderStatus(false);
-    const qi = drawQuestion(bank, level, usedIdx);
-    if(qi<0){ // 题库耗尽（理论上不会，TOTAL 远小于题量），提前结算
-      GG.encodeState({subj:subjKey, trace, correct:trace.filter(t=>t.correct).length});
-      showResult(subjKey, trace, trace.filter(t=>t.correct).length, false);
-      return;
+    let item;
+    if(ai){
+      GG.clear(qBox);
+      qBox.appendChild(GG.el('div',{class:'card pad'},
+        GG.el('div',{class:'thinking', style:{padding:'30px 0'}},
+          GG.el('div',{class:'spinner'}),
+          GG.el('div',{class:'msg'}, 'AI 正在按「'+LEVEL_NAME[level]+'」难度出第 '+(qNum+1)+' 题…'))));
+      try{ item = await genQuestion(aiTopic, level, asked); }
+      catch(e){
+        GG.toast(GG.llm.errMsg(e));
+        if(!trace.length){ intro(); return; }   // 第一题就失败 → 回首页
+        finishQuiz(); return;                    // 中途失败 → 提前结算
+      }
+    } else {
+      const qi = drawQuestion(bank, level, usedIdx);
+      if(qi<0){ finishQuiz(); return; }
+      item = bank[qi];
     }
-    const item = bank[qi];
     renderQ(item);
   }
 
@@ -229,7 +279,7 @@ function traceSVG(trace){
 async function showResult(subjKey, trace, correctCount, fromLink){
   main = main || GG.mountShell(SLUG);
   GG.clear(main);
-  const subj = QUIZ[subjKey] || {name:'测验', emoji:'🧠'};
+  const subj = QUIZ[subjKey] || {name:(typeof subjKey==='string'&&subjKey.indexOf('ai:')===0)?subjKey.slice(3):'测验', emoji:'🧠'};
   const stage = GG.el('div'); main.appendChild(stage);
   if(!fromLink){
     await GG.thinking(stage, ['汇总你的作答…','分析难度轨迹…','结合到达难度与正确率…','算出你的预测分…'], 1500);
