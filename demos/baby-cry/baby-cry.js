@@ -109,6 +109,36 @@ function tipsFor(topCause, sample){
   return s.tips;
 }
 
+/* ---------- AI 安抚顾问层（附加：波形/概率引擎永远本地，连了 key 才叠加个性化安抚；非医疗诊断） ---------- */
+const BABYCRY_SYS = '你是温柔、有经验的育儿安抚顾问（不做医疗诊断）。下面是哭声翻译结果（最可能原因 + 五类概率 + 来源）。请给出针对主因的安抚步骤与观察要点。只输出严格 JSON：{"summary":"一句话共情+判断","steps":["3条按顺序可执行的安抚步骤"],"watch":"一句话——出现什么情况要就医"}。你不做医疗诊断，全部简体中文，语气温柔。';
+function aiAdvice(probs, srcLabel){
+  const dist = probs.map(p=>`${p.cause}${p.pct}%`).join('、');
+  const user = `最可能原因：${probs[0].cause}（${probs[0].pct}%）\n五类分布：${dist}\n来源：${srcLabel}`;
+  return GG.llm.json(BABYCRY_SYS, user, {max_tokens:700});
+}
+function cryBullets(arr, ordered){
+  return GG.el(ordered?'ol':'ul',{class:'small', style:{margin:'4px 0 0', paddingLeft:'20px', color:'var(--ink-2)', lineHeight:'1.7'}},
+    arr.map(t=>GG.el('li', null, t)));
+}
+function mountAdvice(stage, probs, srcLabel){
+  if(!GG.llm.connected()) return;
+  const body = GG.el('div', null, GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 正在给更贴心的安抚建议…'));
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'3px solid var(--accent)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 安抚顾问'),
+      GG.llm.badge(true)),
+    body));
+  aiAdvice(probs, srcLabel).then(obj=>{
+    GG.clear(body);
+    if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
+    const steps = (Array.isArray(obj.steps)?obj.steps:[]).map(String).filter(Boolean);
+    if(steps.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '安抚步骤')); body.appendChild(cryBullets(steps, true)); }
+    if(obj.watch) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '⚠︎ '+String(obj.watch)));
+    if(!steps.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出建议，翻译结果不受影响。'));
+  }).catch(e=>{ GG.clear(body);
+    body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 建议没拿到（'+(e&&e.code||'NET')+'），翻译结果不受影响。')); });
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -118,8 +148,9 @@ function start(){
 function intro(){
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '宝宝在说什么？'),
-    GG.el('p', null, '录一段哭声，或直接试试样本。我会画出哭声波形，估出最可能的原因，并给你对应的安抚建议。')
+    GG.el('p', null, '录一段哭声，或直接试试样本。我会画出哭声波形，估出最可能的原因，并给你对应的安抚建议。连上 AI 还会多一份贴心的安抚顾问。')
   ));
+  main.appendChild(GG.llm.bar());
 
   // 样本哭声（完全离线、无需麦克风的主路径）
   const sampleRow = GG.el('div',{class:'chips', style:{marginTop:'14px', justifyContent:'center'}},
@@ -275,6 +306,9 @@ function renderResult(stage, { amps, probs, srcLabel, sample }){
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
     GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '针对「'+top.cause+'」的安抚建议'),
     tipList));
+
+  // ✨ 连了 key 才追加的 AI 安抚顾问（异步加载，翻译结果已在本地完成）
+  mountAdvice(stage, probs, srcLabel);
 
   // 分享 spec
   const shareSpec = {

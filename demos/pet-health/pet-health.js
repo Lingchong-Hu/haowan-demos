@@ -129,6 +129,35 @@ function buildReport(metrics, part){
     } };
 }
 
+/* ---------- AI 护理建议层（附加：像素分析永远本地，连了 key 才叠加个性化护理建议；非兽医诊断） ---------- */
+const PETHEALTH_SYS = '你是有经验的宠物护理顾问（不是兽医、不做确诊）。下面是用户给宠物某部位拍照自检的结果（健康分、读到的指标、观察项、分级建议）。请给出针对性的家庭护理建议与观察要点。只输出严格 JSON：{"summary":"一句话点评目前状况","care":["3条具体的家庭护理/观察建议"],"vet":"一句话——出现什么情况必须尽快就医"}。你不是兽医、不做确诊，全部简体中文。';
+function aiAdvice(rep, partLabel){
+  const user = `检查部位：${partLabel}\n健康分：${rep.score}/100（${rep.triage.level}）\n读到的指标：发红${rep.metrics.redPct}%、异常迹象${rep.metrics.extraPct}%\n观察项：${rep.items.join('；')}\n发现：${rep.findings.join('、')||'未见明显异常'}\n系统建议：${rep.triage.advice}`;
+  return GG.llm.json(PETHEALTH_SYS, user, {max_tokens:700});
+}
+function petBullets(arr){
+  return GG.el('ul',{class:'small', style:{margin:'4px 0 0', paddingLeft:'20px', color:'var(--ink-2)', lineHeight:'1.7'}},
+    arr.map(t=>GG.el('li', null, t)));
+}
+function mountAdvice(stage, rep, partLabel){
+  if(!GG.llm.connected()) return;
+  const body = GG.el('div', null, GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 正在结合这份报告给护理建议…'));
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'3px solid var(--accent)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 护理建议'),
+      GG.llm.badge(true)),
+    body));
+  aiAdvice(rep, partLabel).then(obj=>{
+    GG.clear(body);
+    if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
+    const care = (Array.isArray(obj.care)?obj.care:[]).map(String).filter(Boolean);
+    if(care.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '家庭护理')); body.appendChild(petBullets(care)); }
+    if(obj.vet) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '⚠︎ 需就医：'+String(obj.vet)));
+    if(!care.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出建议，自检报告不受影响。'));
+  }).catch(e=>{ GG.clear(body);
+    body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 建议没拿到（'+(e&&e.code||'NET')+'），自检报告不受影响。')); });
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -139,8 +168,9 @@ function intro(){
   curPart = curPart || 'eye';
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '给宠物拍张照，做个健康自检'),
-    GG.el('p', null, '选一个检查部位，拍照或直接点本地样图，我会真实读取图像像素，给出健康分、观察项清单和就医建议。')
+    GG.el('p', null, '选一个检查部位，拍照或直接点本地样图，我会真实读取图像像素，给出健康分、观察项清单和就医建议。连上 AI 还会多一份个性化护理建议。')
   ));
+  main.appendChild(GG.llm.bar());
 
   // 部位选择
   const partRow = GG.el('div',{class:'chips', style:{marginTop:'4px'}});
@@ -261,6 +291,9 @@ function renderResult(stage, rep, dataURL, part, srcLabel){
     GG.el('div',{style:{fontWeight:'680', fontSize:'18px', color:toneColor(rep.triage.tone), marginBottom:'4px'}}, rep.triage.level),
     GG.el('p',{style:{margin:'0', color:'var(--ink-2)'}}, rep.triage.advice)
   ));
+
+  // ✨ 连了 key 才追加的 AI 护理建议（异步加载，自检报告已在本地完成）
+  mountAdvice(stage, rep, partLabel);
 
   // 结果卡（含「非诊断」免责 + 分享栏）
   const subtitle = partLabel + ' · ' + (rep.findings.length ? '发现：'+rep.findings.join('、') : '未见明显异常');

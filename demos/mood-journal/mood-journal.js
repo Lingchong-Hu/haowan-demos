@@ -5,6 +5,44 @@ const M = window.MOOD;
 const MIN_ENTRIES = 3;          // 累计 ≥3 条出汇总
 let main, entries = [];          // entries: {text, score(0-100), manual(bool)}
 
+/* ---------- AI 情绪洞察（附加：打分/曲线/词云永远本地；reactive demo 用按需按钮，避免每记一条都调 API；非心理诊断） ---------- */
+const MOOD_SYS = '你是温柔、专业的情绪陪伴者（不做心理诊断）。下面是用户最近写的多条心情记录及其情绪分（0-100）。请读完后给出走心的小结与温柔的建议。只输出严格 JSON：{"summary":"一句话共情式总结","insights":["2到3条你观察到的模式，引用其记录内容"],"suggestions":["2到3条温柔可执行的建议"]}。不做诊断、不贴标签，全部简体中文。';
+function aiInsight(){
+  const lines = entries.map((e,i)=>`#${i+1}(${e.score}) ${e.text}`).join('\n');
+  return GG.llm.json(MOOD_SYS, '我的心情记录：\n'+lines, {max_tokens:800});
+}
+function moodBullets(arr){
+  return GG.el('ul',{class:'small', style:{margin:'4px 0 0', paddingLeft:'20px', color:'var(--ink-2)', lineHeight:'1.7'}},
+    arr.map(t=>GG.el('li', null, t)));
+}
+function renderInsight(body, obj){
+  GG.clear(body);
+  if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
+  const ins = (Array.isArray(obj.insights)?obj.insights:[]).map(String).filter(Boolean);
+  const sug = (Array.isArray(obj.suggestions)?obj.suggestions:[]).map(String).filter(Boolean);
+  if(ins.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '我读到的')); body.appendChild(moodBullets(ins)); }
+  if(sug.length){ body.appendChild(GG.el('div',{class:'section-t'}, '温柔的建议')); body.appendChild(moodBullets(sug)); }
+  if(!ins.length && !sug.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出洞察，曲线与词云不受影响。'));
+}
+function mountInsight(parent){
+  if(!GG.llm.connected()) return;
+  const body = GG.el('div');
+  const btn = GG.el('button',{class:'btn', onClick:()=>{
+    btn.disabled = true; GG.clear(body);
+    body.appendChild(GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}}, 'AI 正在读你的这些记录…'));
+    aiInsight().then(obj=>{ renderInsight(body, obj); btn.disabled=false; btn.textContent='↻ 重新解读'; })
+      .catch(e=>{ GG.clear(body); body.appendChild(GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}},
+        'AI 洞察没拿到（'+(e&&e.code||'NET')+'），曲线与词云不受影响。')); btn.disabled=false; });
+  }}, '✨ 让 AI 读读我的情绪');
+  parent.appendChild(GG.el('div',{class:'section-t'}, 'AI 情绪洞察'));
+  parent.appendChild(GG.el('div',{class:'card pad', style:{borderLeft:'3px solid var(--accent)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('span',{class:'small muted'}, '让 AI 通读你写的每一条，给一段走心的小结'),
+      GG.llm.badge(true)),
+    GG.el('div',{style:{marginTop:'10px'}}, btn),
+    body));
+}
+
 /* ---------- 情感打分：关键词词典 + 否定/程度处理 → 0~100 ---------- */
 function scoreText(text){
   const t = String(text);
@@ -151,8 +189,9 @@ function render(){
 
   main.appendChild(GG.el('div',{class:'hero', style:{paddingBottom:'4px'}},
     GG.el('h1', null, '写下此刻的心情'),
-    GG.el('p', null, `一句话记一条，连写几条。攒满 ${MIN_ENTRIES} 条，我就把它们汇成你的情绪曲线和触发词云。`)
+    GG.el('p', null, `一句话记一条，连写几条。攒满 ${MIN_ENTRIES} 条，我就把它们汇成你的情绪曲线和触发词云。连上 AI 还能多一段走心的情绪洞察。`)
   ));
+  main.appendChild(GG.llm.bar());
 
   /* 输入区 */
   let pendingScore = null;
@@ -268,6 +307,9 @@ function renderSummary(){
   cloudCard.appendChild(GG.el('div',{class:'small muted center', style:{marginTop:'4px'}},
     '字号 = 出现频次　·　彩色 = 触发场景词'));
   main.appendChild(cloudCard);
+
+  // ✨ 连了 key 才出现：按需让 AI 通读全部记录给情绪洞察（曲线/词云已在本地完成）
+  mountInsight(main);
 
   // 结果卡（含免责 + 分享栏）
   const shareInner = GG.el('div',{class:'center muted small'}, '截图分享你的情绪小结 ↓');

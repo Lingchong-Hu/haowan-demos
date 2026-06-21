@@ -21,6 +21,40 @@ function start(){
 
 function topicById(id){ return TOPICS.find(t=>t.id===id); }
 
+/* ---------- AI 个性化指引（附加：byBand 指引永远本地；reactive demo 用按需按钮，避免每次滑动都调 API） ---------- */
+const CODDLE_SYS = '你是育儿指导顾问。家长记录了一条关于宝宝某方面的观察，并给出宝宝月龄。请针对这条具体记录与月龄给出贴心、可执行的指引。只输出严格 JSON：{"summary":"一句话回应这条记录","advice":["3条针对性建议"],"tip":"一条小贴士"}。结合月龄阶段特点，全部简体中文，温柔不制造焦虑。';
+function aiAdvice(){
+  const topic = topicById(state.topicId), band = bandOf(state.months);
+  const user = `观察方面：${topic.label}\n宝宝月龄：${state.months} 个月（${band.label}）\n家长的记录："${(state.note||'').trim() || '（没写备注）'}"`;
+  return GG.llm.json(CODDLE_SYS, user, {max_tokens:700});
+}
+function renderAdvice(body, obj){
+  GG.clear(body);
+  if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
+  const advice = (Array.isArray(obj.advice)?obj.advice:[]).map(String).filter(Boolean);
+  if(advice.length) body.appendChild(GG.el('ul',{class:'small', style:{margin:'4px 0 0', paddingLeft:'20px', color:'var(--ink-2)', lineHeight:'1.7'}},
+    advice.map(t=>GG.el('li', null, t))));
+  if(obj.tip) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '💡 '+String(obj.tip)));
+  if(!advice.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出建议，月龄指引不受影响。'));
+}
+function mountAdvice(box){
+  if(!GG.llm.connected()) return;
+  const aiBody = GG.el('div');
+  const aiBtn = GG.el('button',{class:'btn', onClick:()=>{
+    aiBtn.disabled = true; GG.clear(aiBody);
+    aiBody.appendChild(GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}}, 'AI 正在针对你这条记录想建议…'));
+    aiAdvice().then(obj=>{ renderAdvice(aiBody, obj); aiBtn.disabled=false; aiBtn.textContent='↻ 重新生成'; })
+      .catch(e=>{ GG.clear(aiBody); aiBody.appendChild(GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}},
+        'AI 建议没拿到（'+(e&&e.code||'NET')+'），月龄指引不受影响。')); aiBtn.disabled=false; });
+  }}, '✨ 让 AI 针对你这条记录给建议');
+  box.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'12px', borderLeft:'3px solid var(--accent)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, 'AI 个性化指引'),
+      GG.llm.badge(true)),
+    GG.el('p',{class:'small muted', style:{margin:'2px 0 8px'}}, '结合你写的记录和当前月龄，让 AI 给更具体的建议。'),
+    aiBtn, aiBody));
+}
+
 /* ---------- 主渲染 ---------- */
 function render(){
   GG.clear(main);
@@ -29,6 +63,7 @@ function render(){
     GG.el('h1', null, '随手记一条，给到月龄个性化指引'),
     GG.el('p', null, '选一类观察、写句备注，再滑动宝宝月龄 —— 同一条记录，月龄不同，指引完全不同。')
   ));
+  main.appendChild(GG.llm.bar());
 
   // 1) 选类型
   main.appendChild(GG.el('div',{class:'section-t'}, '① 这条记的是哪方面？'));
@@ -148,6 +183,9 @@ function updateGuide(){
 
   // GG.resultCard 自动附「非建议」免责 + 分享栏
   box.appendChild(GG.resultCard(SLUG, inner, shareSpec));
+
+  // ✨ 连了 key 才出现：按需让 AI 针对「这条记录 + 当前月龄」给个性化建议
+  mountAdvice(box);
 
   box.appendChild(GG.el('p',{class:'small muted center', style:{marginTop:'10px'}},
     '↑ 试着拖动上面的月龄滑块 —— 同一条记录，指引会随月龄明显改变。'));
