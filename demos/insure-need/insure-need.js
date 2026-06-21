@@ -78,6 +78,35 @@ function reason(r){
   return `${ctx}，已有 ¥${r.have} 万保额已覆盖测算需求（¥${r.need} 万），寿险无需再加；把预算放在重疾与医疗的持续保障上更划算。`;
 }
 
+/* ---------- AI 顾问层（附加：需求法计算永远本地确定性，连了 key 才叠加个性化点评） ---------- */
+const INSURE_SYS = '你是中立、不推销具体产品的保险规划师。下面是用户用需求法算出的保障缺口与家庭情况。请给出个性化、可执行的投保建议与提醒。只输出严格 JSON：{"summary":"一句话总体点评","tips":["3条具体的投保/避坑建议，引用其家庭情况与缺口"],"watch":"一句话最该注意的点，如健康告知或预算分配"}。不要推荐具体保险公司或产品名，全部简体中文。';
+function aiAdvice(r){
+  const user = `寿险缺口：¥${r.gap}万（需求¥${r.need}万 − 已有¥${r.have}万）\n重疾建议：¥${r.ci}万（≈${r.ciMul}年收入）\n年龄${r.age}、年收入¥${r.income}万、供养${r.deps}人（其中未成年子女${r.kids}）、负债¥${r.debt}万`;
+  return GG.llm.json(INSURE_SYS, user, {max_tokens:700});
+}
+function bullets(arr){
+  return GG.el('ul',{class:'small', style:{margin:'4px 0 0', paddingLeft:'20px', color:'var(--ink-2)', lineHeight:'1.7'}},
+    arr.map(t=>GG.el('li', null, t)));
+}
+function mountAdvice(stage, r){
+  if(!GG.llm.connected()) return;
+  const body = GG.el('div', null, GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 正在结合你的情况给出建议…'));
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'3px solid var(--accent)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 保险顾问点评'),
+      GG.llm.badge(true)),
+    body));
+  aiAdvice(r).then(obj=>{
+    GG.clear(body);
+    if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
+    const tips = (Array.isArray(obj.tips)?obj.tips:[]).map(String).filter(Boolean);
+    if(tips.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '投保建议')); body.appendChild(bullets(tips)); }
+    if(obj.watch) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '⚠︎ '+String(obj.watch)));
+    if(!tips.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出建议，缺口测算不受影响。'));
+  }).catch(e=>{ GG.clear(body);
+    body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 建议没拿到（'+(e&&e.code||'NET')+'），你的缺口测算不受影响。')); });
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -91,8 +120,9 @@ function intro(){
 
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '你，到底该买多少保？'),
-    GG.el('p', null, '别再被销售牵着走。答 6 个生活问题，用「需求法」当场算出你的寿险缺口、重疾额度，以及该先配哪几个险种 —— 还告诉你为什么。')
+    GG.el('p', null, '别再被销售牵着走。答 6 个生活问题，用「需求法」当场算出你的寿险缺口、重疾额度，以及该先配哪几个险种 —— 还告诉你为什么。连上 AI 还会多一份个性化点评。')
   ));
+  main.appendChild(GG.llm.bar());
 
   const form = GG.el('div',{class:'stack', style:{marginTop:'20px'}});
   Q.forEach(q=>{
@@ -214,6 +244,9 @@ async function showResult(s, fromLink){
   stage.appendChild(parts);
   stage.appendChild(GG.el('div',{class:'section-t'}, '推荐险种 · 按优先级'));
   stage.appendChild(list);
+  stage.appendChild(GG.el('div',{style:{height:'16px'}}));
+  // ✨ 连了 key 才追加的 AI 保险点评（异步加载，缺口测算已在本地完成）
+  mountAdvice(stage, r);
   stage.appendChild(GG.el('div',{style:{height:'6px'}}));
   stage.appendChild(GG.resultCard(SLUG,
     GG.el('div',{class:'center muted small'}, '把这张建议卡截图保存 ↓'), shareSpec));

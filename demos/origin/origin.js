@@ -60,6 +60,36 @@ function stepFor(d, v, m){
   }
 }
 
+/* ---------- AI 顾问层（附加：评分引擎永远本地确定性计算，连了 key 才叠加个性化点评） ---------- */
+const ORIGIN_SYS = '你是务实、不贩卖焦虑的理财规划师。下面是用户的财务体检结果（含真实数字与各分项得分）。请给出个性化、可立即执行的建议。只输出严格 JSON：{"summary":"一句话总体点评，客观、以鼓励为主","actions":["3条具体、可执行、引用其数字的行动建议"],"watch":"一句话最该警惕的风险点"}。全部简体中文，金额用人民币，不要空话套话。';
+function aiAdvice(v, R){
+  const dims = R.dims.map(d=>`${d.label} ${Math.round(d.score)}分`).join('、');
+  const user = `财务健康分：${R.total}（${R.grade.tag}）\n月收入¥${Math.round(v.income)}、月支出¥${Math.round(v.expense)}、每月结余¥${Math.round(R.surplus)}（储蓄率${pctStr(R.savingRate)}）\n存款¥${Math.round(v.savings)}、负债¥${Math.round(v.debt)}、应急金${v.emFund}个月、年龄${v.age}\n分项得分：${dims}`;
+  return GG.llm.json(ORIGIN_SYS, user, {max_tokens:700});
+}
+function bullets(arr){
+  return GG.el('ul',{class:'small', style:{margin:'4px 0 0', paddingLeft:'20px', color:'var(--ink-2)', lineHeight:'1.7'}},
+    arr.map(t=>GG.el('li', null, t)));
+}
+function mountAdvice(stage, v, R){
+  if(!GG.llm.connected()) return;
+  const body = GG.el('div', null, GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 正在结合你的数字给出建议…'));
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'3px solid var(--accent)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 理财规划师点评'),
+      GG.llm.badge(true)),
+    body));
+  aiAdvice(v, R).then(obj=>{
+    GG.clear(body);
+    if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
+    const actions = (Array.isArray(obj.actions)?obj.actions:[]).map(String).filter(Boolean);
+    if(actions.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '行动建议')); body.appendChild(bullets(actions)); }
+    if(obj.watch) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '⚠︎ '+String(obj.watch)));
+    if(!actions.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出建议，评分与下一步不受影响。'));
+  }).catch(e=>{ GG.clear(body);
+    body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 建议没拿到（'+(e&&e.code||'NET')+'），你的评分与下一步不受影响。')); });
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -72,8 +102,9 @@ function intro(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '90 秒，给你的财务做次体检'),
-    GG.el('p', null, '填几项数字，我把它换算成一个 0~100 的财务健康分 + 4 个分项短板，并给出引用你自己数字的下一步。全程本地计算，不上传。')
+    GG.el('p', null, '填几项数字，我把它换算成一个 0~100 的财务健康分 + 4 个分项短板，并给出引用你自己数字的下一步。评分全程本地计算、不上传；连上 AI 后再多一份个性化点评。')
   ));
+  main.appendChild(GG.llm.bar());
 
   const form = GG.el('div',{class:'stack', style:{marginTop:'22px'}});
   const inputs = {};
@@ -178,6 +209,10 @@ async function showResult(v, fromLink){
     )
   );
   stage.appendChild(stepsBox);
+
+  // ✨ 连了 key 才追加的 AI 理财点评（异步加载，评分/下一步已在本地完成）
+  stage.appendChild(GG.el('div',{style:{height:'16px'}}));
+  mountAdvice(stage, v, R);
 
   // 分享卡
   const shareSpec = {

@@ -72,6 +72,28 @@ function match(answers){
   return { cand: best.c, reasons: reasons.slice(0,4), seed };
 }
 
+/* ---------- AI 通路（候选人选择永远本地确定性；连了 key 让 AI 写更走心的理由 + 破冰开场白） ----------
+   AI 只负责"措辞"，不改人选；严禁出现任何匹配度/分数/百分比。 */
+const MM_SYS = '你是温暖、走心的红娘。系统已从候选库里为用户选定了唯一一位 TA（不可更换）。下面给你 TA 的资料、用户的问卷答案、以及你俩答案完全对上的维度。请写出"你们为什么对得上"的理由，以及一句可直接发出去的破冰开场白。只输出严格 JSON：{"reasons":["3到4条理由，每条引用用户的具体答案+TA的特点，温暖具体，35字内"],"icebreaker":"一句自然、不油腻、可直接发出去的破冰开场白"}。绝对不要出现任何匹配度、分数、百分比或数字评分。全部简体中文。';
+
+async function getMatch(answers, useAI){
+  const local = match(answers);
+  if(useAI){
+    try{
+      const c = local.cand;
+      const userAns = QUESTIONS.map(q=>{ const ak=answers[q.id]; return ak? `${q.dim}：${labelOf(q.id, ak)}` : null; }).filter(Boolean).join('\n');
+      const hitDims = QUESTIONS.filter(q=> c.picks[q.id]===answers[q.id]).map(q=>q.dim);
+      const user = `TA 资料：${c.name}，${c.age} 岁，${c.city}。简介：${c.bio}。标签：${(c.tags||[]).join('、')}\n\n用户的问卷答案：\n${userAns}\n\n你俩答案完全对上的维度：${hitDims.join('、') || '（没有完全一致的，靠互补聊得来）'}`;
+      const obj = await GG.llm.json(MM_SYS, user, {max_tokens:700});
+      const reasons = (Array.isArray(obj.reasons)?obj.reasons:[]).map(String).map(s=>s.trim()).filter(Boolean).slice(0,4).map(text=>({text}));
+      if(reasons.length){
+        return { cand:c, reasons, icebreaker:String(obj.icebreaker||'').trim(), _ai:true };
+      }
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  return { cand:local.cand, reasons:local.reasons, icebreaker:'', _ai:false };
+}
+
 /* ---------- 流程 ---------- */
 let main;
 
@@ -91,6 +113,7 @@ function intro(){
     GG.el('h1', null, '回答几道题，我只给你一个人'),
     GG.el('p', null, `不是滑不完的列表，也不算什么"匹配度"。${QUESTIONS.length} 道关于你的小问题，答完我会从候选库里，挑出最该认识你的那一位——并告诉你，为什么是 TA。`)
   ));
+  main.appendChild(GG.llm.bar());
   main.appendChild(GG.el('div',{class:'center', style:{marginTop:'22px'}},
     GG.el('button',{class:'btn primary lg', onClick:()=>quiz()}, '开始回答 →')
   ));
@@ -159,20 +182,26 @@ async function showResult(answers, fromLink){
   main = main || GG.mountShell(SLUG);
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
+  const useAI = GG.llm.connected();
+  let res;
   if(!fromLink){
-    await GG.thinking(stage, [
+    const think = GG.thinking(stage, [
       '读你刚才的每一个选择…',
       '比对候选库里每个人的答案…',
-      '找你们真正对得上的那些点…',
+      useAI ? '让 AI 把你们对上的点说清楚…' : '找你们真正对得上的那些点…',
       '只留一个最该认识你的人…',
-    ], 1700);
+    ], useAI?2000:1700);
+    const [r] = await Promise.all([getMatch(answers, useAI), think]); res = r;
+  } else {
+    res = await getMatch(answers, useAI);
   }
 
-  const { cand, reasons } = match(answers);
+  const { cand, reasons, icebreaker } = res;
   GG.clear(stage);
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
     GG.el('h1',{style:{fontSize:'24px'}}, '💞 为你精配的，就这一位')));
+  stage.appendChild(GG.el('div',{class:'center', style:{margin:'0 0 12px'}}, GG.llm.badge(!!res._ai)));
 
   // 候选人卡
   const profile = GG.el('div',{class:'card pad', style:{marginBottom:'16px',
@@ -205,6 +234,13 @@ async function showResult(answers, fromLink){
     )
   );
   stage.appendChild(why);
+
+  // ✨ AI 破冰开场白（连了 key 才有）
+  if(icebreaker){
+    stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'16px', borderLeft:'3px solid var(--accent)'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ 不知道怎么开口？试试这句'),
+      GG.el('p',{style:{margin:'0', fontSize:'15px', color:'var(--ink)', lineHeight:'1.7', fontStyle:'italic'}}, '“'+icebreaker+'”')));
+  }
 
   // shareSpec：不放任何分数/百分比
   const shareSpec = {

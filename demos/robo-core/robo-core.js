@@ -47,6 +47,26 @@ function blendedVol(alloc){
   return v;
 }
 
+/* ---------- AI 投顾解读层（附加：配置/收益计算永远本地确定性，连了 key 按需触发） ---------- */
+const ROBO_SYS = '你是专业、合规的投资顾问助理。下面是用户的风险等级与系统生成的资产配置。请用通俗语言解读这套配置，并给出可执行的实操建议（如定投、再平衡、留足应急金）。只输出严格 JSON：{"summary":"一句话解读这套配置适合谁","actions":["3条具体可执行的建议"],"watch":"一句话风险提醒"}。不要推荐具体基金/股票代码或产品名，全部简体中文。';
+function aiAdvice(C){
+  const alloc = ASSETS.map(a=>`${a.label}${C.alloc[a.key].toFixed(0)}%`).join('、');
+  const user = `风险等级：${C.lv.name}（${C.lv.tag}）得分${Math.round(C.score)}/100\n资产配置：${alloc}\n组合预期年化${(C.r*100).toFixed(1)}%，10万本金${YEARS}年后约${GG.fmt(Math.round(C.fv))}元`;
+  return GG.llm.json(ROBO_SYS, user, {max_tokens:700});
+}
+function aiBullets(arr){
+  return GG.el('ul',{class:'small', style:{margin:'4px 0 0', paddingLeft:'20px', color:'var(--ink-2)', lineHeight:'1.7'}},
+    arr.map(t=>GG.el('li', null, t)));
+}
+function renderAdvice(body, obj){
+  GG.clear(body);
+  if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
+  const actions = (Array.isArray(obj.actions)?obj.actions:[]).map(String).filter(Boolean);
+  if(actions.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '实操建议')); body.appendChild(aiBullets(actions)); }
+  if(obj.watch) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '⚠︎ '+String(obj.watch)));
+  if(!actions.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出解读，配置本身不受影响。'));
+}
+
 /* ---------- SVG 饼图 ---------- */
 function donut(alloc){
   const W=220, R=92, IR=52, cx=W/2, cy=W/2;
@@ -177,6 +197,24 @@ function redraw(){
   resultBox.appendChild(GG.resultCard(SLUG,
     GG.el('div',{class:'center small muted'}, '改任意一题，饼图与曲线即时变化 · 截图分享你的配置 ↓'),
     shareSpec));
+
+  // ✨ AI 投顾解读（按需触发：避免每改一题都调用；点了才读当前最新配置）
+  if(GG.llm.connected()){
+    const body = GG.el('div');
+    const btn = GG.el('button',{class:'btn', onClick:()=>{
+      btn.disabled = true;
+      GG.clear(body); body.appendChild(GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}}, 'AI 正在解读你当前这套配置…'));
+      aiAdvice(compute()).then(obj=>{ renderAdvice(body, obj); btn.disabled=false; btn.textContent='↻ 重新解读'; })
+        .catch(e=>{ GG.clear(body); body.appendChild(GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}},
+          'AI 解读没拿到（'+(e&&e.code||'NET')+'），配置本身不受影响。')); btn.disabled=false; });
+    }}, '✨ AI 解读这套配置');
+    resultBox.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'12px', borderLeft:'3px solid var(--accent)'}},
+      GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+        GG.el('div',{class:'section-t', style:{marginTop:'0'}}, 'AI 投顾解读'),
+        GG.llm.badge(true)),
+      GG.el('p',{class:'small muted', style:{margin:'2px 0 8px'}}, '基于你当前选择，让 AI 用人话讲讲这套配置 + 给点实操建议。'),
+      btn, body));
+  }
 }
 
 function buildQuestion(q){
@@ -214,6 +252,7 @@ function start(){
     GG.el('h1', null, '60 秒，给你一套资产配置'),
     GG.el('p', null, '答 5 道风险题，实时生成你的资产配置饼图与 '+YEARS+' 年增长曲线 —— 改任意一题，图表立刻跟着变。')
   ));
+  main.appendChild(GG.llm.bar());
 
   // 两栏：左问卷，右图表（窄屏自动堆叠，靠 flex-wrap）
   const grid = GG.el('div',{class:'row', style:{alignItems:'flex-start', gap:'18px', flexWrap:'wrap', marginTop:'10px'}});
