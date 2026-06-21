@@ -923,47 +923,9 @@ window.PROJECTS = [
     ]
   },
 
-  /* ───────────────────────── 22 baby-cry ───────────────────────── */
+  /* ───────────────────────── 22 coddle ───────────────────────── */
   {
-    id: "baby-cry", no: "22", cat: "母婴",
-    kicker: "母婴 · 哭声识别",
-    title: "哭声翻译",
-    subtitle: "录一段哭声，给原因概率（饿 / 困 / 不适）+ 安抚建议",
-    url: "demos/baby-cry/", tags: ["波形分析","原因概率","安抚建议","纯离线"],
-    phoneHint: "录或选一段哭声，看波形与原因概率",
-    sections: [
-      { label: "是什么",   html: `<p>录下宝宝的哭声，给你「可能是饿/困/不适」的概率和对应安抚法。</p>` },
-      { label: "程序逻辑", html: `<h3>录音 → 波形 → 原因 + 安抚</h3>
-        <div class="flow"><span class="step">录/选哭声</span><span class="arr">→</span><span class="step">波形分析</span><span class="arr">→</span><span class="step">原因概率 + 安抚</span><span class="arr">→</span><span class="step">分享</span></div>
-        <ul>
-          <li>全链路：录音 → 波形可视化 → 原因概率条 → 安抚建议</li>
-          <li>不同声音特征给不同概率分布</li>
-          <li>含「非诊断」声明</li>
-        </ul>
-        <p style="margin-top:16px">本地音频特征启发式，<b>零外部依赖、纯离线</b>。</p>` },
-      { label: "商业模式", html: `<ul>
-          <li><b>订阅</b>：哭声历史、成长记录、安抚库（ChatterBaby / Cappella 模式）</li>
-          <li><b>硬件 + 订阅</b>：与智能监护设备联动（Nanit / Miku 模式）</li>
-          <li><b>母婴带货</b>：按场景推荐安抚 / 喂养用品</li>
-        </ul>` },
-      { label: "市场分析", html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-        <ul>
-          <li><b>ChatterBaby（UCLA 出品）</b>：用声学分析判断宝宝哭声原因，是哭声识别的代表性产品。</li>
-          <li><b>Cappella</b>：AI 婴儿哭声翻译 App，主打原因识别。</li>
-          <li><b>Nanit / Miku</b>：智能婴儿监护硬件 + 订阅数据服务，证明母婴监护的硬件 + 订阅可盈利。</li>
-        </ul>
-        <ul>
-          <li><b>痛点</b>：新手父母面对哭声手足无措、睡眠剥夺</li>
-          <li><b>人群</b>：0–1 岁婴儿的新手父母</li>
-          <li><b>本地化</b>：接国内母婴社区与育儿内容</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：哭声识别准确度有限、个体差异大；本 demo 为启发式演示、非诊断</li>
-        </ul>` }
-    ]
-  },
-
-  /* ───────────────────────── 23 coddle ───────────────────────── */
-  {
-    id: "coddle", no: "23", cat: "母婴",
+    id: "coddle", no: "22", cat: "母婴",
     kicker: "母婴 · 育儿指引",
     title: "按月龄育儿指引",
     subtitle: "随口记一条，按宝宝月龄给出个性化指引 —— 同一条记录，不同月龄不同建议",
@@ -998,84 +960,9 @@ window.PROJECTS = [
     ]
   },
 
-  /* ───────────────────────── 24 gamma ───────────────────────── */
+  /* ───────────────────────── 23 mood-journal ───────────────────────── */
   {
-    id: "gamma", no: "24", cat: "办公", featured: true,
-    kicker: "生产力 · AI 演示文稿",
-    title: "一句话变 Deck",
-    subtitle: "输入一个主题，拼装出一整套排好版的 deck",
-    url: "demos/gamma/", tags: ["主题即 deck","≥5 页排版","拼装动画","纯离线"],
-    phoneHint: "输入主题，看自动生成的多页 deck",
-    sections: [
-      { label: "是什么",   html: `<p>给个主题，立刻拼出一份每页有标题、要点、配图位的完整 deck。</p>` },
-      { label: "程序逻辑", html: `<h3>主题 → 大纲 → 多页 deck</h3>
-        <div class="flow"><span class="step">输入主题</span><span class="arr">→</span><span class="step">生成大纲</span><span class="arr">→</span><span class="step">≥5 页排版 deck</span><span class="arr">→</span><span class="step">分享</span></div>
-        <ul>
-          <li>一句话 → <b>≥5 页</b> deck，每页含标题 + 要点 + 占位图</li>
-          <li>卡片以<b>拼装动画式</b>逐页出现</li>
-          <li>换主题 → 整套内容随之变</li>
-        </ul>
-        <p style="margin-top:16px">本地模板化排版生成，<b>零外部依赖、纯离线</b>。</p>` },
-      { label: "商业模式", html: `<ul>
-          <li><b>订阅</b>：无限生成、导出、品牌模板、协作（Gamma / Tome 模式）</li>
-          <li><b>团队版</b>：企业品牌库 + 权限 + 分析</li>
-          <li><b>模板市场</b>：行业模板与创作者分成</li>
-        </ul>` },
-      { label: "市场分析", html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-        <ul>
-          <li><b>Gamma（gamma.app）</b>：同名产品，「一句话生成整套 deck / 网页」，用户数千万、订阅盈利，本 demo 复刻其核心体验。</li>
-          <li><b>Tome / Beautiful.ai</b>：AI 演示文稿工具，订阅制。</li>
-          <li><b>Canva（Magic Design）/ 微软 Copilot for PowerPoint</b>：把 AI 生成 deck 接进超级平台。</li>
-        </ul>
-        <ul>
-          <li><b>痛点</b>：做 PPT 耗时、排版折磨，最痛的是「从 0 到有」</li>
-          <li><b>人群</b>：学生、职场、创业者、销售</li>
-          <li><b>本地化</b>：接中文排版审美与国内办公生态</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：内容质量与配图版权需把关；本 demo 为排版演示</li>
-        </ul>` }
-    ]
-  },
-
-  /* ───────────────────────── 25 notebooklm ───────────────────────── */
-  {
-    id: "notebooklm", no: "25", cat: "创作", featured: true,
-    kicker: "知识工作 · AI 资料消化",
-    title: "喂资料替你消化",
-    subtitle: "粘贴你的资料，问答与学习指南都基于这份资料、能引到原文",
-    url: "demos/notebooklm/", tags: ["基于你的资料","可溯源","学习指南 + 问答","纯离线"],
-    phoneHint: "粘贴一段资料，再提问看是否基于原文",
-    sections: [
-      { label: "是什么",   html: `<p>把你的资料喂进去，它生成学习指南并就这份资料问答，答案能指回原文。</p>` },
-      { label: "程序逻辑", html: `<h3>资料 → 索引 → 指南 + 问答</h3>
-        <div class="flow"><span class="step">贴资料</span><span class="arr">→</span><span class="step">索引</span><span class="arr">→</span><span class="step">学习指南 + 问答</span><span class="arr">→</span><span class="step">分享</span></div>
-        <ul>
-          <li>问答与指南<b>确实基于你粘贴的内容</b>，能引到原文要点</li>
-          <li>没贴的内容不会凭空编（演示版按检索片段作答）</li>
-        </ul>
-        <p style="margin-top:16px">本地检索（分句 + 关键词召回）+ 摘要，<b>零外部依赖、纯离线</b>。</p>` },
-      { label: "商业模式", html: `<ul>
-          <li><b>企业知识助手</b>：基于公司文档的问答 / 搜索，按席位收费（Glean 模式）</li>
-          <li><b>C 端订阅</b>：上传量 / 高级功能 / 播客生成</li>
-          <li><b>教育 / 研究</b>：文献综述、备课、资料速读</li>
-        </ul>` },
-      { label: "市场分析", html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-        <ul>
-          <li><b>Google NotebookLM</b>：同名产品，「上传资料 → 基于资料问答 / 摘要 / 播客」，Google 旗舰，本 demo 复刻其核心体验。</li>
-          <li><b>Glean</b>：企业级「基于公司资料」的 AI 搜索助手，ARR 高速增长，证明 RAG 在 B 端的巨大付费。</li>
-          <li><b>ChatPDF / Humata</b>：把文档问答做成轻量订阅工具。</li>
-        </ul>
-        <ul>
-          <li><b>痛点</b>：资料太多读不完、通用大模型会「一本正经胡说」</li>
-          <li><b>人群</b>：学生、研究者、知识工作者、企业团队</li>
-          <li><b>本地化</b>：接中文文档与国内企业知识库</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：检索质量决定可信度；本 demo 为简化检索演示</li>
-        </ul>` }
-    ]
-  },
-
-  /* ───────────────────────── 26 mood-journal ───────────────────────── */
-  {
-    id: "mood-journal", no: "26", cat: "心理",
+    id: "mood-journal", no: "23", cat: "心理",
     kicker: "心理健康 · 情绪记录",
     title: "心情日记",
     subtitle: "写下心情，多条记录汇成情绪曲线 + 触发词云",
@@ -1111,9 +998,9 @@ window.PROJECTS = [
     ]
   },
 
-  /* ───────────────────────────── Project 27 ───────────────────────────── */
+  /* ───────────────────────────── Project 24 ───────────────────────────── */
   {
-    id: "dinner", no: "27", cat: "餐饮", featured: true,
+    id: "dinner", no: "24", cat: "餐饮", featured: true,
     kicker: "餐饮 · AIGC / 非结构化抽取",
     title: "今天吃什么",
     subtitle: "粘贴一段美食帖 → AI 现场把它变成一份今晚能照做的图文菜谱",
@@ -1176,9 +1063,9 @@ window.PROJECTS = [
     ]
   },
 
-  /* ───────────────────────────── Project 28 ───────────────────────────── */
+  /* ───────────────────────────── Project 25 ───────────────────────────── */
   {
-    id: "unmask", no: "28", cat: "游戏", featured: true,
+    id: "unmask", no: "25", cat: "游戏", featured: true,
     kicker: "游戏 · 隐私博弈 / 行为建模",
     title: "不被看穿",
     subtitle: "剪刀石头布，但对手是一个拼命想给你建模的 AI——这一次，被猜中是你输",

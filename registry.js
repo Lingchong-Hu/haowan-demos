@@ -23,10 +23,7 @@ window.DEMOS = [
   { slug:'matchmaker',   industry:'约会', title:'对话式精配',       tagline:'只给你一个人 + 可追溯理由',    emoji:'💞', accent:'#e0577f', status:'live' },
   { slug:'pet-health',   industry:'宠物', title:'宠物拍照自检',     tagline:'拍眼/皮肤 → 健康分 + 观察项',  emoji:'🐾', accent:'#c98a2b', status:'live', disclaimer:true },
   { slug:'pet-vet',      industry:'宠物', title:'AI 兽医',         tagline:'会反问澄清再给建议',          emoji:'🐶', accent:'#b07a3a', status:'live', disclaimer:true },
-  { slug:'baby-cry',     industry:'母婴', title:'哭声翻译',         tagline:'录哭声 → 原因概率 + 安抚',     emoji:'👶', accent:'#e08aa0', status:'live', disclaimer:true },
   { slug:'coddle',       industry:'母婴', title:'按月龄育儿指引',   tagline:'随口记录 → 个性化指引',       emoji:'🍼', accent:'#d77a98', status:'live', disclaimer:true },
-  { slug:'gamma',        industry:'办公', title:'一句话变 Deck',    tagline:'输入主题 → 整套排版 deck',    emoji:'🖼️', accent:'#6a5cf0', status:'live' },
-  { slug:'notebooklm',   industry:'创作', title:'喂资料替你消化',   tagline:'上传资料 → 学习指南/问答',    emoji:'📓', accent:'#4a6fe0', status:'live' },
   { slug:'mood-journal', industry:'心理', title:'心情日记',         tagline:'写心情 → 情绪曲线 + 词云',     emoji:'🌤️', accent:'#7a8fd4', status:'live', disclaimer:true },
   { slug:'unmask',       industry:'游戏', title:'不被看穿',         tagline:'剪刀石头布 · 别被想懂你的 AI 看穿', emoji:'🎭', accent:'#6457e8', status:'live' },
 ];
