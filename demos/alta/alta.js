@@ -100,6 +100,30 @@ async function getOutfit(occ, useAI){
   return {outfit:r.outfit, reasons:r.reasons, rline:reasonLine(occ, r.reasons), tip:'', _ai:false};
 }
 
+/* 正式度匹配刻度（纯本地）：这套平均正式度 marker vs 场合理想区间 band */
+function formalityScale(reasons, occ){
+  const items = reasons.map(r=>r.item).filter(Boolean);
+  if(!items.length) return null;
+  const avg = items.reduce((a,it)=>a+(it.formality||3),0)/items.length;
+  const [lo,hi] = occ.want.form;
+  const pct = v => ((GG.clamp(v,1,5)-1)/4)*100;
+  const labels = ['极休闲','休闲','适中','正式','极正式'];
+  const inBand = avg>=lo && avg<=hi;
+  return GG.el('div',{class:'card pad', style:{marginTop:'12px'}},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '正式度匹配'),
+    GG.el('div',{style:{position:'relative', height:'30px', margin:'14px 0 6px'}},
+      GG.el('div',{style:{position:'absolute', top:'13px', left:'0', right:'0', height:'4px', borderRadius:'2px', background:'var(--line)'}}),
+      GG.el('div',{style:{position:'absolute', top:'10px', left:pct(lo)+'%', width:(pct(hi)-pct(lo))+'%', height:'10px', borderRadius:'5px', background:'var(--accent-soft)', border:'1px solid var(--accent)'}}),
+      GG.el('div',{style:{position:'absolute', top:'2px', left:'calc('+pct(avg)+'% - 9px)', width:'18px', height:'18px', borderRadius:'50%', background:'var(--accent)', border:'2px solid #fff', boxShadow:'var(--sh-1)'}})
+    ),
+    GG.el('div',{class:'row', style:{justifyContent:'space-between'}},
+      labels.map(l=>GG.el('span',{class:'small muted', style:{fontSize:'11px'}}, l))),
+    GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}},
+      `这套平均正式度 ${avg.toFixed(1)}/5，${occ.label}的理想区间是 ${lo}–${hi}。`+
+      (inBand?'正好落在区间内 ✓' : (avg<lo?'比场合偏休闲了一点。':'比场合偏正式了一点。')))
+  );
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -245,6 +269,8 @@ async function showResult(occ, fromLink){
       GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ 造型师小贴士'),
       GG.el('p',{style:{margin:'0', color:'var(--ink-2)', lineHeight:'1.7'}}, tip)));
   }
+  const fscale = formalityScale(reasons, occ);
+  if(fscale) stage.appendChild(fscale);
   stage.appendChild(GG.el('div',{style:{height:'14px'}}));
   stage.appendChild(list);
   stage.appendChild(GG.resultCard(SLUG,
