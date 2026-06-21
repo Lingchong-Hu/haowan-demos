@@ -297,6 +297,26 @@ function feedbackBlock(title, scoreLabel, pct, bodyNode, color){
 
 function colorFor(pct){ return pct>=75 ? 'var(--good)' : (pct>=45 ? 'var(--warn)' : 'var(--bad)'); }
 
+/* STAR 四要素地图（2×2 宫格，✓/✗ + 命中证据）——区别于线性评分条的一眼概览 */
+function starGrid(a){
+  const presentSet = new Set(a.presentKeys.map(p=>p.key));
+  const cells = STAR.map(p=>{
+    const on = presentSet.has(p.key);
+    const ev = a.present && a.present[p.key];
+    return GG.el('div',{style:{border:'1px solid '+(on?'var(--accent)':'var(--line)'), borderRadius:'12px', padding:'11px 12px',
+      background: on?'var(--accent-soft)':'#fbfbf9'}},
+      GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+        GG.el('span',{style:{fontWeight:'700', fontSize:'14.5px', color:on?'var(--accent)':'var(--ink-3)'}}, p.label),
+        GG.el('span',{style:{fontWeight:'800', fontSize:'16px', color:on?'#2e9e7b':'#c2536f'}}, on?'✓':'✗')),
+      GG.el('p',{class:'small muted', style:{margin:'5px 0 0', lineHeight:'1.5'}},
+        on ? (ev?('你提到「'+snippet(ev)+'…」'):'已讲到') : ('缺：'+p.desc)));
+  });
+  return GG.el('div',{class:'card pad'},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, 'STAR 四要素地图'),
+    GG.el('div',{style:{display:'grid', gridTemplateColumns:'1fr 1fr', gap:'10px'}}, cells[0], cells[1], cells[2], cells[3]),
+    GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '绿勾=已讲到，红叉=缺这块；面试官最爱追问缺的那格。'));
+}
+
 function showResult(stage, a, answerText){
   const advice = a._ai ? { lead:(a._advice[0]||''), all:a._advice.slice(0,3) } : adviceFeedback(a);
   const starText = a._ai ? a._starFb : starFeedback(a);
@@ -314,6 +334,10 @@ function showResult(stage, a, answerText){
     GG.el('div',{class:'small muted', style:{marginBottom:'6px'}}, '你的回答'),
     GG.el('div',{style:{fontSize:'14.5px', lineHeight:'1.6', whiteSpace:'pre-wrap', color:'var(--ink-2)'}}, a.clean)
   ));
+
+  // STAR 四要素地图（可视化概览）
+  stage.appendChild(starGrid(a));
+  stage.appendChild(GG.el('div',{style:{height:'12px'}}));
 
   const blocks = GG.el('div',{class:'stack'});
   blocks.appendChild(feedbackBlock('① STAR 完整度', '', a.starPct, fbNode(starText), colorFor(a.starPct)));

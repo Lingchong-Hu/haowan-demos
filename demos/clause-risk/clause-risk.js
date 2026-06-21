@@ -146,6 +146,24 @@ function showResult(text, hits, stage){
   stage.appendChild(head);
   stage.appendChild(GG.el('div',{style:{margin:'0 0 4px'}}, GG.llm.badge(!!hits._ai)));
 
+  // ── 风险等级分布条（纯本地可视化）──
+  if(hits.length){
+    const cnt = { '高':0, '中':0, '低':0 };
+    hits.forEach(h=> cnt[h.pat.level] = (cnt[h.pat.level]||0)+1);
+    const seg = ['高','中','低'].filter(lv=> cnt[lv]>0).map(lv=>{
+      const col = LEVEL_COLOR[lv];
+      return GG.el('div',{style:{flex:String(cnt[lv]), background:col, color:'#fff', minWidth:'34px',
+        display:'flex', alignItems:'center', justifyContent:'center', fontSize:'12px', fontWeight:'700', padding:'5px 0'}},
+        lv+' '+cnt[lv]);
+    });
+    stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'16px'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '风险等级分布'),
+      GG.el('div',{style:{display:'flex', borderRadius:'8px', overflow:'hidden', gap:'2px'}}, ...seg),
+      GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}},
+        ['高','中','低'].map(lv=> lv+'风险 '+(cnt[lv]||0)+' 处').join(' · '))
+    ));
+  }
+
   if(!hits.length){
     stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'16px'}},
       GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '原文'),

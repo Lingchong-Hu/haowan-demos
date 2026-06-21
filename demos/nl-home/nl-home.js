@@ -164,6 +164,13 @@ function listingCard(item, c){
     ),
     GG.el('div',{class:'small muted'}, `${h.city} · ${h.beds}室 · ${h.area}㎡ · 房龄${h.ageYears}年`),
     GG.el('div',{class:'small', style:{color:'var(--accent)', fontWeight:'600'}}, '命中：'+reasonLine(h, c)),
+    // 软偏好命中度条（纯本地：命中的标签数 / 你要的标签数）
+    (c.tags && c.tags.length ? GG.el('div',{class:'row', style:{alignItems:'center', gap:'8px'}},
+      GG.el('div',{style:{flex:'1', height:'8px', borderRadius:'5px', background:'var(--accent-soft)', overflow:'hidden'}},
+        GG.el('i',{style:{display:'block', height:'100%', width:Math.round(item.hitTags.length/c.tags.length*100)+'%',
+          background:'var(--accent)', borderRadius:'5px'}})),
+      GG.el('span',{class:'small muted', style:{whiteSpace:'nowrap'}}, '偏好命中 '+item.hitTags.length+'/'+c.tags.length)
+    ) : null),
     GG.el('p',{class:'small muted', style:{margin:'0'}}, h.blurb),
     GG.el('div',{class:'chips', style:{marginTop:'2px'}},
       h.tags.map(t=> GG.el('span',{class: item.hitTags.includes(t)?'chip on':'chip', style:{cursor:'default'}}, t)))

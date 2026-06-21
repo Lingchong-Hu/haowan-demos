@@ -241,6 +241,32 @@ async function showResult(s, fromLink){
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px', paddingBottom:'0'}},
     GG.el('h1',{style:{fontSize:'24px'}}, '🛡️ 你的保险配置建议')));
   stage.appendChild(head);
+
+  // 🎚 「再补一点保额」杠杆：剩余缺口实时收敛（纯本地沙盘）
+  if(r.gap>0){
+    const maxAdd = Math.ceil(r.gap);
+    const addVal = GG.el('span',{style:{fontWeight:'800', color:'var(--accent)'}}, '¥0 万');
+    const remain = GG.el('div',{style:{fontSize:'15px', fontWeight:'600'}});
+    const upd = x=>{
+      const ng = Math.max(0, r.need - (r.have + x));
+      GG.clear(remain);
+      if(ng<=0){ remain.appendChild(GG.el('span',{style:{color:'#2e9e7b', fontWeight:'800', fontSize:'19px'}}, '✓ 缺口已补齐')); }
+      else { remain.appendChild(document.createTextNode('剩余寿险缺口 '));
+        remain.appendChild(GG.el('span',{style:{color:'var(--accent)', fontWeight:'800', fontSize:'20px'}}, '¥'+ng+' 万')); }
+    };
+    upd(0);
+    stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🎚 假如再补一点保额'),
+      GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'baseline', marginBottom:'6px'}},
+        GG.el('span',{class:'small muted'}, '再补寿险保额'), addVal),
+      GG.el('input',{type:'range', min:'0', max:String(maxAdd), step:'1', value:'0',
+        style:{width:'100%', accentColor:'var(--accent)', cursor:'pointer'},
+        onInput:e=>{ const x=+e.target.value; addVal.textContent='¥'+x+' 万'; upd(x); }}),
+      GG.el('div',{style:{marginTop:'12px'}}, remain),
+      GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}}, '拖一拖看再加多少保额能把缺口补到 0（仅测算，不改上面的结果）。')
+    ));
+  }
+
   stage.appendChild(parts);
   stage.appendChild(GG.el('div',{class:'section-t'}, '推荐险种 · 按优先级'));
   stage.appendChild(list);
