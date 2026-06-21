@@ -18,6 +18,7 @@ window.DEMOS = [
   { slug:'mindtrip',     industry:'旅行', title:'行程 + 地图',      tagline:'答偏好 → 逐时行程 + 地图标点', emoji:'🗺️', accent:'#0fa3a3', status:'live' },
   { slug:'ollie',        industry:'餐饮', title:'冰箱出菜谱',       tagline:'勾选食材 → 现在能做的菜',     emoji:'🍳', accent:'#e0922b', status:'live' },
   { slug:'mealplan',     industry:'餐饮', title:'7 天饮食计划',     tagline:'问卷 → 周计划 + 购物清单',    emoji:'🥗', accent:'#5aaa2b', status:'live' },
+  { slug:'dinner',       industry:'餐饮', title:'今天吃什么',       tagline:'贴一段美食帖 → AI 现做图文菜谱', emoji:'🍲', accent:'#e0651f', status:'live' },
   { slug:'insure-need',  industry:'保险', title:'该买多少保',       tagline:'答生活问题 → 保额/险种建议',  emoji:'🛡️', accent:'#2b7fae', status:'live', disclaimer:true },
   { slug:'matchmaker',   industry:'约会', title:'对话式精配',       tagline:'只给你一个人 + 可追溯理由',    emoji:'💞', accent:'#e0577f', status:'live' },
   { slug:'pet-health',   industry:'宠物', title:'宠物拍照自检',     tagline:'拍眼/皮肤 → 健康分 + 观察项',  emoji:'🐾', accent:'#c98a2b', status:'live', disclaimer:true },

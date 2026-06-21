@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>今天吃什么 · 那一下</title>
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  /* dinner 专属样式（scoped 前缀 dn-）。复用 theme.css 的 token 与 .btn/.chip/.card */
+  .dn-lede{color:var(--ink-2); font-size:15px; margin:10px 0 0; max-width:600px}
+
+  /* 连接状态 */
+  .dn-status{display:flex; align-items:center; gap:8px; margin:16px 0 0; font-size:13px; color:var(--ink-3)}
+  .dn-dot{width:8px; height:8px; border-radius:50%; background:var(--bad); flex:none}
+  .dn-dot.on{background:var(--good)}
+  .dn-textbtn{color:var(--accent); cursor:pointer; font-weight:600; border:none; background:none;
+    font-size:13px; padding:0; text-decoration:underline; text-underline-offset:2px}
+  .dn-connect{border:1px dashed var(--line); background:#fbfbf9; border-radius:var(--r-s);
+    padding:16px; margin-top:12px}
+  .dn-connect h4{margin:0 0 6px; font-size:14px}
+  .dn-connect p{margin:0 0 10px; font-size:12.5px; color:var(--ink-3); line-height:1.6}
+  .dn-connect .row{display:flex; gap:8px; flex-wrap:wrap}
+  .dn-connect .field{flex:1; min-width:200px}
+
+  /* 示例 chip */
+  .dn-eg-label{font-size:13px; color:var(--ink-3); margin:22px 0 9px}
+  .dn-egs{display:flex; flex-wrap:wrap; gap:9px}
+  .dn-eg{border:1px solid var(--line); background:var(--surface); border-radius:999px;
+    padding:9px 15px; cursor:pointer; font-size:14px; transition:.13s; display:inline-flex;
+    align-items:center; gap:7px}
+  .dn-eg:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px)}
+  .dn-eg .em{font-size:16px}
+
+  /* 输入 */
+  .dn-inwrap{margin-top:16px}
+  .dn-go{margin-top:12px}
+
+  /* 结果：成品层 */
+  .dn-herocard{display:flex; gap:20px; align-items:center; flex-wrap:wrap}
+  .dn-plate{width:148px; height:148px; flex:none}
+  .dn-heroinfo{flex:1; min-width:200px}
+  .dn-dish{font-size:25px; font-weight:760; letter-spacing:-.4px; line-height:1.15}
+  .dn-oneline{color:var(--ink-2); font-size:14.5px; margin:7px 0 0}
+  .dn-badges{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+  .dn-badge{font-size:12.5px; background:var(--accent-soft); color:var(--accent);
+    border-radius:999px; padding:5px 12px; font-weight:600; display:inline-flex; gap:5px; align-items:center}
+
+  /* 来源片段 */
+  .dn-source{border-left:3px solid var(--accent); background:#fbfbf9; padding:9px 14px;
+    border-radius:0 10px 10px 0; color:var(--ink-2); font-size:13.5px; margin-top:16px; line-height:1.6}
+  .dn-source b{color:var(--ink-3); font-weight:600; font-style:normal; font-size:11.5px;
+    display:block; margin-bottom:3px; letter-spacing:.04em}
+
+  /* 食材层 */
+  .dn-h{font-size:13px; font-weight:680; letter-spacing:.04em; text-transform:uppercase;
+    color:var(--ink-3); margin:26px 0 0}
+  .dn-ings{display:grid; grid-template-columns:repeat(auto-fill,minmax(148px,1fr)); gap:10px; margin-top:12px}
+  .dn-ing{display:flex; align-items:center; gap:10px; border:1px solid var(--line);
+    border-radius:12px; padding:10px 12px; background:var(--surface)}
+  .dn-ing .em{font-size:22px; flex:none; line-height:1}
+  .dn-ing .nm{font-size:14px; font-weight:550; line-height:1.25}
+  .dn-ing .amt{margin-left:auto; font-size:11.5px; color:var(--accent); background:var(--accent-soft);
+    border-radius:999px; padding:2px 9px; white-space:nowrap; flex:none}
+
+  /* 步骤层 */
+  .dn-steps{display:flex; flex-direction:column; gap:12px; margin-top:12px}
+  .dn-step{display:flex; gap:14px; align-items:flex-start; border:1px solid var(--line);
+    border-radius:14px; padding:14px 15px; background:var(--surface)}
+  .dn-stepicon{width:46px; height:46px; flex:none; border-radius:12px; background:var(--accent-soft);
+    color:var(--accent); display:flex; align-items:center; justify-content:center}
+  .dn-stepicon svg{width:25px; height:25px}
+  .dn-step .body{flex:1; min-width:0}
+  .dn-step .t{font-weight:650; font-size:15px; display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .dn-stepno{font-variant-numeric:tabular-nums; color:var(--accent); font-weight:800; font-size:13px}
+  .dn-min{font-size:11px; color:var(--ink-3); border:1px solid var(--line); border-radius:999px;
+    padding:1px 8px; font-weight:500}
+  .dn-step .d{font-size:14px; color:var(--ink-2); margin-top:5px; line-height:1.6}
+
+  /* 分享栏 */
+  .dn-sharebar{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; padding-top:16px;
+    border-top:1px solid var(--line-2)}
+  .dn-sharebar .btn{flex:1; min-width:130px}
+
+  /* 兜底卡 */
+  .dn-oops{text-align:center; padding:10px 0}
+  .dn-oops .big{font-size:40px}
+  .dn-oops h3{font-size:19px; margin:10px 0 6px}
+  .dn-oops p{color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:420px}
+
+  /* 外围 chrome（mock） */
+  .dn-chrome{margin-top:44px}
+  .dn-chrome-h{display:flex; align-items:center; margin:26px 0 12px}
+  .dn-chrome-h .t{font-size:13px; font-weight:680; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-3)}
+  .dn-mocktag{font-size:10.5px; color:var(--ink-3); border:1px solid var(--line); border-radius:999px;
+    padding:1px 8px; margin-left:9px; letter-spacing:.02em}
+  .dn-carousel{display:flex; gap:12px; overflow-x:auto; padding:2px 2px 8px; scroll-snap-type:x mandatory}
+  .dn-reco{flex:none; width:172px; scroll-snap-align:start; border:1px solid var(--line);
+    border-radius:14px; overflow:hidden; background:var(--surface)}
+  .dn-reco .top{height:84px; display:flex; align-items:center; justify-content:center}
+  .dn-reco .meta{padding:10px 12px}
+  .dn-reco .nm{font-size:14px; font-weight:600; line-height:1.25}
+  .dn-reco .sub{font-size:12px; color:var(--ink-3); margin-top:3px}
+  .dn-rank{display:flex; flex-direction:column; gap:8px}
+  .dn-rankrow{display:flex; align-items:center; gap:12px; padding:11px 14px; border:1px solid var(--line);
+    border-radius:12px; background:var(--surface)}
+  .dn-rankno{font-weight:800; color:var(--accent); width:22px; text-align:center; flex:none}
+  .dn-rankem{font-size:20px; flex:none}
+  .dn-ranknm{font-size:14px; font-weight:550}
+  .dn-count{color:var(--ink-3); font-size:12.5px; margin-left:auto; white-space:nowrap; flex:none}
+
+  @media (max-width:520px){
+    .dn-dish{font-size:22px}
+    .dn-plate{width:120px; height:120px}
+    .dn-sharebar .btn{min-width:0}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="../../registry.js"></script>
+<script src="../../shared/app.js"></script>
+<script src="./data.js"></script>
+<script src="./dinner.js"></script>
+</body>
+</html>
