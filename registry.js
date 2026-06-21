@@ -28,4 +28,5 @@ window.DEMOS = [
   { slug:'gamma',        industry:'办公', title:'一句话变 Deck',    tagline:'输入主题 → 整套排版 deck',    emoji:'🖼️', accent:'#6a5cf0', status:'live' },
   { slug:'notebooklm',   industry:'创作', title:'喂资料替你消化',   tagline:'上传资料 → 学习指南/问答',    emoji:'📓', accent:'#4a6fe0', status:'live' },
   { slug:'mood-journal', industry:'心理', title:'心情日记',         tagline:'写心情 → 情绪曲线 + 词云',     emoji:'🌤️', accent:'#7a8fd4', status:'live', disclaimer:true },
+  { slug:'unmask',       industry:'游戏', title:'不被看穿',         tagline:'剪刀石头布 · 别被想懂你的 AI 看穿', emoji:'🎭', accent:'#6457e8', status:'live' },
 ];
