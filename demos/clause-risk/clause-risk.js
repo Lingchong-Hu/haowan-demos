@@ -44,6 +44,46 @@ function highlight(text, hits){
   return out;
 }
 
+/* ---------- AI 通路（连了 key 用真实模型找风险，没连退回本地正则引擎） ---------- */
+const CR_SYS = [
+  '你是合同风险审阅助手（仅作演示、不构成法律意见）。读用户贴的合同/条款全文，找出对用户不利或有坑的条款。',
+  '只输出严格 JSON（不要 markdown、不要前言）：',
+  '{ "risks":[ {"frag":"从原文逐字摘录的风险片段(必须是原文里出现过的连续子串，一字不改)",',
+  '  "level":"高|中|低","label":"风险点名称(简短)","plain":"用大白话解释这条为什么是坑","rewrite":"给用户的改写/谈判建议"} ] }',
+  '规则：frag 必须逐字来自原文、能在原文里直接搜到；没有明显风险就返回 {"risks":[]}；最多 12 条；全部简体中文。'
+].join('\n');
+
+async function getHits(text, useAI){
+  if(useAI){
+    try{
+      const obj = await GG.llm.json(CR_SYS, '合同/条款全文：\n'+text, {max_tokens:1800});
+      const hits = aiHits(text, obj);
+      hits._ai = true;
+      return hits;
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  return scan(text);
+}
+
+// 把 AI 返回的风险片段在原文里定位成 hits（必须是真实子串），再按 scan 的规则去重排序
+function aiHits(text, obj){
+  const risks = Array.isArray(obj && obj.risks) ? obj.risks : [];
+  const raw = [];
+  for(const r of risks){
+    const frag = String(r.frag||'').trim();
+    if(!frag) continue;
+    const idx = text.indexOf(frag);
+    if(idx < 0) continue;                       // 不是原文真实子串 → 丢弃，绝不凭空标红
+    const level = ['高','中','低'].includes(r.level) ? r.level : '中';
+    raw.push({ start:idx, end:idx+frag.length, frag,
+      pat:{ level, label:String(r.label||'风险点'), plain:String(r.plain||''), rewrite:String(r.rewrite||'') } });
+  }
+  raw.sort((a,b)=> a.start-b.start || (b.end-b.start)-(a.end-a.start) || LEVEL_RANK[b.pat.level]-LEVEL_RANK[a.pat.level]);
+  const kept=[]; let lastEnd=-1;
+  for(const h of raw){ if(h.start>=lastEnd){ kept.push(h); lastEnd=h.end; } }
+  return kept;
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -56,6 +96,7 @@ function intro(){
     GG.el('h1', null, '把合同条款贴进来，我替你体检'),
     GG.el('p', null, '逐句扫描常见的坑：最终解释权、概不退还、单方变更、自动续费、无限责任、视为同意…… 命中的原文会被标红，并逐条给出大白话解释和改写建议。')
   ));
+  main.appendChild(GG.llm.bar());
   textarea = GG.el('textarea',{
     class:'cr-input',
     placeholder:'在此粘贴你的合同 / 协议 / 条款全文…（也可点下方按钮填入示例）',
@@ -81,9 +122,14 @@ async function runCheck(){
 
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
-  await GG.thinking(stage, ['通读条款全文…','匹配常见风险句式…','定位需要标红的片段…','整理大白话解释与改写建议…'], 1500);
+  const useAI = GG.llm.connected();
+  const think = GG.thinking(stage, ['通读条款全文…',
+    useAI ? 'AI 逐句审阅、定位风险…' : '匹配常见风险句式…',
+    '定位需要标红的片段…','整理大白话解释与改写建议…'], useAI?1900:1500);
 
-  const hits = scan(text);
+  let hits;
+  if(useAI){ const [h] = await Promise.all([getHits(text, true), think]); hits = h; }
+  else { await think; hits = scan(text); }
   GG.clear(stage);
   showResult(text, hits, stage);
 }
@@ -98,6 +144,7 @@ function showResult(text, hits, stage){
       : '未在你贴的文本里发现明显风险点。但这不代表合同绝对安全，重要条款仍建议人工复核。')
   );
   stage.appendChild(head);
+  stage.appendChild(GG.el('div',{style:{margin:'0 0 4px'}}, GG.llm.badge(!!hits._ai)));
 
   if(!hits.length){
     stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'16px'}},

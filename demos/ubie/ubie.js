@@ -4,6 +4,36 @@ const SLUG='ubie';
 const {FLOWS, LEVELS, THRESH} = window.UBIE;
 let main;
 
+/* ---------- AI 个性化解读（分诊分级仍由本地规则给出，连了 key 再叠加一段贴合你回答的解读） ---------- */
+const UBIE_SYS = '你是健康科普助手（仅科普、非诊断、不开药）。根据用户的分诊主诉、关键回答和已得出的分级，给一段个性化、好懂的解读。语气稳、不制造焦虑、不下确诊。只输出严格 JSON：{"reading":"个性化解读(150到250字，说明可能的常见方向、以及为什么是这个分级)","watch":["在家可观察/缓解的点",2到4条],"escalate":["出现哪些情况要尽快就医",2到3条]}';
+
+function aiReading(sysPrompt, userText, escalateTitle){
+  const out = GG.el('div',{class:'card pad', style:{display:'none', marginTop:'4px', background:'#fbfbf9', lineHeight:'1.7'}});
+  let loaded=false, busy=false;
+  const btn = GG.el('button',{class:'btn', onClick:async()=>{
+    if(busy) return;
+    if(loaded){ out.style.display = out.style.display==='none'?'block':'none'; return; }
+    busy=true; const old=btn.textContent; btn.textContent='AI 解读中…'; out.style.display='block';
+    GG.clear(out); out.appendChild(GG.el('div',{class:'muted small'}, 'AI 正在生成个性化解读…'));
+    try{
+      const r = await GG.llm.json(sysPrompt, userText, {max_tokens:700});
+      GG.clear(out);
+      if(r.reading) out.appendChild(GG.el('p',{style:{margin:'0 0 8px', lineHeight:'1.7'}}, String(r.reading)));
+      if(Array.isArray(r.watch) && r.watch.length){
+        out.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'6px'}}, '注意观察'));
+        out.appendChild(GG.el('ul',{style:{margin:'4px 0 0', paddingLeft:'20px', lineHeight:'1.7'}}, r.watch.map(x=>GG.el('li',null,String(x)))));
+      }
+      if(Array.isArray(r.escalate) && r.escalate.length){
+        out.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'10px'}}, escalateTitle||'出现这些尽快就医'));
+        out.appendChild(GG.el('ul',{style:{margin:'4px 0 0', paddingLeft:'20px', lineHeight:'1.7'}}, r.escalate.map(x=>GG.el('li',null,String(x)))));
+      }
+      loaded=true; btn.textContent='✨ 收起 AI 解读';
+    }catch(e){ GG.clear(out); out.appendChild(GG.el('div',{class:'muted small'}, GG.llm.errMsg(e))); btn.textContent=old; }
+    busy=false;
+  }}, '✨ AI 个性化解读');
+  return GG.el('div', null, GG.el('div',{class:'center', style:{margin:'4px 0'}}, btn), out);
+}
+
 /* ---------- 分支引擎 ----------
    按 questions 顺序遍历：
    - 基础题（无 onlyIfYes）：始终提问。
@@ -69,6 +99,7 @@ function intro(){
     GG.el('h1', null, '哪里不舒服？'),
     GG.el('p', null, '选一个主要症状，我会像分诊护士一样一步步追问——你的每个回答都会决定下一题问什么，最后给出「自护 / 远程问诊 / 尽快就医」三级里的一条明确建议。')
   ));
+  main.appendChild(GG.llm.bar());
   const grid = GG.el('div',{style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:'12px', marginTop:'18px'}});
   Object.keys(FLOWS).forEach(key=>{
     const f = FLOWS[key];
@@ -217,6 +248,14 @@ function showResult(eng, key, stage){
   stage.appendChild(ladder);
   stage.appendChild(verdict);
   stage.appendChild(reasonCard);
+
+  // 连了 AI：在本地分诊之上叠加一段贴合你回答的个性化解读
+  if(GG.llm.connected()){
+    const userText = `主诉：${key}\n分诊结论：${level.name}\n用户回答"是"的关键问题：`+
+      (yesQs.length ? yesQs.map(q=>q.q).join('；') : '对所有追问都回答否');
+    stage.appendChild(aiReading(UBIE_SYS, userText, '出现这些尽快就医'));
+  }
+
   // resultCard 因 registry disclaimer:true 会自动追加「非医疗建议」免责声明
   stage.appendChild(GG.resultCard(SLUG,
     GG.el('div',{class:'center muted small', style:{color:'var(--ink-3)'}}, '截图保存这次分诊结果 ↓'),

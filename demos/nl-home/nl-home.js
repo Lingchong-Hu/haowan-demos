@@ -170,6 +170,35 @@ function listingCard(item, c){
   );
 }
 
+/* ---------- AI 通路（连了 key 用真实模型解析这句话；房源过滤永远本地，硬约束绝不破） ---------- */
+const NL_TAGS = ['地铁','学区','南北通透','带阳台','精装','小区新','高楼层','低楼层'];
+const NL_SYS = [
+  '你把用户找房的一句话解析成结构化约束。只输出严格 JSON（不要 markdown、不要前言）：',
+  '{ "city":城市名或null, "beds":卧室数字或null, "maxPrice":预算上限(万,纯数字)或null, "maxAge":房龄上限(年,数字)或null, "tags":[软性偏好] }',
+  'city 只能从这些里选最匹配的，没有就 null：'+CITIES.join('、')+'。',
+  'tags 只能从这些里选(可多选，没有就 [])：'+NL_TAGS.join('、')+'。',
+  'maxPrice 单位万(如 300 表示 300 万)；中文数字要转阿拉伯数字；次新房→maxAge≈5、新房→maxAge≈2。'
+].join('\n');
+
+async function getConstraints(query, useAI){
+  if(useAI){
+    try{
+      const o = await GG.llm.json(NL_SYS, '这句话：'+query, {max_tokens:400});
+      const c = {
+        city: CITIES.includes(o.city) ? o.city : null,
+        beds: parseInt(o.beds,10) || null,
+        maxPrice: (o.maxPrice!=null && +o.maxPrice>0) ? Math.round(+o.maxPrice) : null,
+        maxAge: (o.maxAge!=null && +o.maxAge>=0) ? Math.round(+o.maxAge) : null,
+        tags: Array.isArray(o.tags) ? o.tags.filter(t=>NL_TAGS.includes(t)) : [],
+        _ageNote: null, _ai: true
+      };
+      if(c.maxAge!=null) c._ageNote = '房龄≤'+c.maxAge+'年';
+      return c;
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  return parseQuery(query);
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -187,6 +216,7 @@ function intro(){
     GG.el('h1', null, '用一句话，找到你的家'),
     GG.el('p', null, '像跟中介聊天那样描述：城市、几室、预算、房龄、还有那些“最好有”的小心愿。我来读懂，并从房源库里精挑。')
   ));
+  main.appendChild(GG.llm.bar());
 
   const ta = GG.el('textarea',{class:'field', placeholder:'例如：我想在杭州找个两室一厅，预算300万以内，最好是次新房，离地铁近', rows:'3'});
 
@@ -215,15 +245,18 @@ async function showResult(query, fromLink){
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
 
-  const c = parseQuery(query);
-
+  const useAI = GG.llm.connected();
+  let c;
   if(!fromLink){
-    await GG.thinking(stage, [
-      '读你这句话…',
+    const think = GG.thinking(stage, [
+      useAI ? 'AI 读你这句话…' : '读你这句话…',
       '抽取城市 / 卧室 / 预算 / 房龄约束…',
       '按硬约束过滤房源…',
       '按“最好有”加分排序…'
-    ], 1600);
+    ], useAI?1800:1600);
+    const [cc] = await Promise.all([getConstraints(query, useAI), think]); c = cc;
+  } else {
+    c = await getConstraints(query, useAI);
   }
   const { scored, total, tightest } = search(c);
   GG.encodeState({ q: query });
@@ -232,6 +265,7 @@ async function showResult(query, fromLink){
   // 原话回显
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'6px', paddingBottom:'4px'}},
     GG.el('h1',{style:{fontSize:'24px'}}, '🏠 为你找到的房')));
+  stage.appendChild(GG.el('div',{style:{margin:'0 0 6px'}}, GG.llm.badge(!!c._ai)));
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', background:'linear-gradient(160deg,var(--accent-soft),#fff 60%)'}},
     GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '你说'),
     GG.el('p',{style:{margin:'0', fontSize:'17px', lineHeight:'1.6'}}, '“'+query+'”'),
