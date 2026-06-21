@@ -392,4 +392,129 @@ GG.resultCard = function(slug, inner, shareSpec){
   return card;
 };
 
+/* ════════════════════════════════════════════════════════════════════════
+   GG.llm — 全站共享 LLM 连接器（连一次 key 全站通用）
+   ────────────────────────────────────────────────────────────────────────
+   本站纯静态托管、无后端，两条通路按优先级：
+     ① 后端代理 GG.llm.PROXY：服务端持 key + 限流 + 每日上限 → 公开链接可防滥用（安全做法）。
+     ② 浏览器直连（BYOK）：访问者自带 key，仅存其本机 localStorage。没 key 时各 demo 退回本地引擎。
+   ⚠️ TODO（公开上线前）：部署 serverless 代理，把 GG.llm.PROXY 指过去，移除浏览器直连分支
+       （前端持有的 key 会暴露、可被盗刷）。模型用便宜的小模型即可。
+   demo 用法：
+     main.appendChild(GG.llm.bar());                          // 放一个「连接 AI」状态条
+     if(GG.llm.connected()){ obj = await GG.llm.json(SYS, userText, {max_tokens:2000}); }
+     else { ...本地兜底... }
+     resultCard.prepend(GG.llm.badge(fromAI));                // 标注用了哪个引擎
+   json()/text() 失败时 throw（err.code ∈ NEED_SETUP|BAD_KEY|NET|PARSE_FAIL）。
+   ════════════════════════════════════════════════════════════════════════ */
+GG.llm = (function(){
+  const KEY_LS = 'haowan_anthropic_key';
+  const api = { PROXY:'', MODEL:'claude-haiku-4-5-20251001' };
+
+  api.getKey = ()=>{ try{ return localStorage.getItem(KEY_LS)||''; }catch(e){ return ''; } };
+  api.setKey = v =>{ try{ v?localStorage.setItem(KEY_LS,v):localStorage.removeItem(KEY_LS); }catch(e){} };
+  api.connected = ()=> !!api.PROXY || !!api.getKey();
+
+  api.safeParse = function(raw){
+    if(!raw) return null;
+    let s = String(raw).trim();
+    s = s.replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+    try{ return JSON.parse(s); }catch(e){}
+    const a=s.indexOf('{'), b=s.lastIndexOf('}');
+    if(a>=0&&b>a){ try{ return JSON.parse(s.slice(a,b+1)); }catch(e){} }
+    const c=s.indexOf('['), d=s.lastIndexOf(']');
+    if(c>=0&&d>c){ try{ return JSON.parse(s.slice(c,d+1)); }catch(e){} }
+    return null;
+  };
+
+  async function rawCall(system, user, opts, prefill){
+    opts = opts||{};
+    if(api.PROXY){
+      const r = await fetch(api.PROXY, { method:'POST', headers:{'content-type':'application/json'},
+        body: JSON.stringify({ system, user, max_tokens:opts.max_tokens||1200 }) });
+      if(!r.ok) throw new Error('后端代理出错（'+r.status+'）');
+      const j = await r.json();
+      return j && j.text!==undefined ? j.text : (typeof j==='string'? j : JSON.stringify(j));
+    }
+    const key = api.getKey();
+    if(!key){ const e=new Error('NEED_SETUP'); e.code='NEED_SETUP'; throw e; }
+    const messages = [{ role:'user', content:user }];
+    if(prefill) messages.push({ role:'assistant', content:prefill });
+    let r;
+    try{
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{ 'x-api-key':key, 'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true', 'content-type':'application/json' },
+        body: JSON.stringify({ model:opts.model||api.MODEL, max_tokens:opts.max_tokens||1200, system, messages })
+      });
+    }catch(e){ const err=new Error('NET'); err.code='NET'; throw err; }
+    if(r.status===401){ const e=new Error('BAD_KEY'); e.code='BAD_KEY'; throw e; }
+    if(!r.ok){ let m=''; try{ const j=await r.json(); m=(j.error&&j.error.message)||''; }catch(_){}
+      throw new Error('调用失败（'+r.status+'）'+(m?'：'+m:'')); }
+    const data = await r.json();
+    return (data.content && data.content[0] && data.content[0].text) || '';
+  }
+
+  /* 返回解析后的 JSON 对象/数组（默认预填 '{' 强制 JSON；要数组传 opts.prefill='[' 或 ''） */
+  api.json = async function(system, user, opts){
+    opts = opts||{};
+    const prefill = opts.prefill!==undefined ? opts.prefill : '{';
+    const raw = await rawCall(system, user, opts, prefill);
+    const obj = api.safeParse((prefill||'') + raw);
+    if(!obj){ const e=new Error('PARSE_FAIL'); e.code='PARSE_FAIL'; throw e; }
+    return obj;
+  };
+  api.text = function(system, user, opts){ return rawCall(system, user, opts, ''); };
+
+  /* 状态条 + 内联连接面板（自包含，返回一个 DOM 节点；连接/清除后调 onChange(connected)） */
+  api.bar = function(onChange){
+    const root = GG.el('div',{class:'llmbar'});
+    let panel=null;
+    function paint(){
+      GG.clear(root); panel=null;
+      const on = api.connected();
+      root.appendChild(GG.el('span',{class:'llmdot'+(on?' on':'')}));
+      root.appendChild(GG.el('span',{class:'llmtxt'},
+        on ? '已连接 AI · 用真实模型生成' : '未连接 · 现用本地示例引擎（连接后升级为真实 AI）'));
+      root.appendChild(GG.el('button',{class:'llmlink', onClick:toggle}, on?'管理':'连接 AI 升级'));
+    }
+    function toggle(){
+      if(panel){ panel.remove(); panel=null; return; }
+      const input = GG.el('input',{class:'field', type:'password', autocomplete:'off',
+        placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:api.getKey()});
+      const save = GG.el('button',{class:'btn primary', onClick:()=>{
+        api.setKey(input.value.trim()); GG.toast(input.value.trim()?'已连接 ✓':'已清除');
+        paint(); onChange && onChange(api.connected());
+      }}, '保存');
+      const clr = api.getKey() ? GG.el('button',{class:'btn ghost', onClick:()=>{
+        api.setKey(''); GG.toast('已清除'); paint(); onChange && onChange(false);
+      }}, '清除') : null;
+      panel = GG.el('div',{class:'llmpanel'},
+        GG.el('p',{html:'纯静态站点没有后端。给一个 Anthropic API Key 即可用<b>真实模型</b>生成——'+
+          'key <b>只存你本机浏览器</b>、不上传服务器；用便宜的 Haiku，花费极低。没有 key 也能玩（走本地示例引擎）。<br>'+
+          '⚠️ 要公开分享给别人用，应改后端代理（见 app.js 里 GG.llm 顶部 TODO）。'}),
+        GG.el('div',{class:'row', style:{flexWrap:'wrap'}}, input, save, clr));
+      root.appendChild(panel); input.focus();
+    }
+    paint();
+    return root;
+  };
+
+  api.badge = function(ai){ return GG.el('span',{class:'llm-badge'+(ai?' ai':'')},
+    ai ? '✨ 真实 AI 生成' : '本地示例引擎'); };
+
+  /* 统一的错误兜底文案（demo 可用） */
+  api.errMsg = function(err){
+    const c = err && err.code;
+    if(c==='NEED_SETUP') return '还没连接 AI，已用本地引擎';
+    if(c==='BAD_KEY') return 'API Key 无效，已用本地引擎';
+    if(c==='NET') return '连不上模型，已用本地引擎';
+    if(c==='PARSE_FAIL') return 'AI 返回异常，已用本地引擎';
+    return 'AI 生成失败，已用本地引擎';
+  };
+
+  return api;
+})();
+
 })();

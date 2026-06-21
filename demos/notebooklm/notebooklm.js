@@ -10,6 +10,57 @@ const SLUG='notebooklm';
 const {SAMPLE, STOP} = window.NOTEBOOKLM;
 let main, engine=null;
 
+/* ---------- AI 通路（连了 key 用真实模型消化 + 基于资料问答，没连退回本地检索引擎） ---------- */
+const NB_DIGEST_SYS = [
+  '你基于【用户提供的资料】产出学习指南。只输出严格 JSON（不要 markdown、不要前言）：',
+  '{ "gist":"一句话概括资料主旨", "points":["关键要点(基于资料、可概括改写、完整一句)",3到5条], "questions":["针对这份资料确实能回答的好问题",5条] }',
+  '只用资料里的信息、不要编资料没有的内容；全部简体中文。'
+].join('\n');
+const NB_QA_SYS = [
+  '你只能依据【给定资料】回答用户的问题。只输出严格 JSON（不要 markdown、不要前言）：',
+  '{ "found": true或false, "answer":"基于资料的简洁回答(found=false 时留空字符串)", "quotes":["资料中支撑该回答的原句(逐字摘录、不要改写)",1到3条] }',
+  '资料里没提到就把 found 设为 false、不要编造；全部简体中文。'
+].join('\n');
+
+async function getDigest(text){
+  const obj = await GG.llm.json(NB_DIGEST_SYS, '资料：\n'+text, {max_tokens:1200});
+  const points = (Array.isArray(obj.points)?obj.points:[]).map(String).filter(Boolean).slice(0,6);
+  const questions = (Array.isArray(obj.questions)?obj.questions:[]).map(String).filter(Boolean).slice(0,6);
+  const gistTxt = String(obj.gist||'');
+  if(!gistTxt && !points.length) throw new Error('empty');
+  return {
+    gist: gistTxt || gist(engine),
+    points: points.length ? points : summarize(engine, 4),
+    questions: questions.length ? questions : suggestQuestions(engine)
+  };
+}
+async function aiAnswer(text, q){
+  const obj = await GG.llm.json(NB_QA_SYS, '资料：\n'+text+'\n\n问题：'+q, {max_tokens:700});
+  return { found: !!obj.found, answer: String(obj.answer||''),
+           quotes: (Array.isArray(obj.quotes)?obj.quotes:[]).map(String).filter(Boolean).slice(0,3) };
+}
+
+function quoteBlock(quote){
+  return GG.el('div',{style:{margin:'8px 0', padding:'12px 14px', background:'var(--accent-soft)',
+    borderLeft:'3px solid var(--accent)', borderRadius:'8px', lineHeight:'1.65'}},
+    GG.el('span',{style:{color:'var(--accent)', fontWeight:'700'}}, '根据原文：'),
+    GG.el('span', null, '«'+quote+'»'));
+}
+function noInfoBlock(){
+  return GG.el('div',{style:{margin:'8px 0', padding:'12px 14px', background:'var(--accent-soft)',
+    borderRadius:'8px', lineHeight:'1.65'}},
+    '这份资料里没有提到相关内容，我无法据此回答。换个角度问问，或补充更多资料试试。');
+}
+function localAnswerInto(wrap, q){
+  const res = answer(engine, q);
+  if(res.ok){
+    res.quotes.forEach(quote=> wrap.appendChild(quoteBlock(quote)));
+    wrap.appendChild(GG.el('div',{class:'small muted', style:{marginTop:'6px'}}, '以上为资料中与你的问题最相关的原句（原样引用，未改写）。'));
+  } else {
+    wrap.appendChild(noInfoBlock());
+  }
+}
+
 /* ---------- 文本处理 ---------- */
 // 切句：按中文句末标点 / 换行断句，保留较有信息量的句子。
 function splitSentences(text){
@@ -132,6 +183,7 @@ function intro(){
     GG.el('h1', null, '喂它一份资料，替你消化'),
     GG.el('p', null, '粘贴任意一段中文资料（文章、笔记、说明）。我会就着这份资料替你抽出学习指南，并基于原文回答你的问题——每个答案都引用资料里的原句。')
   ));
+  main.appendChild(GG.llm.bar());
 
   const ta = GG.el('textarea',{
     id:'src', class:'card',
@@ -163,26 +215,42 @@ function intro(){
 async function digest(text){
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
-  await GG.thinking(stage, ['通读你的资料…','切句 · 统计关键词…','给每句打分、抽取要点…','整理学习指南…'], 1500);
+  const useAI = GG.llm.connected();
+  const think = GG.thinking(stage,
+    useAI ? ['通读你的资料…','AI 提炼主旨与要点…','拟好可问的问题…','整理学习指南…']
+          : ['通读你的资料…','切句 · 统计关键词…','给每句打分、抽取要点…','整理学习指南…'],
+    useAI ? 1800 : 1500);
 
-  engine = buildEngine(text);
-  const points = summarize(engine, Math.min(5, Math.max(3, Math.round(engine.sentences.length/4))));
-  const theGist = gist(engine);
-  const questions = suggestQuestions(engine);
+  engine = buildEngine(text);   // 本地引擎始终建：兜底问答 + 关键词标签
+  let dg=null, ai=false;
+  if(useAI){
+    try{ dg = await getDigest(text); ai=true; }
+    catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  await think;
+  if(!dg){
+    dg = {
+      gist: gist(engine),
+      points: summarize(engine, Math.min(5, Math.max(3, Math.round(engine.sentences.length/4)))),
+      questions: suggestQuestions(engine)
+    };
+  }
 
   GG.clear(stage);
-  renderResult(stage, text, points, theGist, questions);
+  renderResult(stage, text, dg.points, dg.gist, dg.questions, ai);
 }
 
-function renderResult(stage, text, points, theGist, questions){
+function renderResult(stage, text, points, theGist, questions, ai){
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
     GG.el('h1',{style:{fontSize:'24px'}}, '📓 你的学习指南')));
+  stage.appendChild(GG.el('div',{style:{margin:'0 0 6px'}}, GG.llm.badge(!!ai)));
 
   // 资料主旨
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', background:'linear-gradient(160deg,var(--accent-soft),var(--surface) 60%)'}},
     GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '资料主旨'),
     GG.el('div',{style:{fontSize:'17px', fontWeight:'600', lineHeight:'1.6'}}, theGist),
-    GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}}, `从你这 ${engine.sentences.length} 句资料里，按关键词密度抽出的核心句。`)
+    GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}},
+      ai ? 'AI 通读全文后概括的主旨。' : `从你这 ${engine.sentences.length} 句资料里，按关键词密度抽出的核心句。`)
   ));
 
   // 学习指南要点（抽取自原文）
@@ -193,12 +261,12 @@ function renderResult(stage, text, points, theGist, questions){
       GG.el('div',{style:{flex:'1', lineHeight:'1.65', color:'var(--ink-1)'}}, p)
     ));
   });
-  stage.appendChild(GG.el('div',{class:'section-t'}, '关键要点（直接抽自你的资料）'));
+  stage.appendChild(GG.el('div',{class:'section-t'}, ai ? '关键要点（AI 基于你的资料归纳）' : '关键要点（直接抽自你的资料）'));
   stage.appendChild(ptList);
 
   // 问答区
   const qaBox = GG.el('div',{class:'card pad', style:{marginTop:'20px'}});
-  qaBox.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '基于资料问答 · 答案引用原文'));
+  qaBox.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'0'}}, ai ? '基于资料问答 · AI 依据原文作答' : '基于资料问答 · 答案引用原文'));
 
   const ansArea = GG.el('div',{style:{marginTop:'14px'}});
 
@@ -210,7 +278,7 @@ function renderResult(stage, text, points, theGist, questions){
   input.addEventListener('keydown', e=>{ if(e.key==='Enter') doAsk(input.value); });
 
   // 推荐问题 chips
-  qaBox.appendChild(GG.el('div',{class:'small muted', style:{marginBottom:'8px'}}, '试试这些问题（由资料高频词生成）：'));
+  qaBox.appendChild(GG.el('div',{class:'small muted', style:{marginBottom:'8px'}}, ai ? '试试这些问题（AI 基于资料拟的）：' : '试试这些问题（由资料高频词生成）：'));
   const chipRow = GG.el('div',{class:'chips', style:{marginBottom:'14px'}});
   questions.forEach(q=>{
     chipRow.appendChild(GG.el('span',{class:'chip', onClick:()=>{ input.value=q; doAsk(q); }}, q));
@@ -220,28 +288,33 @@ function renderResult(stage, text, points, theGist, questions){
   qaBox.appendChild(ansArea);
   stage.appendChild(qaBox);
 
-  function doAsk(q){
+  async function doAsk(q){
     q = String(q||'').trim();
     if(!q){ GG.toast('先输入一个问题'); return; }
-    const res = answer(engine, q);
     GG.clear(ansArea);
     const wrap = GG.el('div',{style:{marginTop:'16px', borderTop:'1px solid var(--line)', paddingTop:'14px'}});
     wrap.appendChild(GG.el('div',{class:'small', style:{color:'var(--ink-2)', marginBottom:'8px'}}, '问：'+q));
-    if(res.ok){
-      res.quotes.forEach(quote=>{
-        wrap.appendChild(GG.el('div',{style:{
-          margin:'8px 0', padding:'12px 14px', background:'var(--accent-soft)',
-          borderLeft:'3px solid var(--accent)', borderRadius:'8px', lineHeight:'1.65'}},
-          GG.el('span',{style:{color:'var(--accent)', fontWeight:'700'}}, '根据原文：'),
-          GG.el('span',null, '«'+quote+'»')
-        ));
-      });
-      wrap.appendChild(GG.el('div',{class:'small muted', style:{marginTop:'6px'}}, '以上为资料中与你的问题最相关的原句（原样引用，未改写）。'));
-    } else {
-      wrap.appendChild(GG.el('div',{style:{margin:'8px 0', padding:'12px 14px', background:'var(--accent-soft)', borderRadius:'8px', lineHeight:'1.65'}},
-        '这份资料里没有提到相关内容，我无法据此回答。换个角度问问，或补充更多资料试试。'));
-    }
     ansArea.appendChild(wrap);
+    if(ai){
+      const loading = GG.el('div',{class:'small muted'}, 'AI 正在依据资料作答…'); wrap.appendChild(loading);
+      try{
+        const res = await aiAnswer(text, q);
+        loading.remove();
+        if(res.found){
+          if(res.answer) wrap.appendChild(GG.el('div',{style:{margin:'8px 0', lineHeight:'1.7', color:'var(--ink-1)'}}, res.answer));
+          res.quotes.forEach(quote=> wrap.appendChild(quoteBlock(quote)));
+          wrap.appendChild(GG.el('div',{class:'small muted', style:{marginTop:'6px'}}, '答案依据你的资料，引用为原文逐字摘录。'));
+        } else {
+          wrap.appendChild(noInfoBlock());
+        }
+      }catch(e){
+        loading.remove();
+        localAnswerInto(wrap, q);
+        wrap.appendChild(GG.el('div',{class:'small muted', style:{marginTop:'6px'}}, '（'+GG.llm.errMsg(e)+'）'));
+      }
+    } else {
+      localAnswerInto(wrap, q);
+    }
   }
 
   // 分享卡：要点 → rows

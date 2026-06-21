@@ -139,6 +139,54 @@ function adviceFeedback(a){
   return { lead: tips[0], all: tips.slice(0,3) };
 }
 
+/* ---------------- AI 通路（连了 key 用真实模型出题 + 反馈，没连退回本地题库 + 启发式分析） ---------------- */
+const FR_FB_SYS = [
+  '你是资深面试教练。读候选人对一道行为面试题的回答，按 STAR 框架打分并给针对性反馈。',
+  '只输出严格 JSON（不要 markdown、不要前言）：',
+  '{ "star_present":["命中的要素，取值只能是 S/T/A/R"], "star_pct":0到100, "spec_pct":0到100, "overall":0到100,',
+  '  "numbers":["从回答里摘到的量化片段(逐字)"], "star_feedback":"针对回答的 STAR 结构点评(2到3句)",',
+  '  "spec_feedback":"针对具体性/数据的点评(2到3句)", "advice":["可执行的改进建议",2到3条] }',
+  '反馈必须针对候选人实际写的内容、引用其中的细节，不同回答给不同反馈；全部简体中文。'
+].join('\n');
+
+async function pickQuestion(role){
+  if(GG.llm.connected()){
+    GG.clear(main); const s = GG.el('div'); main.appendChild(s);
+    const think = GG.thinking(s, ['AI 正在为「'+role.label+'」出题…'], 900);
+    try{
+      const [r] = await Promise.all([
+        GG.llm.json('你是资深面试官。为指定岗位出一道高质量的行为面试题（STAR 类、考察真实经历、一句话提问）。只输出 JSON：{"question":"..."}',
+          '岗位：'+role.label, {max_tokens:200}),
+        think ]);
+      if(r && r.question) return String(r.question);
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); await think; }
+  }
+  return localPick(role);
+}
+function localPick(role){
+  let idx = Math.floor(GG.rng(Date.now())()*role.questions.length);
+  if(idx === state.qIdx && role.questions.length > 1) idx = (idx+1) % role.questions.length;
+  state.qIdx = idx;
+  return role.questions[idx];
+}
+
+async function aiAnalyze(role, question, answerText){
+  const obj = await GG.llm.json(FR_FB_SYS,
+    '岗位：'+role.label+'\n面试题：'+question+'\n候选人回答：\n'+answerText, {max_tokens:900});
+  const clean = (answerText||'').trim();
+  const present = Array.isArray(obj.star_present) ? obj.star_present : [];
+  const cl = n => GG.clamp(parseInt(n,10)||0, 0, 100);
+  return {
+    clean, chars: clean.replace(/\s/g,'').length, sentCount: sentences(clean).length,
+    numbers: (Array.isArray(obj.numbers)?obj.numbers:[]).map(String).filter(Boolean),
+    present: {}, presentKeys: STAR.filter(p=> present.includes(p.key)),
+    missingKeys: STAR.filter(p=> !present.includes(p.key)),
+    starPct: cl(obj.star_pct), specPct: cl(obj.spec_pct), overall: cl(obj.overall),
+    _ai: true, _starFb: String(obj.star_feedback||''), _specFb: String(obj.spec_feedback||''),
+    _advice: (Array.isArray(obj.advice)?obj.advice:[]).map(String).filter(Boolean)
+  };
+}
+
 /* ---------------- 流程 ---------------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -150,8 +198,9 @@ function intro(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '选个岗位，进入模拟面试'),
-    GG.el('p', null, 'AI 随机出一道行为面试题，你用文字作答，立刻拿到结构化反馈：STAR 完整度、具体性、和一条可执行的改进建议——全部针对你写的内容。')
+    GG.el('p', null, 'AI 出一道行为面试题，你用文字作答，立刻拿到结构化反馈：STAR 完整度、具体性、和一条可执行的改进建议——全部针对你写的内容。')
   ));
+  main.appendChild(GG.llm.bar());
   main.appendChild(GG.el('div',{class:'section-t'}, '应聘岗位'));
   const grid = GG.el('div',{class:'stack'});
   ROLES.forEach(role=>{
@@ -167,23 +216,14 @@ function intro(){
   main.appendChild(grid);
 }
 
-function chooseRole(role){
+async function chooseRole(role){
   state.role = role;
-  // 随机抽题（避免和上一题重复）
-  let idx = Math.floor(GG.rng(Date.now())()*role.questions.length);
-  if(idx === state.qIdx && role.questions.length > 1) idx = (idx+1) % role.questions.length;
-  state.qIdx = idx;
-  state.question = role.questions[idx];
+  state.question = await pickQuestion(role);   // 连了 AI 现出题，否则本地题库
   askStage();
 }
 
-function nextQuestion(){
-  // 同岗位换一题
-  const role = state.role;
-  let idx = Math.floor(GG.rng(Date.now()+1)()*role.questions.length);
-  if(idx === state.qIdx && role.questions.length > 1) idx = (idx+1) % role.questions.length;
-  state.qIdx = idx;
-  state.question = role.questions[idx];
+async function nextQuestion(){
+  state.question = await pickQuestion(state.role);
   askStage();
 }
 
@@ -219,15 +259,19 @@ function askStage(){
 async function runFeedback(answerText){
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
-  await GG.thinking(stage, [
+  const useAI = GG.llm.connected();
+  const think = GG.thinking(stage, [
     '正在读你的回答…',
     '检测 STAR 四要素是否齐全…',
     '提取你提到的量化数据…',
-    '评估篇幅 / 句长 / 语速…',
+    useAI ? 'AI 逐条点评、生成反馈…' : '评估篇幅 / 句长 / 语速…',
     '生成针对性反馈…',
-  ], 1900);
+  ], 2000);
 
-  const a = analyze(answerText);
+  let a=null;
+  if(useAI){ try{ a = await aiAnalyze(state.role, state.question, answerText); }catch(e){ GG.toast(GG.llm.errMsg(e)); } }
+  await think;
+  if(!a) a = analyze(answerText);
   GG.clear(stage);
   showResult(stage, a, answerText);
 }
@@ -254,11 +298,14 @@ function feedbackBlock(title, scoreLabel, pct, bodyNode, color){
 function colorFor(pct){ return pct>=75 ? 'var(--good)' : (pct>=45 ? 'var(--warn)' : 'var(--bad)'); }
 
 function showResult(stage, a, answerText){
-  const advice = adviceFeedback(a);
+  const advice = a._ai ? { lead:(a._advice[0]||''), all:a._advice.slice(0,3) } : adviceFeedback(a);
+  const starText = a._ai ? a._starFb : starFeedback(a);
+  const specText = a._ai ? a._specFb : specFeedback(a);
   const starTags = a.presentKeys.map(p=> p.label.split(' ')[0]);
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px', paddingBottom:'4px'}},
     GG.el('h1',{style:{fontSize:'24px'}}, '📋 你的面试反馈')));
+  stage.appendChild(GG.el('div',{style:{marginBottom:'4px'}}, GG.llm.badge(!!a._ai)));
   stage.appendChild(GG.el('div',{class:'small muted', style:{marginBottom:'4px'}},
     `${state.role.emoji} ${state.role.label} · 共识别 ${a.presentKeys.length}/4 个 STAR 要素 · ${a.numbers.length} 处量化 · ${a.chars} 字`));
 
@@ -269,8 +316,8 @@ function showResult(stage, a, answerText){
   ));
 
   const blocks = GG.el('div',{class:'stack'});
-  blocks.appendChild(feedbackBlock('① STAR 完整度', '', a.starPct, fbNode(starFeedback(a)), colorFor(a.starPct)));
-  blocks.appendChild(feedbackBlock('② 具体性（数据 / 细节）', '', a.specPct, fbNode(specFeedback(a)), colorFor(a.specPct)));
+  blocks.appendChild(feedbackBlock('① STAR 完整度', '', a.starPct, fbNode(starText), colorFor(a.starPct)));
+  blocks.appendChild(feedbackBlock('② 具体性（数据 / 细节）', '', a.specPct, fbNode(specText), colorFor(a.specPct)));
   // 改进建议块：列出最多 3 条可执行项
   const adviceInner = GG.el('div', null,
     GG.el('div',{style:{marginBottom:'6px'}}, '为你列出最该改的几点：'),
@@ -297,6 +344,27 @@ function showResult(stage, a, answerText){
     GG.el('div',{class:'center muted small'}, '截图分享这张面试反馈 ↓'),
     shareSpec
   ));
+
+  // 加分 feature：连了 AI 时，一键看「按 STAR 改写的范例答案」（沿用你的真实经历）
+  if(a._ai){
+    const out = GG.el('div',{class:'card pad', style:{display:'none', marginTop:'4px', background:'#fbfbf9',
+      lineHeight:'1.7', whiteSpace:'pre-wrap', color:'var(--ink-2)'}});
+    let loaded=false, busy=false;
+    const mb = GG.el('button',{class:'btn', onClick:async()=>{
+      if(busy) return;
+      if(loaded){ out.style.display = out.style.display==='none'?'block':'none'; return; }
+      busy=true; const old=mb.textContent; mb.textContent='AI 改写中…'; out.style.display='block'; out.textContent='AI 正在按 STAR 改写一版范例…';
+      try{
+        const r = await GG.llm.json(
+          '你是面试教练。基于候选人的原始回答，按 STAR 结构改写出一版更强的范例答案（150到300字，沿用其真实经历、补全缺失要素、加入合理量化）。只输出 JSON：{"model":"..."}',
+          '岗位：'+state.role.label+'\n面试题：'+state.question+'\n原始回答：\n'+answerText, {max_tokens:800});
+        out.textContent = r.model || '（无）'; loaded=true; mb.textContent='✦ 收起范例';
+      }catch(e){ out.textContent = GG.llm.errMsg(e); mb.textContent=old; }
+      busy=false;
+    }}, '✦ 看 AI 改写的范例答案');
+    stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'14px'}}, mb));
+    stage.appendChild(out);
+  }
 
   // 操作区
   stage.appendChild(GG.el('div',{class:'row', style:{justifyContent:'center', gap:'12px', marginTop:'18px', flexWrap:'wrap'}},
