@@ -82,6 +82,39 @@ function analyze(srcCanvas){
   };
 }
 
+/* ---------- AI 造型顾问（附加层：核心取色/季型判定永远本地，连了 key 才叠加个性化建议） ---------- */
+const SD_SYS = '你是资深色彩造型顾问。用户做完色彩季型诊断，下面是结果。请给出更个性化、可执行的穿搭与妆容建议。只输出严格 JSON：{"summary":"一句话点评 ta 的色彩特质","wear":["3条具体的单品/颜色搭配建议"],"makeup":["2条妆容或配饰建议"],"avoid":"一句话提醒最该避开什么"}。全部简体中文，建议要具体（点名颜色/单品），不要空话。';
+function aiAdvice(res){
+  const S = res.season;
+  const user = `色彩季型：${S.name}（${S.vibe}）\n冷暖：${res.undertone}\n深浅：${res.depth}色系\n照片主色：${res.dominant.map(d=>d.name).join('、')}\n推荐配色板：${res.palette.map(p=>p.name).join('、')}`;
+  return GG.llm.json(SD_SYS, user, {max_tokens:700});
+}
+function bullets(arr){
+  return GG.el('ul',{class:'small', style:{margin:'4px 0 0', paddingLeft:'20px', color:'var(--ink-2)', lineHeight:'1.7'}},
+    arr.map(t=>GG.el('li', null, t)));
+}
+function mountAdvice(stage, res){
+  if(!GG.llm.connected()) return;
+  const body = GG.el('div', null, GG.el('p',{class:'small muted', style:{margin:'0'}}, '正在为你的季型生成个性化建议…'));
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'3px solid var(--accent)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 造型顾问'),
+      GG.llm.badge(true)),
+    body));
+  aiAdvice(res).then(obj=>{
+    GG.clear(body);
+    if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
+    const wear = (Array.isArray(obj.wear)?obj.wear:[]).map(String).filter(Boolean);
+    const makeup = (Array.isArray(obj.makeup)?obj.makeup:[]).map(String).filter(Boolean);
+    if(wear.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '穿搭')); body.appendChild(bullets(wear)); }
+    if(makeup.length){ body.appendChild(GG.el('div',{class:'section-t'}, '妆容 / 配饰')); body.appendChild(bullets(makeup)); }
+    if(obj.avoid) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '避开：'+String(obj.avoid)));
+    if(!wear.length && !makeup.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出建议，核心诊断不受影响。'));
+  }).catch(e=>{ GG.clear(body);
+    body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}},
+      'AI 建议没拿到（'+(e&&e.code||'NET')+'），核心色彩诊断不受影响。')); });
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -106,6 +139,8 @@ function intro(){
   ));
   main.appendChild(GG.el('p',{class:'center muted small', style:{marginTop:'14px'}},
     '照片只在你的浏览器本地处理，不上传任何服务器。'));
+  main.appendChild(GG.el('div',{class:'center small muted', style:{marginTop:'10px'}}, '连上 AI 后，诊断完会多一份个性化造型建议 ↓'));
+  main.appendChild(GG.llm.bar());
 }
 
 function useSample(s){
@@ -175,6 +210,9 @@ function renderResult(stage, res, dataURL, srcLabel){
     GG.el('div',{class:'section-t'}, '建议避开'),
     swRow(res.avoid, false)
   ));
+
+  // ✨ 连了 key 才追加的 AI 造型建议（异步加载，核心诊断已在上面本地完成）
+  mountAdvice(stage, res);
 
   const shareSpec={
     slug:SLUG, title:'我的色彩季型 · '+S.name,

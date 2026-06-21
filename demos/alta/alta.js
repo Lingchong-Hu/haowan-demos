@@ -72,6 +72,34 @@ function reasonLine(occ, reasons){
   return `${flavor}，所以挑了 ${top}。`;
 }
 
+/* ---------- AI 通路（连了 key 让模型从你勾选的单品里搭整套并解释；没连退回本地契合度引擎） ----------
+   只能用用户真实勾选的单品 key；必选部位（上装/下装/鞋）缺一就退回本地，绝不漏搭。 */
+const ALTA_SYS = '你是私人穿搭师。用户给你 ta 衣橱里现有的单品（每行 key｜名称/部位/正式度1-5/风格标签）和今天的场合，请只用这些单品搭一整套：上装、下装、鞋必选；外套、配饰按场合需要可选。只输出严格 JSON：{"reason":"一句话整体搭配思路，要点明场合","items":[{"slot":"上装/下装/外套/鞋/配饰 之一","key":"必须是用户单品列表里的 key","why":"选它的理由,18字内"}],"tip":"一条额外造型小贴士"}。只能用用户提供的 key，每个部位最多一件，全部简体中文。';
+
+async function getOutfit(occ, useAI){
+  if(useAI){
+    try{
+      const chosen = WARDROBE.filter(w=> picked.has(w.key));
+      const items = chosen.map(w=>`${w.key}｜${w.label}/${w.slot}/正式度${w.formality}/${w.styleTags.join('·')}`).join('\n');
+      const obj = await GG.llm.json(ALTA_SYS, `场合：${occ.label}（${occ.emoji}）。\n我衣橱里现有：\n${items}`, {max_tokens:800});
+      const seenSlot = new Set(); const outfit = {}; const reasons = [];
+      (Array.isArray(obj.items)?obj.items:[]).forEach(it=>{
+        const w = BY_KEY[it.key];
+        if(!w || !picked.has(w.key) || seenSlot.has(w.slot)) return;   // key 必须真实勾选 + 每部位最多一件
+        seenSlot.add(w.slot); outfit[w.slot] = w;
+        reasons.push({slot:w.slot, item:w, hits:w.styleTags.filter(t=> occ.want.styleTags.includes(t)), why:String(it.why||'').trim()});
+      });
+      if(REQUIRED.every(s=> outfit[s])){                                // 必选部位齐才采用
+        reasons.sort((a,b)=> SLOTS.indexOf(a.slot)-SLOTS.indexOf(b.slot));
+        return {outfit, reasons, rline:String(obj.reason||'').trim()||reasonLine(occ,reasons),
+                tip:String(obj.tip||'').trim(), _ai:true};
+      }
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  const r = buildOutfit(occ);
+  return {outfit:r.outfit, reasons:r.reasons, rline:reasonLine(occ, r.reasons), tip:'', _ai:false};
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -139,6 +167,7 @@ function occasionStage(){
     GG.el('h1', null, '今天去哪儿？'),
     GG.el('p', null, '同一个衣橱，换个场合，我会搭出不一样的整套。')
   ));
+  main.appendChild(GG.llm.bar());
   const grid = GG.el('div',{class:'chips', style:{marginTop:'18px', justifyContent:'center'}});
   OCCASIONS.forEach(occ=>{
     grid.appendChild(GG.el('button',{class:'btn lg', style:{minWidth:'150px'},
@@ -156,19 +185,25 @@ async function showResult(occ, fromLink){
   main = main || GG.mountShell(SLUG);
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
+  const useAI = GG.llm.connected();
+  let res;
   if(!fromLink){
-    await GG.thinking(stage, [
+    const think = GG.thinking(stage, [
       `锁定场合：${occ.label}…`,
       `翻你衣橱里的 ${picked.size} 件单品…`,
-      '逐个部位算契合度…',
+      useAI?'AI 逐件挑、组一整套…':'逐个部位算契合度…',
       '组出一整套…'
-    ], 1500);
+    ], useAI?1900:1500);
+    const [r] = await Promise.all([getOutfit(occ, useAI), think]); res = r;
+  } else {
+    res = await getOutfit(occ, useAI);
   }
-  const {outfit, reasons} = buildOutfit(occ);
+  const {outfit, reasons, rline, tip} = res;
   GG.clear(stage);
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
     GG.el('h1',{style:{fontSize:'24px'}}, `${occ.emoji} ${occ.label}　这套穿`)));
+  stage.appendChild(GG.el('div',{class:'center', style:{margin:'0 0 12px'}}, GG.llm.badge(!!res._ai)));
 
   // 整套展示：每个部位一行
   const list = GG.el('div',{class:'stack'});
@@ -182,12 +217,12 @@ async function showResult(occ, fromLink){
             GG.el('span',{class:'pill', style:{background:'var(--accent)', color:'#fff', fontWeight:'700', padding:'3px 10px', borderRadius:'999px', fontSize:'12px'}}, r.slot),
             GG.el('h3',{style:{fontSize:'18px'}}, it.label)),
           r.hits.length? GG.el('span',{class:'small muted'}, '契合：'+r.hits.slice(0,2).join('、')) : null
-        )
+        ),
+        r.why ? GG.el('p',{class:'small muted', style:{margin:'4px 0 0'}}, r.why) : null
       )
     ));
   });
 
-  const rline = reasonLine(occ, reasons);
   const note = GG.el('div',{class:'card pad', style:{background:`linear-gradient(160deg,var(--accent-soft),#fff 60%)`}},
     GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '搭配理由'),
     GG.el('div',{style:{fontSize:'16px', fontWeight:'600'}}, rline)
@@ -205,6 +240,11 @@ async function showResult(occ, fromLink){
   };
 
   stage.appendChild(note);
+  if(tip){
+    stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'12px', borderLeft:'3px solid var(--accent)'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ 造型师小贴士'),
+      GG.el('p',{style:{margin:'0', color:'var(--ink-2)', lineHeight:'1.7'}}, tip)));
+  }
   stage.appendChild(GG.el('div',{style:{height:'14px'}}));
   stage.appendChild(list);
   stage.appendChild(GG.resultCard(SLUG,

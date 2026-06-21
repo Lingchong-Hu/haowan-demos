@@ -104,6 +104,38 @@ function reasonFor(car, ctx){
   return '因为' + parts.slice(0,3).join('；') + '。';
 }
 
+/* ---------- AI 通路（连了 key 让模型读你的答案、从车库里荐车并逐条解释；没连退回本地点积打分） ----------
+   硬约束（预算、座位）始终在本地强制：AI 选的车若超预算 / 座位不够 → 直接丢弃，绝不破。 */
+const CS_SYS = '你是懂车的购车顾问。用户回答了几道选车问题，下面给你 ta 的回答和完整车库（每行 车名｜价位档/车型/座位/能源 + 强项）。请从车库里挑 1~3 台最合适的，理由要逐条引用 ta 的回答（预算/用途/座位/能源/最看重）。绝不推荐超预算或座位不够的车。只输出严格 JSON：{"picks":[{"name":"必须与车库里的车名完全一致","match":契合度数字60到98,"reason":"为什么推荐，引用 ta 的回答，50字内"}]}。按契合度从高到低，全部简体中文。';
+
+async function getRecs(answers, useAI){
+  const ctx = recommend(answers);
+  if(useAI){
+    try{
+      const lib = CARS.map(c=>`${c.name}｜${PRICE_LABEL[c.priceTier]}/${c.body}/${c.seats}座/${c.energy} · 强项：${c.strengths.join('、')}`).join('\n');
+      const ans = [
+        `预算上限：${PRICE_LABEL[ctx.budget]}`,
+        `用途：${ansLabel(answers,'use')}`,
+        `座位：${ansLabel(answers,'seat')}（至少 ${ctx.seatNeed} 座）`,
+        `能源：${ctx.energyPref||'不限'}`,
+        `最看重：${ansLabel(answers,'care')}`,
+      ].join('\n');
+      const obj = await GG.llm.json(CS_SYS, `用户回答：\n${ans}\n\n车库：\n${lib}`, {max_tokens:900});
+      const seen = new Set();
+      const picks = (Array.isArray(obj.picks)?obj.picks:[]).map(p=>{
+        const car = CARS.find(c=> c.name===p.name);             // 车名必须完全匹配，否则丢弃
+        if(!car || seen.has(car.name)) return null;
+        if(car.priceTier > ctx.budget) return null;             // 硬约束：超预算丢弃
+        if(car.seats < ctx.seatNeed) return null;               // 硬约束：座位不够丢弃
+        seen.add(car.name);
+        return {car, match: Math.round(GG.clamp(parseInt(p.match,10)||80, 60, 98)), reason:String(p.reason||'').trim()};
+      }).filter(Boolean);
+      if(picks.length){ ctx._aiTop = picks.slice(0,3); ctx._ai = true; }
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  return ctx;
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -126,6 +158,7 @@ function intro(){
     GG.el('h1', null, '答几个问题，帮你挑那台车'),
     GG.el('p', null, `不懂参数也没关系。回答 ${QUESTIONS.length} 道单选题——预算、用途、坐几人、能源、最看重什么，我就从车库里给你精选 1~3 台，并逐条说清为什么推荐。`)
   ));
+  main.appendChild(GG.llm.bar());
   main.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
     GG.el('button',{class:'btn primary lg', onClick:quiz}, '开始答题 →')
   ));
@@ -185,16 +218,20 @@ async function showResult(answers, fromLink){
   main = main || GG.mountShell(SLUG);
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
+  const useAI = GG.llm.connected();
+  let ctx;
   if(!fromLink){
-    await GG.thinking(stage, [
+    const think = GG.thinking(stage, [
       '读取你的 '+QUESTIONS.length+' 个选择…',
-      '拆解预算 / 用途 / 座位需求…',
+      useAI?'AI 拆解你的用车需求…':'拆解预算 / 用途 / 座位需求…',
       '在车库 '+CARS.length+' 台里逐台匹配…',
       '挑出最懂你的几台…'
-    ], 1600);
+    ], useAI?2000:1600);
+    const [c] = await Promise.all([getRecs(answers, useAI), think]); ctx = c;
+  } else {
+    ctx = await getRecs(answers, useAI);
   }
-  const ctx = recommend(answers);
-  const {top} = ctx;
+  const top = ctx._aiTop || ctx.top.map(t=>({car:t.car, match:t.match, reason:reasonFor(t.car, ctx)}));
   GG.clear(stage);
 
   // 你的需求画像（引用答案）
@@ -224,23 +261,24 @@ async function showResult(answers, fromLink){
             GG.el('h3',{style:{fontSize:'19px'}}, car.name)),
           GG.el('span',{class:'pill'}, '契合 '+r.match+'%')
         ),
-        GG.el('p',{class:'small', style:{margin:'8px 0 0', color:'var(--ink-2)'}}, reasonFor(car, ctx)),
+        GG.el('p',{class:'small', style:{margin:'8px 0 0', color:'var(--ink-2)'}}, r.reason),
         GG.el('p',{class:'small muted', style:{margin:'4px 0 0'}}, car.blurb),
         chips(car)
       )
     ));
   });
 
-  const top1 = top[0].car;
+  const top1 = top[0];
   const shareSpec = {
     slug:SLUG, title:'答题荐车结果',
-    subtitle: top1.name,
+    subtitle: top1.car.name,
     rows: top.map((r,i)=>({label:'推荐 '+(i+1), value:`${r.car.name}（契合 ${r.match}%）`})),
     tags: ansSummary,
-    note: top1.name+' —— '+reasonFor(top1, ctx),
+    note: top1.car.name+' —— '+top1.reason,
   };
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}}, GG.el('h1',{style:{fontSize:'24px'}}, '🔑 给你挑了这几台')));
+  stage.appendChild(GG.el('div',{style:{margin:'0 0 10px'}}, GG.llm.badge(!!ctx._ai)));
   stage.appendChild(profile);
   stage.appendChild(list);
   stage.appendChild(GG.resultCard(SLUG, GG.el('div',{class:'center muted small'}, '截图 / 分享你的荐车结果 ↓'), shareSpec));

@@ -63,6 +63,45 @@ function reasonFor(car, tendencies){
   return '在你没拒绝的方向里综合得分最高的一台。';
 }
 
+/* ---------- AI 通路（连了 key 让模型读你的滑动倾向、从车库里精配并解释；没连退回本地打分） ---------- */
+const WHIPS_SYS = '你是懂车的购车顾问。用户在一堆车里左右滑（右滑=喜欢，左滑=不喜欢）。下面给你 ta 右滑/左滑的车，以及完整候选车库（每行 id|车名：车型/尺寸/气质/动力/定位）。请从【候选车库】里挑 3 台最合 ta 口味的车，并解释为什么——理由要引用 ta 右滑里反复出现的偏好。只输出严格 JSON：{"insight":"一句话总结 ta 的购车口味","picks":[{"id":"候选车库里的 id","match":契合度数字60到98,"reason":"为什么推荐，引用 ta 的滑动倾向，40字内"}]}。picks 必须 3 台，id 必须来自候选车库，按契合度从高到低。全部简体中文。';
+
+function localRecs(liked, disliked){
+  const {top3, tendencies, likedCount} = recommend(liked, disliked);
+  return {
+    top3: top3.map(t=>({car:t.car, match:t.match, reason:reasonFor(t.car, tendencies)})),
+    tendencies, likedCount, insight:'', _ai:false
+  };
+}
+
+async function getRecs(liked, disliked, useAI){
+  const local = recommend(liked, disliked);
+  if(useAI && liked.length){
+    try{
+      const fmt = c=>`${c.body}/${c.size}/${c.vibe}/${c.power}/${c.price}`;
+      const cat = CATALOG.map(c=>`${c.id}|${c.name}：${fmt(c)}`).join('\n');
+      const likeStr = liked.map(c=>`${c.name}(${fmt(c)})`).join('、') || '无';
+      const dislikeStr = disliked.map(c=>c.name).join('、') || '无';
+      const obj = await GG.llm.json(WHIPS_SYS,
+        `右滑(喜欢)：${likeStr}\n左滑(不喜欢)：${dislikeStr}\n\n候选车库：\n${cat}`, {max_tokens:900});
+      const seen = new Set();
+      const picks = (Array.isArray(obj.picks)?obj.picks:[]).map(p=>{
+        const car = CATALOG.find(c=> c.id===p.id);                 // id 必须真实存在，否则丢弃
+        if(!car || seen.has(car.id)) return null; seen.add(car.id);
+        return {car, match: Math.round(GG.clamp(parseInt(p.match,10)||80, 58, 98)), reason:String(p.reason||'').trim()};
+      }).filter(Boolean);
+      if(picks.length){
+        // 不足 3 台用本地结果补齐（仍保证来自车库、不重复）
+        for(const t of local.top3){ if(picks.length>=3) break;
+          if(!seen.has(t.car.id)){ seen.add(t.car.id); picks.push({car:t.car, match:t.match, reason:reasonFor(t.car, local.tendencies)}); } }
+        return {top3:picks.slice(0,3), tendencies:local.tendencies, likedCount:local.likedCount,
+                insight:String(obj.insight||'').trim(), _ai:true};
+      }
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  return localRecs(liked, disliked);
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -81,6 +120,7 @@ function intro(){
     GG.el('h1', null, '左右滑，找到你的本命车'),
     GG.el('p', null, `向右滑 ❤ 喜欢、向左滑 ✕ 不喜欢。滑满 ${MIN_SWIPE} 张，我就读懂你的口味，从车库里精配 3 台。`)
   ));
+  main.appendChild(GG.llm.bar());
   main.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
     GG.el('button',{class:'btn primary lg', onClick:swipeStage}, '开始滑车 →')
   ));
@@ -210,10 +250,16 @@ async function showResult(liked, disliked, fromLink){
   main = main || GG.mountShell(SLUG);
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
+  const useAI = GG.llm.connected();
+  let recs;
   if(!fromLink){
-    await GG.thinking(stage, ['读取你的 '+liked.length+' 次右滑…','拆解车型 / 气质 / 动力倾向…','在车库里匹配…','精配 3 台中…'], 1500);
+    const think = GG.thinking(stage, ['读取你的 '+liked.length+' 次右滑…',
+      useAI?'AI 拆解你的购车口味…':'拆解车型 / 气质 / 动力倾向…','在车库里匹配…','精配 3 台中…'], useAI?1900:1500);
+    const [r] = await Promise.all([getRecs(liked, disliked, useAI), think]); recs = r;
+  } else {
+    recs = await getRecs(liked, disliked, useAI);
   }
-  const {top3, tendencies, likedCount} = recommend(liked, disliked);
+  const {top3, tendencies, likedCount, insight} = recs;
 
   GG.clear(stage);
   // 口味 DNA
@@ -241,7 +287,7 @@ async function showResult(liked, disliked, fromLink){
             GG.el('h3',{style:{fontSize:'19px'}}, car.name)),
           GG.el('span',{class:'pill'}, '契合 '+r.match+'%')
         ),
-        GG.el('p',{class:'small', style:{margin:'8px 0 0', color:'var(--ink-2)'}}, reasonFor(car, tendencies)),
+        GG.el('p',{class:'small', style:{margin:'8px 0 0', color:'var(--ink-2)'}}, r.reason),
         GG.el('p',{class:'small muted', style:{margin:'4px 0 0'}}, car.blurb),
         chips(car)
       )
@@ -252,12 +298,18 @@ async function showResult(liked, disliked, fromLink){
     slug:SLUG, title:'我的本命车 · 精配 3 台',
     subtitle: tendencies.length? ('口味 DNA：'+dnaLine) : '口味很挑',
     tags: tendencies.map(t=>t.val),
-    note: top3.length? (top3[0].car.name+' —— '+reasonFor(top3[0].car, tendencies)) : '',
+    note: top3.length? (top3[0].car.name+' —— '+top3[0].reason) : '',
     rows: top3.map((r,i)=>({label:'推荐 '+(i+1), value:`${r.car.name}（契合 ${r.match}%）`})),
   };
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}}, GG.el('h1',{style:{fontSize:'24px'}}, '🎉 你的精配结果')));
+  stage.appendChild(GG.el('div',{style:{margin:'0 0 10px'}}, GG.llm.badge(!!recs._ai)));
   stage.appendChild(dna);
+  if(insight){
+    stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'3px solid var(--accent)'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 口味洞察'),
+      GG.el('p',{style:{margin:'0', fontSize:'15px', color:'var(--ink-2)', lineHeight:'1.7'}}, insight)));
+  }
   stage.appendChild(list);
   stage.appendChild(GG.resultCard(SLUG, GG.el('div',{class:'center muted small'}, '截图分享你的本命车 ↓'), shareSpec));
   stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
