@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>当攻防都变便宜 · 互动版 · 好玩的东西</title>
+<meta name="description" content="边滚边玩：拧攻击与防御的旋钮看天平怎么倒；点一个节点看信任链怎么级联崩塌；勾掉几个坏习惯看个人暴露面实时缩小。" />
+<!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+/* ════════ 互动版（explorable）局部样式，全部 scoped 在 .play 下 ════════ */
+.play{ --crk:#c0392b; --std:#3f7d5a; --amb:#bd8126; }
+.play b,.play strong{font-weight:600}
+.play-hero{padding:30px 0 8px;max-width:760px;margin:0 auto}
+.play-hero h1{font-size:clamp(30px,5.4vw,48px);margin:6px 0 10px}
+.play-hero .dek{font-size:18px;color:var(--ink-soft);font-family:var(--serif);line-height:1.7}
+.play-hero .scroll-hint{margin-top:18px;font-size:13px;color:var(--accent);letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:8px}
+.play-hero .scroll-hint .ar{animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+.play-sec{max-width:760px;margin:0 auto;padding:46px 0}
+.play-sec + .play-sec{border-top:1px solid var(--line)}
+.sec-lede{font-size:19px;line-height:1.85;color:#3f3832;font-family:var(--serif);margin-bottom:26px}
+.sec-lede b{font-weight:600;color:var(--ink)}
+
+.reveal{transition:opacity .7s ease,transform .7s ease}
+.reveal.armed{opacity:0;transform:translateY(22px)}
+.reveal.armed.in{opacity:1;transform:none}
+
+.widget{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px 26px 28px;box-shadow:0 22px 50px -34px rgba(60,40,25,.45)}
+.w-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.w-head h3{font-size:21px;font-family:var(--serif)}
+.w-tag{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#fff;
+  background:var(--accent);border-radius:999px;padding:5px 12px;white-space:nowrap}
+
+.play input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+  background:var(--bg-2);outline:none;cursor:pointer}
+.play input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:22px;height:22px;border-radius:50%;background:var(--accent);border:3px solid #fff;
+  box-shadow:0 3px 8px -1px rgba(120,50,20,.5);cursor:grab}
+.play input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.08)}
+.play input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;cursor:grab}
+
+/* ════ widget 1 · 攻防天平（招牌）════ */
+.scale-cols{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:6px}
+@media(max-width:560px){.scale-cols{grid-template-columns:1fr}}
+.scale-side{border:1.5px solid var(--line);border-radius:14px;padding:16px 16px 18px;background:var(--bg)}
+.scale-side.atk{border-color:#e6b0a3}
+.scale-side.def{border-color:#bcd3c1}
+.ss-title{font-size:13px;font-weight:600;letter-spacing:.06em;margin-bottom:14px;display:flex;
+  align-items:center;gap:7px}
+.scale-side.atk .ss-title{color:var(--crk)}
+.scale-side.def .ss-title{color:var(--std)}
+.knob{display:flex;flex-direction:column;gap:6px;margin-bottom:13px;font-size:12.5px;color:var(--ink-soft)}
+.knob .kt{display:flex;justify-content:space-between}
+.knob .kt b{font-variant-numeric:tabular-nums;color:var(--ink)}
+.scale-side.atk input[type=range]::-webkit-slider-thumb{background:var(--crk)}
+.scale-side.atk input[type=range]::-moz-range-thumb{background:var(--crk)}
+.scale-side.def input[type=range]::-webkit-slider-thumb{background:var(--std)}
+.scale-side.def input[type=range]::-moz-range-thumb{background:var(--std)}
+
+.seesaw{position:relative;height:140px;margin:18px 0 6px}
+.beam{position:absolute;top:54px;left:7%;width:86%;height:12px;border-radius:8px;
+  background:linear-gradient(90deg,#cf7d6a,#7c9b86);display:flex;justify-content:space-between;
+  align-items:center;transform-origin:center center;transition:transform .3s cubic-bezier(.34,1.3,.5,1)}
+.pan{width:104px;height:104px;border-radius:50%;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;color:#fff;
+  box-shadow:0 14px 30px -16px rgba(60,40,25,.6);transition:transform .3s}
+.pan.left{background:radial-gradient(circle at 38% 30%,#d96a52,#b2331f);margin-left:-8px}
+.pan.right{background:radial-gradient(circle at 38% 30%,#6f9079,#46624f);margin-right:-8px}
+.pan .pw{font-family:var(--display);font-size:30px;font-weight:600;line-height:1}
+.pan .pl{font-size:11.5px;opacity:.92;margin-top:3px}
+.fulcrum{position:absolute;top:60px;left:50%;transform:translateX(-50%);width:0;height:0;
+  border-left:20px solid transparent;border-right:20px solid transparent;border-bottom:40px solid var(--line);z-index:-1}
+.scale-verdict{margin-top:14px;text-align:center;font-size:16px;line-height:1.7;
+  padding:14px 18px;border-radius:12px;background:var(--bg-2);transition:background .25s}
+.scale-verdict.danger{background:#fbe9e5;color:var(--crk)}
+.scale-verdict.safe{background:#eef3ee;color:var(--std)}
+.scale-verdict b{font-weight:600}
+.scale-note{margin-top:14px;font-size:14px;line-height:1.7;color:#473f38;text-align:center}
+.scale-note b{color:var(--accent);font-weight:600}
+
+/* ════ widget 2 · 信任链级联 ════ */
+.chain{display:flex;align-items:stretch;gap:0;flex-wrap:nowrap;overflow-x:auto;padding:6px 2px 14px}
+.node{flex:1;min-width:96px;text-align:center;cursor:pointer;border:1.5px solid var(--line);
+  border-radius:13px;padding:14px 8px;background:var(--bg);transition:all .2s;position:relative;user-select:none}
+.node:hover{border-color:var(--accent-soft)}
+.node .ne{font-size:24px}
+.node .nn{font-size:13.5px;font-weight:600;margin-top:5px}
+.node .nst{font-size:11px;margin-top:5px;color:var(--std);font-weight:600}
+.node.fallen{border-color:var(--crk);background:#fbe9e5}
+.node.fallen .nst{color:var(--crk)}
+.node.origin{box-shadow:0 0 0 3px rgba(192,57,43,.18)}
+.chain .arrow{flex:0 0 22px;display:flex;align-items:center;justify-content:center;color:var(--ink-soft);font-size:16px}
+.chain-bar{display:flex;align-items:center;gap:10px;margin-top:6px;flex-wrap:wrap}
+.chain-msg{flex:1;font-size:14.5px;line-height:1.65;color:#473f38;min-width:240px}
+.chain-msg b{color:var(--crk);font-weight:600}
+.chain-msg.clean b{color:var(--std)}
+.reset-btn{font-size:13px;padding:8px 15px}
+.chain-foot{margin-top:16px;font-size:14px;line-height:1.75;color:#473f38;
+  padding:14px 18px;background:var(--bg-2);border-radius:12px}
+.chain-foot b{color:var(--accent);font-weight:600}
+
+/* ════ widget 3 · 个人暴露面 ════ */
+.exp-wrap{display:grid;grid-template-columns:1.05fr .95fr;gap:20px}
+@media(max-width:600px){.exp-wrap{grid-template-columns:1fr}}
+.habit{display:flex;align-items:flex-start;gap:11px;cursor:pointer;user-select:none;
+  border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);
+  transition:all .18s;margin-bottom:10px}
+.habit:hover{border-color:var(--accent-soft)}
+.habit.on{border-color:#e6b0a3;background:#fdf3f1}
+.habit .hbox{flex:none;width:20px;height:20px;border-radius:6px;border:2px solid var(--line);
+  margin-top:1px;position:relative;transition:all .18s}
+.habit.on .hbox{border-color:var(--crk);background:var(--crk)}
+.habit.on .hbox::after{content:"!";position:absolute;inset:0;color:#fff;font-size:13px;font-weight:700;
+  display:flex;align-items:center;justify-content:center}
+.habit .ht{font-size:14px;color:var(--ink);line-height:1.5}
+.habit .hs{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.exp-meter{border:1px solid var(--line);border-radius:14px;background:var(--bg-2);padding:20px;height:fit-content}
+.em-num{font-family:var(--display);font-size:46px;font-weight:600;line-height:1;transition:color .25s}
+.em-label{font-size:12.5px;color:var(--ink-soft);margin-top:4px}
+.em-bar{height:10px;border-radius:999px;background:var(--card);overflow:hidden;margin:14px 0 18px}
+.em-fill{height:100%;width:0;border-radius:999px;transition:width .3s ease,background .25s}
+.em-doors-k{font-size:11.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--crk);margin-bottom:9px}
+.em-doors{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.em-doors li{font-size:12.5px;line-height:1.5;padding:7px 11px;border-radius:8px;background:#fbe9e5;
+  color:#7a2b1d;animation:popIn .25s ease}
+.em-doors li.safe{background:#eef3ee;color:var(--std);text-align:center}
+@keyframes popIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.exp-caption{margin-top:18px;font-size:14.5px;line-height:1.75;color:#473f38;text-align:center}
+.exp-caption b{color:var(--accent);font-weight:600}
+
+/* ════ widget 4 · 例子画廊 ════ */
+.gal-cards{display:flex;gap:12px;flex-wrap:wrap}
+.gal-card{flex:1;min-width:200px;text-align:left;border:1.5px solid var(--line);border-radius:14px;
+  padding:16px 18px;background:var(--bg);cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.gal-card:hover{border-color:var(--accent-soft);transform:translateY(-2px)}
+.gal-card.on{border-color:var(--accent);background:var(--card);box-shadow:0 14px 32px -22px rgba(150,60,25,.6)}
+.gal-card .gc-emoji{font-size:24px}
+.gal-card .gc-title{font-family:var(--display);font-size:16.5px;font-weight:600;margin:6px 0 4px}
+.gal-card .gc-bench{font-size:12px;color:var(--ink-soft);font-weight:500}
+.gal-detail{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg-2);
+  padding:20px 22px;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.gd-bench{font-size:12.5px;font-weight:600;color:var(--ink-soft);margin-bottom:14px}
+.gd-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:560px){.gd-cols{grid-template-columns:1fr;gap:16px}}
+.gd-k{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.gd-col.atk .gd-k{color:var(--crk)}
+.gd-col.def .gd-k{color:var(--std)}
+.gd-col p{font-size:14px;line-height:1.75;color:#3f3832}
+.gd-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.gd-tags span{font-size:11.5px;font-weight:500;padding:4px 11px;border-radius:999px;
+  background:var(--card);border:1px solid var(--line);color:var(--ink-soft)}
+.gal-more{margin-top:18px;font-size:14px;line-height:1.7;color:var(--ink-soft)}
+.gal-more-note{font-size:12.5px;opacity:.8}
+
+.play-close{max-width:760px;margin:0 auto;padding:48px 0 12px;text-align:center;border-top:1px solid var(--line)}
+.play-close blockquote{margin:0 auto 28px;max-width:560px;font-family:var(--serif);font-style:italic;
+  font-size:19px;line-height:1.8;color:var(--ink)}
+.play-close blockquote b{color:var(--accent);font-style:normal}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects">项目</a>
+      <a href="../index.html#thoughts">思考</a>
+      <a href="../index.html#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<main class="play">
+
+  <header class="play-hero wrap">
+    <a class="back" href="../index.html#thoughts">← 全部思考</a>
+    <div class="mode-toggle">
+      <a href="safety.html">📖 原文</a>
+      <a href="safety-play.html" class="is-active">✦ 互动版</a>
+    </div>
+    <div class="kicker">Thinking · 安全 · 边玩边读</div>
+    <h1>当攻防都变便宜</h1>
+    <p class="dek">不用读完一长篇——拧攻击与防御的旋钮，看天平怎么倒；点一个节点，看信任链怎么级联崩塌；
+      再勾掉几个坏习惯，看你自己的暴露面实时缩小。</p>
+    <div class="scroll-hint"><span class="ar">↓</span> 往下滚，每一段都能玩</div>
+  </header>
+
+  <!-- 1 · 攻防天平（招牌）-->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">最容易被忽略的一点：<b>AI 没有只武装攻击者。</b>
+      左右两组旋钮，调的是<b>同一批能力</b>——它既拉低攻击成本，也拉低防御成本。
+      危险的从来不是技术本身，是天平倒向谁。亲手拧拧看：</p>
+
+    <div class="widget w-scale">
+      <div class="w-head"><span class="w-tag">拧旋钮</span><h3>同一架天平，两头都被抬起来</h3></div>
+      <div class="scale-cols">
+        <div class="scale-side atk">
+          <div class="ss-title">⚔️ 攻击端（成本越低越红）</div>
+          <div class="knob"><div class="kt"><span>钓鱼定制化</span><b id="aPhV">30</b></div><input type="range" id="aPh" min="0" max="100" value="30"></div>
+          <div class="knob"><div class="kt"><span>深伪逼真度</span><b id="aDfV">30</b></div><input type="range" id="aDf" min="0" max="100" value="30"></div>
+          <div class="knob"><div class="kt"><span>自动化规模</span><b id="aAuV">30</b></div><input type="range" id="aAu" min="0" max="100" value="30"></div>
+        </div>
+        <div class="scale-side def">
+          <div class="ss-title">🛡️ 防御端（用上越多越绿）</div>
+          <div class="knob"><div class="kt"><span>持续验真</span><b id="dVfV">30</b></div><input type="range" id="dVf" min="0" max="100" value="30"></div>
+          <div class="knob"><div class="kt"><span>异常检测</span><b id="dAnV">30</b></div><input type="range" id="dAn" min="0" max="100" value="30"></div>
+          <div class="knob"><div class="kt"><span>零信任覆盖</span><b id="dZtV">30</b></div><input type="range" id="dZt" min="0" max="100" value="30"></div>
+        </div>
+      </div>
+
+      <div class="seesaw">
+        <div class="fulcrum"></div>
+        <div class="beam" id="beam">
+          <div class="pan left" id="panL"><span class="pw" id="atkW">30</span><span class="pl">攻击 · 威胁</span></div>
+          <div class="pan right" id="panR"><span class="pw" id="defW">30</span><span class="pl">防御 · 韧性</span></div>
+        </div>
+      </div>
+
+      <div class="scale-verdict" id="scaleVerdict"></div>
+      <p class="scale-note">注意——你拧的两侧，<b>是同一项 AI 能力的两种用法</b>。它不会自动站在好人一边。</p>
+    </div>
+  </section>
+
+  <!-- 2 · 信任链级联 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">旧时代的安全靠<b>一道墙</b>：把坏人挡在外面。但当"看起来是真的"可以被批量伪造，
+      墙里也可能站着 AI 假扮的自己人。<b>点任意一个节点，把它"攻破"看看</b>——下游会发生什么：</p>
+
+    <div class="widget w-chain">
+      <div class="w-head"><span class="w-tag">点一点</span><h3>一道墙，挡不住级联崩塌</h3></div>
+      <div class="chain" id="chain"></div>
+      <div class="chain-bar">
+        <div class="chain-msg clean" id="chainMsg"></div>
+        <button class="btn btn-ghost reset-btn" id="chainReset">↺ 全部复位</button>
+      </div>
+      <div class="chain-foot" id="chainFoot"></div>
+    </div>
+  </section>
+
+  <!-- 3 · 个人暴露面 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">你最大的暴露面，往往不是什么高深漏洞，而是几个随手养成的习惯。
+      好消息是——这些门，<b>绝大多数你自己就能关上</b>。勾掉它们，看暴露面实时缩小：</p>
+
+    <div class="widget w-exposure">
+      <div class="w-head"><span class="w-tag">勾掉坏习惯</span><h3>你的习惯，就是你的攻击面</h3></div>
+      <div class="exp-wrap">
+        <div class="exp-habits" id="expHabits"></div>
+        <div class="exp-meter">
+          <div class="em-num" id="expNum">0</div>
+          <div class="em-label">个人暴露面指数（越低越好）</div>
+          <div class="em-bar"><div class="em-fill" id="expFill"></div></div>
+          <div class="em-doors-k">给攻击者敞开的门</div>
+          <ul class="em-doors" id="expDoors"></ul>
+        </div>
+      </div>
+      <p class="exp-caption" id="expCaption"></p>
+    </div>
+  </section>
+
+  <!-- 4 · 例子画廊 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">这些都不是假想。下面是已经发生的真实攻击——
+      以及<b>同一件事，防御端本可以怎么接住它：</b></p>
+
+    <div class="widget w-gallery">
+      <div class="w-head"><span class="w-tag">点开看看</span><h3>真实攻击 · 与它的解法</h3></div>
+      <div class="gal-cards" id="galCards"></div>
+      <div class="gal-detail" id="galDetail"></div>
+      <p class="gal-more">每一例的解法都指向同一句话：<b>别赌墙不破，把「验真」做进每一步</b>。
+        <br><span class="gal-more-note">（往 CASES 数组里加一条，就多一个案例。）</span></p>
+    </div>
+  </section>
+
+  <!-- 结尾 -->
+  <section class="play-close wrap reveal">
+    <blockquote>AI 不会单方面让世界更危险——它把攻防<b>同时</b>打到地板价。<br>剩下的，是一场关于<b>谁用得更好</b>的赛跑。</blockquote>
+    <a class="btn btn-primary" href="../index.html#contact">聊聊你在担心的安全问题 →</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap"><p><a href="../index.html">← 回到首页</a> &nbsp;·&nbsp; <a href="safety.html">读纯文字原文 📖</a></p></div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+
+  /* ════ widget 1 · 攻防天平 ════ */
+  (function(){
+    var atk = ["aPh","aDf","aAu"], def = ["dVf","dAn","dZt"];
+    function avg(ids){ var s=0; ids.forEach(function(id){ s += +$(id).value; }); return Math.round(s/ids.length); }
+    function render(){
+      atk.concat(def).forEach(function(id){ $(id+"V").textContent = $(id).value; });
+      var a = avg(atk), d = avg(def);
+      $("atkW").textContent = a; $("defW").textContent = d;
+      var diff = a - d;                                  // >0 攻击重
+      var deg = clamp(diff * 0.16, -15, 15);             // 攻击重 → 左端下沉（顺时针为正、左端上扬，故取负）
+      $("beam").style.transform = "rotate(" + (-deg) + "deg)";
+      var v = $("scaleVerdict");
+      v.className = "scale-verdict";
+      if (diff > 22){ v.classList.add("danger");
+        v.innerHTML = "⚠️ 天平倒向 <b>「危险」</b>——攻击端占了上风。普通人也成了划算的目标。"; }
+      else if (diff < -22){ v.classList.add("safe");
+        v.innerHTML = "🛡️ 天平倒向 <b>「可控」</b>——防御端顶住了。同样的 AI，被用来守。"; }
+      else {
+        v.innerHTML = "⚖️ <b>势均力敌</b>。这恰恰是现实：攻防被同时放大，胜负在<b>谁用得更好</b>。"; }
+    }
+    atk.concat(def).forEach(function(id){ $(id).addEventListener("input", render); });
+    render();
+  })();
+
+  /* ════ widget 2 · 信任链级联 ════ */
+  var NODES = [
+    { e:"🪪", n:"身份",     fall:"有人用深伪的声音/人脸冒充了「你本人」" },
+    { e:"💻", n:"设备",     fall:"一台被控的设备，从此发出的都被当成可信" },
+    { e:"📨", n:"消息来源", fall:"一封以假乱真的内部邮件，没人会去核它真假" },
+    { e:"🔗", n:"供应链",   fall:"一个被投毒的第三方组件，悄悄混进了系统" },
+    { e:"🗄️", n:"你的系统", fall:"核心系统对上面这些「自己人」毫无防备地敞开" }
+  ];
+  (function(){
+    var chainEl = $("chain"), origin = -1;
+    function build(){
+      var html = "";
+      NODES.forEach(function(nd, i){
+        html += '<div class="node" data-i="' + i + '"><div class="ne">' + nd.e + '</div>' +
+          '<div class="nn">' + nd.n + '</div><div class="nst">✓ 可信</div></div>';
+        if (i < NODES.length - 1) html += '<div class="arrow">→</div>';
+      });
+      chainEl.innerHTML = html;
+      Array.prototype.forEach.call(chainEl.querySelectorAll(".node"), function(el){
+        el.addEventListener("click", function(){
+          var i = +el.getAttribute("data-i");
+          origin = (origin === i) ? -1 : i;     // 再点同一个 = 取消
+          render();
+        });
+      });
+    }
+    function render(){
+      var nodes = chainEl.querySelectorAll(".node");
+      Array.prototype.forEach.call(nodes, function(el, i){
+        var fallen = origin >= 0 && i >= origin;
+        el.classList.toggle("fallen", fallen);
+        el.classList.toggle("origin", i === origin);
+        el.querySelector(".nst").textContent = fallen ? "✗ 失守" : "✓ 可信";
+      });
+      var msg = $("chainMsg"), foot = $("chainFoot");
+      if (origin < 0){
+        msg.className = "chain-msg clean";
+        msg.innerHTML = "整条链都还可信。<b style='color:var(--std)'>点一个节点，把它攻破试试。</b>";
+        foot.innerHTML = "旧范式赌的是「每道墙都不破」。可只要 <b>任意一个</b> 节点被冒充，它下游的一切都会默认信任它——崩塌是级联的。";
+      } else {
+        var down = NODES.length - origin;
+        msg.className = "chain-msg";
+        msg.innerHTML = "💥 <b>" + NODES[origin].n + "</b> 被攻破：" + NODES[origin].fall +
+          "。<b>它下游的 " + (down - 1) + " 个环节，全部跟着失守。</b>";
+        foot.innerHTML = "看到了吗——一个点破，下游全倒。所以新范式不是再砌一道更高的墙，而是 <b>零信任</b>：默认谁都不可信，<b>每一步都重新验真</b>，不给「级联」留通道。";
+      }
+    }
+    $("chainReset").addEventListener("click", function(){ origin = -1; render(); });
+    build(); render();
+  })();
+
+  /* ════ widget 3 · 个人暴露面 ════ */
+  var HABITS = [
+    { id:"reuse", on:true,  t:"多个网站复用同一个密码", s:"一处泄露，处处沦陷",
+      pts:26, door:"一个网站被拖库，攻击者拿同一组密码去撞开你的邮箱、网银（撞库）" },
+    { id:"public", on:true, t:"社媒公开了生日 / 家乡 / 单位", s:"密保问题的标准答案",
+      pts:18, door:"这些正是「找回密码」的安全问题答案，也是定制钓鱼的素材" },
+    { id:"grant", on:true,  t:"装 App 时一路点「同意」", s:"把通讯录、位置全交出去",
+      pts:20, door:"过度授权的 App 把你的通讯录、位置、相册打包带走，转手即数据" },
+    { id:"feed", on:false,  t:"什么都往在线工具里喂", s:"敏感信息一去不回",
+      pts:16, door:"合同、聊天记录、证件照喂给来路不明的工具，可能被留存、再训练" },
+    { id:"no2fa", on:true,  t:"嫌麻烦不开两步验证", s:"密码是唯一的一道锁",
+      pts:20, door:"一旦密码泄露，没有第二道关——账号直接被接管" }
+  ];
+  (function(){
+    var state = {};
+    HABITS.forEach(function(h){ state[h.id] = h.on; });
+    var listEl = $("expHabits");
+    listEl.innerHTML = HABITS.map(function(h){
+      return '<div class="habit' + (h.on ? ' on' : '') + '" data-id="' + h.id + '" role="checkbox" tabindex="0" aria-checked="' + h.on + '">' +
+        '<span class="hbox"></span><span><span class="ht">' + h.t + '</span><span class="hs">' + h.s + '</span></span></div>';
+    }).join("");
+    function render(){
+      var pts = 0, doors = [];
+      HABITS.forEach(function(h){ if (state[h.id]){ pts += h.pts; doors.push(h.door); } });
+      pts = clamp(pts, 0, 100);
+      $("expNum").textContent = pts;
+      $("expFill").style.width = pts + "%";
+      var col = pts >= 66 ? "var(--crk)" : pts >= 33 ? "var(--gold)" : "var(--sage)";
+      $("expNum").style.color = col;
+      $("expFill").style.background = col;
+      $("expDoors").innerHTML = doors.length
+        ? doors.map(function(d){ return '<li>' + d + '</li>'; }).join("")
+        : '<li class="safe">✓ 这些门都关上了。基本功做到位，已经挡掉了绝大多数攻击。</li>';
+      $("expCaption").innerHTML = pts === 0
+        ? "你刚刚把暴露面降到了 <b>0</b>——而你做的，只是关掉几个随手的坏习惯。<b>安全里可控的部分，比你以为的多。</b>"
+        : pts >= 66
+          ? "暴露面还很高。<b>逐条勾掉看看</b>，每关一道门，红条就缩一截。"
+          : "好多了。<b>继续——把剩下的门也关上。</b>";
+    }
+    function toggle(el){
+      var id = el.getAttribute("data-id");
+      state[id] = !state[id];
+      el.classList.toggle("on", state[id]);
+      el.setAttribute("aria-checked", state[id] ? "true" : "false");
+      render();
+    }
+    Array.prototype.forEach.call(listEl.querySelectorAll(".habit"), function(el){
+      el.addEventListener("click", function(){ toggle(el); });
+      el.addEventListener("keydown", function(e){ if (e.key === " " || e.key === "Enter"){ e.preventDefault(); toggle(el); } });
+    });
+    render();
+  })();
+
+  /* ════ widget 4 · 例子画廊（数据驱动，加例子=加一条）════ */
+  var CASES = [
+    {
+      emoji:"🎭", title:"深伪视频会议诈骗", bench:"2024 · 香港 · 损失约 2 亿港元",
+      atk:"骗子用深伪技术，把财务人员拉进一场<b>与会者全是假同事</b>的视频会议，声音、长相都对得上，当场指令转账。",
+      def:"凡涉及转账的指令，<b>必须带外核身</b>——挂掉视频、用另一条已知渠道回拨本人确认；高额操作设双人复核。",
+      tags:["深伪","冒充身份","带外核验"]
+    },
+    {
+      emoji:"🪝", title:"钓鱼即服务（PhaaS）", bench:"近年 · 暗网现成工具包",
+      atk:"现成的钓鱼套件让<b>零基础也能批量发</b>高仿登录页，配合 AI 生成千人千面的话术，攻击成本趋近于零。",
+      def:"少靠「眼力」识别，多靠机制：<b>多因子验证</b>让偷到密码也登不进；浏览器/邮箱侧的域名与来源核验自动拦截。",
+      tags:["规模化","凭据窃取","多因子"]
+    },
+    {
+      emoji:"📞", title:"一通电话攻陷企业", bench:"2023 · MGM / Caesars",
+      atk:"攻击者<b>打电话冒充员工</b>，对 IT 客服一通话术攻心，骗过身份核验、重置了凭据，撬开整张内网。",
+      def:"客服侧的身份核验不能靠「答得出工号」：<b>强身份验真 + 最小权限</b>，让单个账号即便失守也炸不开全局。",
+      tags:["社会工程","人是入口","最小权限"]
+    },
+    {
+      emoji:"💉", title:"喂给 AI 的「投毒」内容", bench:"新面 · 提示注入（prompt injection）",
+      atk:"网页、文档里藏着给 AI 看的隐藏指令，AI 助手一读就被<b>劫持去执行</b>越权操作——这正是本站每个 demo 都要防的。",
+      def:"铁律：<b>外部内容一律当数据、不当指令</b>；有副作用的动作必须人在回路确认。把信任边界画在 AI 之外。",
+      tags:["提示注入","Agent 安全","人在回路"]
+    }
+    /* ── 加例子：复制上面一段，改 emoji / title / bench / atk / def / tags ── */
+  ];
+  (function(){
+    var cardsEl = $("galCards"), detailEl = $("galDetail"), cur = 0;
+    function renderCards(){
+      cardsEl.innerHTML = CASES.map(function(e, i){
+        return '<button class="gal-card' + (i === cur ? ' on' : '') + '" data-i="' + i + '">' +
+          '<div class="gc-emoji">' + e.emoji + '</div>' +
+          '<div class="gc-title">' + e.title + '</div>' +
+          '<div class="gc-bench">' + e.bench + '</div></button>';
+      }).join("");
+      Array.prototype.forEach.call(cardsEl.querySelectorAll(".gal-card"), function(b){
+        b.addEventListener("click", function(){ cur = +b.getAttribute("data-i"); renderCards(); renderDetail(); });
+      });
+    }
+    function renderDetail(){
+      var e = CASES[cur];
+      detailEl.innerHTML =
+        '<div class="gd-bench">' + e.bench + '</div>' +
+        '<div class="gd-cols">' +
+          '<div class="gd-col atk"><div class="gd-k">攻击怎么得手</div><p>' + e.atk + '</p></div>' +
+          '<div class="gd-col def"><div class="gd-k">本可以怎么接住</div><p>' + e.def + '</p></div>' +
+        '</div>' +
+        '<div class="gd-tags">' + e.tags.map(function(t){ return '<span>' + t + '</span>'; }).join("") + '</div>';
+    }
+    renderCards(); renderDetail();
+  })();
+
+  /* ════ 滚动渐入 ════ */
+  (function(){
+    var els = document.querySelectorAll(".reveal");
+    if (!("IntersectionObserver" in window)) return;
+    Array.prototype.forEach.call(els, function(el){ el.classList.add("armed"); });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { threshold: 0.1 });
+    Array.prototype.forEach.call(els, function(el){ io.observe(el); });
+  })();
+})();
+</script>
+</body>
+</html>

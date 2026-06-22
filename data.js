@@ -49,6 +49,13 @@ window.SITE = {
       play: "thoughts/data-future-play.html"
     },
     {
+      kicker: "Thinking · 安全",
+      title: "当攻防都变便宜",
+      desc: "你过去的安全感，多半是「攻击你不划算」撑起来的。AI 把攻击成本打到地板，也把防御成本打到地板——危险的不是技术，是天平倒向谁。",
+      href: "thoughts/safety.html",
+      play: "thoughts/safety-play.html"
+    },
+    {
       kicker: "Thinking · 组织",
       title: "AI 时代的组织架构",
       desc: "代码变便宜后，胜负手是「需求洞察 + 完整交付」的结合——而这两样几乎从不长在同一个人身上。为什么律所的结构，恰好是这个时代最对的答案。",
