@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>意图，才是下一个输入 · 互动版 · 好玩的东西</title>
+<meta name="description" content="边滚边玩：点开炫酷新设备看它撞上的习惯墙；拖动适应进度感受过渡期低谷；勾选行业看社会惯性；再打开上下文与记忆，看 intnt 怎么把多步操作压成一步。" />
+<!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+/* ════════ 互动版（explorable）局部样式，全部 scoped 在 .play 下 ════════ */
+.play{ --crk:#c0392b; --std:#3f7d5a; --amb:#bd8126; }
+.play b,.play strong{font-weight:600}
+.play-hero{padding:30px 0 8px;max-width:760px;margin:0 auto}
+.play-hero h1{font-size:clamp(30px,5.4vw,48px);margin:6px 0 10px}
+.play-hero .dek{font-size:18px;color:var(--ink-soft);font-family:var(--serif);line-height:1.7}
+.play-hero .scroll-hint{margin-top:18px;font-size:13px;color:var(--accent);letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:8px}
+.play-hero .scroll-hint .ar{animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+.play-sec{max-width:760px;margin:0 auto;padding:46px 0}
+.play-sec + .play-sec{border-top:1px solid var(--line)}
+.sec-lede{font-size:19px;line-height:1.85;color:#3f3832;font-family:var(--serif);margin-bottom:26px}
+.sec-lede b{font-weight:600;color:var(--ink)}
+
+.reveal{transition:opacity .7s ease,transform .7s ease}
+.reveal.armed{opacity:0;transform:translateY(22px)}
+.reveal.armed.in{opacity:1;transform:none}
+
+.widget{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px 26px 28px;box-shadow:0 22px 50px -34px rgba(60,40,25,.45)}
+.w-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.w-head h3{font-size:21px;font-family:var(--serif)}
+.w-tag{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#fff;
+  background:var(--accent);border-radius:999px;padding:5px 12px;white-space:nowrap}
+
+.play input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+  background:var(--bg-2);outline:none;cursor:pointer}
+.play input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:24px;height:24px;border-radius:50%;background:var(--accent);border:3px solid #fff;
+  box-shadow:0 3px 8px -1px rgba(120,50,20,.5);cursor:grab}
+.play input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.08)}
+.play input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;cursor:grab}
+
+/* ════ widget 1 · 新设备画廊 ════ */
+.gal-cards{display:flex;gap:12px;flex-wrap:wrap}
+.gal-card{flex:1;min-width:150px;text-align:left;border:1.5px solid var(--line);border-radius:14px;
+  padding:14px 16px;background:var(--bg);cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.gal-card:hover{border-color:var(--accent-soft);transform:translateY(-2px)}
+.gal-card.on{border-color:var(--accent);background:var(--card);box-shadow:0 14px 32px -22px rgba(150,60,25,.6)}
+.gal-card .gc-emoji{font-size:23px}
+.gal-card .gc-title{font-family:var(--display);font-size:15.5px;font-weight:600;margin:6px 0 3px}
+.gal-card .gc-bench{font-size:11.5px;color:var(--ink-soft);font-weight:500}
+.gal-detail{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg-2);
+  padding:20px 22px;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.gd-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:560px){.gd-cols{grid-template-columns:1fr;gap:16px}}
+.gd-k{font-size:11.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+.gd-col.tech .gd-k{color:var(--std)}
+.gd-col.wall .gd-k{color:var(--crk)}
+.gd-col p{font-size:14px;line-height:1.75;color:#3f3832}
+.gd-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.gd-tags span{font-size:11.5px;font-weight:500;padding:4px 11px;border-radius:999px;
+  background:var(--card);border:1px solid var(--line);color:var(--ink-soft)}
+.gal-more{margin-top:18px;font-size:14px;line-height:1.7;color:var(--ink-soft)}
+.gal-more b{color:var(--accent);font-weight:600}
+
+/* ════ widget 2 · 过渡期低谷 ════ */
+.curve-box{border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:14px 14px 6px;margin-bottom:16px}
+.curve-box svg{display:block;width:100%;height:auto}
+.cv-base{stroke:var(--ink-soft);stroke-width:1;stroke-dasharray:4 4;opacity:.6}
+.cv-path{fill:none;stroke:var(--accent);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+.cv-area{fill:rgba(192,57,43,.10)}
+.cv-dot{fill:#fff;stroke:var(--accent);stroke-width:3}
+.cv-drop{stroke:var(--accent);stroke-width:1;stroke-dasharray:3 3;opacity:.5}
+.cv-baselabel{font-size:9px;fill:var(--ink-soft);font-family:var(--sans)}
+.ctrl{display:flex;flex-direction:column;gap:7px;margin-bottom:14px;font-size:13px;color:var(--ink-soft)}
+.ctrl .ct{display:flex;justify-content:space-between}
+.ctrl .ct b{color:var(--ink);font-variant-numeric:tabular-nums}
+.cv-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:4px 0 10px}
+@media(max-width:520px){.cv-stats{grid-template-columns:1fr}}
+.cv-stat{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg-2);text-align:center}
+.cv-stat .csn{font-family:var(--display);font-size:24px;font-weight:600;line-height:1;transition:color .2s}
+.cv-stat .csl{font-size:11.5px;color:var(--ink-soft);margin-top:5px;line-height:1.4}
+.cv-caption{margin-top:8px;font-size:14.5px;line-height:1.75;color:#473f38;
+  padding:14px 18px;background:var(--bg-2);border-radius:12px}
+.cv-caption b{color:var(--accent);font-weight:600}
+
+/* ════ widget 3 · 行业强绑定 ════ */
+.ind-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+@media(max-width:560px){.ind-grid{grid-template-columns:1fr}}
+.ind-chip{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;
+  border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);
+  transition:all .18s;font-size:14px;font-weight:500;color:var(--ink-soft)}
+.ind-chip:hover{border-color:var(--accent-soft)}
+.ind-chip .ie{font-size:20px}
+.ind-chip.on{border-color:var(--accent);background:var(--card);color:var(--ink)}
+.ind-chip .dot{margin-left:auto;width:18px;height:18px;border-radius:50%;border:2px solid var(--line);
+  position:relative;transition:all .18s;flex:none}
+.ind-chip.on .dot{border-color:var(--accent);background:var(--accent)}
+.ind-chip.on .dot::after{content:"✓";position:absolute;inset:0;color:#fff;font-size:11px;
+  display:flex;align-items:center;justify-content:center;font-weight:700}
+.ind-meter{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg-2);padding:18px 20px}
+.im-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin-bottom:8px}
+.im-label{font-size:13px;font-weight:600;color:var(--ink-soft)}
+.im-num{font-family:var(--display);font-size:18px;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.im-bar{height:9px;border-radius:999px;background:var(--card);overflow:hidden;margin-bottom:16px}
+.im-fill{height:100%;width:0;border-radius:999px;background:linear-gradient(90deg,#cf9b5a,#b4542e);transition:width .3s ease}
+.im-why{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.im-why li{font-size:12.5px;line-height:1.5;padding:8px 12px;border-radius:9px;background:var(--card);
+  border:1px solid var(--line);color:#4a423b;animation:popIn .25s ease;display:flex;gap:8px}
+.im-why li.empty{justify-content:center;color:var(--ink-soft)}
+@keyframes popIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.ind-caption{margin-top:16px;font-size:14.5px;line-height:1.75;color:#473f38;text-align:center}
+.ind-caption b{color:var(--accent);font-weight:600}
+
+/* ════ widget 4 · intnt 意图引擎（招牌）════ */
+.eng-toggles{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+@media(max-width:520px){.eng-toggles{grid-template-columns:1fr}}
+.eng-toggle{display:flex;align-items:flex-start;gap:11px;cursor:pointer;user-select:none;
+  border:1.5px solid var(--line);border-radius:13px;padding:14px 16px;background:var(--bg);transition:all .18s}
+.eng-toggle:hover{border-color:var(--accent-soft)}
+.eng-toggle.on{border-color:var(--accent);background:var(--card);box-shadow:0 12px 28px -20px rgba(150,60,25,.7)}
+.eng-toggle .et-box{flex:none;width:38px;height:22px;border-radius:999px;background:var(--bg-2);
+  position:relative;transition:background .2s;margin-top:2px}
+.eng-toggle.on .et-box{background:var(--accent)}
+.eng-toggle .et-box::after{content:"";position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:#fff;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.eng-toggle.on .et-box::after{transform:translateX(16px)}
+.eng-toggle .et-t{font-size:14.5px;font-weight:600;color:var(--ink)}
+.eng-toggle .et-s{font-size:12px;color:var(--ink-soft);margin-top:2px}
+.eng-scenario{font-size:13.5px;color:var(--ink-soft);background:var(--bg-2);border-radius:11px;
+  padding:11px 15px;margin-bottom:16px;line-height:1.6}
+.eng-scenario b{color:var(--ink);font-weight:600}
+.eng-headline{font-family:var(--serif);font-size:17.5px;line-height:1.7;color:var(--ink);min-height:52px;margin-bottom:16px}
+.eng-headline b{color:var(--accent);font-weight:600}
+.eng-stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.eng-stat{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--bg);text-align:center}
+.eng-stat .esn{font-family:var(--display);font-size:30px;font-weight:600;line-height:1;transition:color .25s}
+.eng-stat .esl{font-size:11.5px;color:var(--ink-soft);margin-top:5px}
+.eng-dep{font-size:15px;font-weight:600;transition:color .25s}
+.eng-steps-k{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin-bottom:9px}
+.eng-steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.eng-steps li{font-size:13px;line-height:1.5;padding:8px 12px;border-radius:9px;background:var(--bg-2);
+  color:#4a423b;animation:popIn .25s ease;display:flex;gap:9px}
+.eng-steps li .sn{flex:none;width:18px;height:18px;border-radius:50%;background:var(--accent);color:#fff;
+  font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.eng-steps li.done{background:#eef3ee;color:var(--std)}
+.eng-steps li.done .sn{background:var(--std)}
+.eng-caption{margin-top:18px;font-size:14.5px;line-height:1.8;color:#473f38;
+  padding:15px 20px;background:var(--bg-2);border-radius:12px}
+.eng-caption b{color:var(--accent);font-weight:600}
+
+.play-close{max-width:760px;margin:0 auto;padding:48px 0 12px;text-align:center;border-top:1px solid var(--line)}
+.play-close blockquote{margin:0 auto 28px;max-width:560px;font-family:var(--serif);font-style:italic;
+  font-size:19px;line-height:1.8;color:var(--ink)}
+.play-close blockquote b{color:var(--accent);font-style:normal}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects">项目</a>
+      <a href="../index.html#thoughts">思考</a>
+      <a href="../index.html#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<main class="play">
+
+  <header class="play-hero wrap">
+    <a class="back" href="../index.html#thoughts">← 全部思考</a>
+    <div class="mode-toggle">
+      <a href="intent.html">📖 原文</a>
+      <a href="intent-play.html" class="is-active">✦ 互动版</a>
+    </div>
+    <div class="kicker">Thinking · 意图 · 边玩边读</div>
+    <h1>意图，才是下一个输入</h1>
+    <p class="dek">不用读完一长篇——点开炫酷新设备看它撞上的习惯墙；拖动适应进度感受过渡期低谷；
+      勾选行业看社会惯性；再打开上下文与记忆，看 intnt 怎么把多步操作压成一步。</p>
+    <div class="scroll-hint"><span class="ar">↓</span> 往下滚，每一段都能玩</div>
+  </header>
+
+  <!-- 1 · 新设备画廊 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">AI 时代的新输入设备百花齐放，技术与操作性大多都不差。
+      但点开每一个，你会发现它们栽在<b>同一面墙</b>上——习惯的惯性：</p>
+
+    <div class="widget w-devices">
+      <div class="w-head"><span class="w-tag">点开看看</span><h3>炫酷的新设备，和它撞上的墙</h3></div>
+      <div class="gal-cards" id="devCards"></div>
+      <div class="gal-detail" id="devDetail"></div>
+      <p class="gal-more">不是技术不行，是它们都要求你<b>推翻几十年的肌肉记忆</b>从头学起。
+        墙，比参数高得多。</p>
+    </div>
+  </section>
+
+  <!-- 2 · 过渡期低谷 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">个人惯性最狠的地方：换新设备的效率不是一路上升，而是<b>先掉进一个低谷</b>——
+      旧的熟练度用不上，新的还没建立。<b>大多数人撑不过低谷就退回去了。</b>拖拖看：</p>
+
+    <div class="widget w-curve">
+      <div class="w-head"><span class="w-tag">拖一拖</span><h3>过渡期，是一条向下的坡</h3></div>
+      <div class="curve-box">
+        <svg viewBox="0 0 320 150" preserveAspectRatio="xMidYMid meet" aria-label="过渡期效率曲线">
+          <path id="cvArea" class="cv-area" d=""></path>
+          <line class="cv-base" x1="10" y1="75" x2="310" y2="75"></line>
+          <text class="cv-baselabel" x="12" y="71">键鼠基线 100</text>
+          <path id="cvPath" class="cv-path" d=""></path>
+          <line id="cvDrop" class="cv-drop" x1="0" y1="0" x2="0" y2="135"></line>
+          <circle id="cvDot" class="cv-dot" cx="10" cy="75" r="5"></circle>
+        </svg>
+      </div>
+      <div class="ctrl">
+        <div class="ct"><span>适应进度（你坚持了多久）</span><b id="adaptV">0%</b></div>
+        <input type="range" id="adaptR" min="0" max="100" value="0" />
+      </div>
+      <div class="ctrl">
+        <div class="ct"><span>新设备的效率天花板</span><b id="ceilV">130</b></div>
+        <input type="range" id="ceilR" min="105" max="155" value="130" />
+      </div>
+      <div class="cv-stats">
+        <div class="cv-stat"><div class="csn" id="csNow">100</div><div class="csl">此刻相对效率<br>（键鼠=100）</div></div>
+        <div class="cv-stat"><div class="csn" id="csValley">—</div><div class="csl">低谷最深<br>会掉到</div></div>
+        <div class="cv-stat"><div class="csn" id="csBreak">—</div><div class="csl">熬到这里<br>才追平键鼠</div></div>
+      </div>
+      <p class="cv-caption" id="cvCaption"></p>
+    </div>
+  </section>
+
+  <!-- 3 · 行业强绑定 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">个人或许能咬牙换。但<b>整个行业的工作流、培训、工具链，都焊死在键鼠上</b>。
+      勾选几个行业，看这股社会惯性有多重：</p>
+
+    <div class="widget w-industry">
+      <div class="w-head"><span class="w-tag">勾一勾</span><h3>社会惯性：行业的强绑定</h3></div>
+      <div class="ind-grid" id="indGrid"></div>
+      <div class="ind-meter">
+        <div class="im-top"><span class="im-label">社会惯性 · 换设备的总阻力</span><span class="im-num" id="indNum">0</span></div>
+        <div class="im-bar"><div class="im-fill" id="indFill"></div></div>
+        <ul class="im-why" id="indWhy"></ul>
+      </div>
+      <p class="ind-caption" id="indCaption"></p>
+    </div>
+  </section>
+
+  <!-- 4 · intnt 意图引擎（招牌）-->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">所以我们的选择不是换设备，是<b>不改习惯、把键鼠的效率榨干</b>。
+      钥匙在<b>上下文 + 长期记忆</b>里——把它们合成你此刻的<b>意图</b>，就能把多步压成一步。
+      这就是 <b>intnt</b>。两个开关，亲手试：</p>
+
+    <div class="widget w-engine">
+      <div class="w-head"><span class="w-tag">开两个关</span><h3>intnt：先懂你想干嘛，再替你动手</h3></div>
+      <div class="eng-scenario">📨 场景：<b>你刚收到一封客户邮件，想回复、并把会议排进日程。</b>看看 intnt 知道得越多，你要亲手做的越少。</div>
+      <div class="eng-toggles">
+        <div class="eng-toggle" id="tgCtx" role="switch" tabindex="0" aria-checked="false">
+          <span class="et-box"></span>
+          <span><span class="et-t">上下文</span><span class="et-s">你此刻正在做什么</span></span>
+        </div>
+        <div class="eng-toggle" id="tgMem" role="switch" tabindex="0" aria-checked="false">
+          <span class="et-box"></span>
+          <span><span class="et-t">长期记忆</span><span class="et-s">你一贯的偏好与做法</span></span>
+        </div>
+      </div>
+      <div class="eng-headline" id="engHeadline"></div>
+      <div class="eng-stats">
+        <div class="eng-stat"><div class="esn" id="engSteps">8</div><div class="esl">你要亲手做的步数</div></div>
+        <div class="eng-stat"><div class="esn eng-dep" id="engDep">高</div><div class="esl">对键鼠的依赖</div></div>
+      </div>
+      <div class="eng-steps-k">你要亲手做的事</div>
+      <ul class="eng-steps" id="engStepList"></ul>
+      <p class="eng-caption" id="engCaption"></p>
+    </div>
+  </section>
+
+  <!-- 结尾 -->
+  <section class="play-close wrap reveal">
+    <blockquote>最好的输入，不是更炫的设备——<br>是一套<b>已经懂你要做什么</b>的旧工具。</blockquote>
+    <a class="btn btn-primary" href="../index.html#contact">聊聊 intnt 和你的输入效率 →</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap"><p><a href="../index.html">← 回到首页</a> &nbsp;·&nbsp; <a href="intent.html">读纯文字原文 📖</a></p></div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+
+  /* ════ widget 1 · 新设备画廊 ════ */
+  var DEVICES = [
+    { emoji:"🧠", name:"脑机接口", bench:"Neuralink 等",
+      tech:"想一想就能打字，带宽天花板极高，长期想象空间最大。",
+      wall:"侵入式、训练成本高，几十年的键盘肌肉记忆一夜清零——离日常太远。",
+      tags:["想象力满分","落地最远"] },
+    { emoji:"👁️", name:"眼动 + 手势", bench:"Apple Vision Pro",
+      tech:"看哪儿点哪儿、捏一下确认，空间界面无限大，沉浸感拉满。",
+      wall:"久用眼睛累、精度不及鼠标，公开场合比划手势既尴尬又慢。",
+      tags:["体验惊艳","精度/疲劳"] },
+    { emoji:"🎙️", name:"语音输入", bench:"Siri / 语音转写",
+      tech:"解放双手、最接近自然交流，口述长文极快。",
+      wall:"公共场合不能说，改错麻烦，对代码、表格、精确操作几乎无力。",
+      tags:["最自然","场景受限"] },
+    { emoji:"✋", name:"肌电腕带", bench:"Meta sEMG",
+      tech:"靠手指的微动作识别，隐蔽、低疲劳，可随身。",
+      wall:"要从头学一整套新手势，生态空白，没有任何行业软件为它而建。",
+      tags:["很隐蔽","要重学"] },
+    { emoji:"📌", name:"AI 原生硬件", bench:"Humane Pin / Rabbit R1",
+      tech:"无屏、随身、AI 优先，理念上想绕开屏幕与键盘。",
+      wall:"实测翻车：脱离键鼠后效率不升反降，用户的习惯彻底无处安放。",
+      tags:["理念新","已被市场打脸"] }
+  ];
+  (function(){
+    var cardsEl = $("devCards"), detailEl = $("devDetail"), cur = 0;
+    function renderCards(){
+      cardsEl.innerHTML = DEVICES.map(function(e, i){
+        return '<button class="gal-card' + (i === cur ? ' on' : '') + '" data-i="' + i + '">' +
+          '<div class="gc-emoji">' + e.emoji + '</div>' +
+          '<div class="gc-title">' + e.name + '</div>' +
+          '<div class="gc-bench">' + e.bench + '</div></button>';
+      }).join("");
+      Array.prototype.forEach.call(cardsEl.querySelectorAll(".gal-card"), function(b){
+        b.addEventListener("click", function(){ cur = +b.getAttribute("data-i"); renderCards(); renderDetail(); });
+      });
+    }
+    function renderDetail(){
+      var e = DEVICES[cur];
+      detailEl.innerHTML =
+        '<div class="gd-cols">' +
+          '<div class="gd-col tech"><div class="gd-k">✓ 技术与操作性</div><p>' + e.tech + '</p></div>' +
+          '<div class="gd-col wall"><div class="gd-k">✗ 撞上的习惯墙</div><p>' + e.wall + '</p></div>' +
+        '</div>' +
+        '<div class="gd-tags">' + e.tags.map(function(t){ return '<span>' + t + '</span>'; }).join("") + '</div>';
+    }
+    renderCards(); renderDetail();
+  })();
+
+  /* ════ widget 2 · 过渡期低谷 ════ */
+  (function(){
+    var aR = $("adaptR"), cR = $("ceilR");
+    var X0 = 10, X1 = 310, Y = function(e){ return clamp(175 - e, 15, 140); };  // eff 40..160 → y 135..15
+    var X = function(t){ return X0 + t * (X1 - X0); };
+    function smooth(u){ u = clamp(u,0,1); return u*u*(3-2*u); }
+    function eff(t, C){
+      var V = 45;                                   // 低谷最深
+      if (t <= 0.3) return 100 - (100 - V) * smooth(t/0.3);
+      return V + (C - V) * smooth((t - 0.3)/0.7);
+    }
+    function buildPath(C, area){
+      var d = "", N = 60;
+      for (var i = 0; i <= N; i++){
+        var t = i / N, x = X(t), y = Y(eff(t, C));
+        d += (i === 0 ? "M" : "L") + x.toFixed(1) + " " + y.toFixed(1) + " ";
+      }
+      if (area) d += "L" + X1 + " 135 L" + X0 + " 135 Z";
+      return d;
+    }
+    function breakEven(C){                           // 回升段中效率重新 >=100 的 t
+      for (var i = 30; i <= 100; i++){ var t = i/100; if (eff(t, C) >= 100) return t; }
+      return null;
+    }
+    function render(){
+      var t = +aR.value / 100, C = +cR.value;
+      $("adaptV").textContent = aR.value + "%";
+      $("ceilV").textContent = C;
+      $("cvPath").setAttribute("d", buildPath(C, false));
+      $("cvArea").setAttribute("d", buildPath(C, true));
+      var e = eff(t, C), x = X(t), y = Y(e);
+      $("cvDot").setAttribute("cx", x.toFixed(1));
+      $("cvDot").setAttribute("cy", y.toFixed(1));
+      $("cvDrop").setAttribute("x1", x.toFixed(1));
+      $("cvDrop").setAttribute("x2", x.toFixed(1));
+      $("cvDrop").setAttribute("y1", y.toFixed(1));
+
+      var now = Math.round(e);
+      var nowEl = $("csNow"); nowEl.textContent = now;
+      nowEl.style.color = now < 100 ? "var(--crk)" : "var(--std)";
+      $("csValley").textContent = "45";
+      $("csValley").style.color = "var(--crk)";
+      var be = breakEven(C);
+      $("csBreak").textContent = be ? Math.round(be * 100) + "%" : "—";
+
+      var cap = $("cvCaption");
+      if (now < 100)
+        cap.innerHTML = "📉 此刻你比用键鼠还<b>慢</b>（" + now + " < 100）。这就是低谷——<b>很多人就是在这里放弃、退回了键鼠。</b>";
+      else if (t < 0.55)
+        cap.innerHTML = "↗️ 刚爬出低谷、追平键鼠。<b>但你已经为此付出了一整段比从前更慢的日子。</b>";
+      else
+        cap.innerHTML = "✅ 熬过来了，现在确实比键鼠快。<b>问题是——值不值得普通人忍受前面那段下坡？这道门槛，比「技术更先进」高得多。</b>";
+    }
+    aR.addEventListener("input", render);
+    cR.addEventListener("input", render);
+    render();
+  })();
+
+  /* ════ widget 3 · 行业强绑定 ════ */
+  var INDUSTRIES = [
+    { id:"esport", emoji:"🎮", name:"游戏 · 电竞", w:24, why:"FPS 靠鼠标亚像素精度、MOBA 靠键鼠高速连招——换输入方式等于竞技自杀" },
+    { id:"dev",    emoji:"💻", name:"编程 · 开发", w:22, why:"快捷键、vim、多窗口切换，键盘本身就是生产力的核心" },
+    { id:"trade",  emoji:"📈", name:"金融 · 交易", w:20, why:"交易员多屏热键、毫秒级操作，一点误差代价巨大" },
+    { id:"design", emoji:"🎨", name:"设计 · CAD",  w:18, why:"鼠标/数位板的精确定位，是 AutoCAD、Photoshop 的命根子" },
+    { id:"office", emoji:"📊", name:"财务 · 数据", w:16, why:"Excel 的键盘流、公式与快捷键，是整个岗位的肌肉记忆" }
+  ];
+  (function(){
+    var state = {};
+    INDUSTRIES.forEach(function(d){ state[d.id] = false; });
+    var grid = $("indGrid");
+    grid.innerHTML = INDUSTRIES.map(function(d){
+      return '<div class="ind-chip" data-id="' + d.id + '" role="checkbox" tabindex="0" aria-checked="false">' +
+        '<span class="ie">' + d.emoji + '</span><span>' + d.name + '</span><span class="dot"></span></div>';
+    }).join("");
+    function render(){
+      var sum = 0, on = [];
+      INDUSTRIES.forEach(function(d){ if (state[d.id]){ sum += d.w; on.push(d); } });
+      sum = clamp(sum, 0, 100);
+      $("indNum").textContent = sum;
+      $("indFill").style.width = sum + "%";
+      $("indWhy").innerHTML = on.length
+        ? on.map(function(d){ return '<li><span>' + d.emoji + '</span><span>' + d.why + '</span></li>'; }).join("")
+        : '<li class="empty">勾上行业，看它为什么离不开键鼠 ↑</li>';
+      $("indCaption").innerHTML = on.length >= 3
+        ? "勾得越多越清楚：<b>这股惯性几乎不可动</b>。个人能换，行业掉头难如登天——这是新输入方式绕不过的阻力。"
+        : "每个行业的整条工具链，都长在键鼠之上。<b>再多勾几个看看。</b>";
+    }
+    function toggle(el){
+      var id = el.getAttribute("data-id");
+      state[id] = !state[id];
+      el.classList.toggle("on", state[id]);
+      el.setAttribute("aria-checked", state[id] ? "true" : "false");
+      render();
+    }
+    Array.prototype.forEach.call(grid.querySelectorAll(".ind-chip"), function(el){
+      el.addEventListener("click", function(){ toggle(el); });
+      el.addEventListener("keydown", function(e){ if (e.key === " " || e.key === "Enter"){ e.preventDefault(); toggle(el); } });
+    });
+    render();
+  })();
+
+  /* ════ widget 4 · intnt 意图引擎 ════ */
+  var STEPS_FULL = [
+    "打开这封邮件、从头读完",
+    "记下客户提的要点",
+    "新建一个日历事件",
+    "翻历史邮件，查你跟这客户的排期惯例",
+    "切回邮件窗口",
+    "一个字一个字敲回复",
+    "再核对一遍时间",
+    "点发送"
+  ];
+  var ENGINE = {
+    "00": { head:"🤷 intnt 不知道你此刻想做什么——只能<b>等你一步步亲手告诉它</b>。和普通软件没区别。",
+            steps:STEPS_FULL, dep:"高", depc:"var(--crk)",
+            cap:"两个开关都关着。系统对你的<b>意图</b>一无所知，于是一切都要你手动来——这正是今天大多数工具的样子。" },
+    "10": { head:"👀 它知道你<b>正在处理这封客户邮件</b>了（上下文），能把相关动作摆到你眼前。",
+            steps:["读 intnt 已划好重点的邮件","在它预填的回复框上改两句","确认它列出的相关日程","点发送"],
+            dep:"中", depc:"var(--gold)",
+            cap:"只有上下文：它知道你在干嘛，能少让你切来切去。<b>但不懂你的偏好，回复和排期还得你自己定。</b>" },
+    "01": { head:"🧩 它记得你的偏好（记忆），却<b>不知道你此刻在干嘛</b>——空有一身本事，使不上劲。",
+            steps:["自己打开邮件、读完","告诉它你现在要回复","在它按你习惯拟的草稿上微调","确认时间","点发送"],
+            dep:"高", depc:"var(--crk)",
+            cap:"只有记忆、没有上下文：再了解你，也得先靠你亲手指明「我现在在做什么」。<b>缺了上下文，记忆也落不了地。</b>" },
+    "11": { head:"🎯 它既知道你在干嘛（上下文），又知道你一贯怎么做（记忆）——<b>直接把那一步替你做好，你点一下确认。</b>",
+            steps:["确认 intnt 拟好的回复 + 已排好的日程，一键发送"],
+            dep:"低", depc:"var(--std)",
+            cap:"上下文 + 记忆 = 你此刻的<b>意图</b>。intnt 把原来的 8 步压成 1 步——<b>不换设备、不改习惯，手动操作却少了一大截。这，就是 intnt 的地基。</b>" }
+  };
+  (function(){
+    var ctx = false, mem = false;
+    function key(){ return (ctx ? "1" : "0") + (mem ? "1" : "0"); }
+    function render(){
+      $("tgCtx").classList.toggle("on", ctx); $("tgCtx").setAttribute("aria-checked", ctx);
+      $("tgMem").classList.toggle("on", mem); $("tgMem").setAttribute("aria-checked", mem);
+      var e = ENGINE[key()];
+      $("engHeadline").innerHTML = e.head;
+      $("engSteps").textContent = e.steps.length;
+      $("engSteps").style.color = e.steps.length <= 1 ? "var(--std)" : e.steps.length <= 4 ? "var(--gold)" : "var(--crk)";
+      var dep = $("engDep"); dep.textContent = e.dep; dep.style.color = e.depc;
+      $("engStepList").innerHTML = e.steps.map(function(s, i){
+        var done = e.steps.length === 1;
+        return '<li class="' + (done ? "done" : "") + '"><span class="sn">' + (done ? "✓" : (i + 1)) + '</span><span>' + s + '</span></li>';
+      }).join("");
+      $("engCaption").innerHTML = e.cap;
+    }
+    $("tgCtx").addEventListener("click", function(){ ctx = !ctx; render(); });
+    $("tgMem").addEventListener("click", function(){ mem = !mem; render(); });
+    $("tgCtx").addEventListener("keydown", function(ev){ if (ev.key===" "||ev.key==="Enter"){ ev.preventDefault(); ctx=!ctx; render(); } });
+    $("tgMem").addEventListener("keydown", function(ev){ if (ev.key===" "||ev.key==="Enter"){ ev.preventDefault(); mem=!mem; render(); } });
+    render();
+  })();
+
+  /* ════ 滚动渐入 ════ */
+  (function(){
+    var els = document.querySelectorAll(".reveal");
+    if (!("IntersectionObserver" in window)) return;
+    Array.prototype.forEach.call(els, function(el){ el.classList.add("armed"); });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { threshold: 0.1 });
+    Array.prototype.forEach.call(els, function(el){ io.observe(el); });
+  })();
+})();
+</script>
+</body>
+</html>

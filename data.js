@@ -42,6 +42,13 @@ window.SITE = {
   // 思考类页面
   thoughts: [
     {
+      kicker: "Thinking · 意图",
+      title: "意图，才是下一个输入",
+      desc: "脑机接口、眼动、语音、肌电……炫酷的新输入设备，都败给了同一件事——习惯的惯性。真正的胜负手不在换设备，在读懂你此刻想做什么。这就是 intnt。",
+      href: "thoughts/intent.html",
+      play: "thoughts/intent-play.html"
+    },
+    {
       kicker: "Thinking · 数据",
       title: "你的数据，预言你的明天",
       desc: "每一次点击、停留、深夜的搜索，都是一次「意图的泄露」。把碎片拼起来，就能在你开口之前知道你要什么——这就是预测式商业，和它那条很细的边界。",
