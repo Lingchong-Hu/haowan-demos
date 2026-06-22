@@ -42,6 +42,13 @@ window.SITE = {
   // 思考类页面
   thoughts: [
     {
+      kicker: "Thinking · 数据",
+      title: "你的数据，预言你的明天",
+      desc: "每一次点击、停留、深夜的搜索，都是一次「意图的泄露」。把碎片拼起来，就能在你开口之前知道你要什么——这就是预测式商业，和它那条很细的边界。",
+      href: "thoughts/data-future.html",
+      play: "thoughts/data-future-play.html"
+    },
+    {
       kicker: "Thinking · 组织",
       title: "AI 时代的组织架构",
       desc: "代码变便宜后，胜负手是「需求洞察 + 完整交付」的结合——而这两样几乎从不长在同一个人身上。为什么律所的结构，恰好是这个时代最对的答案。",

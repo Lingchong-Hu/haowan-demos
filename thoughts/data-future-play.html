@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>你的数据，预言你的明天 · 互动版 · 好玩的东西</title>
+<meta name="description" content="边滚边玩：勾几条数据，看一个陌生 ID 怎么从模糊变得精准到发毛；拖动时间，看需求一条条被提前看见；亲手划那条「贴心 ↔ 越界」的线。" />
+<!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+/* ════════ 互动版（explorable）局部样式，全部 scoped 在 .play 下 ════════ */
+.play{ --crk:#c0392b; --std:#3f7d5a; --amb:#bd8126; }
+.play b,.play strong{font-weight:600}   /* 强调统一用 600 半粗，避免 CJK 在 700 下的合成粗体过重 */
+.play-hero{padding:30px 0 8px;max-width:760px;margin:0 auto}
+.play-hero h1{font-size:clamp(30px,5.4vw,48px);margin:6px 0 10px}
+.play-hero .dek{font-size:18px;color:var(--ink-soft);font-family:var(--serif);line-height:1.7}
+.play-hero .scroll-hint{margin-top:18px;font-size:13px;color:var(--accent);letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:8px}
+.play-hero .scroll-hint .ar{animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+.play-sec{max-width:760px;margin:0 auto;padding:46px 0}
+.play-sec + .play-sec{border-top:1px solid var(--line)}
+.sec-lede{font-size:19px;line-height:1.85;color:#3f3832;font-family:var(--serif);margin-bottom:26px}
+.sec-lede b{font-weight:600;color:var(--ink)}
+.sec-foot{margin-top:22px;font-size:15.5px;line-height:1.8;color:#473f38;
+  padding:15px 20px;background:var(--bg-2);border-radius:12px}
+.sec-foot b{color:var(--accent);font-weight:600}
+
+/* reveal on scroll —— 默认完全可见；只有 JS 正常运行才「武装→渐入」，JS 一挂内容照样全显示 */
+.reveal{transition:opacity .7s ease,transform .7s ease}
+.reveal.armed{opacity:0;transform:translateY(22px)}
+.reveal.armed.in{opacity:1;transform:none}
+
+/* ── 通用 widget 外框 ── */
+.widget{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px 26px 28px;box-shadow:0 22px 50px -34px rgba(60,40,25,.45)}
+.w-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.w-head h3{font-size:21px;font-family:var(--serif)}
+.w-tag{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#fff;
+  background:var(--accent);border-radius:999px;padding:5px 12px;white-space:nowrap}
+
+/* ── range 通用样式 ── */
+.play input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+  background:var(--bg-2);outline:none;cursor:pointer}
+.play input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:24px;height:24px;border-radius:50%;background:var(--accent);border:3px solid #fff;
+  box-shadow:0 3px 8px -1px rgba(120,50,20,.5);cursor:grab}
+.play input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.08)}
+.play input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;cursor:grab}
+
+/* ════ widget 1 · 数据流叠加器（招牌）════ */
+.stream-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px}
+@media(max-width:560px){.stream-grid{grid-template-columns:1fr 1fr}}
+.stream-chip{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;
+  border:1.5px solid var(--line);border-radius:12px;padding:12px 14px;background:var(--bg);
+  transition:all .18s;font-size:14.5px;font-weight:500;color:var(--ink-soft)}
+.stream-chip:hover{border-color:var(--accent-soft)}
+.stream-chip .se{font-size:19px}
+.stream-chip.on{border-color:var(--accent);background:var(--card);color:var(--ink);
+  box-shadow:0 12px 28px -20px rgba(150,60,25,.7)}
+.stream-chip .dot{margin-left:auto;width:18px;height:18px;border-radius:50%;border:2px solid var(--line);
+  position:relative;transition:all .18s;flex:none}
+.stream-chip.on .dot{border-color:var(--accent);background:var(--accent)}
+.stream-chip.on .dot::after{content:"✓";position:absolute;inset:0;color:#fff;font-size:11px;
+  display:flex;align-items:center;justify-content:center;font-weight:700}
+.stream-hint{font-size:12.5px;color:var(--ink-soft);text-align:right;margin:2px 2px 20px;opacity:.85}
+
+.pred-card{border:1px solid var(--line);border-radius:16px;background:var(--bg-2);padding:22px 22px 24px;
+  transition:background .25s,border-color .25s}
+.pred-card.hot{background:#fbeeec;border-color:#e6b5aa}
+.pred-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:6px}
+.pred-who{font-size:12.5px;font-weight:600;letter-spacing:.04em;color:var(--ink-soft)}
+.pred-conf{font-family:var(--display);font-size:15px;font-weight:600;color:var(--accent);
+  font-variant-numeric:tabular-nums;white-space:nowrap}
+.conf-bar{height:8px;border-radius:999px;background:var(--card);overflow:hidden;margin:8px 0 18px}
+.conf-fill{height:100%;width:0;border-radius:999px;
+  background:linear-gradient(90deg,#cf9b5a,#b4542e);transition:width .35s ease}
+.conf-fill.hot{background:linear-gradient(90deg,#d4642e,#c0392b)}
+.pred-headline{font-family:var(--serif);font-size:18.5px;line-height:1.7;color:var(--ink);min-height:56px}
+.pred-headline b{color:var(--accent);font-weight:600}
+.pred-card.hot .pred-headline b{color:var(--crk)}
+.clue-list{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:7px}
+.clue-list li{font-size:13px;line-height:1.5;padding:8px 12px;border-radius:9px;background:var(--card);
+  border:1px solid var(--line);color:#4a423b;animation:popIn .25s ease;display:flex;gap:8px}
+.clue-list li .ce{flex:none}
+@keyframes popIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+.pred-empty{font-size:15px;color:var(--ink-soft);text-align:center;padding:14px 0}
+
+/* ════ widget 2 · 需求时间轴 ════ */
+.tl-slider-row{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.tl-slider-row input{flex:1}
+.tl-end{font-size:13px;color:var(--ink-soft);font-weight:500;white-space:nowrap}
+.tl-when{text-align:center;font-family:var(--display);font-size:22px;color:var(--accent);margin:12px 0 18px}
+.tl-track{position:relative;height:6px;background:var(--bg-2);border-radius:999px;margin:0 4px 26px}
+.tl-track .dot{position:absolute;top:50%;transform:translate(-50%,-50%);width:11px;height:11px;
+  border-radius:50%;background:var(--accent-soft);transition:background .2s,transform .2s}
+.tl-track .dot.passed{background:var(--accent)}
+.tl-track .dot.cur{background:var(--accent);transform:translate(-50%,-50%) scale(1.6);
+  box-shadow:0 0 0 4px rgba(180,84,46,.18)}
+.need-card{border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:20px 22px}
+.need-emoji{font-size:30px}
+.need-name{font-family:var(--display);font-size:21px;font-weight:600;margin:6px 0 4px}
+.need-desc{font-size:14.5px;color:#4a423b;line-height:1.7;font-family:var(--serif)}
+.need-conf{margin-top:14px;font-size:12.5px;color:var(--ink-soft)}
+.need-conf b{color:var(--sage);font-weight:600}
+.tl-caption{margin-top:20px;font-size:15px;line-height:1.75;color:#473f38;
+  padding:14px 18px;background:var(--bg-2);border-radius:12px}
+.tl-caption b{color:var(--accent);font-weight:600}
+
+/* ════ widget 3 · 边界滑块（贴心↔越界）════ */
+.bd-scale{position:relative;margin:6px 4px 4px}
+.bd-scale input{width:100%}
+.bd-ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--ink-soft);margin-top:4px}
+.bd-zone{margin:22px 0 6px;border-radius:16px;padding:22px 22px 24px;border:1.5px solid var(--line);
+  transition:background .25s,border-color .25s}
+.bd-zone.z0{background:#eef3ee;border-color:#bcd3c1}
+.bd-zone.z1{background:var(--bg-2);border-color:var(--line)}
+.bd-zone.z2{background:#fdf5e6;border-color:#e7cf9a}
+.bd-zone.z3{background:#fbe9e5;border-color:#e6b0a3}
+.bd-feel{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;
+  letter-spacing:.12em;text-transform:uppercase;padding:5px 12px;border-radius:999px;margin-bottom:14px}
+.bd-zone.z0 .bd-feel{background:#d6e8da;color:var(--std)}
+.bd-zone.z1 .bd-feel{background:#e7ddd0;color:var(--ink-soft)}
+.bd-zone.z2 .bd-feel{background:#f3e2bd;color:var(--amb)}
+.bd-zone.z3 .bd-feel{background:#f3cabf;color:var(--crk)}
+.bd-scene{font-size:17px;line-height:1.75;color:var(--ink);font-family:var(--serif)}
+.bd-scene b{font-weight:600}
+.bd-react{margin-top:14px;font-size:14.5px;line-height:1.7;color:#4a423b}
+.bd-react b{font-weight:600}
+.bd-caption{margin-top:20px;font-size:15px;line-height:1.8;color:#473f38;text-align:center}
+.bd-caption b{color:var(--accent);font-weight:600}
+
+/* ════ widget 4 · 例子画廊 ════ */
+.gal-cards{display:flex;gap:12px;flex-wrap:wrap}
+.gal-card{flex:1;min-width:200px;text-align:left;border:1.5px solid var(--line);border-radius:14px;
+  padding:16px 18px;background:var(--bg);cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.gal-card:hover{border-color:var(--accent-soft);transform:translateY(-2px)}
+.gal-card.on{border-color:var(--accent);background:var(--card);
+  box-shadow:0 14px 32px -22px rgba(150,60,25,.6)}
+.gal-card .gc-emoji{font-size:24px}
+.gal-card .gc-title{font-family:var(--display);font-size:17px;font-weight:600;margin:6px 0 4px}
+.gal-card .gc-bench{font-size:12px;color:var(--sage);font-weight:500}
+.gal-detail{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg-2);
+  padding:20px 22px;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.gd-bench{font-size:12.5px;font-weight:600;color:var(--sage);letter-spacing:.02em;margin-bottom:14px}
+.gd-cols{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:560px){.gd-cols{grid-template-columns:1fr;gap:16px}}
+.gd-k{font-size:11.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;margin-bottom:8px}
+.gd-col.signal .gd-k{color:var(--accent)}
+.gd-col.win .gd-k{color:var(--sage)}
+.gd-col p{font-size:14px;line-height:1.75;color:#3f3832}
+.gd-tags{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+.gd-tags span{font-size:11.5px;font-weight:500;padding:4px 11px;border-radius:999px;
+  background:var(--card);border:1px solid var(--line);color:var(--ink-soft)}
+.gal-more{margin-top:18px;font-size:14px;line-height:1.7;color:var(--ink-soft)}
+.gal-more-note{font-size:12.5px;opacity:.8}
+
+/* ── 结尾 ── */
+.play-close{max-width:760px;margin:0 auto;padding:48px 0 12px;text-align:center;border-top:1px solid var(--line)}
+.play-close blockquote{margin:0 auto 28px;max-width:560px;font-family:var(--serif);font-style:italic;
+  font-size:19px;line-height:1.8;color:var(--ink)}
+.play-close blockquote b{color:var(--accent);font-style:normal}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects">项目</a>
+      <a href="../index.html#thoughts">思考</a>
+      <a href="../index.html#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<main class="play">
+
+  <header class="play-hero wrap">
+    <a class="back" href="../index.html#thoughts">← 全部思考</a>
+    <div class="mode-toggle">
+      <a href="data-future.html">📖 原文</a>
+      <a href="data-future-play.html" class="is-active">✦ 互动版</a>
+    </div>
+    <div class="kicker">Thinking · 数据 · 边玩边读</div>
+    <h1>你的数据，预言你的明天</h1>
+    <p class="dek">不用读完一长篇——勾几条数据，看一个陌生 ID 怎么从模糊变得精准到发毛；
+      拖动时间，看需求一条条被提前看见；再亲手划那条「贴心 ↔ 越界」的线。</p>
+    <div class="scroll-hint"><span class="ar">↓</span> 往下滚，每一段都能玩</div>
+  </header>
+
+  <!-- 1 · 数据流叠加器（招牌）-->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">单独看，每一条数据都微不足道。但每一条，都是同一个"意图"投下的影子。
+      <b>勾上越多影子，那张脸就越清楚</b>——给你一个陌生 ID，亲手喂数据看看：</p>
+
+    <div class="widget w-stream">
+      <div class="w-head"><span class="w-tag">勾一勾</span><h3>把碎片叠成一张脸</h3></div>
+      <div class="stream-grid" id="streamGrid"></div>
+      <div class="stream-hint">勾得越多，下面这位"陌生人"就越藏不住 ↓</div>
+
+      <div class="pred-card" id="predCard">
+        <div class="pred-top">
+          <span class="pred-who">匿名用户 #4471 · 预测画像</span>
+          <span class="pred-conf" id="predConf">置信度 0%</span>
+        </div>
+        <div class="conf-bar"><div class="conf-fill" id="confFill"></div></div>
+        <div class="pred-headline" id="predHeadline"></div>
+        <ul class="clue-list" id="clueList"></ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 · 需求时间轴 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">需求从来不是一个孤立的点，是<b>一条有顺序的链</b>。
+      预测式商业真正的赢法，是把这条链上的每一个未来时刻都提前看见——
+      然后在你走到那一步之前，就站在那里。拖动时间往前推：</p>
+
+    <div class="widget w-timeline">
+      <div class="w-head"><span class="w-tag">拖一拖</span><h3>把时间往前推，需求一个个浮出来</h3></div>
+      <div class="tl-slider-row">
+        <span class="tl-end">今天</span>
+        <input type="range" id="tlRange" min="0" max="100" value="0" aria-label="未来时间" />
+        <span class="tl-end">+ 半年</span>
+      </div>
+      <div class="tl-when" id="tlWhen"></div>
+      <div class="tl-track" id="tlTrack"></div>
+      <div class="need-card" id="needCard"></div>
+      <p class="tl-caption" id="tlCaption"></p>
+    </div>
+  </section>
+
+  <!-- 3 · 边界滑块 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">同一份数据、同一套算法，既能"贴心地预判"，也能"越界地窥探"。
+      <b>差别不在技术，在分寸。</b>下面是同一条预测——"我们算出你大概率要搬家"——
+      把滑块从左拖到右，看它怎么从体贴一步步滑成可怕。<b>你的线，划在哪？</b></p>
+
+    <div class="widget w-boundary">
+      <div class="w-head"><span class="w-tag">划条线</span><h3>贴心，还是窥探？</h3></div>
+      <div class="bd-scale">
+        <input type="range" id="bdRange" min="0" max="100" value="15" aria-label="边界" />
+        <div class="bd-ticks"><span>贴心</span><span>微妙</span><span>不安</span><span>越界</span></div>
+      </div>
+      <div class="bd-zone z0" id="bdZone">
+        <span class="bd-feel" id="bdFeel"></span>
+        <div class="bd-scene" id="bdScene"></div>
+        <div class="bd-react" id="bdReact"></div>
+      </div>
+      <p class="bd-caption" id="bdCaption"></p>
+    </div>
+  </section>
+
+  <!-- 4 · 例子画廊 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">这不是空想。一批公司已经靠"比你更早知道你要什么"建起了护城河。
+      点开看看，<b>谁攥住了需求信号，谁就赢在了起跑线之前：</b></p>
+
+    <div class="widget w-gallery">
+      <div class="w-head"><span class="w-tag">点开看看</span><h3>谁已靠需求信号盈利</h3></div>
+      <div class="gal-cards" id="galCards"></div>
+      <div class="gal-detail" id="galDetail"></div>
+      <p class="gal-more">底层都是同一件事：<b>把分散的行为，变成可提前下注的需求信号</b>。
+        <br><span class="gal-more-note">（往 EXAMPLES 数组里加一条，就多一个例子。）</span></p>
+    </div>
+  </section>
+
+  <!-- 结尾 -->
+  <section class="play-close wrap reveal">
+    <blockquote>数据不会泄露你做过什么——<br>它泄露你<b>接下来要做什么</b>。</blockquote>
+    <a class="btn btn-primary" href="../index.html#contact">把你的需求讲给我们 →</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap"><p><a href="../index.html">← 回到首页</a> &nbsp;·&nbsp; <a href="data-future.html">读纯文字原文 📖</a></p></div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+
+  /* ════ widget 1 · 数据流叠加器（招牌）════
+     场景：一个匿名 ID 正在悄悄准备搬家。每条数据是一块拼图，
+     signal 之和 = 100；勾得越多，置信度越高、预测越具体。 */
+  var STREAMS = [
+    { id:"loc",    emoji:"📍", name:"位置",  signal:18, ce:"📍", clue:"连续两周出现在城西几个陌生小区，每次停留 30–60 分钟" },
+    { id:"search", emoji:"🔍", name:"搜索",  signal:24, ce:"🔍", clue:"搜过「退租押金能退多少」「靠谱搬家公司报价」" },
+    { id:"buy",    emoji:"🛒", name:"购物",  signal:20, ce:"🛒", clue:"刚下单 20 个收纳箱、两卷气泡膜" },
+    { id:"rhythm", emoji:"⏰", name:"作息",  signal:10, ce:"⏰", clue:"连着五个深夜 1 点后还在活跃刷手机" },
+    { id:"pay",    emoji:"💳", name:"支付",  signal:16, ce:"💳", clue:"付了一笔标注「中介服务费」的款" },
+    { id:"social", emoji:"💬", name:"社交",  signal:12, ce:"💬", clue:"在群里问「有靠谱的搬家师傅推荐吗」" }
+  ];
+  (function(){
+    var state = {};
+    STREAMS.forEach(function(s){ state[s.id] = false; });
+    var grid = $("streamGrid");
+    grid.innerHTML = STREAMS.map(function(s){
+      return '<div class="stream-chip" data-id="' + s.id + '" role="checkbox" tabindex="0" aria-checked="false">' +
+        '<span class="se">' + s.emoji + '</span><span>' + s.name + '</span><span class="dot"></span></div>';
+    }).join("");
+
+    function render(){
+      var conf = 0, on = [];
+      STREAMS.forEach(function(s){ if (state[s.id]){ conf += s.signal; on.push(s); } });
+      conf = clamp(conf, 0, 100);
+      var hot = conf >= 86;
+
+      $("predConf").textContent = "置信度 " + conf + "%";
+      $("confFill").style.width = conf + "%";
+      $("confFill").classList.toggle("hot", hot);
+      $("predCard").classList.toggle("hot", hot);
+
+      var h;
+      if (conf === 0)
+        h = '<span class="pred-empty">🙈 没有任何数据。这只是一个匿名 ID——我们不知道 ta 是谁，更不知道 ta 要什么。</span>';
+      else if (conf <= 30)
+        h = '这个人最近在<b>张罗一件不大不小的事</b>……具体是什么，还看不清。';
+      else if (conf <= 60)
+        h = '像是要<b>换个住处</b>？方向有了——但也可能是装修、旅行，或者别的。';
+      else if (conf <= 85)
+        h = 'ta 大概率<b>正在准备搬家</b>。轮廓清楚了，时间点还差一口气。';
+      else
+        h = '📦 <b>未来约 3 周内搬家，几乎确定。</b>下一条需求链已经排好：搬家服务 → 宽带迁移 → 新居家具 → 周边外卖。我们可以在 ta 开口之前，就把这些推到眼前。';
+      $("predHeadline").innerHTML = h;
+
+      $("clueList").innerHTML = on.map(function(s){
+        return '<li><span class="ce">' + s.ce + '</span><span>' + s.clue + '</span></li>';
+      }).join("");
+    }
+    function toggle(el){
+      var id = el.getAttribute("data-id");
+      state[id] = !state[id];
+      el.classList.toggle("on", state[id]);
+      el.setAttribute("aria-checked", state[id] ? "true" : "false");
+      render();
+    }
+    Array.prototype.forEach.call(grid.querySelectorAll(".stream-chip"), function(el){
+      el.addEventListener("click", function(){ toggle(el); });
+      el.addEventListener("keydown", function(e){
+        if (e.key === " " || e.key === "Enter"){ e.preventDefault(); toggle(el); }
+      });
+    });
+    render();
+  })();
+
+  /* ════ widget 2 · 需求时间轴 ════ */
+  var NEEDS = [
+    { at:0,  when:"今天",    emoji:"🚚", name:"搬家服务",       conf:96, desc:"找师傅、约车、比价。这是 ta 此刻最迫切、也最先开口的需求。" },
+    { at:9,  when:"+3 天",   emoji:"📦", name:"打包耗材补货",   conf:90, desc:"收纳箱不够、缺胶带和记号笔——会在深夜随手补单。" },
+    { at:20, when:"+1 周",   emoji:"🌐", name:"宽带 / 水电过户", conf:84, desc:"地址变更、宽带迁移、账单过户。麻烦但绕不开。" },
+    { at:36, when:"+2 周",   emoji:"🛋️", name:"新居家具家电",   conf:78, desc:"床垫、窗帘、冰箱、灯具。客单价最高的一波，谁先站在这里谁吃肉。" },
+    { at:55, when:"+1 个月", emoji:"🍜", name:"生活半径重建",   conf:68, desc:"附近的早餐店、外卖、超市、菜市场——整个日常补给网要重连。" },
+    { at:75, when:"+2 个月", emoji:"🚲", name:"通勤方式调整",   conf:55, desc:"上班路线变了：共享单车、打车、甚至考虑换辆车。" },
+    { at:92, when:"+4 个月", emoji:"🪴", name:"安顿与社交",     conf:44, desc:"绿植、装饰、乔迁小聚。安顿好了，需求从「生存」转向「生活」。" }
+  ];
+  (function(){
+    var r = $("tlRange"), track = $("tlTrack");
+    track.innerHTML = NEEDS.map(function(n){
+      return '<span class="dot" data-at="' + n.at + '" style="left:' + n.at + '%"></span>';
+    }).join("");
+    var dots = track.querySelectorAll(".dot");
+    function curIndex(v){
+      var idx = 0;
+      for (var i = 0; i < NEEDS.length; i++){ if (v >= NEEDS[i].at - 0.5) idx = i; }
+      return idx;
+    }
+    function render(){
+      var v = +r.value, i = curIndex(v), n = NEEDS[i];
+      $("tlWhen").textContent = n.when;
+      Array.prototype.forEach.call(dots, function(d, k){
+        d.classList.toggle("passed", k < i);
+        d.classList.toggle("cur", k === i);
+      });
+      $("needCard").innerHTML =
+        '<div class="need-emoji">' + n.emoji + '</div>' +
+        '<div class="need-name">' + n.name + '</div>' +
+        '<div class="need-desc">' + n.desc + '</div>' +
+        '<div class="need-conf">提前预判置信度 · <b>' + n.conf + '%</b></div>';
+      $("tlCaption").innerHTML = i >= NEEDS.length - 1
+        ? "你刚刚把一个人未来半年的需求，<b>从头到尾预演了一遍</b>。谁能在每个点上提前站好，谁就拿走了整条链。"
+        : (i >= 3
+            ? "看到没——一次搬家，拉出<b>一长串</b>互相咬合的需求。<b>继续往前推。</b>"
+            : "需求是有顺序的。<b>往后拖，看这条链怎么一节节展开。</b>");
+    }
+    r.addEventListener("input", render);
+    render();
+  })();
+
+  /* ════ widget 3 · 边界滑块（贴心↔越界）════ */
+  var BANDS = [
+    { z:"z0", feel:"😊 贴心", scene:"你在搜索框打下「搬家」两个字，App 顺手把<b>靠谱搬家服务和收纳箱</b>推到眼前，帮你省下一通翻找。",
+      react:"<b>感受：方便。</b>你主动开了口，它接得又快又准——这是预测最善意的样子。" },
+    { z:"z1", feel:"🤔 微妙", scene:"你还<b>没搜任何东西</b>，打开 App，首页已经默默变成了一整屏「搬家专题」。",
+      react:"<b>感受：它怎么知道？</b>预测跑到了你开口之前。便利仍在，但你开始意识到——它一直在看。" },
+    { z:"z2", feel:"😟 不安", scene:"你收到一条短信：「<b>听说您近期要搬家</b>，新居宽带专属优惠请查收」。可你从没在任何地方说过要搬家。",
+      react:"<b>感受：被偷看了。</b>它不只算到了，还<b>主动告诉你它算到了</b>——而且用在了推销上。那条线，刚刚被踩到。" },
+    { z:"z3", feel:"😠 越界", scene:"你的房东「恰好」打来电话问是不是要退租；公司 HR 也「顺口」提了一句你最近在看别的房子。<b>你的搬家计划，先于你告诉任何人，就泄露了出去。</b>",
+      react:"<b>感受：危险。</b>同一份预测，被卖给了会伤害你的人。技术没变，分寸碎了——这就是越界。" }
+  ];
+  (function(){
+    var r = $("bdRange");
+    function bandOf(v){ return v <= 25 ? 0 : v <= 55 ? 1 : v <= 80 ? 2 : 3; }
+    function render(){
+      var v = +r.value, i = bandOf(v), b = BANDS[i];
+      var zone = $("bdZone");
+      zone.className = "bd-zone " + b.z;
+      $("bdFeel").textContent = b.feel;
+      $("bdScene").innerHTML = b.scene;
+      $("bdReact").innerHTML = b.react;
+      $("bdCaption").innerHTML = i <= 1
+        ? "现在还在安全的一侧。<b>再往右拖一点，看那条线在哪里断裂。</b>"
+        : (i === 2
+            ? "你已经跨过了大多数人的舒适区。<b>差别从来不是技术，是分寸。</b>"
+            : "技术是同一套，从最左到最右，<b>没变过一行代码</b>。变的只有用它的人的分寸——而那条线，得由做产品的人亲手划。");
+    }
+    r.addEventListener("input", render);
+    render();
+  })();
+
+  /* ════ widget 4 · 例子画廊（数据驱动，加例子=加一条）════ */
+  var EXAMPLES = [
+    {
+      emoji:"🤰", title:"Target · 怀孕预测", bench:"对标 Target（美股 TGT）",
+      signal:"无香乳液、特定营养补充剂、大包装棉品——孕早期会出现一组<b>稳定的购物指纹</b>。Target 给每位顾客算了一个「怀孕概率分」。",
+      win:"在孕妇自己公开之前，就把母婴优惠券精准寄达，抢在所有竞争对手前锁定这位未来几年的高价值客户。需求信号 = 提前几个月的客户锁定。",
+      tags:["购物指纹","提前锁客","经典案例"]
+    },
+    {
+      emoji:"📦", title:"Amazon · 预测式发货", bench:"对标 Amazon（美股 AMZN）",
+      signal:"浏览时长、加购未付、地区购买趋势——亚马逊用这些信号预测「某地区即将下单的商品」。",
+      win:"在你点「下单」之前，货已经发到离你最近的仓库。把配送时间压到对手够不到的下限——速度本身成了护城河。专利早在 2013 年就申请了。",
+      tags:["提前发货","以速度筑墙","已申请专利"]
+    },
+    {
+      emoji:"🎬", title:"Netflix · 未拍先知", bench:"对标 Netflix（美股 NFLX）",
+      signal:"几亿人的观看、暂停、弃剧、重看数据，拼出「什么样的剧集会被追完」的精确画像。",
+      win:"《纸牌屋》在开拍前，就靠数据确信它会爆——于是敢一次性买下两季。把「赌内容」变成了「算内容」，这是传统片厂给不出的确定性。",
+      tags:["内容即数据","先算后拍","降低赌性"]
+    },
+    {
+      emoji:"👗", title:"Stitch Fix · 替你先挑", bench:"对标 Stitch Fix（美股 SFIX）",
+      signal:"尺码、风格反馈、退货理由、社媒灵感——把「你说不清但确实存在的审美」量化成一组偏好向量。",
+      win:"不等你逛，先替你挑五件寄到家。需求信号在这里直接变成了「免逛街」的体验——预测越准，退货越少，复购越稳。",
+      tags:["替你决策","偏好向量","所见即所选"]
+    }
+    /* ── 加例子：复制上面一段，改 emoji / title / bench / signal / win / tags ── */
+  ];
+  (function(){
+    var cardsEl = $("galCards"), detailEl = $("galDetail"), cur = 0;
+    function renderCards(){
+      cardsEl.innerHTML = EXAMPLES.map(function(e, i){
+        return '<button class="gal-card' + (i === cur ? ' on' : '') + '" data-i="' + i + '">' +
+          '<div class="gc-emoji">' + e.emoji + '</div>' +
+          '<div class="gc-title">' + e.title + '</div>' +
+          '<div class="gc-bench">' + e.bench + '</div></button>';
+      }).join("");
+      Array.prototype.forEach.call(cardsEl.querySelectorAll(".gal-card"), function(b){
+        b.addEventListener("click", function(){ cur = +b.getAttribute("data-i"); renderCards(); renderDetail(); });
+      });
+    }
+    function renderDetail(){
+      var e = EXAMPLES[cur];
+      detailEl.innerHTML =
+        '<div class="gd-bench">' + e.bench + '</div>' +
+        '<div class="gd-cols">' +
+          '<div class="gd-col signal"><div class="gd-k">读到的需求信号</div><p>' + e.signal + '</p></div>' +
+          '<div class="gd-col win"><div class="gd-k">怎么赢在开口之前</div><p>' + e.win + '</p></div>' +
+        '</div>' +
+        '<div class="gd-tags">' + e.tags.map(function(t){ return '<span>' + t + '</span>'; }).join("") + '</div>';
+    }
+    renderCards(); renderDetail();
+  })();
+
+  /* ════ 滚动渐入（渐进增强：无 JS / 无 IO 时内容默认全可见）════ */
+  (function(){
+    var els = document.querySelectorAll(".reveal");
+    if (!("IntersectionObserver" in window)) return;     // 不支持就保持可见，绝不隐藏
+    Array.prototype.forEach.call(els, function(el){ el.classList.add("armed"); });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { threshold: 0.1 });
+    Array.prototype.forEach.call(els, function(el){ io.observe(el); });
+  })();
+})();
+</script>
+</body>
+</html>
