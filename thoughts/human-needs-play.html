@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>需求，挖到人性那一层 · 互动版 · 好玩的东西</title>
+<meta name="description" content="边滚边玩：把一个表层诉求一层层挖到人性；拖动时代看表层怎么变、人性怎么不变；翻牌看「嘴上说的 vs 真正要的」；再把每根人性的弦接到 AI 能做的事上。" />
+<!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+/* ════════ 互动版（explorable）局部样式，全部 scoped 在 .play 下 ════════ */
+.play{ --crk:#c0392b; --std:#3f7d5a; --amb:#bd8126; }
+.play b,.play strong{font-weight:600}
+.play-hero{padding:30px 0 8px;max-width:760px;margin:0 auto}
+.play-hero h1{font-size:clamp(30px,5.4vw,48px);margin:6px 0 10px}
+.play-hero .dek{font-size:18px;color:var(--ink-soft);font-family:var(--serif);line-height:1.7}
+.play-hero .scroll-hint{margin-top:18px;font-size:13px;color:var(--accent);letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:8px}
+.play-hero .scroll-hint .ar{animation:bob 1.4s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+
+.play-sec{max-width:760px;margin:0 auto;padding:46px 0}
+.play-sec + .play-sec{border-top:1px solid var(--line)}
+.sec-lede{font-size:19px;line-height:1.85;color:#3f3832;font-family:var(--serif);margin-bottom:26px}
+.sec-lede b{font-weight:600;color:var(--ink)}
+
+.reveal{transition:opacity .7s ease,transform .7s ease}
+.reveal.armed{opacity:0;transform:translateY(22px)}
+.reveal.armed.in{opacity:1;transform:none}
+
+.widget{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px 26px 28px;box-shadow:0 22px 50px -34px rgba(60,40,25,.45)}
+.w-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.w-head h3{font-size:21px;font-family:var(--serif)}
+.w-tag{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#fff;
+  background:var(--accent);border-radius:999px;padding:5px 12px;white-space:nowrap}
+
+.play input[type=range]{-webkit-appearance:none;appearance:none;height:6px;border-radius:999px;
+  background:var(--bg-2);outline:none;cursor:pointer}
+.play input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;
+  width:24px;height:24px;border-radius:50%;background:var(--accent);border:3px solid #fff;
+  box-shadow:0 3px 8px -1px rgba(120,50,20,.5);cursor:grab}
+.play input[type=range]::-webkit-slider-thumb:active{cursor:grabbing;transform:scale(1.08)}
+.play input[type=range]::-moz-range-thumb{width:22px;height:22px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;cursor:grab}
+
+/* ════ widget 1 · 欲望下钻（招牌）════ */
+.dig-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.dig-chip{border:1.5px solid var(--line);border-radius:999px;padding:9px 16px;background:var(--bg);
+  cursor:pointer;font-size:14px;font-weight:500;color:var(--ink-soft);transition:all .18s;font-family:var(--sans)}
+.dig-chip:hover{border-color:var(--accent-soft)}
+.dig-chip.on{border-color:var(--accent);background:var(--accent);color:#fff}
+.dig-stack{margin-top:18px;display:flex;flex-direction:column;gap:0}
+.dig-layer{position:relative;border:1px solid var(--line);border-radius:13px;padding:15px 18px;
+  background:var(--bg);margin-left:0;animation:digIn .35s ease}
+.dig-layer + .dig-layer{margin-top:10px}
+@keyframes digIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+.dl-k{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--ink-soft);margin-bottom:5px}
+.dig-layer.d0{margin-left:0}
+.dig-layer.d1{margin-left:5%}
+.dig-layer.d2{margin-left:10%}
+.dig-layer.core{margin-left:15%;border-color:var(--accent);background:#fbeeec}
+.dig-layer.core .dl-k{color:var(--accent)}
+.dl-text{font-size:15px;line-height:1.65;color:var(--ink);font-family:var(--serif)}
+.dl-driver{font-family:var(--display);font-size:20px;font-weight:600;color:var(--accent);margin-bottom:4px}
+.dig-ai{margin-top:12px;border:1px solid var(--sage);border-radius:13px;padding:15px 18px;
+  background:#eef3ee;animation:digIn .4s ease}
+.dig-ai .dl-k{color:var(--sage)}
+.dig-ai .dl-text{color:#33402f}
+.dig-actions{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+.dig-btn{font-size:14px}
+.dig-hint{font-size:13px;color:var(--ink-soft);margin-top:14px}
+
+/* ════ widget 2 · 时代滑块（表层变，人性不变）════ */
+.era-row{display:flex;align-items:center;gap:14px;margin-bottom:4px}
+.era-row input{flex:1}
+.era-end{font-size:13px;color:var(--ink-soft);font-weight:500;white-space:nowrap}
+.era-year{text-align:center;font-family:var(--display);font-size:22px;color:var(--accent);margin:10px 0 16px}
+.era-surface{border:1px solid var(--line);border-radius:14px;background:var(--bg);padding:22px;text-align:center;
+  transition:background .2s}
+.era-surface .es-emoji{font-size:42px;line-height:1}
+.era-surface .es-name{font-family:var(--display);font-size:22px;font-weight:600;margin-top:8px}
+.era-surface .es-tag{font-size:13px;color:var(--ink-soft);margin-top:4px}
+.era-core{margin-top:12px;border:1.5px solid var(--accent);border-radius:14px;background:#fbeeec;
+  padding:16px 20px;text-align:center}
+.era-core .ec-k{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--accent)}
+.era-core .ec-text{font-family:var(--serif);font-size:17px;color:var(--ink);margin-top:6px;font-weight:600}
+.era-caption{margin-top:16px;font-size:14.5px;line-height:1.75;color:#473f38;text-align:center}
+.era-caption b{color:var(--accent);font-weight:600}
+
+/* ════ widget 3 · 真伪需求翻牌 ════ */
+.flip-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:560px){.flip-grid{grid-template-columns:1fr}}
+.flip{perspective:1000px;cursor:pointer;height:128px}
+.flip-inner{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.4,.2,.2,1);
+  transform-style:preserve-3d}
+.flip.flipped .flip-inner{transform:rotateY(180deg)}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;justify-content:center;
+  border:1.5px solid var(--line)}
+.flip-front{background:var(--bg)}
+.flip-back{background:#fbeeec;border-color:var(--accent);transform:rotateY(180deg)}
+.ff-k{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px}
+.flip-front .ff-k{color:var(--ink-soft)}
+.flip-back .ff-k{color:var(--accent)}
+.ff-text{font-size:15.5px;line-height:1.55;color:var(--ink);font-family:var(--serif)}
+.flip-front .ff-text::before{content:"“";opacity:.5}
+.flip-front .ff-text::after{content:"”";opacity:.5}
+.ff-hint{font-size:11.5px;color:var(--ink-soft);margin-top:auto;padding-top:8px;opacity:.8}
+.flip-caption{margin-top:18px;font-size:14.5px;line-height:1.75;color:#473f38;text-align:center}
+.flip-caption b{color:var(--accent);font-weight:600}
+
+/* ════ widget 4 · 人性→AI 映射画廊 ════ */
+.map-chips{display:flex;gap:10px;flex-wrap:wrap}
+.map-chip{flex:1;min-width:120px;text-align:center;border:1.5px solid var(--line);border-radius:14px;
+  padding:14px 10px;background:var(--bg);cursor:pointer;transition:all .2s;font-family:var(--sans)}
+.map-chip:hover{border-color:var(--accent-soft);transform:translateY(-2px)}
+.map-chip.on{border-color:var(--accent);background:var(--card);box-shadow:0 14px 32px -22px rgba(150,60,25,.6)}
+.map-chip .mc-emoji{font-size:26px}
+.map-chip .mc-name{font-size:13.5px;font-weight:600;margin-top:6px;color:var(--ink)}
+.map-detail{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--bg-2);
+  padding:22px;animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.md-flow{display:flex;align-items:stretch;gap:12px;flex-wrap:wrap}
+.md-cell{flex:1;min-width:180px}
+.md-arrow{display:flex;align-items:center;color:var(--accent);font-size:22px;font-weight:600}
+@media(max-width:560px){.md-arrow{transform:rotate(90deg);justify-content:center;width:100%}}
+.md-k{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;margin-bottom:7px}
+.md-cell.nature .md-k{color:var(--accent)}
+.md-cell.ai .md-k{color:var(--sage)}
+.md-cell p{font-size:14px;line-height:1.7;color:#3f3832}
+.md-demo{margin-top:16px;font-size:13.5px;line-height:1.6;color:#473f38;padding:12px 16px;
+  background:var(--card);border:1px solid var(--line);border-radius:11px}
+.md-demo b{color:var(--accent);font-weight:600}
+.map-more{margin-top:18px;font-size:14px;line-height:1.7;color:var(--ink-soft)}
+.map-more-note{font-size:12.5px;opacity:.8}
+
+.play-close{max-width:760px;margin:0 auto;padding:48px 0 12px;text-align:center;border-top:1px solid var(--line)}
+.play-close blockquote{margin:0 auto 28px;max-width:560px;font-family:var(--serif);font-style:italic;
+  font-size:19px;line-height:1.8;color:var(--ink)}
+.play-close blockquote b{color:var(--accent);font-style:normal}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects">项目</a>
+      <a href="../index.html#thoughts">思考</a>
+      <a href="../index.html#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<main class="play">
+
+  <header class="play-hero wrap">
+    <a class="back" href="../index.html#thoughts">← 全部思考</a>
+    <div class="mode-toggle">
+      <a href="human-needs.html">📖 原文</a>
+      <a href="human-needs-play.html" class="is-active">✦ 互动版</a>
+    </div>
+    <div class="kicker">Thinking · 人性 · 边玩边读</div>
+    <h1>需求，挖到人性那一层</h1>
+    <p class="dek">不用读完一长篇——把一个表层诉求一层层挖到人性；拖动时代，看表层怎么变、人性怎么不变；
+      翻牌看「嘴上说的 vs 真正要的」；再把每根人性的弦，接到 AI 能做的事上。</p>
+    <div class="scroll-hint"><span class="ar">↓</span> 往下滚，每一段都能玩</div>
+  </header>
+
+  <!-- 1 · 欲望下钻（招牌）-->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">用户给你的，是 ta 能想到的<b>解法</b>，不是真正的需求。
+      挑一个表层诉求，一层层往下挖——看它最后落在<b>哪根人性的弦</b>上，
+      以及 AI 能怎么拨它：</p>
+
+    <div class="widget w-dig">
+      <div class="w-head"><span class="w-tag">往下挖</span><h3>把一句诉求，挖到人性见底</h3></div>
+      <div class="dig-chips" id="digChips"></div>
+      <div class="dig-stack" id="digStack"></div>
+      <div class="dig-actions" id="digActions"></div>
+      <p class="dig-hint" id="digHint">↑ 先选一个诉求，再一层层往下挖。</p>
+    </div>
+  </section>
+
+  <!-- 2 · 时代滑块 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">越靠表层的需求越不稳，越靠人性越稳。同一根"从 A 到 B"的弦，
+      表层的解法被技术换了一茬又一茬——<b>但那根弦，一百年没动过</b>。拖动时代看看：</p>
+
+    <div class="widget w-era">
+      <div class="w-head"><span class="w-tag">拖时代</span><h3>表层在变，人性不变</h3></div>
+      <div class="era-row">
+        <span class="era-end">1900</span>
+        <input type="range" id="eraRange" min="0" max="100" value="0" aria-label="年代" />
+        <span class="era-end">未来</span>
+      </div>
+      <div class="era-year" id="eraYear"></div>
+      <div class="era-surface" id="eraSurface"></div>
+      <div class="era-core">
+        <div class="ec-k">底层人性 · 从没变过</div>
+        <div class="ec-text">更快、更省心地从一个地方，到另一个地方。</div>
+      </div>
+      <p class="era-caption" id="eraCaption"></p>
+    </div>
+  </section>
+
+  <!-- 3 · 真伪需求翻牌 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">"更快的马"不是需求，是用户能想到的解法。
+      下面每张牌，正面是<b>嘴上说的</b>——翻过来，是<b>真正要的</b>。挨个点开看看：</p>
+
+    <div class="widget w-flip">
+      <div class="w-head"><span class="w-tag">翻牌</span><h3>嘴上说的 vs 真正要的</h3></div>
+      <div class="flip-grid" id="flipGrid"></div>
+      <p class="flip-caption">用户递给你「解法」，把「任务」藏了起来——常常 ta 自己也说不清。
+        <b>替 ta 挖出来，是你的活。</b></p>
+    </div>
+  </section>
+
+  <!-- 4 · 人性→AI 映射画廊 -->
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">AI 没有创造新的人性需求。它做的是——<b>给每一根古老的弦，找到前所未有的拨法</b>。
+      点一根弦，看 AI 现在能怎么拨它，以及本站哪个 demo 正拨着它：</p>
+
+    <div class="widget w-map">
+      <div class="w-head"><span class="w-tag">点根弦</span><h3>人性的弦 → AI 的新拨法</h3></div>
+      <div class="map-chips" id="mapChips"></div>
+      <div class="map-detail" id="mapDetail"></div>
+      <p class="map-more">这就是本站每个 demo 的同一个句式：<b>挖到一根人性的弦，再用 AI 找一种新方式拨它</b>。
+        <br><span class="map-more-note">（往 DRIVERS 数组里加一条，就多一根弦。）</span></p>
+    </div>
+  </section>
+
+  <!-- 结尾 -->
+  <section class="play-close wrap reveal">
+    <blockquote>技术换了一茬又一茬，人性那几根弦——<b>一根没多，一根没少</b>。<br>挖到那一层，再交给 AI。</blockquote>
+    <a class="btn btn-primary" href="../index.html#contact">说说你想拨的那根弦 →</a>
+  </section>
+
+</main>
+
+<footer>
+  <div class="wrap"><p><a href="../index.html">← 回到首页</a> &nbsp;·&nbsp; <a href="human-needs.html">读纯文字原文 📖</a></p></div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var clamp = function(v,a,b){ return Math.max(a, Math.min(b, v)); };
+
+  /* ════ widget 1 · 欲望下钻 ════ */
+  var DESIRES = [
+    {
+      chip:"想发一条精修过的朋友圈",
+      layers:[
+        { k:"表层诉求", t:"想把照片修得更好看，再发出去。" },
+        { k:"再问：发了图什么？", t:"想让看到的人觉得「我过得不错」、点个赞。" },
+        { k:"挖到底层", t:"被看见、被羡慕、被认可——确认「我是有价值的」。" }
+      ],
+      driver:"被认可 · 社会认同",
+      ai:"AI 能放大表达：把不会拍、不会修的人，一键拉到「看起来很会」的水平；让人人都能产出超过自己技能的内容，去拨这根「被看见」的弦。"
+    },
+    {
+      chip:"想要一台更快的电脑",
+      layers:[
+        { k:"表层诉求", t:"电脑太慢，想换台更快的。" },
+        { k:"再问：快了要干嘛？", t:"想少等待、别在 deadline 前卡壳、别被打断思路。" },
+        { k:"挖到底层", t:"对「掌控感」的渴望——慢 = 失控 = 焦虑。要的是「尽在掌握」。" }
+      ],
+      driver:"掌控 · 确定性",
+      ai:"AI 能预测你下一步要什么、提前备好；把一长串复杂操作压成一句话搞定。它拨的，是把「失控的焦虑」换成「一切尽在掌握」。"
+    },
+    {
+      chip:"想办张更便宜的健身卡",
+      layers:[
+        { k:"表层诉求", t:"健身卡太贵，想找张便宜的。" },
+        { k:"再问：为什么要健身？", t:"想要一个更好的自己——又怕像上次一样办了卡就荒废、白花钱。" },
+        { k:"挖到底层", t:"自我提升的渴望 + 怕后悔的恐惧：要的不是便宜，是「这次能坚持下来」。" }
+      ],
+      driver:"成为更好的自己 · 不再后悔",
+      ai:"AI 能把大目标拆成不会放弃的小步、即时反馈、卡壳时推你一把。它拨的，是「这一次我真的能做到」那根弦——而不只是省那点钱。"
+    }
+  ];
+  (function(){
+    var chipsEl = $("digChips"), stackEl = $("digStack"), actEl = $("digActions"), hintEl = $("digHint");
+    var cur = -1, depth = 0;   // depth: 已揭开的层数（0=未开始）
+    chipsEl.innerHTML = DESIRES.map(function(d, i){
+      return '<button class="dig-chip" data-i="' + i + '">「' + d.chip + '」</button>';
+    }).join("");
+    function pick(i){
+      cur = i; depth = 1; render();
+    }
+    function render(){
+      Array.prototype.forEach.call(chipsEl.querySelectorAll(".dig-chip"), function(b){
+        b.classList.toggle("on", +b.getAttribute("data-i") === cur);
+      });
+      if (cur < 0){ stackEl.innerHTML = ""; actEl.innerHTML = ""; return; }
+      var d = DESIRES[cur], total = d.layers.length;
+      var html = "";
+      for (var j = 0; j < Math.min(depth, total); j++){
+        var cls = j === total - 1 ? "core" : ("d" + j);
+        var kk = j === total - 1 ? "挖到底层 · 人性" : d.layers[j].k;
+        var body = j === total - 1
+          ? '<div class="dl-driver">' + d.driver + '</div><div class="dl-text">' + d.layers[j].t + '</div>'
+          : '<div class="dl-text">' + d.layers[j].t + '</div>';
+        html += '<div class="dig-layer ' + cls + '"><div class="dl-k">' + kk + '</div>' + body + '</div>';
+      }
+      if (depth >= total){
+        html += '<div class="dig-ai"><div class="dl-k">✦ AI 能怎么拨这根弦</div><div class="dl-text">' + d.ai + '</div></div>';
+      }
+      stackEl.innerHTML = html;
+
+      if (depth < total){
+        actEl.innerHTML = '<button class="btn btn-primary dig-btn" id="digMore">继续往下挖 ↓</button>';
+        $("digMore").addEventListener("click", function(){ depth++; render(); });
+        hintEl.textContent = "再挖一层，看它落在哪根人性的弦上。";
+      } else {
+        actEl.innerHTML = '<button class="btn btn-ghost dig-btn" id="digReset">↑ 换一个诉求</button>';
+        $("digReset").addEventListener("click", function(){ cur = -1; depth = 0; hintEl.textContent = "↑ 先选一个诉求，再一层层往下挖。"; render(); });
+        hintEl.textContent = "看到了吗——表层那句话，根扎在人性里。AI 拨的，是最底下那根弦。";
+      }
+    }
+    Array.prototype.forEach.call(chipsEl.querySelectorAll(".dig-chip"), function(b){
+      b.addEventListener("click", function(){ pick(+b.getAttribute("data-i")); });
+    });
+  })();
+
+  /* ════ widget 2 · 时代滑块 ════ */
+  var ERAS = [
+    { at:0,  year:"1900",  emoji:"🐎", name:"一匹更快的马",         tag:"那个年代能想象到的极限" },
+    { at:28, year:"1930s", emoji:"🚗", name:"一辆私家车",           tag:"福特把「更快的马」换了底层" },
+    { at:62, year:"2010s", emoji:"📱", name:"一键叫来的网约车",     tag:"不必拥有，需要时召之即来" },
+    { at:85, year:"2025",  emoji:"🚕", name:"自动驾驶，路上还能办公", tag:"连「开」这件事都省了" },
+    { at:100,year:"未来",  emoji:"✨", name:"也许根本不用移动",     tag:"远程在场——抵达，但人没动" }
+  ];
+  (function(){
+    var r = $("eraRange");
+    function curEra(v){ var idx = 0; for (var i = 0; i < ERAS.length; i++){ if (v >= ERAS[i].at - 0.5) idx = i; } return idx; }
+    function render(){
+      var i = curEra(+r.value), e = ERAS[i];
+      $("eraYear").textContent = e.year;
+      $("eraSurface").innerHTML =
+        '<div class="es-emoji">' + e.emoji + '</div>' +
+        '<div class="es-name">' + e.name + '</div>' +
+        '<div class="es-tag">' + e.tag + '</div>';
+      $("eraCaption").innerHTML = i >= ERAS.length - 1
+        ? "从最左拖到最右，<b>上面的方块换了五次，下面那根弦一个字没改</b>。把判断锚在它上面，技术再怎么变，你都不慌。"
+        : "表层的解法，每来一阵技术的风就掀掉重写。<b>继续往后拖——看下面那根弦动不动。</b>";
+    }
+    r.addEventListener("input", render);
+    render();
+  })();
+
+  /* ════ widget 3 · 真伪需求翻牌 ════ */
+  var PAIRS = [
+    { said:"我要一匹更快的马", real:"更快、更省力地抵达——至于是不是马，无所谓。" },
+    { said:"我要一个四分之一英寸的钻头", real:"我要墙上那个洞，和把画挂上去的那点成就感。" },
+    { said:"给我加上这个功能", real:"别让我学、别让我动脑子——帮我把事直接办了。" },
+    { said:"能不能再便宜点", real:"我怕买贵、怕选错被笑——给我「不会出错」的安全感。" }
+  ];
+  (function(){
+    var grid = $("flipGrid");
+    grid.innerHTML = PAIRS.map(function(p, i){
+      return '<div class="flip" data-i="' + i + '" role="button" tabindex="0">' +
+        '<div class="flip-inner">' +
+          '<div class="flip-face flip-front"><div class="ff-k">😶 嘴上说的</div>' +
+            '<div class="ff-text">' + p.said + '</div><div class="ff-hint">点一下，翻到背面 ↩</div></div>' +
+          '<div class="flip-face flip-back"><div class="ff-k">💡 真正要的</div>' +
+            '<div class="ff-text">' + p.real + '</div></div>' +
+        '</div></div>';
+    }).join("");
+    function flip(el){ el.classList.toggle("flipped"); }
+    Array.prototype.forEach.call(grid.querySelectorAll(".flip"), function(el){
+      el.addEventListener("click", function(){ flip(el); });
+      el.addEventListener("keydown", function(e){ if (e.key === " " || e.key === "Enter"){ e.preventDefault(); flip(el); } });
+    });
+  })();
+
+  /* ════ widget 4 · 人性→AI 映射画廊（数据驱动，加例子=加一条）════ */
+  var DRIVERS = [
+    { emoji:"🛡️", name:"安全 · 守护",
+      nature:"不愿失去所爱、怕意外突然降临——这是最古老、也最揪心的一根弦。",
+      ai:"AI 能 7×24 默默地监测、识别异常、在出事前预警，把「提心吊胆」换成「有人替我盯着」。",
+      demo:"本站的 <b>Snug · 老人守护</b> 正拨着它：把对父母的牵挂，变成一双不眨眼的眼睛。" },
+    { emoji:"🎛️", name:"掌控 · 确定性",
+      nature:"人厌恶不确定。看不清未来，就焦虑；能预判、能掌握，就安心。",
+      ai:"AI 能把你的未来预测出来、把复杂压成一句话，让「失控」变「尽在掌握」。",
+      demo:"<b>「你的数据，预言你的明天」</b> 和 <b>今天吃什么 dinner</b> 都拨这根弦——替你先想一步。" },
+    { emoji:"💞", name:"被理解 · 被看见",
+      nature:"想被听见、被认可、被当回事——确认「我是有价值的」。",
+      ai:"AI 能永远耐心地听、记得你说过的每句话、给出贴着你来的回应，永不嫌烦。",
+      demo:"本站的 <b>情绪日记 mood-journal</b> 与 <b>走心撮合 matchmaker</b>，拨的都是「被看见」。" },
+    { emoji:"⏳", name:"省时 · 省力",
+      nature:"人天生想用更少的力气，办成更多的事。怕麻烦，是刻在基因里的。",
+      ai:"AI 能代你跑腿、自动决策、把一连串琐事一次办妥，把省下来的时间还给你。",
+      demo:"<b>周计划 mealplan</b>、<b>菜谱 ollie</b> 替你把「今天吃啥、怎么买」整件事接管掉。" },
+    { emoji:"🧭", name:"好奇 · 探索",
+      nature:"人对新鲜、对未知有天然的渴望——想看看世界还有什么。",
+      ai:"AI 能按你的口味无限生成、精准推荐，把「探索」从碰运气变成场场对味。",
+      demo:"<b>行程 mindtrip</b>、<b>选车 whips</b> 拨这根弦：陪你去看更对的远方。" },
+    { emoji:"🎨", name:"表达 · 创造",
+      nature:"想表达、想留下点自己的东西、想被世界听见自己的声音。",
+      ai:"AI 能把每个人的创造力放大十倍，让不会画、不会写、不会搭配的人也能造出好东西。",
+      demo:"<b>穿搭 alta</b>、<b>风格 style-dna</b> 把「我也想很会」变成人人够得着。" }
+  ];
+  (function(){
+    var chipsEl = $("mapChips"), detailEl = $("mapDetail"), cur = 0;
+    function renderChips(){
+      chipsEl.innerHTML = DRIVERS.map(function(d, i){
+        return '<button class="map-chip' + (i === cur ? ' on' : '') + '" data-i="' + i + '">' +
+          '<div class="mc-emoji">' + d.emoji + '</div><div class="mc-name">' + d.name + '</div></button>';
+      }).join("");
+      Array.prototype.forEach.call(chipsEl.querySelectorAll(".map-chip"), function(b){
+        b.addEventListener("click", function(){ cur = +b.getAttribute("data-i"); renderChips(); renderDetail(); });
+      });
+    }
+    function renderDetail(){
+      var d = DRIVERS[cur];
+      detailEl.innerHTML =
+        '<div class="md-flow">' +
+          '<div class="md-cell nature"><div class="md-k">' + d.emoji + ' 古老的弦</div><p>' + d.nature + '</p></div>' +
+          '<div class="md-arrow">→</div>' +
+          '<div class="md-cell ai"><div class="md-k">✦ AI 的新拨法</div><p>' + d.ai + '</p></div>' +
+        '</div>' +
+        '<div class="md-demo">🎯 ' + d.demo + '</div>';
+    }
+    renderChips(); renderDetail();
+  })();
+
+  /* ════ 滚动渐入 ════ */
+  (function(){
+    var els = document.querySelectorAll(".reveal");
+    if (!("IntersectionObserver" in window)) return;
+    Array.prototype.forEach.call(els, function(el){ el.classList.add("armed"); });
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting){ en.target.classList.add("in"); io.unobserve(en.target); } });
+    }, { threshold: 0.1 });
+    Array.prototype.forEach.call(els, function(el){ io.observe(el); });
+  })();
+})();
+</script>
+</body>
+</html>

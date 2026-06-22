@@ -56,6 +56,13 @@ window.SITE = {
       play: "thoughts/safety-play.html"
     },
     {
+      kicker: "Thinking · 人性",
+      title: "需求，挖到人性那一层",
+      desc: "用户嘴上要的，从来不是 ta 真正要的。把需求一层层挖到底层人性，你会发现：表层千变万化，底层就那么几根弦——而 AI 改变的，是拨弦的方式，不是弦本身。",
+      href: "thoughts/human-needs.html",
+      play: "thoughts/human-needs-play.html"
+    },
+    {
       kicker: "Thinking · 组织",
       title: "AI 时代的组织架构",
       desc: "代码变便宜后，胜负手是「需求洞察 + 完整交付」的结合——而这两样几乎从不长在同一个人身上。为什么律所的结构，恰好是这个时代最对的答案。",
