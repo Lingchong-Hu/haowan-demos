@@ -26,4 +26,10 @@ window.DEMOS = [
   { slug:'coddle',       industry:'母婴', title:'按月龄育儿指引',   tagline:'随口记录 → 个性化指引',       emoji:'🍼', accent:'#d77a98', status:'live', disclaimer:true },
   { slug:'mood-journal', industry:'心理', title:'心情日记',         tagline:'写心情 → 情绪曲线 + 词云',     emoji:'🌤️', accent:'#7a8fd4', status:'live', disclaimer:true },
   { slug:'unmask',       industry:'游戏', title:'不被看穿',         tagline:'剪刀石头布 · 别被想懂你的 AI 看穿', emoji:'🎭', accent:'#6457e8', status:'live' },
+  // ── 出海 / 外贸 · AI 时代特有的跨境商业模式 ──
+  { slug:'loka',         industry:'跨境电商', title:'出海本地化',     tagline:'一件商品 → 多国原生 listing + 合规提示', emoji:'🌐', accent:'#1f8a70', status:'live' },
+  { slug:'niche',        industry:'跨境电商', title:'蓝海选品雷达',   tagline:'一个大类 → 扫出还没杀红的细分蓝海', emoji:'🧭', accent:'#8a5cd1', status:'live' },
+  { slug:'landed',       industry:'跨境电商', title:'到岸价对比',     tagline:'输入成本 → 各国到岸价 + 利润，先打哪国', emoji:'🚢', accent:'#2c5fa8', status:'live' },
+  { slug:'sonar',        industry:'外贸',     title:'外贸询盘操盘手', tagline:'贴一封询盘 → 判真伪 + 起草回复 + 报价策略', emoji:'📡', accent:'#3b5bdb', status:'live' },
+  { slug:'ping',         industry:'留学',     title:'留学生身份合规导航', tagline:'一句话描述身份 → 个性化路线图 + 政策雷达 + 家长安心卡', emoji:'🛟', accent:'#1f8c8c', status:'live', disclaimer:true },
 ];

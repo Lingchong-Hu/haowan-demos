@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>蓝海选品雷达 · 那一下</title>
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  /* niche 专属（scoped 前缀 nc-）。复用 theme.css token */
+  .nc-lede{color:var(--ink-2); font-size:15px; margin:10px 0 0; max-width:640px}
+
+  .nc-pick-h{font-size:13px; color:var(--ink-3); margin:22px 0 9px; font-weight:600}
+  .nc-picks{display:flex; flex-wrap:wrap; gap:9px}
+  .nc-mchip{border:1px solid var(--line); background:var(--surface); border-radius:999px;
+    padding:8px 14px; cursor:pointer; font-size:13.5px; transition:.13s; user-select:none}
+  .nc-mchip:hover{border-color:var(--accent)}
+  .nc-mchip.on{border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:600}
+
+  .nc-eg-label{font-size:13px; color:var(--ink-3); margin:22px 0 9px}
+  .nc-egs{display:flex; flex-wrap:wrap; gap:9px}
+  .nc-eg{border:1px solid var(--line); background:var(--surface); border-radius:999px;
+    padding:9px 15px; cursor:pointer; font-size:14px; transition:.13s; display:inline-flex; align-items:center; gap:7px}
+  .nc-eg:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px)}
+  .nc-eg .em{font-size:16px}
+  .nc-inrow{display:flex; gap:9px; margin-top:16px; flex-wrap:wrap}
+  .nc-inrow .field{flex:1; min-width:200px}
+
+  /* 结果头 */
+  .nc-core{margin-top:8px}
+  .nc-core .k{font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); font-weight:680}
+  .nc-core .v{font-size:18px; font-weight:680; margin-top:4px; line-height:1.35}
+  .nc-marknote{font-size:13.5px; color:var(--ink-2); background:#fbfbf9; border:1px solid var(--line);
+    border-radius:10px; padding:10px 13px; margin-top:11px; line-height:1.55}
+
+  /* 细分机会卡 */
+  .nc-list{display:flex; flex-direction:column; gap:14px; margin-top:18px}
+  .nc-card{border:1px solid var(--line); border-radius:16px; background:var(--surface); padding:15px 16px}
+  .nc-ch{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .nc-em{font-size:24px; line-height:1}
+  .nc-nm{font-size:16px; font-weight:720; flex:1; min-width:120px}
+  .nc-opp{display:flex; flex-direction:column; align-items:flex-end; flex:none}
+  .nc-oppn{font-size:22px; font-weight:820; line-height:1}
+  .nc-oppl{font-size:10.5px; color:var(--ink-3); letter-spacing:.03em}
+
+  .nc-meter{height:7px; border-radius:999px; background:var(--line); overflow:hidden; margin-top:11px}
+  .nc-meter span{display:block; height:100%; border-radius:999px}
+
+  .nc-tags{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px}
+  .nc-tag{font-size:12px; border-radius:999px; padding:4px 11px; font-weight:600}
+  .nc-tag.demand{background:rgba(45,158,123,.12); color:#1e6e52}
+  .nc-tag.comp{background:rgba(212,136,43,.14); color:#8a5a16}
+
+  .nc-rows{margin-top:13px; display:flex; flex-direction:column; gap:9px}
+  .nc-row{font-size:13.5px; line-height:1.55; display:flex; gap:9px}
+  .nc-row .lbl{flex:none; color:var(--ink-3); font-weight:600; width:74px}
+  .nc-row .txt{flex:1; color:var(--ink-2)}
+  .nc-row.risk .txt{color:#a23b3b}
+
+  .nc-verdict{margin-top:18px; background:var(--accent-soft); border-radius:14px; padding:14px 16px;
+    font-size:14.5px; line-height:1.6; color:var(--ink-1)}
+  .nc-verdict b{color:var(--accent); font-weight:700; display:block; margin-bottom:4px; font-size:12px;
+    letter-spacing:.04em; text-transform:uppercase}
+
+  .nc-bottom{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; padding-top:16px; border-top:1px solid var(--line-2)}
+  .nc-bottom .btn{flex:1; min-width:140px}
+  .nc-chain{font-size:12.5px; color:var(--ink-3); margin-top:22px; text-align:center; line-height:1.7}
+  .nc-chain b{color:var(--ink-2)}
+
+  .nc-oops{text-align:center; padding:10px 0}
+  .nc-oops .big{font-size:40px}
+  .nc-oops h3{font-size:19px; margin:10px 0 6px}
+  .nc-oops p{color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:420px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="../../registry.js"></script>
+<script src="../../shared/app.js"></script>
+<script src="./niche.js"></script>
+</body>
+</html>

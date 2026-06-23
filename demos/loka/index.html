@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>出海本地化 · 那一下</title>
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  /* loka 专属（scoped 前缀 lk-）。复用 theme.css 的 token 与 .btn/.chip/.card/.field */
+  .lk-lede{color:var(--ink-2); font-size:15px; margin:10px 0 0; max-width:640px}
+
+  /* 市场选择 */
+  .lk-pick-h{font-size:13px; color:var(--ink-3); margin:22px 0 9px; font-weight:600}
+  .lk-picks{display:flex; flex-wrap:wrap; gap:9px}
+  .lk-mchip{border:1px solid var(--line); background:var(--surface); border-radius:999px;
+    padding:8px 14px; cursor:pointer; font-size:14px; transition:.13s; display:inline-flex;
+    align-items:center; gap:7px; user-select:none}
+  .lk-mchip:hover{border-color:var(--accent)}
+  .lk-mchip.on{border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:600}
+  .lk-mchip .fl{font-size:16px}
+  .lk-mchip .pl{font-size:11px; color:var(--ink-3)}
+  .lk-mchip.on .pl{color:var(--accent)}
+
+  /* 示例 chip */
+  .lk-eg-label{font-size:13px; color:var(--ink-3); margin:22px 0 9px}
+  .lk-egs{display:flex; flex-wrap:wrap; gap:9px}
+  .lk-eg{border:1px solid var(--line); background:var(--surface); border-radius:999px;
+    padding:9px 15px; cursor:pointer; font-size:14px; transition:.13s; display:inline-flex; align-items:center; gap:7px}
+  .lk-eg:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px)}
+  .lk-eg .em{font-size:16px}
+
+  .lk-inwrap{margin-top:16px}
+  .lk-go{margin-top:12px}
+
+  /* 结果：产品核心 */
+  .lk-core{display:flex; align-items:flex-start; gap:12px; flex-wrap:wrap; margin-bottom:6px}
+  .lk-core .txt{flex:1; min-width:220px}
+  .lk-core .k{font-size:12px; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3); font-weight:680}
+  .lk-core .v{font-size:18px; font-weight:680; margin-top:4px; line-height:1.35}
+
+  /* 市场卡网格 */
+  .lk-grid{display:grid; grid-template-columns:1fr; gap:16px; margin-top:18px}
+  @media(min-width:760px){ .lk-grid{grid-template-columns:1fr 1fr} }
+  .lk-mcard{border:1px solid var(--line); border-radius:16px; background:var(--surface);
+    padding:16px 16px 14px; display:flex; flex-direction:column}
+  .lk-mhead{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .lk-flag{font-size:22px; line-height:1}
+  .lk-mname{font-weight:720; font-size:16px}
+  .lk-plat{font-size:11.5px; color:var(--accent); background:var(--accent-soft);
+    border-radius:999px; padding:3px 10px; font-weight:600}
+  .lk-angle{font-size:12.5px; color:var(--ink-2); background:#fbfbf9; border:1px solid var(--line);
+    border-radius:10px; padding:8px 11px; margin-top:11px; line-height:1.55}
+  .lk-angle b{color:var(--ink-3); font-weight:600; font-size:11px; letter-spacing:.03em;
+    display:block; margin-bottom:2px; text-transform:uppercase}
+  .lk-title{font-size:15.5px; font-weight:650; line-height:1.4; margin-top:13px}
+  .lk-title-zh{font-size:12.5px; color:var(--ink-3); margin-top:4px; line-height:1.5}
+  .lk-bul{list-style:none; padding:0; margin:12px 0 0; display:flex; flex-direction:column; gap:7px}
+  .lk-bul li{font-size:13.5px; line-height:1.5; padding-left:18px; position:relative; color:var(--ink-2)}
+  .lk-bul li::before{content:'▸'; color:var(--accent); position:absolute; left:2px; top:0}
+  .lk-kw{display:flex; flex-wrap:wrap; gap:6px; margin-top:12px}
+  .lk-kwt{font-size:11.5px; color:var(--ink-3); border:1px solid var(--line); border-radius:6px;
+    padding:3px 8px; background:#fbfbf9}
+  .lk-notes{margin-top:13px; display:flex; flex-direction:column; gap:8px}
+  .lk-note{font-size:12.5px; line-height:1.55; border-radius:10px; padding:9px 11px; display:flex; gap:8px}
+  .lk-note .ic{flex:none}
+  .lk-note.comp{background:rgba(212,150,40,.10); color:#8a6516}
+  .lk-note.pit{background:var(--accent-soft); color:var(--ink-2)}
+  .lk-note b{font-weight:600}
+  .lk-mcopy{margin-top:13px; align-self:flex-start}
+
+  .lk-bottom{display:flex; gap:10px; flex-wrap:wrap; margin-top:20px; padding-top:16px; border-top:1px solid var(--line-2)}
+  .lk-bottom .btn{flex:1; min-width:140px}
+
+  .lk-chain{font-size:12.5px; color:var(--ink-3); margin-top:22px; text-align:center; line-height:1.7}
+  .lk-chain a{color:var(--accent); text-decoration:none; font-weight:600}
+
+  .lk-oops{text-align:center; padding:10px 0}
+  .lk-oops .big{font-size:40px}
+  .lk-oops h3{font-size:19px; margin:10px 0 6px}
+  .lk-oops p{color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:420px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="../../registry.js"></script>
+<script src="../../shared/app.js"></script>
+<script src="./loka.js"></script>
+</body>
+</html>

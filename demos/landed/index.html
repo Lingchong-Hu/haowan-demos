@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>到岸价 & 市场利润对比 · 那一下</title>
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  /* landed 专属（scoped 前缀 ld-）。复用 theme.css token */
+  .ld-lede{color:var(--ink-2); font-size:15px; margin:10px 0 0; max-width:640px}
+
+  .ld-form{display:grid; grid-template-columns:1fr; gap:11px; margin-top:18px}
+  @media(min-width:560px){ .ld-form{grid-template-columns:2fr 1fr 1fr} }
+  .ld-f label{font-size:12px; color:var(--ink-3); font-weight:600; display:block; margin-bottom:4px}
+
+  .ld-pick-h{font-size:13px; color:var(--ink-3); margin:18px 0 9px; font-weight:600}
+  .ld-picks{display:flex; flex-wrap:wrap; gap:9px}
+  .ld-mchip{border:1px solid var(--line); background:var(--surface); border-radius:999px;
+    padding:8px 13px; cursor:pointer; font-size:13.5px; transition:.13s; display:inline-flex; gap:6px; user-select:none}
+  .ld-mchip:hover{border-color:var(--accent)}
+  .ld-mchip.on{border-color:var(--accent); background:var(--accent-soft); color:var(--accent); font-weight:600}
+  .ld-mchip .fl{font-size:15px}
+
+  .ld-egs{display:flex; flex-wrap:wrap; gap:9px; margin-top:14px}
+  .ld-eg{border:1px solid var(--line); background:var(--surface); border-radius:999px;
+    padding:8px 14px; cursor:pointer; font-size:13.5px; transition:.13s; display:inline-flex; gap:6px; align-items:center}
+  .ld-eg:hover{border-color:var(--accent); color:var(--accent)}
+  .ld-go{margin-top:14px}
+
+  .ld-core{margin-top:8px; font-size:14px; color:var(--ink-2)}
+  .ld-core b{color:var(--ink-1)}
+
+  /* 市场对比卡 */
+  .ld-list{display:flex; flex-direction:column; gap:14px; margin-top:16px}
+  .ld-card{border:1px solid var(--line); border-radius:16px; background:var(--surface); padding:15px 16px}
+  .ld-card.best{border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset}
+  .ld-ch{display:flex; align-items:center; gap:9px; flex-wrap:wrap}
+  .ld-fl{font-size:22px}
+  .ld-mn{font-size:16px; font-weight:720; flex:1; min-width:100px}
+  .ld-best-badge{font-size:11px; font-weight:700; color:#fff; background:var(--accent);
+    border-radius:999px; padding:3px 10px}
+  .ld-margin{display:flex; flex-direction:column; align-items:flex-end}
+  .ld-mn-pct{font-size:22px; font-weight:820; line-height:1}
+  .ld-mn-l{font-size:10.5px; color:var(--ink-3)}
+
+  /* 成本瀑布条 */
+  .ld-bar{display:flex; height:24px; border-radius:7px; overflow:hidden; margin-top:13px; border:1px solid var(--line)}
+  .ld-seg{height:100%; min-width:2px}
+  .ld-legend{display:flex; flex-wrap:wrap; gap:10px 16px; margin-top:9px}
+  .ld-lg{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--ink-2)}
+  .ld-dot{width:10px; height:10px; border-radius:3px; flex:none}
+
+  .ld-prices{display:flex; gap:18px; flex-wrap:wrap; margin-top:13px; font-size:13.5px}
+  .ld-price .pv{font-size:17px; font-weight:740; color:var(--ink-1)}
+  .ld-price .pl{font-size:11px; color:var(--ink-3)}
+  .ld-note{font-size:13px; color:var(--ink-2); background:#fbfbf9; border:1px solid var(--line);
+    border-radius:10px; padding:9px 12px; margin-top:12px; line-height:1.55}
+
+  .ld-verdict{margin-top:18px; background:var(--accent-soft); border-radius:14px; padding:14px 16px;
+    font-size:14.5px; line-height:1.6; color:var(--ink-1)}
+  .ld-verdict b{color:var(--accent); font-weight:700; display:block; margin-bottom:4px; font-size:12px;
+    letter-spacing:.04em; text-transform:uppercase}
+  .ld-disc{font-size:11.5px; color:var(--ink-3); margin-top:14px; line-height:1.5; text-align:center}
+
+  .ld-bottom{display:flex; gap:10px; flex-wrap:wrap; margin-top:18px; padding-top:16px; border-top:1px solid var(--line-2)}
+  .ld-bottom .btn{flex:1; min-width:140px}
+  .ld-chain{font-size:12.5px; color:var(--ink-3); margin-top:22px; text-align:center; line-height:1.7}
+  .ld-chain b{color:var(--ink-2)}
+
+  .ld-oops{text-align:center; padding:10px 0}
+  .ld-oops .big{font-size:40px}
+  .ld-oops h3{font-size:19px; margin:10px 0 6px}
+  .ld-oops p{color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:420px}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="../../registry.js"></script>
+<script src="../../shared/app.js"></script>
+<script src="./landed.js"></script>
+</body>
+</html>

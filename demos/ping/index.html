@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PING · 留学生身份合规导航 · 那一下</title>
+<link rel="stylesheet" href="../../shared/theme.css">
+<style>
+  /* ping 专属（scoped 前缀 pg-）。气质：克制、平静、可信。移动优先 ~390px。 */
+  .pg-lede{color:var(--ink-2); font-size:15px; margin:10px 0 0; max-width:600px; line-height:1.6}
+
+  /* 全局免责（每屏可见、不可折叠） */
+  .pg-disc{font-size:12px; color:var(--ink-2); background:rgba(212,136,43,.08);
+    border:1px solid rgba(212,136,43,.22); border-radius:10px; padding:9px 12px; margin-top:14px; line-height:1.55}
+  .pg-disc b{color:#8a5a16}
+
+  /* 输入 */
+  .pg-inwrap{margin-top:16px}
+  .pg-presets{display:flex; flex-direction:column; gap:9px; margin-top:14px}
+  .pg-preset{border:1px solid var(--line); border-radius:13px; padding:12px 14px; background:var(--surface);
+    cursor:pointer; font-size:14px; display:flex; gap:11px; align-items:center; transition:.14s; text-align:left; line-height:1.45}
+  .pg-preset:hover{border-color:var(--accent); transform:translateY(-1px)}
+  .pg-preset .em{font-size:19px; flex:none}
+  .pg-eg-label{font-size:13px; color:var(--ink-3); margin:20px 0 0}
+
+  .pg-more-toggle{font-size:13px; color:var(--accent); cursor:pointer; margin-top:16px; font-weight:600;
+    background:none; border:none; padding:0; display:inline-flex; gap:5px; align-items:center}
+  .pg-more{margin-top:12px; display:grid; grid-template-columns:1fr 1fr; gap:11px}
+  .pg-more .f{min-width:0}
+  .pg-more .f label{font-size:11px; color:var(--ink-3); font-weight:600; display:block; margin-bottom:4px}
+  .pg-more .field{width:100%}
+  .pg-go{margin-top:16px}
+
+  /* 结果 · 区段标题 */
+  .pg-sec-h{font-size:13px; font-weight:720; letter-spacing:.03em; color:var(--ink-3); text-transform:uppercase;
+    margin:26px 0 2px; display:flex; align-items:center; gap:8px}
+  .pg-sec-sub{font-size:12.5px; color:var(--ink-3); margin:4px 0 0; line-height:1.5}
+
+  /* 屏2 · 时间线状态机 */
+  .pg-timeline{display:flex; overflow-x:auto; padding:8px 2px 12px; margin-top:10px; gap:0}
+  .pg-stage{flex:1; min-width:66px; text-align:center; position:relative; opacity:.38; transition:.2s}
+  .pg-stage.done{opacity:.72}
+  .pg-stage.on{opacity:1}
+  .pg-stage:not(:first-child)::before{content:''; position:absolute; left:-50%; top:7px; width:100%; height:2px;
+    background:var(--line); z-index:0}
+  .pg-stage.done:not(:first-child)::before, .pg-stage.on:not(:first-child)::before{background:var(--accent)}
+  .pg-stage .dot{width:16px; height:16px; border-radius:50%; background:#fff; border:2px solid var(--line);
+    margin:0 auto 7px; position:relative; z-index:1}
+  .pg-stage.done .dot{background:var(--accent); border-color:var(--accent)}
+  .pg-stage.on .dot{background:var(--accent); border-color:var(--accent); box-shadow:0 0 0 5px var(--accent-soft)}
+  .pg-stage .lbl{font-size:11px; line-height:1.3; color:var(--ink-2)}
+  .pg-stage.on .lbl{color:var(--accent); font-weight:700}
+
+  /* 屏2 · 必须做的事 */
+  .pg-step{border:1px solid var(--line); border-radius:14px; padding:13px 15px; background:var(--surface); margin-top:10px}
+  .pg-step .act{font-weight:680; font-size:15px; line-height:1.45; display:flex; gap:9px}
+  .pg-stepno{color:var(--accent); font-weight:800; flex:none}
+  .pg-step .row{font-size:13px; line-height:1.55; display:flex; gap:8px; margin-top:9px; align-items:flex-start}
+  .pg-step .row .ic{flex:none}
+  .pg-step .win{color:var(--ink-2)}
+  .pg-step .cons{color:#a23b3b; background:rgba(214,69,69,.07); border-radius:9px; padding:8px 10px}
+  .pg-step .src{margin-top:10px}
+  .pg-step .src a{font-size:12.5px; color:var(--accent); text-decoration:none; font-weight:600;
+    border:1px solid var(--accent-soft); border-radius:999px; padding:4px 11px; display:inline-flex; gap:5px}
+  .pg-step .src a:hover{background:var(--accent-soft)}
+  .pg-step .src .noref{font-size:12.5px; color:var(--ink-3)}
+
+  /* 屏3 · 风险雷达 */
+  .pg-radar-note{font-size:11.5px; color:var(--ink-3); background:#fbfbf9; border:1px solid var(--line);
+    border-radius:9px; padding:8px 11px; margin-top:8px; line-height:1.5}
+  .pg-risk{border:1px solid var(--line); border-left:3px solid #d4882b; border-radius:0 12px 12px 0;
+    padding:12px 14px; background:#fbfbf9; margin-top:10px}
+  .pg-risk .label{font-weight:680; font-size:14px; display:flex; gap:7px; align-items:center}
+  .pg-risk .meaning{font-size:13px; color:var(--ink-2); margin-top:6px; line-height:1.55}
+  .pg-risk .hedge{font-size:13px; margin-top:7px; color:#1e6e52; display:flex; gap:7px; line-height:1.55}
+  .pg-risk .hedge .ic{flex:none}
+
+  /* 屏4 · 家长安心卡 */
+  .pg-parent{border:1px solid var(--line); border-radius:18px; padding:18px 18px 16px; margin-top:10px;
+    background:#fff; position:relative; overflow:hidden}
+  .pg-parent::before{content:''; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--pc,#2d9e7b)}
+  .pg-pstatus{display:flex; align-items:center; gap:9px; font-size:16px; font-weight:780; color:var(--pc,#2d9e7b)}
+  .pg-pstatus .d{font-size:18px}
+  .pg-pline{font-size:16px; font-weight:600; line-height:1.55; margin-top:11px; color:var(--ink-1)}
+  .pg-pmile{font-size:13.5px; color:var(--ink-2); margin-top:9px; display:flex; gap:7px; line-height:1.5}
+  .pg-pfoot{font-size:11.5px; color:var(--ink-3); margin-top:14px; padding-top:12px; border-top:1px solid var(--line-2)}
+  .pg-pacts{display:flex; gap:9px; flex-wrap:wrap; margin-top:14px}
+  .pg-pacts .btn{flex:1; min-width:140px}
+
+  .pg-restart{margin-top:22px; text-align:center}
+
+  .pg-oops{text-align:center; padding:10px 0}
+  .pg-oops .big{font-size:40px}
+  .pg-oops h3{font-size:19px; margin:10px 0 6px}
+  .pg-oops p{color:var(--ink-2); font-size:14px; margin:0 auto 4px; max-width:420px}
+
+  @media (max-width:430px){
+    .pg-more{grid-template-columns:1fr}
+    .pg-pacts .btn{min-width:0}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script src="../../registry.js"></script>
+<script src="../../shared/app.js"></script>
+<script src="./ping.js"></script>
+</body>
+</html>
