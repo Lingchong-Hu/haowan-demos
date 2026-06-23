@@ -81,7 +81,7 @@ window.SITE = {
     {
       kicker: "Thinking · 流程",
       title: "可问责的开发流程",
-      desc: "用 AI 把交付做快，用两道机制把它做得可问责：没有验收标准的任务不进场，不能为代码答话就不放行。",
+      desc: "「为它负责」到底是什么意思？从 AI 生成到敢交付，中间那道坎，用「自己懂」还是「独立验证」来跨——这是我们每个项目都在反复做的判断。",
       href: "thoughts/dev-process.html",
       play: "thoughts/dev-process-play.html"
     }
