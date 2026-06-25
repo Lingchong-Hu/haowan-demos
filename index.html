@@ -161,8 +161,9 @@
       <div class="go">查看 · 亲手体验 →</div></a>`;
   }).join("");
 
-  // 思考卡片（有 play 字段则默认进互动版，并显示角标）
-  $("thought-grid").innerHTML = S.thoughts.map(t => {
+  // 思考卡片（只渲染 featured；有 play 字段则默认进互动版，并显示角标）
+  const featuredThoughts = S.thoughts.filter(t => t.featured);
+  $("thought-grid").innerHTML = (featuredThoughts.length ? featuredThoughts : S.thoughts).map(t => {
     const badge = t.play ? `<span class="play-badge">✦ 互动版</span>` : "";
     const go = t.play ? "边玩边读 →" : "阅读 →";
     return `<a class="tcard" href="${t.play || t.href}">

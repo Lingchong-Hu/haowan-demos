@@ -41,13 +41,15 @@ window.SITE = {
   },
 
   // 思考类页面
+  // ▸ featured:true 的才在首页「一些思考」展示；其余仍是上线页面，靠各篇内部的相互链接访问。
   thoughts: [
     {
       kicker: "Thinking · 意图",
       title: "意图，才是下一个输入",
       desc: "脑机接口、眼动、语音、肌电……炫酷的新输入设备，都败给了同一件事——习惯的惯性。真正的胜负手不在换设备，在读懂你此刻想做什么。这就是 intnt。",
       href: "thoughts/intent.html",
-      play: "thoughts/intent-play.html"
+      play: "thoughts/intent-play.html",
+      featured: true
     },
     {
       kicker: "Thinking · 数据",
@@ -83,7 +85,8 @@ window.SITE = {
       title: "可问责的开发流程",
       desc: "「为它负责」到底是什么意思？从 AI 生成到敢交付，中间那道坎，用「自己懂」还是「独立验证」来跨——这是我们每个项目都在反复做的判断。",
       href: "thoughts/dev-process.html",
-      play: "thoughts/dev-process-play.html"
+      play: "thoughts/dev-process-play.html",
+      featured: true
     }
   ],
 
