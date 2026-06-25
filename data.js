@@ -1566,5 +1566,34 @@ window.PROJECTS = [
     ]
   },
 
+  /* ───────────────────────── 33–35 AnyHome 三件套（留学生租房中介 · 内部工具，直达实时 demo）───────────────────────── */
+  {
+    id: "anyhome-listing-card", no: "33", cat: "留学租房", direct: true,
+    kicker: "留学生租房中介 · 房源物料",
+    title: "房源物料生成器",
+    subtitle: "把 StreetEasy 复制来的房源文字，5 分钟变成一张 AnyHome 品牌的中英双语推荐卡——通勤、周边、关键条款都呈现好，guarantor 显著标出，一键导图发学生",
+    url: "demos/anyhome-listing-card/",
+    tags: ["粘文字 → 双语房源卡", "通勤标草稿 · 可现场改", "guarantor 显著标出", "缺失标「待补」绝不编造", "一键导出 PNG"],
+    sections: []
+  },
+  {
+    id: "anyhome-intake", no: "34", cat: "留学租房", direct: true,
+    kicker: "留学生租房中介 · 需求前台",
+    title: "需求结构化前台",
+    subtitle: "学生自助引导式录入，15 题带分支：没有美国信用就自动追问 guarantor、人在国内就标时差跟进；填完产出一张干净的 lead 卡交给中介团队",
+    url: "demos/anyhome-intake/",
+    tags: ["15 题引导式问答", "分支追问 · 帮你理清", "无信用 → 追问 guarantor", "在国内 → 标时差跟进", "lead 卡一键复制", "24/7 自助 · 无需 key"],
+    sections: []
+  },
+  {
+    id: "anyhome-checklist", no: "35", cat: "留学租房", direct: true,
+    kicker: "留学生租房中介 · 签约材料",
+    title: "签约材料清单生成",
+    subtitle: "按学生情况（有无美国信用 / 收入 / 担保人）生成个性化、中英双语的签约材料 checklist，每条都附「为什么需要」，省掉一遍遍口头解释",
+    url: "demos/anyhome-checklist/",
+    tags: ["按身份分支生成", "中英双语对照", "每条附「为什么需要」", "US guarantor / service / 预付", "标注以房东要求为准"],
+    sections: []
+  },
+
   /* ── 加新 demo：复制上面一段，改 id / no / cat / 内容 / url，即出现在首页 ── */
 ];
