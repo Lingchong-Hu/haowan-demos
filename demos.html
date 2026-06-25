@@ -68,11 +68,13 @@
         <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
         <div class="tags">${tags}</div><div class="go">即将上线</div></div>`;
     }
-    return `<a class="card" href="project.html?id=${p.id}" data-cat="${p.cat || ''}">
+    const href = p.direct ? p.url : `project.html?id=${p.id}`;
+    const ext = p.direct ? ' target="_blank" rel="noopener"' : '';
+    return `<a class="card" href="${href}"${ext} data-cat="${p.cat || ''}">
       <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
       <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
       <div class="tags">${tags}</div>
-      <div class="go">查看 · 亲手体验 →</div></a>`;
+      <div class="go">${p.direct ? '亲手体验 ↗' : '查看 · 亲手体验 →'}</div></a>`;
   }).join("");
 
   // 筛选

@@ -1491,5 +1491,16 @@ window.PROJECTS = [
     ]
   },
 
+  /* ───────────────────────── 31 concierge（精选 · 首页卡片直达实时 demo，不走详情页）───────────────────────── */
+  {
+    id: "concierge", no: "31", cat: "短租民宿", featured: true, direct: true,
+    kicker: "短租托管 · AI 访客管家",
+    title: "AI 访客管家",
+    subtitle: "把客人随口一问变成收入与口碑——查实时房态加住收款、故障派单、例外转人工，多语种 7×24",
+    url: "demos/concierge/",
+    tags: ["加住 upsell · 收款", "故障分诊 · 派单", "例外转人工", "多语种 · 7×24"],
+    sections: []
+  },
+
   /* ── 加新 demo：复制上面一段，改 id / no / cat / 内容 / url，即出现在首页 ── */
 ];
