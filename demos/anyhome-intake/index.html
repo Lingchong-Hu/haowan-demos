@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AnyHome · 帮你理清楚租房需求</title>
+<style>
+/* ════════════════════════════════════════════════════════════════
+   AnyHome · 需求结构化前台（intake）— 自包含单文件，无构建，无外部依赖。
+   学生自助引导式问答（确定性状态机）→ 干净 lead 卡给团队。
+   红线在代码里强制：只帮问帮理，不判断匹配、不推荐房源、不编造未填信息。
+   ════════════════════════════════════════════════════════════════ */
+:root{
+  /* TODO: 替换品牌资产（占位品牌色 token，待换真实 AnyHome 品牌色） */
+  --ink:#1c2b2a; --ink-2:#465856; --ink-3:#7c8b89; --ink-4:#a7b3b1;
+  --paper:#f6f4ef; --surface:#fffefb; --surface-2:#faf7f1;
+  --line:#e6e0d6; --line-2:#efeae0;
+  --brand:#15706b;            /* AnyHome 主色 · 信任感的深青绿 */
+  --brand-soft:#e4f0ee; --brand-line:#bcdedb;
+  --accent:#c2410c;           /* 警示 / guarantor · 暖赭红 */
+  --accent-soft:#fbe9df; --accent-line:#f0c3a6;
+  --good:#2f7d5b; --good-soft:#e7f2ec;
+  --warn:#b9842a; --warn-soft:#f7eed9;
+  --r:14px; --r-s:9px; --r-l:22px;
+  --sh-1:0 1px 2px rgba(20,40,38,.05), 0 3px 12px rgba(20,40,38,.05);
+  --sh-2:0 12px 40px rgba(20,40,38,.10);
+  --maxw:780px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+  --serif:Georgia,"Songti SC","STSong","Noto Serif SC","Times New Roman",serif;
+  --mono:"SFMono-Regular",ui-monospace,"Cascadia Code","Consolas","Menlo",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans); color:var(--ink); background:var(--paper);
+  -webkit-font-smoothing:antialiased; line-height:1.6; font-size:16px}
+::selection{background:var(--brand-soft)}
+
+/* ── 顶栏 ── */
+.bar{position:sticky; top:0; z-index:40; backdrop-filter:saturate(1.3) blur(10px);
+  background:rgba(246,244,239,.84); border-bottom:1px solid var(--line)}
+.bar .in{max-width:var(--maxw); margin:0 auto; padding:11px 22px; display:flex; align-items:center; gap:12px}
+.mark{display:flex; align-items:center; gap:9px; font-weight:650; font-size:15px; letter-spacing:-.2px}
+.mark .glyph{width:22px; height:22px; flex:none; display:grid; place-items:center;
+  border:1.5px solid var(--brand); border-radius:6px; color:var(--brand); font-size:12px; font-weight:800}
+.bar .spacer{flex:1}
+.bar .firm{font-size:11.5px; color:var(--ink-3); letter-spacing:.02em; white-space:nowrap}
+
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px 90px}
+
+/* ── Hero（仅首屏） ── */
+.hero{padding:38px 0 4px}
+.hero .eyebrow{font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--brand); margin-bottom:13px}
+.hero h1{font-size:clamp(24px,4.4vw,33px); font-weight:740; letter-spacing:-.7px; line-height:1.16}
+.hero h1 .em{color:var(--brand)}
+.hero .lede{color:var(--ink-2); font-size:16px; margin:14px 0 0; max-width:600px; line-height:1.62}
+.hero .start{margin-top:24px; appearance:none; border:none; border-radius:12px; cursor:pointer;
+  background:var(--ink); color:#fff; font-size:16px; font-weight:600; padding:15px 28px; font-family:inherit;
+  transition:.15s; display:inline-flex; align-items:center; gap:9px}
+.hero .start:hover{background:#0f1a19}
+.hero .start:active{transform:translateY(1px)}
+.hero .reassure{margin-top:14px; font-size:12.5px; color:var(--ink-3); display:flex; gap:14px; flex-wrap:wrap}
+.hero .reassure i{font-style:normal; display:inline-flex; gap:6px; align-items:center}
+
+/* ── 进度 ── */
+.prog{position:sticky; top:46px; z-index:30; padding:14px 0 10px;
+  background:linear-gradient(var(--paper) 70%, rgba(246,244,239,0))}
+.prog .meta{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:8px; gap:10px}
+.prog .step{font-size:13px; font-weight:650; color:var(--ink-2)}
+.prog .step b{color:var(--brand); font-variant-numeric:tabular-nums}
+.prog .pct{font-size:12px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+.prog .track{height:6px; background:var(--line-2); border-radius:999px; overflow:hidden}
+.prog .fill{height:100%; background:var(--brand); border-radius:999px; transition:width .35s cubic-bezier(.2,.7,.2,1)}
+
+/* ── 问答卡 ── */
+.qcard{margin-top:18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l);
+  box-shadow:var(--sh-1); padding:30px 32px 26px; animation:rise .38s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+.qcard .qkicker{font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--brand); margin-bottom:9px}
+.qcard .qkicker.branch{color:var(--accent)}
+.qcard h2{font-size:22px; font-weight:730; letter-spacing:-.4px; line-height:1.28; margin:0}
+.qcard .qhint{font-size:13.5px; color:var(--ink-3); margin:9px 0 0; line-height:1.55}
+.qcard .qbody{margin-top:20px}
+
+/* 选项（单选/多选共用） */
+.opts{display:flex; flex-direction:column; gap:9px}
+.opts.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:9px}
+.opt{display:flex; align-items:center; gap:11px; border:1px solid var(--line); background:var(--surface);
+  border-radius:11px; padding:13px 15px; font-size:15px; cursor:pointer; font-family:inherit; text-align:left;
+  color:var(--ink); transition:.13s; width:100%; line-height:1.4}
+.opt:hover{border-color:var(--brand); background:var(--brand-soft)}
+.opt.sel{border-color:var(--brand); background:var(--brand-soft); box-shadow:0 0 0 1px var(--brand) inset}
+.opt .box{width:19px; height:19px; flex:none; border:1.5px solid var(--ink-4); border-radius:5px;
+  display:grid; place-items:center; color:#fff; font-size:12px; font-weight:800; transition:.12s}
+.opt.radio .box{border-radius:50%}
+.opt.sel .box{background:var(--brand); border-color:var(--brand)}
+.opt .txt{flex:1; min-width:0}
+.opt .txt .sub{display:block; font-size:12px; color:var(--ink-3); margin-top:2px; font-weight:400}
+.opt.sel .txt .sub{color:var(--brand)}
+
+/* 文本 / 数字输入 */
+.tin{width:100%; border:1px solid var(--line); border-radius:11px; padding:13px 15px; font-size:15px;
+  font-family:inherit; background:var(--surface); color:var(--ink)}
+.tin:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft)}
+.dual{display:flex; gap:11px; align-items:center}
+.dual .tin{flex:1}
+.dual .sep{color:var(--ink-3); font-size:14px; flex:none}
+.inline-note{font-size:12.5px; color:var(--ink-3); margin-top:10px; line-height:1.55}
+
+/* 多选自定义追加 */
+.addrow{display:flex; gap:9px; margin-top:11px}
+.addrow .tin{flex:1}
+.addrow .addbtn{appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--ink-2);
+  border-radius:11px; padding:0 16px; font-size:14px; font-weight:560; cursor:pointer; font-family:inherit; white-space:nowrap}
+.addrow .addbtn:hover{border-color:var(--brand); color:var(--brand)}
+
+/* 导航按钮 */
+.qnav{display:flex; gap:11px; align-items:center; margin-top:24px}
+.btn{appearance:none; border:none; border-radius:11px; cursor:pointer; font-family:inherit; font-weight:600;
+  transition:.14s; display:inline-flex; align-items:center; justify-content:center; gap:8px}
+.btn.next{flex:1; background:var(--ink); color:#fff; font-size:16px; padding:14px}
+.btn.next:hover{background:#0f1a19}
+.btn.next:active{transform:translateY(1px)}
+.btn.next:disabled{opacity:.4; cursor:default}
+.btn.back{flex:none; background:transparent; color:var(--ink-3); font-size:14px; padding:14px 6px}
+.btn.back:hover{color:var(--ink)}
+.btn.skip{flex:none; background:transparent; color:var(--ink-3); font-size:13px; padding:14px 4px; text-decoration:underline; text-underline-offset:2px}
+.btn.skip:hover{color:var(--ink-2)}
+
+/* ── AI 连接条（仅 lead 卡阶段用，可选润色） ── */
+.aibar{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:0 0 4px; font-size:13px}
+.aidot{width:8px; height:8px; border-radius:50%; background:var(--ink-4); flex:none}
+.aidot.on{background:var(--good)}
+.aitxt{color:var(--ink-2)}
+.ailink{border:none; background:none; color:var(--brand); font-weight:650; cursor:pointer; font-size:13px;
+  text-decoration:underline; text-underline-offset:2px; padding:0; font-family:inherit}
+.aipanel{flex-basis:100%; border:1px dashed var(--line); background:var(--surface-2); border-radius:var(--r-s);
+  padding:14px 15px; margin-top:8px}
+.aipanel p{margin:0 0 11px; font-size:12.5px; color:var(--ink-3); line-height:1.65}
+.aipanel .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.field{border:1px solid var(--line); border-radius:9px; padding:11px 13px; font-size:14px; font-family:inherit;
+  background:var(--surface); color:var(--ink); flex:1; min-width:200px}
+.field:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft)}
+.minibtn{appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  border-radius:9px; padding:11px 16px; font-size:14px; font-weight:560; cursor:pointer; font-family:inherit; white-space:nowrap}
+.minibtn.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+.minibtn.ghost{background:transparent}
+
+/* ── lead 卡 ── */
+.results{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+.lead{margin-top:14px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l);
+  box-shadow:var(--sh-2); overflow:hidden}
+.lead-top{height:6px; background:linear-gradient(90deg,var(--brand),var(--accent))}
+.lead-pad{padding:30px 34px 32px}
+.lead-mast{border-bottom:2px solid var(--ink); padding-bottom:15px; margin-bottom:6px}
+.lead-mast .kanji{font-family:var(--serif); font-size:12px; letter-spacing:.34em; color:var(--ink-3); text-transform:uppercase; margin-bottom:8px}
+.lead-mast h2{font-family:var(--serif); font-size:25px; font-weight:700; letter-spacing:.5px; line-height:1.2}
+.lead-mast .sub{font-size:13px; color:var(--ink-3); margin-top:8px; display:flex; gap:16px; flex-wrap:wrap}
+.lead-mast .sub b{color:var(--ink-2); font-weight:600}
+
+/* 完整度条 */
+.compl{display:flex; align-items:center; gap:14px; margin:18px 0 4px; padding:14px 16px; border-radius:var(--r);
+  background:var(--surface-2); border:1px solid var(--line)}
+.compl .num{font-size:30px; font-weight:780; line-height:1; letter-spacing:-1px; color:var(--brand); flex:none; font-variant-numeric:tabular-nums}
+.compl .meta .t{font-size:14px; font-weight:650}
+.compl .meta .s{font-size:12.5px; color:var(--ink-3); margin-top:2px}
+.compl .track{flex:1; min-width:90px; height:6px; background:var(--line-2); border-radius:999px; overflow:hidden}
+.compl .track .fl{height:100%; background:var(--brand); border-radius:999px}
+
+/* flagged 区 */
+.flags{margin:18px 0 4px; display:flex; flex-direction:column; gap:10px}
+.flag{display:flex; gap:12px; align-items:flex-start; border-radius:var(--r); padding:13px 16px; line-height:1.5;
+  border:1px solid var(--accent-line); background:var(--accent-soft)}
+.flag .fi{flex:none; font-size:16px; margin-top:1px}
+.flag .ft{font-size:14px; color:var(--ink)}
+.flag .ft b{color:var(--accent); font-weight:700}
+.flag .ft .nb{font-size:12.5px; color:var(--ink-3); display:block; margin-top:3px; font-weight:400}
+.flag.tz{border-color:var(--warn-soft); background:var(--warn-soft)}
+.flag.tz .ft b{color:var(--warn)}
+
+/* 摘要段（AI 润色或离线模板） */
+.summary{margin:20px 0 4px; padding:16px 18px; border-radius:var(--r); background:var(--brand-soft);
+  border:1px solid var(--brand-line); font-size:14.5px; color:var(--ink); line-height:1.7; white-space:pre-wrap}
+.summary .sl{display:inline-flex; align-items:center; gap:7px; font-size:11px; font-weight:700; letter-spacing:.04em;
+  text-transform:uppercase; color:var(--brand); background:var(--surface); border:1px solid var(--brand-line);
+  border-radius:999px; padding:3px 10px; margin-bottom:11px}
+
+/* 结构化分组 */
+.dsec{margin-top:24px}
+.dsec-h{font-family:var(--serif); font-size:12px; font-weight:700; letter-spacing:.2em; color:var(--brand);
+  text-transform:uppercase; padding-bottom:7px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:9px}
+.dsec-h .no{font-family:var(--mono); color:var(--ink-4); font-size:11px; letter-spacing:0}
+.drow{display:flex; gap:14px; padding:9px 0; border-bottom:1px solid var(--line-2); align-items:baseline}
+.drow .k{width:120px; flex:none; font-size:13px; color:var(--ink-3); line-height:1.5}
+.drow .v{flex:1; min-width:0; font-size:14.5px; color:var(--ink); line-height:1.55}
+.drow .v.dim{color:var(--ink-4); font-style:italic}
+.drow .v .en{color:var(--ink-3); font-size:13px}
+
+/* 工具栏 / 重来 */
+.toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-top:24px}
+.tool{flex:1; min-width:140px; appearance:none; border:1px solid var(--line); background:var(--surface);
+  color:var(--ink); border-radius:10px; padding:12px; font-size:14px; font-weight:560; cursor:pointer;
+  font-family:inherit; transition:.13s; display:inline-flex; align-items:center; justify-content:center; gap:7px}
+.tool:hover{border-color:var(--brand); color:var(--brand)}
+.tool.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+.tool.primary:hover{filter:brightness(.95); color:#fff}
+
+/* 思考过场 */
+.think{display:flex; flex-direction:column; align-items:center; gap:15px; padding:30px 0; text-align:center}
+.spin{width:34px; height:34px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--brand);
+  animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.think .m{color:var(--ink-2); font-size:14px; min-height:20px}
+
+/* 脚注（firm 水印） */
+.foot{margin-top:42px; padding-top:22px; border-top:1px solid var(--line); text-align:center}
+.foot .pos{font-size:13px; color:var(--ink-2); line-height:1.6; max-width:540px; margin:0 auto}
+.foot .pos b{color:var(--ink); font-weight:650}
+.foot .brand{font-size:11.5px; color:var(--ink-4); margin-top:12px; letter-spacing:.04em}
+
+/* toast */
+.toast{position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(18px);
+  background:var(--ink); color:#fff; padding:11px 20px; border-radius:999px; font-size:14px;
+  box-shadow:var(--sh-2); opacity:0; transition:.25s; z-index:100; pointer-events:none}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+@media (max-width:640px){
+  .wrap{padding:0 16px 70px}
+  .qcard{padding:22px 18px 22px}
+  .qcard h2{font-size:19px}
+  .lead-pad{padding:22px 18px 26px}
+  .lead-mast h2{font-size:21px}
+  .opts.grid{grid-template-columns:1fr 1fr}
+  .drow{flex-direction:column; gap:2px}
+  .drow .k{width:auto}
+  .compl{flex-wrap:wrap}
+  .compl .track{flex-basis:100%; order:3}
+  .toolbar .tool{min-width:0}
+  .bar .firm{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="in">
+    <!-- TODO: 替换品牌资产（wordmark / logo） -->
+    <div class="mark"><span class="glyph">A</span>AnyHome</div>
+    <div class="spacer"></div>
+    <div class="firm">需求结构化前台 · 帮你理清楚，再交给我们团队</div>
+  </div>
+</div>
+
+<main class="wrap" id="app"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ════════════════ 工具（照抄 _SHARED.md，勿改实现） ════════════════ */
+function el(tag, props){
+  const e = document.createElement(tag);
+  if(props){ for(const k in props){ const v = props[k];
+    if(v==null || v===false) continue;
+    if(k==='class') e.className = v;
+    else if(k==='html') e.innerHTML = v;
+    else if(k==='text') e.textContent = v;
+    else if(k==='style' && typeof v==='object') Object.assign(e.style, v);
+    else if(k.slice(0,2)==='on' && typeof v==='function') e.addEventListener(k.slice(2).toLowerCase(), v);
+    else e.setAttribute(k, v);
+  }}
+  for(let i=2;i<arguments.length;i++){ let kids=arguments[i]; if(!Array.isArray(kids)) kids=[kids];
+    for(const kid of kids){ if(kid==null || kid===false) continue;
+      e.appendChild(kid.nodeType ? kid : document.createTextNode(String(kid))); } }
+  return e;
+}
+function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); return n; }
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let toastT; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1900); }
+async function copy(text){ try{ await navigator.clipboard.writeText(text); toast('已复制 ✓'); }
+  catch(e){ try{ const ta=el('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('已复制 ✓'); }
+    catch(_){ toast('复制失败，请手动选择'); } } }
+
+/* ════════════════ LLM 连接器（照抄 _SHARED.md makeLLM，只换 SYS / maxTokens） ════════════════ */
+function makeLLM(SYS, maxTokens){
+  const KEY_LS='haowan_anthropic_key', MODEL='claude-sonnet-4-6';
+  const get=()=>{ try{ return localStorage.getItem(KEY_LS)||''; }catch(e){ return ''; } };
+  const set=v=>{ try{ v?localStorage.setItem(KEY_LS,v):localStorage.removeItem(KEY_LS); }catch(e){} };
+  const connected=()=> !!get();
+  function safeParse(raw){ if(!raw) return null;
+    let s=String(raw).trim().replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+    try{ return JSON.parse(s); }catch(e){}
+    const a=s.indexOf('{'), b=s.lastIndexOf('}');
+    if(a>=0&&b>a){ try{ return JSON.parse(s.slice(a,b+1)); }catch(e){} } return null; }
+  async function run(userText){
+    const key=get(); if(!key){ const e=new Error('NEED_SETUP'); e.code='NEED_SETUP'; throw e; }
+    let r; try{
+      r = await fetch('https://api.anthropic.com/v1/messages',{ method:'POST',
+        headers:{ 'x-api-key':key, 'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true', 'content-type':'application/json' },
+        body: JSON.stringify({ model:MODEL, max_tokens:maxTokens||1200, system:SYS,
+          messages:[ {role:'user', content:userText}, {role:'assistant', content:'{'} ] }) });
+    }catch(e){ const err=new Error('NET'); err.code='NET'; throw err; }
+    if(r.status===401){ const e=new Error('BAD_KEY'); e.code='BAD_KEY'; throw e; }
+    if(!r.ok){ const e=new Error('HTTP_'+r.status); e.code='HTTP'; throw e; }
+    const data=await r.json();
+    const txt=(data.content && data.content[0] && data.content[0].text) || '';
+    const obj=safeParse('{'+txt);
+    if(!obj){ const e=new Error('PARSE_FAIL'); e.code='PARSE_FAIL'; throw e; } return obj; }
+  function errMsg(err){ const c=err&&err.code;
+    if(c==='NEED_SETUP') return '还没连接 AI，已显示离线示例';
+    if(c==='BAD_KEY') return 'API Key 无效';
+    if(c==='NET') return '连不上模型（注意：file:// 直接打开可能被浏览器拦截，请用本地 HTTP 预览）';
+    if(c==='PARSE_FAIL') return 'AI 返回格式异常，请重试';
+    return 'AI 生成失败，请重试'; }
+  return { get,set,connected,run,errMsg };
+}
+
+/* ════════════════ 内嵌 system prompt（仅最后一步润色摘要；非主路径） ════════════════
+   只把已结构化好的答案改写成一段干净的中文 lead 摘要 + flagged 列表。
+   绝不新增 / 编造任何学生没填的信息；不判断匹配、不推荐房源。 */
+const SYS = [
+'你是 AnyHome（NYC 留学生租房中介）的 lead 摘要润色助手。',
+'输入是一名学生在引导式问答里已经【填好】的结构化答案（JSON），以及系统已判定的 flagged 项。',
+'你的唯一任务：把这些已知信息改写成一段给中介团队看的、干净通顺的中文 lead 摘要，外加一个 flagged 要点列表。',
+'',
+'铁律：',
+'1. 只用输入里【已经存在】的信息。学生没填的字段一律不提、不补、不猜。',
+'2. 绝不判断需求是否合理、绝不评估匹配度、绝不推荐任何具体房源或区域。',
+'3. flagged 项原样保留（无美国信用/收入、guarantor 情况、时差等），只复述不解读、不给解法。',
+'4. 价格、日期、区域等数字与专有名词原样保留（neighborhood / guarantor / WeChat 等英文照旧）。',
+'',
+'只返回 JSON，无前后文、无 markdown 围栏。Schema：',
+'{',
+'  "summary": "一段 3-5 句的中文 lead 摘要，覆盖学校/时间线/预算/居住偏好/区域等已填要点",',
+'  "flags": [ "逐条复述系统给的 flagged 要点（中文）", ... ]',
+'}'
+].join('\n');
+
+const LLM = makeLLM(SYS, 1000);
+
+/* ════════════════ 学校下拉（同 Demo1） ════════════════ */
+const SCHOOLS = ['NYU','Columbia','Parsons (The New School)','FIT','Pace','Fordham (Lincoln Center)','Baruch (CUNY)','NYU Tandon','Cooper Union','其他'];
+
+/* ════════════════ 常见 neighborhood（多选，可自定义追加） ════════════════ */
+const NEIGHBORHOODS = ['Murray Hill','Midtown','Upper East Side','Upper West Side','Greenwich Village',
+  'East Village','Lower East Side','Williamsburg','Long Island City','Harlem','Financial District',
+  'Chelsea','Hell\'s Kitchen','Astoria','Morningside Heights'];
+
+/* ════════════════ must-haves（多选） ════════════════ */
+const MUST_HAVES = [
+  {v:'in-unit laundry', sub:'室内洗衣'},
+  {v:'doorman', sub:'门卫'},
+  {v:'gym', sub:'健身房'},
+  {v:'furnished', sub:'带家具'},
+  {v:'elevator', sub:'电梯'},
+  {v:'dishwasher', sub:'洗碗机'},
+  {v:'pet-friendly', sub:'可养宠物'},
+  {v:'A/C', sub:'空调'},
+];
+
+/* ════════════════ 状态机：问题流（确定性，~15 项，带分支） ════════════════
+   每题：id, kicker, q, hint?, type, 以及 type 专属字段。
+   type: 'single' | 'multi' | 'text' | 'range' | 'beds' | 'roommate' | 'origin'
+   分支：showIf(state) 决定该题是否出现（Q11 guarantor 仅在 Q10 答“无”时出现）。 */
+const QUESTIONS = [
+  { id:'school', kicker:'第 1 步', q:'你的目标学校是哪所？', hint:'我们会按学校所在区位帮你理需求。',
+    type:'single', options:SCHOOLS, other:true, otherPlaceholder:'其他学校名…' },
+
+  { id:'program_start', kicker:'第 2 步', q:'项目大概什么时候开学？',
+    hint:'比如 2026 Fall、2026 年 1 月。', type:'text', placeholder:'例：2026 Fall / 2026 年 9 月' },
+
+  { id:'move_in', kicker:'第 3 步', q:'你期望什么时候入住？',
+    hint:'有大致月份就行，越具体越好安排看房节奏。', type:'text', placeholder:'例：2026 年 8 月中 / ASAP' },
+
+  { id:'budget', kicker:'第 4 步', q:'预算大概在什么区间？',
+    hint:'按每月租金（USD / 月）。先给个范围，后面还会问弹性。', type:'range', unit:'$ / 月',
+    minPlaceholder:'最低', maxPlaceholder:'最高' },
+
+  { id:'living', kicker:'第 5 步', q:'你打算独住，还是合租？',
+    type:'roommate' },
+
+  { id:'areas', kicker:'第 6 步', q:'有想住的区域吗？（可多选）',
+    hint:'不确定可以少选或跳过，我们会按学校通勤帮你补。', type:'multi', options:NEIGHBORHOODS, custom:true,
+    customPlaceholder:'其他区域…' },
+
+  { id:'layout', kicker:'第 7 步', q:'户型上有要求吗？',
+    hint:'卧室 / 卫生间数量，不确定填大概。', type:'beds' },
+
+  { id:'must_haves', kicker:'第 8 步', q:'有哪些必须要有的（must-have）？（可多选）',
+    hint:'只选你真在意的，不在意的留空就好。', type:'multi', objOptions:MUST_HAVES },
+
+  { id:'lease', kicker:'第 9 步', q:'打算租多久？',
+    type:'single', options:['12 个月（标准 lease）','少于 12 个月 / 短租','灵活，看房源','还不确定'] },
+
+  { id:'us_credit', kicker:'第 10 步 · 关键', q:'你目前有美国本地的信用记录或收入吗？',
+    hint:'这一项决定后面要不要走 guarantor 流程，对国际学生很常见，如实选即可。',
+    type:'single', options:['有（美国信用 / 收入）','没有（典型国际学生）','部分 / 不确定'],
+    branchKey:true },
+
+  // 分支题：仅当 Q10 答“没有”或“部分/不确定”时出现
+  { id:'guarantor', kicker:'追问 · guarantor', branch:true,
+    q:'关于 guarantor（担保人），你这边是什么情况？',
+    hint:'没有美国信用 / 收入时，房东通常会要求 guarantor。先告诉我们你的方向，具体怎么解由我们团队来。',
+    type:'single', options:[
+      '有 US guarantor（美国本地担保人）',
+      '想用 guarantor service（如 Insurent / TheGuarantors）',
+      '可以预付（prepay 几个月）',
+      '还不清楚，需要团队帮我理'],
+    showIf: st => st.us_credit==='没有（典型国际学生）' || st.us_credit==='部分 / 不确定' },
+
+  { id:'pets', kicker:'第 12 步', q:'有宠物吗？',
+    type:'single', options:['没有','有猫','有狗','其他宠物'] },
+
+  { id:'origin', kicker:'第 13 步', q:'你现在人在哪里？',
+    hint:'在国内的话我们会安排异步跟进，避免时差错过你。', type:'origin' },
+
+  { id:'contact', kicker:'第 14 步', q:'方便留个联系方式吗？',
+    hint:'我们整理好后会主动联系你。WeChat 或 email 都行。', type:'contact' },
+
+  { id:'budget_flex', kicker:'第 15 步 · 最后一步', q:'如果遇到很合适的，预算能往上浮动一点吗？',
+    hint:'帮我们判断要不要给你看略超预算但很对的房源。', type:'single',
+    options:['硬上限，不能超','可以小幅上浮（~10%）','好房源可以谈','优先地段，预算其次'] },
+];
+
+/* ════════════════ 状态 ════════════════ */
+const state = {
+  i: 0,            // 当前可见题在 visibleQ() 序列里的索引
+  answers: {},     // id -> 答案
+  started: false,
+};
+
+// 当前可见题序列（动态，因分支而变）
+function visibleQ(){ return QUESTIONS.filter(q => !q.showIf || q.showIf(state.answers)); }
+
+/* ── 单题是否已作答（用于 next 可用性 / 完整度） ── */
+function isAnswered(q){
+  const a = state.answers[q.id];
+  if(a==null) return false;
+  switch(q.type){
+    case 'multi': return Array.isArray(a) && a.length>0;
+    case 'range': return a && (a.min!=null && a.min!=='' || a.max!=null && a.max!=='');
+    case 'beds':  return a && (a.beds || a.baths);
+    case 'roommate': return a && a.mode;
+    case 'origin': return a && a.where;
+    case 'contact': return a && (a.value||'').trim();
+    default: return String(a).trim()!=='';
+  }
+}
+
+/* ════════════════ 渲染：首屏 hero ════════════════ */
+function renderHero(){
+  const app = clear(document.getElementById('app'));
+  app.appendChild(el('div',{class:'hero'},
+    el('div',{class:'eyebrow'}, '租房需求 · 自助梳理'),
+    el('h1',null,['花 2 分钟，', el('br'), '我们帮你把租房需求', el('span',{class:'em'},'理清楚')]),
+    el('p',{class:'lede'},
+      '一题一题来，友好不啰嗦。填完会生成一张干净的需求卡交给 AnyHome 团队——'+
+      '在国内也能 24 小时随时填，不用迁就时差，重复的事一次说清。'),
+    el('button',{class:'start', onClick:()=>{ state.started=true; state.i=0; renderQ(); }},
+      ['开始梳理需求 →']),
+    el('div',{class:'reassure'},
+      el('i',null,'🕒 国内可随时填'),
+      el('i',null,'🧭 只帮你理清，不替你做决定'),
+      el('i',null,'🔒 信息只交给 AnyHome 团队'))
+  ));
+}
+
+/* ════════════════ 渲染：进度条 ════════════════ */
+function progressBar(){
+  const vis = visibleQ();
+  const total = vis.length;
+  const cur = Math.min(state.i+1, total);
+  const pct = Math.round((state.i/total)*100);
+  return el('div',{class:'prog'},
+    el('div',{class:'meta'},
+      el('span',{class:'step'}, ['第 ', el('b',null,String(cur)), ' / '+total+' 题']),
+      el('span',{class:'pct'}, pct+'% 完成')),
+    el('div',{class:'track'}, el('div',{class:'fill', style:{width:pct+'%'}}))
+  );
+}
+
+/* ════════════════ 渲染：当前题 ════════════════ */
+function renderQ(){
+  const vis = visibleQ();
+  if(state.i >= vis.length){ renderLead(); return; }
+  const q = vis[state.i];
+
+  const app = clear(document.getElementById('app'));
+  app.appendChild(progressBar());
+
+  const card = el('div',{class:'qcard'});
+  card.appendChild(el('div',{class:'qkicker'+(q.branch?' branch':'')}, q.kicker));
+  card.appendChild(el('h2',null,q.q));
+  if(q.hint) card.appendChild(el('p',{class:'qhint'}, q.hint));
+
+  const body = el('div',{class:'qbody'});
+  body.appendChild(renderInput(q));
+  card.appendChild(body);
+
+  // 导航
+  const nav = el('div',{class:'qnav'});
+  if(state.i>0) nav.appendChild(el('button',{class:'btn back', onClick:goBack}, '← 上一题'));
+  const nextBtn = el('button',{class:'btn next',
+    onClick:()=>{ goNext(); }}, state.i===vis.length-1 ? ['生成需求卡 →'] : ['下一题 →']);
+  refreshNext(nextBtn, q);
+  nav.appendChild(nextBtn);
+  // 选填题给「跳过」
+  if(!q.branchKey && q.id!=='school'){
+    nav.appendChild(el('button',{class:'btn skip', onClick:()=>{ goNext(true); }}, '跳过'));
+  }
+  card.appendChild(nav);
+  app.appendChild(card);
+
+  // 把 nextBtn 引用挂到 card 上，供输入回调刷新
+  card._nextBtn = nextBtn; card._q = q;
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+function refreshNext(btn, q){
+  // school 题必答；其余可跳过，但未答时 next 文案仍可点（视为跳过）。
+  // 为引导清晰：必答题未答则禁用 next。
+  if(q.branchKey || q.id==='school'){ btn.disabled = !isAnswered(q); }
+  else { btn.disabled = false; }
+}
+function syncNext(){
+  const card = document.querySelector('.qcard');
+  if(card && card._nextBtn && card._q) refreshNext(card._nextBtn, card._q);
+}
+
+/* ── 各题型输入 ── */
+function renderInput(q){
+  const a = state.answers;
+  switch(q.type){
+
+    case 'single': {
+      const wrap = el('div',{class:'opts'});
+      q.options.forEach(opt=>{
+        const sel = a[q.id]===opt;
+        const btn = el('button',{class:'opt radio'+(sel?' sel':''),
+          onClick:()=>{ a[q.id]=opt; renderQ(); }},
+          el('span',{class:'box'}, sel?'●':''), el('span',{class:'txt'}, opt));
+        wrap.appendChild(btn);
+      });
+      // “其他”自由输入（school）
+      if(q.other){
+        const known = q.options.includes(a[q.id]);
+        const cur = (!known && a[q.id]) ? a[q.id] : '';
+        const otherSel = a[q.id]==='其他' || (!known && !!a[q.id]);
+        const inp = el('input',{class:'tin', style:{marginTop:'2px'}, type:'text',
+          placeholder:q.otherPlaceholder||'其他…', value:cur,
+          onInput:e=>{ const v=e.target.value.trim(); a[q.id]= v || '其他'; syncNext(); }});
+        if(otherSel || a[q.id]==='其他') wrap.appendChild(inp);
+      }
+      return wrap;
+    }
+
+    case 'text': {
+      return el('input',{class:'tin', type:'text', placeholder:q.placeholder||'',
+        value:a[q.id]||'', onInput:e=>{ a[q.id]=e.target.value; syncNext(); }});
+    }
+
+    case 'range': {
+      const v = a[q.id] || (a[q.id]={min:'',max:''});
+      const row = el('div',{class:'dual'},
+        el('input',{class:'tin', type:'number', inputmode:'numeric', min:'0', placeholder:q.minPlaceholder||'最低',
+          value:v.min, onInput:e=>{ v.min=e.target.value; syncNext(); }}),
+        el('span',{class:'sep'},'—'),
+        el('input',{class:'tin', type:'number', inputmode:'numeric', min:'0', placeholder:q.maxPlaceholder||'最高',
+          value:v.max, onInput:e=>{ v.max=e.target.value; syncNext(); }}));
+      const box = el('div',null, row);
+      box.appendChild(el('div',{class:'inline-note'}, '单位：'+(q.unit||'$ / 月')+'。只填一个也行，留范围我们更好排房源。'));
+      return box;
+    }
+
+    case 'roommate': {
+      const v = a[q.id] || (a[q.id]={mode:'',count:''});
+      const opts = el('div',{class:'opts'});
+      [['独住','一个人住'],['合租','和室友一起 / share']].forEach(([m,sub])=>{
+        const sel=v.mode===m;
+        opts.appendChild(el('button',{class:'opt radio'+(sel?' sel':''),
+          onClick:()=>{ v.mode=m; if(m==='独住') v.count=''; renderQ(); }},
+          el('span',{class:'box'}, sel?'●':''),
+          el('span',{class:'txt'}, [m, el('span',{class:'sub'}, sub)])));
+      });
+      const box = el('div',null, opts);
+      if(v.mode==='合租'){
+        box.appendChild(el('div',{style:{marginTop:'11px'}},
+          el('input',{class:'tin', type:'number', inputmode:'numeric', min:'1', placeholder:'打算几人合租？（含你，可留空）',
+            value:v.count, onInput:e=>{ v.count=e.target.value; syncNext(); }})));
+      }
+      return box;
+    }
+
+    case 'beds': {
+      const v = a[q.id] || (a[q.id]={beds:'',baths:''});
+      const mk = (key,label,ph)=> el('div',{style:{flex:'1'}},
+        el('div',{class:'inline-note', style:{marginTop:'0',marginBottom:'6px'}}, label),
+        el('input',{class:'tin', type:'text', placeholder:ph, value:v[key],
+          onInput:e=>{ v[key]=e.target.value; syncNext(); }}));
+      return el('div',{class:'dual'}, mk('beds','卧室 beds','例：1 / studio / 2+'), mk('baths','卫生间 baths','例：1 / 不限'));
+    }
+
+    case 'origin': {
+      const v = a[q.id] || (a[q.id]={where:'',detail:''});
+      const opts = el('div',{class:'opts'});
+      [['在国内','China','需异步跟进，避免时差'],['已在美国','US',''],['其他地区','Other','']].forEach(([w,code,sub])=>{
+        const sel=v.where===w;
+        opts.appendChild(el('button',{class:'opt radio'+(sel?' sel':''),
+          onClick:()=>{ v.where=w; renderQ(); }},
+          el('span',{class:'box'}, sel?'●':''),
+          el('span',{class:'txt'}, [w, sub?el('span',{class:'sub'}, sub):null])));
+      });
+      const box = el('div',null, opts);
+      box.appendChild(el('div',{style:{marginTop:'11px'}},
+        el('input',{class:'tin', type:'text', placeholder:'具体城市（可留空，例：上海 / NYC）',
+          value:v.detail, onInput:e=>{ v.detail=e.target.value; syncNext(); }})));
+      return box;
+    }
+
+    case 'contact': {
+      const v = a[q.id] || (a[q.id]={kind:'WeChat',value:''});
+      const opts = el('div',{class:'opts grid', style:{gridTemplateColumns:'1fr 1fr'}});
+      ['WeChat','Email'].forEach(k=>{
+        const sel=v.kind===k;
+        opts.appendChild(el('button',{class:'opt radio'+(sel?' sel':''),
+          onClick:()=>{ v.kind=k; renderQ(); }},
+          el('span',{class:'box'}, sel?'●':''), el('span',{class:'txt'}, k)));
+      });
+      const box = el('div',null, opts);
+      box.appendChild(el('div',{style:{marginTop:'11px'}},
+        el('input',{class:'tin', type:'text',
+          placeholder:v.kind==='Email'?'你的 email…':'你的 WeChat ID…',
+          value:v.value, onInput:e=>{ v.value=e.target.value; syncNext(); }})));
+      return box;
+    }
+
+    case 'multi': {
+      const list = a[q.id] || (a[q.id]=[]);
+      const items = q.objOptions || q.options.map(o=>({v:o}));
+      const wrap = el('div',{class:'opts grid'});
+      items.forEach(it=>{
+        const sel = list.includes(it.v);
+        wrap.appendChild(el('button',{class:'opt'+(sel?' sel':''),
+          onClick:()=>{ const ix=list.indexOf(it.v); ix>=0?list.splice(ix,1):list.push(it.v); renderQ(); }},
+          el('span',{class:'box'}, sel?'✓':''),
+          el('span',{class:'txt'}, [it.v, it.sub?el('span',{class:'sub'}, it.sub):null])));
+      });
+      const box = el('div',null, wrap);
+      // 已选自定义项（不在预置列表里的）也显示为可点 chip
+      const presetVals = items.map(i=>i.v);
+      const customs = list.filter(x=>!presetVals.includes(x));
+      if(customs.length){
+        const cw = el('div',{class:'opts grid', style:{marginTop:'9px'}});
+        customs.forEach(c=>{
+          cw.appendChild(el('button',{class:'opt sel',
+            onClick:()=>{ const ix=list.indexOf(c); if(ix>=0) list.splice(ix,1); renderQ(); }},
+            el('span',{class:'box'},'✓'), el('span',{class:'txt'}, c)));
+        });
+        box.appendChild(cw);
+      }
+      if(q.custom){
+        let val='';
+        const inp = el('input',{class:'tin', placeholder:q.customPlaceholder||'其他…',
+          onInput:e=>{ val=e.target.value; },
+          onKeydown:e=>{ if(e.key==='Enter'){ e.preventDefault(); const t=val.trim(); if(t && !list.includes(t)){ list.push(t); renderQ(); } } }});
+        const addBtn = el('button',{class:'addbtn', onClick:()=>{ const t=(inp.value||'').trim(); if(t && !list.includes(t)){ list.push(t); renderQ(); } }}, '添加');
+        box.appendChild(el('div',{class:'addrow'}, inp, addBtn));
+      }
+      return box;
+    }
+  }
+  return el('div',null,'（未知题型）');
+}
+
+/* ── 导航逻辑 ── */
+function goNext(skip){
+  const vis = visibleQ();
+  const q = vis[state.i];
+  if(skip){ /* 跳过：保留空答案 */ }
+  state.i++;
+  // 若越界 → 进 lead 卡
+  if(state.i >= visibleQ().length){ renderLead(); return; }
+  renderQ();
+}
+function goBack(){
+  if(state.i>0){ state.i--; renderQ(); }
+  else { renderHero(); }
+}
+
+/* ════════════════ 答案 → 结构化 lead 数据（确定性） ════════════════ */
+function fmtRange(r){
+  if(!r) return '';
+  const lo=(r.min!=null?String(r.min):'').trim(), hi=(r.max!=null?String(r.max):'').trim();
+  if(lo && hi) return '$'+lo+' – $'+hi+' / 月';
+  if(lo) return '$'+lo+'+ / 月';
+  if(hi) return '最高 $'+hi+' / 月';
+  return '';
+}
+function fmtLiving(v){
+  if(!v||!v.mode) return '';
+  if(v.mode==='独住') return '独住 (solo)';
+  const c=(v.count!=null?String(v.count):'').trim();
+  return '合租 (share)'+(c?(' · 约 '+c+' 人'):'');
+}
+function fmtBeds(v){
+  if(!v) return '';
+  const parts=[];
+  if((v.beds||'').trim()) parts.push((v.beds).trim()+' bed');
+  if((v.baths||'').trim()) parts.push((v.baths).trim()+' bath');
+  return parts.join(' / ');
+}
+function fmtOrigin(v){
+  if(!v||!v.where) return '';
+  return v.where + ((v.detail||'').trim()?(' · '+v.detail.trim()):'');
+}
+function fmtContact(v){
+  if(!v||!(v.value||'').trim()) return '';
+  return v.kind+'：'+v.value.trim();
+}
+function fmtList(arr){ return (Array.isArray(arr)&&arr.length)?arr.join('、'):''; }
+
+/* lead 分组结构（呈现 + 复制都用它）。value 为空表示该项未填（标“待补”，绝不编造）。 */
+function buildLead(){
+  const a = state.answers;
+  const groups = [
+    { ix:'01', name:'学校 / 时间线', en:'School / Timeline', rows:[
+      ['目标学校', a.school||'', 'School'],
+      ['项目开学', a.program_start||'', 'Program start'],
+      ['期望入住', a.move_in||'', 'Move-in'],
+    ]},
+    { ix:'02', name:'预算', en:'Budget', rows:[
+      ['预算区间', fmtRange(a.budget), 'Budget'],
+      ['预算弹性', a.budget_flex||'', 'Flexibility'],
+    ]},
+    { ix:'03', name:'居住与户型', en:'Living / Layout', rows:[
+      ['居住形式', fmtLiving(a.living), 'Living'],
+      ['户型需求', fmtBeds(a.layout), 'Layout'],
+      ['租期', a.lease||'', 'Lease term'],
+      ['宠物', a.pets||'', 'Pets'],
+    ]},
+    { ix:'04', name:'区域与偏好', en:'Areas / Must-haves', rows:[
+      ['期望区域', fmtList(a.areas), 'Neighborhoods'],
+      ['Must-haves', fmtList(a.must_haves), 'Must-haves'],
+    ]},
+    { ix:'05', name:'资质与担保', en:'Credit / Guarantor', rows:[
+      ['美国信用/收入', a.us_credit||'', 'US credit / income'],
+      ['Guarantor 情况', a.guarantor||'', 'Guarantor'],
+    ]},
+    { ix:'06', name:'联系方式 / 所在地', en:'Contact / Origin', rows:[
+      ['现所在地', fmtOrigin(a.origin), 'Current location'],
+      ['联系方式', fmtContact(a.contact), 'Contact'],
+    ]},
+  ];
+
+  // 完整度：以「曾出现过的可见题」为分母（含分支动态计入）
+  const vis = visibleQ();
+  let answered=0;
+  vis.forEach(q=>{ if(isAnswered(q)) answered++; });
+  const completeness = { answered, total: vis.length };
+
+  // flagged 项（确定性强制 —— 红线核心）
+  const flags = [];
+  // 1) guarantor / 无美国信用
+  if(a.us_credit==='没有（典型国际学生）' || a.us_credit==='部分 / 不确定'){
+    const gv = a.guarantor ? ('学生方向：'+a.guarantor) : '学生尚未明确 guarantor 方向，需团队跟进。';
+    flags.push({
+      kind:'guarantor',
+      icon:'⚠️',
+      title:'无 / 不确定美国信用·收入，需 guarantor 方案',
+      note: gv + '（只标记不解决——guarantor 方案是团队的活。）'
+    });
+  }
+  // 2) 在国内 → 时差
+  if(a.origin && a.origin.where==='在国内'){
+    flags.push({
+      kind:'tz',
+      icon:'🕒',
+      title:'学生在国内，时差跟进',
+      note:'建议异步联系（'+(fmtContact(a.contact)||'联系方式待补')+'），避免时差错过。'
+    });
+  }
+
+  return { groups, completeness, flags, answers:a };
+}
+
+/* ════════════════ 离线 lead 摘要模板（主路径，不依赖 key） ════════════════ */
+function offlineSummary(d){
+  const a = d.answers;
+  const bits = [];
+  const school = a.school || '（学校待补）';
+  let s1 = '该学生目标 '+school;
+  if(a.program_start) s1 += '，'+a.program_start+' 入学';
+  if(a.move_in) s1 += '，期望 '+a.move_in+' 入住';
+  bits.push(s1+'。');
+
+  const budget = fmtRange(a.budget);
+  if(budget){
+    let s2 = '预算 '+budget;
+    if(a.budget_flex) s2 += '（'+a.budget_flex+'）';
+    bits.push(s2+'。');
+  }
+  const live = fmtLiving(a.living), beds = fmtBeds(a.layout);
+  const livestr = [live, beds].filter(Boolean).join('，');
+  if(livestr) bits.push('居住偏好：'+livestr+(a.lease?('，租期 '+a.lease):'')+'。');
+
+  const areas = fmtList(a.areas), mh = fmtList(a.must_haves);
+  if(areas) bits.push('意向区域：'+areas+'。');
+  if(mh) bits.push('Must-haves：'+mh+'。');
+
+  if(a.us_credit) bits.push('美国信用/收入：'+a.us_credit+(a.guarantor?('；guarantor 方向：'+a.guarantor):'')+'。');
+  const origin = fmtOrigin(a.origin), contact = fmtContact(a.contact);
+  if(origin||contact) bits.push('现所在地：'+(origin||'待补')+(contact?('；'+contact):'')+'。');
+
+  return bits.join('');
+}
+
+/* ════════════════ lead 卡渲染 ════════════════ */
+let _aiSummary = null;     // AI 润色后的摘要（可选）
+let _aiFlags = null;       // AI 复述的 flagged（可选）
+
+function renderLead(){
+  const d = buildLead();
+  const app = clear(document.getElementById('app'));
+  const wrap = el('div',{class:'results'});
+
+  // AI 连接条（可选润色）
+  wrap.appendChild(aiBar(d));
+
+  const lead = el('div',{class:'lead'});
+  lead.appendChild(el('div',{class:'lead-top'}));
+  const pad = el('div',{class:'lead-pad'});
+  lead.appendChild(pad);
+
+  // 报头
+  pad.appendChild(el('div',{class:'lead-mast'},
+    el('div',{class:'kanji'}, 'AnyHome · Tenant Lead'),
+    el('h2',null,'学生需求 Lead 卡'),
+    el('div',{class:'sub'},
+      el('span',null,['学校：',el('b',null, esc(d.answers.school||'待补'))]),
+      el('span',null,['生成时间：',el('b',null, new Date().toLocaleString('zh-CN',{hour12:false}))]))
+  ));
+
+  // 完整度
+  const c = d.completeness;
+  const pct = c.total ? Math.round((c.answered/c.total)*100) : 0;
+  pad.appendChild(el('div',{class:'compl'},
+    el('div',{class:'num'}, c.answered+'/'+c.total),
+    el('div',{class:'meta'},
+      el('div',{class:'t'}, '需求完整度 '+pct+'%'),
+      el('div',{class:'s'}, '已填 '+c.answered+' 项，共 '+c.total+' 项'+(c.answered<c.total?'　·　空项已如实标「待补」，未编造':'　·　全部填齐'))),
+    el('div',{class:'track'}, el('div',{class:'fl', style:{width:pct+'%'}}))
+  ));
+
+  // flagged 项
+  if(d.flags.length){
+    const fl = el('div',{class:'flags'});
+    d.flags.forEach(f=>{
+      fl.appendChild(el('div',{class:'flag'+(f.kind==='tz'?' tz':'')},
+        el('span',{class:'fi'}, f.icon),
+        el('span',{class:'ft'}, [el('b',null,f.title), el('span',{class:'nb'}, f.note)])));
+    });
+    pad.appendChild(fl);
+  }
+
+  // 摘要段（AI 润色优先；否则离线模板）
+  const summaryText = _aiSummary || offlineSummary(d);
+  pad.appendChild(el('div',{class:'summary'},
+    el('span',{class:'sl'}, _aiSummary ? '✦ AI 润色摘要' : '📝 需求摘要'),
+    el('div',null, summaryText)));
+
+  // 结构化分组
+  d.groups.forEach(g=>{
+    const sec = el('div',{class:'dsec'});
+    sec.appendChild(el('div',{class:'dsec-h'}, el('span',{class:'no'},g.ix), g.en+' · '+g.name));
+    g.rows.forEach(([k,v,en])=>{
+      const filled = v && String(v).trim()!=='';
+      sec.appendChild(el('div',{class:'drow'},
+        el('div',{class:'k'}, [k, en?el('span',{class:'en'},'　'+en):null]),
+        el('div',{class:'v'+(filled?'':' dim')}, filled ? esc(v) : '待补')));
+    });
+    pad.appendChild(sec);
+  });
+
+  // 工具栏
+  pad.appendChild(el('div',{class:'toolbar'},
+    el('button',{class:'tool primary', onClick:()=>copy(leadText(d))}, '📋 复制 lead 卡（给团队）'),
+    el('button',{class:'tool', onClick:()=>{ resetAll(); }}, '↻ 重新填一遍')
+  ));
+
+  wrap.appendChild(lead);
+
+  // 脚注（firm 水印，无显眼 CTA）
+  wrap.appendChild(el('div',{class:'foot'},
+    el('div',{class:'pos'}, [
+      '这张 lead 卡只做三件事：',el('b',null,'呈现你填的需求'),'、',el('b',null,'结构化分组'),'、',el('b',null,'标出需团队跟进的点'),
+      '。它不判断你的需求合不合适、不推荐任何具体房源——那是 AnyHome 团队的活。']),
+    el('div',{class:'brand'}, 'AnyHome · 内部工具 · 呈现而非判断　// TODO: 替换品牌资产'))
+  );
+
+  app.appendChild(wrap);
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ════════════════ lead 卡纯文本（给团队复制） ════════════════ */
+function leadText(d){
+  const a = d.answers;
+  const L = [];
+  L.push('【AnyHome · 学生需求 Lead 卡】');
+  L.push('学校：'+(a.school||'待补')+'　|　生成：'+new Date().toLocaleString('zh-CN',{hour12:false}));
+  L.push('完整度：'+d.completeness.answered+'/'+d.completeness.total+' 项');
+  L.push('');
+  if(d.flags.length){
+    L.push('— ⚑ 需团队跟进 —');
+    d.flags.forEach(f=>{ L.push('  '+f.icon+' '+f.title); L.push('     '+f.note); });
+    L.push('');
+  }
+  const summaryText = _aiSummary || offlineSummary(d);
+  L.push('— 摘要 —');
+  L.push('  '+summaryText);
+  L.push('');
+  d.groups.forEach(g=>{
+    L.push('— '+g.name+' / '+g.en+' —');
+    g.rows.forEach(([k,v])=>{
+      const filled = v && String(v).trim()!=='';
+      L.push('  '+k+'：'+(filled?v:'____（待补）'));
+    });
+    L.push('');
+  });
+  L.push('—— AnyHome 需求结构化前台 · 只呈现/结构化/标记，不判断匹配');
+  return L.join('\n');
+}
+
+/* ════════════════ 可选：AI 润色摘要（非主路径） ════════════════ */
+const AI_MSGS = ['整理你填的需求…','改写成给团队看的中文摘要…','复述需跟进的标记项…'];
+async function polishWithAI(d){
+  // 仅把【已填】答案 + 已判定 flags 传给模型，要求只润色摘要、复述 flags、不新增信息。
+  const payload = {
+    answers: d.answers,
+    flagged: d.flags.map(f=>f.title+'：'+f.note),
+    instruction:'仅基于以上已填信息，生成 summary（中文 lead 摘要）与 flags（复述上面的 flagged，不新增）。绝不编造未填字段。'
+  };
+  const obj = await LLM.run(JSON.stringify(payload, null, 2));
+  // 归一：只接受字符串字段，绝不让模型篡改结构化数据
+  _aiSummary = (obj && typeof obj.summary==='string' && obj.summary.trim()) ? obj.summary.trim() : null;
+  _aiFlags = (obj && Array.isArray(obj.flags)) ? obj.flags.filter(x=>typeof x==='string') : null;
+}
+
+/* ════════════════ AI 连接条（lead 阶段） ════════════════ */
+function aiBar(leadData){
+  const root = el('div',{class:'aibar'}); let panel=null;
+  function paint(){
+    clear(root); panel=null;
+    const on = LLM.connected();
+    root.appendChild(el('span',{class:'aidot'+(on?' on':'')}));
+    root.appendChild(el('span',{class:'aitxt'}, on
+      ? '已连接 AI · 可让模型把摘要润色得更顺（结构化数据不变）'
+      : '未连接 · 现用离线模板摘要（已完整可用，连接后仅润色摘要那段）'));
+    if(on){
+      root.appendChild(el('button',{class:'ailink', onClick:runPolish}, _aiSummary?'重新润色':'用 AI 润色摘要'));
+      root.appendChild(el('span',{class:'aitxt'},' · '));
+    }
+    root.appendChild(el('button',{class:'ailink', onClick:toggle}, on?'管理 Key':'连接 AI（可选）'));
+  }
+  async function runPolish(){
+    const d = buildLead();
+    const old = root.innerHTML;
+    clear(root);
+    const msgEl = el('span',{class:'aitxt'}, AI_MSGS[0]);
+    root.appendChild(el('span',{class:'spin', style:{width:'16px',height:'16px',borderWidth:'2px'}}));
+    root.appendChild(msgEl);
+    let i=0; const timer=setInterval(()=>{ i=(i+1)%AI_MSGS.length; msgEl.textContent=AI_MSGS[i]; }, 850);
+    try{
+      await polishWithAI(d);
+      clearInterval(timer);
+      toast('已用 AI 润色摘要 ✓');
+      renderLead();   // 重渲染，带上 _aiSummary
+    }catch(err){
+      clearInterval(timer);
+      toast(LLM.errMsg(err));
+      paint();
+    }
+  }
+  function toggle(){
+    if(panel){ panel.remove(); panel=null; return; }
+    const input = el('input',{class:'field', type:'password', autocomplete:'off',
+      placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:LLM.get()});
+    const save = el('button',{class:'minibtn primary', onClick:()=>{
+      LLM.set(input.value.trim()); toast(input.value.trim()?'已连接 ✓':'已清除'); paint(); }}, '保存');
+    const clr = LLM.get() ? el('button',{class:'minibtn ghost', onClick:()=>{ LLM.set(''); _aiSummary=null; _aiFlags=null; toast('已清除'); paint(); }}, '清除') : null;
+    panel = el('div',{class:'aipanel'},
+      el('p',{html:'纯静态演示、无后端。lead 卡<b>无需 key 就已完整可用</b>（离线模板摘要）。'+
+        '给一个 Anthropic API Key 仅用于把摘要那段<b>润色得更顺</b>——'+
+        'key <b>只存你本机浏览器</b>、不上传任何服务器；结构化数据与 flagged 项始终由本地确定性逻辑生成，AI 不改它们。'}),
+      el('div',{class:'row'}, input, save, clr));
+    root.appendChild(panel); input.focus();
+  }
+  paint();
+  return root;
+}
+
+/* ════════════════ 重置 ════════════════ */
+function resetAll(){
+  state.i=0; state.answers={}; state.started=false;
+  _aiSummary=null; _aiFlags=null;
+  renderHero();
+}
+
+/* ════════════════ 开发自检钩子 ════════════════ */
+window.INTAKE_DEV = {
+  state, buildLead, QUESTIONS, visibleQ,
+  // 预填一组完整答案，直达 lead 卡（含两个分支触发），便于自检
+  demo(){
+    state.answers = {
+      school:'NYU', program_start:'2026 Fall', move_in:'2026 年 8 月中',
+      budget:{min:'2500',max:'3500'}, living:{mode:'合租',count:'2'},
+      areas:['Murray Hill','East Village'], layout:{beds:'1',baths:'1'},
+      must_haves:['in-unit laundry','furnished','elevator'], lease:'12 个月（标准 lease）',
+      us_credit:'没有（典型国际学生）', guarantor:'想用 guarantor service（如 Insurent / TheGuarantors）',
+      pets:'没有', origin:{where:'在国内',detail:'上海'},
+      contact:{kind:'WeChat',value:'anyhome_demo'}, budget_flex:'可以小幅上浮（~10%）'
+    };
+    state.i = visibleQ().length;
+    renderLead();
+  }
+};
+
+/* ════════════════ 启动 ════════════════ */
+renderHero();
+})();
+</script>
+</body>
+</html>

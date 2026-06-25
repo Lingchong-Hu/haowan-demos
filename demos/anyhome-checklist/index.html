@@ -1,0 +1,836 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>签约材料清单生成 · AnyHome</title>
+<!-- html2canvas（仅用于「导出图片」，加载失败时导出按钮自带兜底，主路径不依赖它） -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" crossorigin="anonymous"></script>
+<style>
+/* ════════════════════════════════════════════════════════════════
+   AnyHome · 签约材料清单生成 (anyhome-checklist) — 自包含，无构建。
+   参照房型：展示门户/demos/probe。气质：concierge 文档级的克制与可靠。
+   红线在代码里强制：纯确定性分支生成清单；只列材料，不谈判、不判断房源；
+   不绝对化，处处标「以房东/楼盘要求为准」。
+   ════════════════════════════════════════════════════════════════ */
+:root{
+  /* TODO: 替换品牌资产（以下为 AnyHome 占位品牌色） */
+  --ink:#1c2b2a; --ink-2:#465856; --ink-3:#7c8b89; --ink-4:#a7b3b1;
+  --paper:#f6f4ef; --surface:#fffefb; --surface-2:#faf7f1;
+  --line:#e6e0d6; --line-2:#efeae0;
+  --brand:#15706b;            /* AnyHome 主色 · 信任感的深青绿 */
+  --brand-soft:#e4f0ee; --brand-line:#bcdedb;
+  --accent:#c2410c;           /* 警示 / guarantor · 暖赭红 */
+  --accent-soft:#fbe9df; --accent-line:#f0c3a6;
+  --good:#2f7d5b; --good-soft:#e7f2ec;
+  --warn:#b9842a; --warn-soft:#f7eed9;
+  --r:14px; --r-s:9px; --r-l:22px;
+  --sh-1:0 1px 2px rgba(20,40,38,.05), 0 3px 12px rgba(20,40,38,.05);
+  --sh-2:0 12px 40px rgba(20,40,38,.10);
+  --maxw:880px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+  --serif:Georgia,"Songti SC","STSong","Noto Serif SC","Times New Roman",serif;
+  --mono:"SFMono-Regular",ui-monospace,"Cascadia Code","Consolas","Menlo",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans); color:var(--ink); background:var(--paper);
+  -webkit-font-smoothing:antialiased; line-height:1.6; font-size:16px}
+::selection{background:var(--brand-soft)}
+
+/* ── 顶栏 ── */
+.bar{position:sticky; top:0; z-index:40; backdrop-filter:saturate(1.3) blur(10px);
+  background:rgba(246,244,239,.84); border-bottom:1px solid var(--line)}
+.bar .in{max-width:var(--maxw); margin:0 auto; padding:11px 22px; display:flex; align-items:center; gap:12px}
+.mark{display:flex; align-items:center; gap:9px; font-weight:650; font-size:15px; letter-spacing:-.2px}
+.mark .glyph{width:22px; height:22px; flex:none; display:grid; place-items:center;
+  border:1.5px solid var(--brand); border-radius:6px; color:var(--brand); font-size:12px; font-weight:800}
+.bar .spacer{flex:1}
+.bar .firm{font-size:11.5px; color:var(--ink-3); letter-spacing:.02em; white-space:nowrap}
+
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px 90px}
+
+/* ── Hero ── */
+.hero{padding:42px 0 6px}
+.hero .eyebrow{font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--brand); margin-bottom:13px}
+.hero h1{font-size:clamp(25px,4.4vw,35px); font-weight:740; letter-spacing:-.7px; line-height:1.16}
+.hero h1 .em{color:var(--accent)}
+.hero .lede{color:var(--ink-2); font-size:16px; margin:14px 0 0; max-width:680px; line-height:1.62}
+
+/* ── 连接 AI 条 ── */
+.aibar{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:22px 0 0; font-size:13px}
+.aidot{width:8px; height:8px; border-radius:50%; background:var(--ink-4); flex:none}
+.aidot.on{background:var(--good)}
+.aitxt{color:var(--ink-2)}
+.ailink{border:none; background:none; color:var(--brand); font-weight:650; cursor:pointer; font-size:13px;
+  text-decoration:underline; text-underline-offset:2px; padding:0; font-family:inherit}
+.aipanel{flex-basis:100%; border:1px dashed var(--line); background:var(--surface-2); border-radius:var(--r-s);
+  padding:14px 15px; margin-top:8px}
+.aipanel p{margin:0 0 11px; font-size:12.5px; color:var(--ink-3); line-height:1.65}
+.aipanel .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+
+/* ── 问卷区 ── */
+.quiz{margin-top:24px; border:1px solid var(--line); border-radius:var(--r-l); background:var(--surface);
+  box-shadow:var(--sh-1); overflow:hidden}
+.quiz-top{height:6px; background:linear-gradient(90deg,var(--brand),var(--accent))}
+.quiz-pad{padding:24px 26px 26px}
+.quiz-h{font-size:13px; font-weight:650; color:var(--ink-2); letter-spacing:.01em; margin-bottom:4px}
+.quiz-sub{font-size:12.5px; color:var(--ink-3); margin-bottom:18px; line-height:1.55}
+.qitem{padding:15px 0; border-top:1px solid var(--line-2)}
+.qitem:first-of-type{border-top:none; padding-top:4px}
+.qitem.hidden{display:none}
+.qlabel{font-size:14.5px; font-weight:560; margin-bottom:10px; display:flex; align-items:baseline; gap:8px; flex-wrap:wrap}
+.qlabel .en{color:var(--ink-3); font-weight:400; font-size:12.5px}
+.qlabel .br{font-size:11px; font-weight:600; color:var(--accent); background:var(--accent-soft);
+  border:1px solid var(--accent-line); border-radius:999px; padding:1px 8px}
+.opts{display:flex; gap:8px; flex-wrap:wrap}
+.opt{border:1px solid var(--line); background:var(--surface-2); color:var(--ink-2); border-radius:999px;
+  padding:8px 15px; font-size:13.5px; cursor:pointer; font-family:inherit; transition:.13s; user-select:none}
+.opt:hover{border-color:var(--brand); color:var(--ink)}
+.opt.sel{background:var(--brand); border-color:var(--brand); color:#fff; font-weight:560}
+.opt.sel.acc{background:var(--accent); border-color:var(--accent)}
+select.field, input.field{border:1px solid var(--line); border-radius:9px; padding:10px 13px; font-size:14px;
+  font-family:inherit; background:var(--surface); color:var(--ink); min-width:200px}
+select.field:focus, input.field:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft)}
+.go{margin-top:20px; width:100%; appearance:none; border:none; border-radius:12px; cursor:pointer;
+  background:var(--ink); color:#fff; font-size:16px; font-weight:600; padding:15px; font-family:inherit;
+  transition:.15s; display:inline-flex; align-items:center; justify-content:center; gap:9px}
+.go:hover{background:#0f1c1b}
+.go:active{transform:translateY(1px)}
+.go:disabled{opacity:.5; cursor:default}
+.quiz-foot{display:flex; gap:10px; flex-wrap:wrap; margin-top:11px; align-items:center}
+.quiz-foot .preset{font-size:12.5px; color:var(--ink-3); margin-right:2px}
+.preset-b{border:1px solid var(--line); background:var(--surface); color:var(--ink-2); border-radius:999px;
+  padding:6px 12px; font-size:12.5px; cursor:pointer; font-family:inherit; transition:.13s}
+.preset-b:hover{border-color:var(--brand); color:var(--ink)}
+
+/* ── 思考过场（仅润色时） ── */
+.think{display:flex; flex-direction:column; align-items:center; gap:17px; padding:46px 0; text-align:center}
+.spin{width:34px; height:34px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--brand);
+  animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.think .m{color:var(--ink-2); font-size:14px; min-height:21px}
+
+/* ── 结果壳 ── */
+.results{margin-top:30px; animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+
+.sec-eyebrow{font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);
+  margin:30px 0 4px; display:flex; align-items:center; gap:8px}
+.sec-eyebrow .badge{font-size:11px; font-weight:600; letter-spacing:.02em; text-transform:none;
+  background:var(--brand-soft); color:var(--brand); padding:2px 9px; border-radius:999px}
+
+/* ── 清单文档 ── */
+.doc{margin-top:18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l);
+  box-shadow:var(--sh-2); overflow:hidden}
+.doc-top{height:6px; background:linear-gradient(90deg,var(--brand),var(--accent))}
+.doc-pad{padding:32px 36px 36px}
+.doc-mast{border-bottom:2px solid var(--ink); padding-bottom:16px; margin-bottom:8px}
+.doc-mast .kanji{font-family:var(--serif); font-size:12.5px; letter-spacing:.34em; color:var(--ink-3);
+  text-transform:uppercase; margin-bottom:9px}
+.doc-mast h2{font-family:var(--serif); font-size:26px; font-weight:700; letter-spacing:.4px; line-height:1.2}
+.doc-mast .sub{font-size:13px; color:var(--ink-3); margin-top:9px; display:flex; gap:14px; flex-wrap:wrap}
+.doc-mast .sub b{color:var(--ink-2); font-weight:600}
+
+/* 路径徽章 */
+.pathrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
+.pbadge{font-size:12px; font-weight:600; border-radius:999px; padding:4px 12px;
+  background:var(--brand-soft); color:var(--brand); border:1px solid var(--brand-line)}
+.pbadge.acc{background:var(--accent-soft); color:var(--accent); border-color:var(--accent-line)}
+
+/* guarantor 显著高亮块（国际学生头号卡点） */
+.guar{margin:20px 0 4px; border:1.5px solid var(--accent-line); background:var(--accent-soft);
+  border-radius:14px; padding:15px 17px}
+.guar .gh{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; letter-spacing:.02em;
+  color:var(--accent); text-transform:uppercase; background:var(--surface); border:1px solid var(--accent-line);
+  border-radius:999px; padding:3px 11px; margin-bottom:10px}
+.guar .gt{font-size:14px; color:var(--ink); line-height:1.62}
+.guar .gt b{color:var(--accent)}
+
+/* 段 */
+.dsec{margin-top:26px}
+.dsec-h{font-family:var(--serif); font-size:12px; font-weight:700; letter-spacing:.2em; color:var(--brand);
+  text-transform:uppercase; padding-bottom:7px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:9px}
+.dsec-h .no{font-family:var(--mono); color:var(--ink-4); font-size:11px; letter-spacing:0}
+.dsec-h .en{color:var(--ink-3); font-weight:600; letter-spacing:.06em}
+
+.item{display:flex; gap:13px; padding:13px 0; border-bottom:1px solid var(--line-2); align-items:flex-start}
+.item:last-child{border-bottom:none}
+.item .chk{width:19px; height:19px; flex:none; border:1.6px solid var(--brand-line); border-radius:5px;
+  margin-top:2px; background:var(--surface)}
+.item .body{flex:1; min-width:0}
+.item .zh{font-size:14.5px; font-weight:560; line-height:1.5}
+.item .zh .tag{font-size:11px; font-weight:600; padding:1px 8px; border-radius:999px; margin-left:8px;
+  background:var(--brand-soft); color:var(--brand)}
+.item .zh .tag.acc{background:var(--accent-soft); color:var(--accent)}
+.item .en{font-size:13px; color:var(--ink-3); margin-top:2px; line-height:1.5}
+.item .why{font-size:12.5px; color:var(--ink-2); margin-top:6px; line-height:1.55;
+  padding-left:11px; border-left:3px solid var(--brand-line)}
+.item .why .wl{font-weight:700; color:var(--brand); margin-right:5px}
+
+/* 底部免责 */
+.disc{margin:24px 0 2px; font-size:12.5px; color:var(--ink-2); background:var(--warn-soft);
+  border:1px solid var(--warn); border-radius:var(--r-s); padding:12px 15px; line-height:1.62; display:flex; gap:9px}
+.disc .ic{flex:none; font-size:14px}
+.disc b{color:var(--ink)}
+
+/* ── 工具栏 / 脚注 ── */
+.toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-top:24px}
+.tool{flex:1; min-width:140px; appearance:none; border:1px solid var(--line); background:var(--surface);
+  color:var(--ink); border-radius:10px; padding:12px; font-size:14px; font-weight:560; cursor:pointer;
+  font-family:inherit; transition:.13s; display:inline-flex; align-items:center; justify-content:center; gap:7px}
+.tool:hover{border-color:var(--brand); color:var(--brand)}
+.tool.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+.tool.primary:hover{filter:brightness(.95); color:#fff}
+.tool:disabled{opacity:.5; cursor:default}
+
+.foot{margin-top:46px; padding-top:22px; border-top:1px solid var(--line); text-align:center}
+.foot .pos{font-size:13.5px; color:var(--ink-2); line-height:1.6; max-width:580px; margin:0 auto}
+.foot .pos b{color:var(--ink); font-weight:650}
+.foot .brand{font-size:11.5px; color:var(--ink-4); margin-top:13px; letter-spacing:.04em}
+
+/* ── toast ── */
+.toast{position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(18px);
+  background:var(--ink); color:#fff; padding:11px 20px; border-radius:999px; font-size:14px;
+  box-shadow:var(--sh-2); opacity:0; transition:.25s; z-index:100; pointer-events:none}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+.field-pw{border:1px solid var(--line); border-radius:9px; padding:11px 13px; font-size:14px; font-family:inherit;
+  background:var(--surface); color:var(--ink); flex:1; min-width:200px}
+.field-pw:focus{outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft)}
+.minibtn{appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  border-radius:9px; padding:11px 16px; font-size:14px; font-weight:560; cursor:pointer; font-family:inherit; white-space:nowrap}
+.minibtn.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+.minibtn.ghost{background:transparent}
+
+@media (max-width:640px){
+  .wrap{padding:0 16px 70px}
+  .quiz-pad{padding:20px 18px 22px}
+  .doc-pad{padding:22px 18px 26px}
+  .doc-mast h2{font-size:21px}
+  .toolbar .tool{min-width:0}
+  .bar .firm{display:none}
+  .item .why{padding-left:9px}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="in">
+    <!-- TODO: 替换品牌资产（wordmark / logo） -->
+    <div class="mark"><span class="glyph">A</span>AnyHome</div>
+    <div class="spacer"></div>
+    <div class="firm">签约材料清单 · 省口头重复解释，不替你判断房源</div>
+  </div>
+</div>
+
+<main class="wrap" id="app"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ════════════════ 工具（照抄 _SHARED.md，勿改） ════════════════ */
+function el(tag, props){
+  const e = document.createElement(tag);
+  if(props){ for(const k in props){ const v = props[k];
+    if(v==null || v===false) continue;
+    if(k==='class') e.className = v;
+    else if(k==='html') e.innerHTML = v;
+    else if(k==='text') e.textContent = v;
+    else if(k==='style' && typeof v==='object') Object.assign(e.style, v);
+    else if(k.slice(0,2)==='on' && typeof v==='function') e.addEventListener(k.slice(2).toLowerCase(), v);
+    else e.setAttribute(k, v);
+  }}
+  for(let i=2;i<arguments.length;i++){ let kids=arguments[i]; if(!Array.isArray(kids)) kids=[kids];
+    for(const kid of kids){ if(kid==null || kid===false) continue;
+      e.appendChild(kid.nodeType ? kid : document.createTextNode(String(kid))); } }
+  return e;
+}
+function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); return n; }
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let toastT; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1900); }
+async function copy(text){ try{ await navigator.clipboard.writeText(text); toast('已复制 ✓'); }
+  catch(e){ try{ const ta=el('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('已复制 ✓'); }
+    catch(_){ toast('复制失败，请手动选择'); } } }
+
+/* ════════════════ LLM 连接器（照抄 _SHARED.md makeLLM，仅换 SYS / max_tokens） ════════════════ */
+function makeLLM(SYS, maxTokens){
+  const KEY_LS='haowan_anthropic_key', MODEL='claude-sonnet-4-6';
+  const get=()=>{ try{ return localStorage.getItem(KEY_LS)||''; }catch(e){ return ''; } };
+  const set=v=>{ try{ v?localStorage.setItem(KEY_LS,v):localStorage.removeItem(KEY_LS); }catch(e){} };
+  const connected=()=> !!get();
+  function safeParse(raw){ if(!raw) return null;
+    let s=String(raw).trim().replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+    try{ return JSON.parse(s); }catch(e){}
+    const a=s.indexOf('{'), b=s.lastIndexOf('}');
+    if(a>=0&&b>a){ try{ return JSON.parse(s.slice(a,b+1)); }catch(e){} } return null; }
+  async function run(userText){
+    const key=get(); if(!key){ const e=new Error('NEED_SETUP'); e.code='NEED_SETUP'; throw e; }
+    let r; try{
+      r = await fetch('https://api.anthropic.com/v1/messages',{ method:'POST',
+        headers:{ 'x-api-key':key, 'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true', 'content-type':'application/json' },
+        body: JSON.stringify({ model:MODEL, max_tokens:maxTokens||1200, system:SYS,
+          messages:[ {role:'user', content:userText}, {role:'assistant', content:'{'} ] }) });
+    }catch(e){ const err=new Error('NET'); err.code='NET'; throw err; }
+    if(r.status===401){ const e=new Error('BAD_KEY'); e.code='BAD_KEY'; throw e; }
+    if(!r.ok){ const e=new Error('HTTP_'+r.status); e.code='HTTP'; throw e; }
+    const data=await r.json();
+    const txt=(data.content && data.content[0] && data.content[0].text) || '';
+    const obj=safeParse('{'+txt);
+    if(!obj){ const e=new Error('PARSE_FAIL'); e.code='PARSE_FAIL'; throw e; } return obj; }
+  function errMsg(err){ const c=err&&err.code;
+    if(c==='NEED_SETUP') return '还没连接 AI，已显示模板清单';
+    if(c==='BAD_KEY') return 'API Key 无效';
+    if(c==='NET') return '连不上模型（注意：file:// 直接打开可能被浏览器拦截，请用本地 HTTP 预览）';
+    if(c==='PARSE_FAIL') return 'AI 返回格式异常，已用模板清单';
+    return 'AI 生成失败，已用模板清单'; }
+  return { get,set,connected,run,errMsg };
+}
+
+/* 润色用 system prompt：只许改措辞，不许增删条目、不许填数字。 */
+const POLISH_SYS = [
+'你是 AnyHome 的中文文案润色器。我会给你一份 NYC 租房签约材料 checklist 的条目数组。',
+'你的唯一任务：把每条的 zh（中文名）与 why（为什么需要）润色得更友好、更口语、更让留学生安心。',
+'铁律：',
+'  1. 绝不增加或删除任何条目，数组长度与 id 必须与输入完全一致；',
+'  2. 绝不修改 en（英文专有名词原样保留）；',
+'  3. 绝不写入任何具体金额、月数、利率、机构报价等数字（这些由房东/楼盘决定，本工具不替学生判断）；',
+'  4. 不谈判、不评价房源、不给"怎么解决"的建议——只润色"是什么 / 为什么需要"的表述。',
+'只返回 JSON，无前后文、无 markdown 围栏。Schema：',
+'{ "items": [ { "id":"原样id", "zh":"润色后中文名", "why":"润色后为什么需要" }, ... ] }'
+].join('\n');
+const LLM = makeLLM(POLISH_SYS, 1400);
+
+/* ════════════════ 问卷模型（短问卷 · 单选/是否） ════════════════ */
+const VISAS = ['F-1','J-1','M-1','OPT / STEM-OPT','H-1B','绿卡 / Permanent Resident','其他 / 待定'];
+// 默认身份组合：典型国际学生 —— 无美国信用 + 无收入 + 想用 guarantor service
+const DEFAULT_PROFILE = {
+  credit:'no',      // 是否有美国信用记录
+  income:'no',      // 是否有美国收入/offer
+  usGuarantor:'no', // 是否有可用 US guarantor
+  visa:'F-1',       // 签证/身份
+  noCreditPlan:'service' // 无信用时的方案：'guarantor'(US co-signer) | 'service' | 'prepay'
+};
+
+/* ════════════════ 清单数据源（纯确定性 · 模板渲染） ════════════════
+   每条：{ id, zh, en, why, tag? }。tag 用于标 guarantor / 高亮项。
+   所有条目均为通用 NYC 租赁申请常见要求，不含任何具体数字。           */
+
+// 通用：所有路径都需要的「身份与基础材料」
+function baseDocs(p){
+  const visa = p.visa || 'F-1';
+  const items = [
+    { id:'passport', zh:'护照（含个人信息页 + 美签页）', en:'Passport (bio page + U.S. visa page)',
+      why:'房东 / 经纪需核验你的身份与合法入境身份，这是任何申请的第一步。' },
+    { id:'id', zh:'学生证 / 政府身份证件', en:'Student ID / Government photo ID',
+      why:'作为辅助身份证明，部分楼盘会同时要护照与一张带照片的 ID。' },
+    { id:'i20', zh:visa==='F-1'?'I-20 表（F-1 学生身份证明）':(visa==='J-1'?'DS-2019（J-1 身份证明）':'在美合法身份文件（I-20 / DS-2019 / EAD 等）'),
+      en: visa==='F-1'?'Form I-20':(visa==='J-1'?'Form DS-2019':'Proof of U.S. status (I-20 / DS-2019 / EAD)'),
+      why:'证明你在美国的合法身份与在读 / 在职状态，留学生租房几乎必备。', tag:'身份' },
+    { id:'visa_status', zh:'签证 / 身份页（'+visa+'）', en:'Visa / status page ('+visa+')',
+      why:'与护照、I-20 互相印证你当前的合法停留身份。' },
+    { id:'enroll', zh:'在读证明 / 录取通知（Enrollment / Offer letter）', en:'Enrollment verification / Acceptance letter',
+      why:'证明你是在校学生，解释你"为什么没有美国收入"，是国际学生申请的关键背景材料。', tag:'身份' },
+    { id:'app_fee', zh:'申请费 / 背景调查费（application fee）', en:'Application & screening fee',
+      why:'多数楼盘收取一笔不可退的申请费用于跑信用 / 背景调查；具体金额以该楼盘要求为准。' },
+  ];
+  return items;
+}
+
+// 资金证明（首月 + 押金 + broker fee）—— 措辞不含具体月数/金额
+function fundsDocs(){
+  return [
+    { id:'funds', zh:'资金证明：首月租金 + 押金（deposit）+ 经纪费（broker fee）', en:'Proof of funds: first month + security deposit + broker fee',
+      why:'签约时通常需一次性备齐这几笔；具体几个月、是否收 broker fee 以房东 / 楼盘要求为准，本工具不替你估算金额。', tag:'资金' },
+    { id:'bank', zh:'银行存款证明 / 账户流水', en:'Bank statement / proof of savings',
+      why:'在没有美国收入时，足额存款是证明你"付得起房租"的主要方式。' },
+  ];
+}
+
+// 有信用 + 收入 路径
+function pathHasCredit(p){
+  const secs = [];
+  secs.push({ no:'01', en:'Identity', zh:'身份与基础材料', items: baseDocs(p) });
+  secs.push({ no:'02', en:'Income', zh:'收入与信用', items:[
+    { id:'paystub', zh:'收入证明：工资单 / offer letter', en:'Pay stubs / offer letter',
+      why:'房东用收入来判断你的支付能力；通常看年收入与月租的倍数关系，具体倍数以楼盘要求为准。', tag:'收入' },
+    { id:'employ', zh:'在职证明 / employment letter', en:'Employment verification letter',
+      why:'佐证你工作的稳定性与收入来源，与工资单互相印证。' },
+    { id:'tax', zh:'报税记录（W-2 / 1040，如有）', en:'Tax returns (W-2 / 1040)',
+      why:'部分楼盘要往年报税记录核对收入真实性；没有可先以工资单 + offer 替代。' },
+    { id:'credit', zh:'美国信用报告 / 信用分（credit report）', en:'U.S. credit report / score',
+      why:'有美国信用记录时，房东会直接拉你的 credit report 评估违约风险，这是你相对国际学生的优势项。', tag:'信用' },
+  ]});
+  secs.push({ no:'03', en:'References', zh:'推荐与资金', items:[
+    { id:'ref', zh:'推荐人 / references（前房东或雇主）', en:'References (prior landlord / employer)',
+      why:'前房东或雇主的背书能加分，尤其在竞争激烈的房源上。' },
+    ...fundsDocs(),
+  ]});
+  return { pathKey:'has_credit', pathLabel:'有美国信用 + 收入 · 标准申请', sections:secs };
+}
+
+// 无信用/收入 —— 共同部分
+function pathNoCreditBase(p){
+  const secs = [];
+  secs.push({ no:'01', en:'Identity', zh:'身份与基础材料', items: baseDocs(p) });
+  return secs;
+}
+
+// 无信用 → US guarantor 路径
+function pathUSGuarantor(p){
+  const secs = pathNoCreditBase(p);
+  secs.push({ no:'02', en:'Guarantor', zh:'担保人（US guarantor）材料', items:[
+    { id:'g_id', zh:'担保人身份证件（护照 / 驾照）', en:"Guarantor's photo ID",
+      why:'房东需核验为你担保的人是谁、是否真实存在。', tag:'guarantor' },
+    { id:'g_income', zh:'担保人收入证明（工资单 / offer / 在职证明）', en:"Guarantor's proof of income",
+      why:'guarantor 的收入要求通常高于租客本人（往往按更高的月租倍数核），具体倍数以房东 / 楼盘要求为准。', tag:'guarantor' },
+    { id:'g_credit', zh:'担保人美国信用报告 / 信用分', en:"Guarantor's U.S. credit report",
+      why:'担保人需有良好美国信用，房东以此判断"租客违约时这位担保人是否兜得住"。', tag:'guarantor' },
+    { id:'g_tax', zh:'担保人报税记录（W-2 / 1040，如有）', en:"Guarantor's tax returns",
+      why:'进一步佐证担保人收入的稳定与真实，部分楼盘会要求。', tag:'guarantor' },
+    { id:'g_letter', zh:'担保协议 / guarantor agreement（房东模板）', en:'Guarantor agreement (landlord form)',
+      why:'担保人需签署房东提供的担保协议，正式承担连带责任；以房东模板为准。', tag:'guarantor' },
+  ]});
+  secs.push({ no:'03', en:'Funds', zh:'资金证明', items: fundsDocs() });
+  return { pathKey:'us_guarantor', pathLabel:'无美国信用 / 收入 · US guarantor 路径', sections:secs, guarantor:'us' };
+}
+
+// 无信用 → guarantor service 路径
+function pathService(p){
+  const secs = pathNoCreditBase(p);
+  secs.push({ no:'02', en:'Service', zh:'担保服务（Insurent / TheGuarantors）申请材料', items:[
+    { id:'s_check', zh:'确认该楼盘是否接受 guarantor service', en:'Confirm the building accepts a guarantor service',
+      why:'并非所有房东都接受 Insurent / TheGuarantors，先确认再申请，免得白跑；以该楼盘政策为准。', tag:'service' },
+    { id:'s_id', zh:'本人身份与身份文件（护照 / 签证 / I-20）', en:'Your ID & status docs (passport / visa / I-20)',
+      why:'担保服务也要核验你的身份与在美合法身份，与房东申请所需基本一致。', tag:'service' },
+    { id:'s_enroll', zh:'在读证明 / offer letter', en:'Enrollment / offer letter',
+      why:'担保服务据此评估你的背景，国际学生 / 无美国收入者正是其主要客群。', tag:'service' },
+    { id:'s_funds', zh:'资金 / 存款证明（按 service 要求）', en:'Proof of funds / savings (per service)',
+      why:'部分担保服务对无收入申请人会看存款；具体门槛以该 service 当时要求为准。', tag:'service' },
+    { id:'s_fee', zh:'担保服务费用（一次性 / 按比例）', en:'Guarantor service fee',
+      why:'担保服务会收一笔费用；具体怎么收、收多少以该 service 报价为准，本工具不替你估算。', tag:'service' },
+    { id:'s_cert', zh:'担保批准函 / certificate（拿到后交房东）', en:'Approval certificate (submit to landlord)',
+      why:'service 批准后会出一份担保凭证，需连同你的申请一并交给房东。', tag:'service' },
+  ]});
+  secs.push({ no:'03', en:'Funds', zh:'资金证明', items: fundsDocs() });
+  return { pathKey:'service', pathLabel:'无美国信用 / 收入 · 担保服务路径', sections:secs, guarantor:'service' };
+}
+
+// 无信用 → 预付 路径
+function pathPrepay(p){
+  const secs = pathNoCreditBase(p);
+  secs.push({ no:'02', en:'Prepay', zh:'预付方案材料', items:[
+    { id:'p_confirm', zh:'与房东确认可接受预付及预付月数', en:'Confirm prepayment is accepted & how many months',
+      why:'是否接受预付、预付几个月完全由房东决定，先谈妥再准备；预付月数以房东要求为准，本工具不替你定。', tag:'预付' },
+    { id:'p_funds', zh:'预付资金证明（银行存款 / 流水）', en:'Proof of funds for prepayment',
+      why:'预付意味着一次性付出较大金额，房东要先看到你账户里确有这笔钱。', tag:'预付' },
+    { id:'p_source', zh:'资金来源说明（如父母资助 / 汇款记录）', en:'Source of funds (e.g. parental support / remittance)',
+      why:'大额一次性付款时，部分房东会问资金来源，提前备好汇款 / 资助说明更顺。', tag:'预付' },
+  ]});
+  secs.push({ no:'03', en:'Funds', zh:'其余签约资金', items:[
+    { id:'p_deposit', zh:'押金（deposit）+ 经纪费（broker fee，如有）', en:'Security deposit + broker fee (if any)',
+      why:'即使预付了租金，押金与可能的 broker fee 通常仍单独收；是否收、收多少以房东 / 楼盘为准。', tag:'资金' },
+  ]});
+  return { pathKey:'prepay', pathLabel:'无美国信用 / 收入 · 预付路径', sections:secs, guarantor:'prepay' };
+}
+
+/* 主分支函数：profile → checklist 对象 */
+function buildChecklist(p){
+  p = p || DEFAULT_PROFILE;
+  let result;
+  // 主分支：有美国信用 + 收入 → 标准；否则走 guarantor/无收入路径
+  if(p.credit==='yes' && p.income==='yes'){
+    result = pathHasCredit(p);
+  } else {
+    // 无信用 / 无收入。若本人有 US guarantor，优先 US guarantor；否则按所选方案。
+    let plan = p.noCreditPlan;
+    if(p.usGuarantor==='yes') plan = 'guarantor';
+    if(plan==='guarantor') result = pathUSGuarantor(p);
+    else if(plan==='prepay') result = pathPrepay(p);
+    else result = pathService(p); // 默认 service（典型国际学生）
+  }
+  result.profile = p;
+  return result;
+}
+
+// guarantor 高亮文案（按路径）
+function guarHighlight(d){
+  const g = d.guarantor;
+  if(g==='us') return ['核心卡点 · US Guarantor','这一单走 <b>US guarantor（美国担保人）</b> 路径：房东要的不只是你的材料，更要担保人的<b>收入、信用、身份</b>三件套。担保人的信用与收入要求通常比租客本人更高 —— 具体口径以房东 / 楼盘要求为准。'];
+  if(g==='service') return ['核心卡点 · Guarantor Service','这一单走 <b>担保服务（Insurent / TheGuarantors）</b>：先确认楼盘<b>是否接受</b>该 service，再走 service 自己的申请。服务会收一笔费用、并在批准后出担保凭证交给房东。'];
+  if(g==='prepay') return ['核心卡点 · Prepay 预付','这一单走 <b>预付</b>：是否接受、预付<b>几个月</b>由房东决定 —— 本工具不替你定月数。核心是用<b>足额资金证明</b>让房东放心。'];
+  return null;
+}
+
+/* ════════════════ 渲染清单 ════════════════ */
+let mountResults;
+function renderChecklist(d){
+  const wrap = el('div',{class:'results'});
+
+  wrap.appendChild(el('div',{class:'sec-eyebrow'},
+    '个性化清单 · Tailored checklist', el('span',{class:'badge'},'确定性生成')));
+
+  const doc = el('div',{class:'doc', id:'doc'});
+  doc.appendChild(el('div',{class:'doc-top'}));
+  const pad = el('div',{class:'doc-pad'});
+  doc.appendChild(pad);
+
+  // 报头
+  const total = d.sections.reduce((n,s)=>n+s.items.length,0);
+  pad.appendChild(el('div',{class:'doc-mast'},
+    el('div',{class:'kanji'}, 'Lease Application Checklist · NYC'),
+    el('h2',null,'签约材料清单'),
+    el('div',{class:'sub'},
+      el('span',null,['身份：',el('b',null, d.profile.visa||'F-1')]),
+      el('span',null,['共 ',el('b',null, total+' 项'),' 材料']),
+      el('span',null,['分 ',el('b',null, d.sections.length+' 段')]))
+  ));
+
+  // 路径徽章
+  const accPaths = {us:1, service:1, prepay:1};
+  pad.appendChild(el('div',{class:'pathrow'},
+    el('span',{class:'pbadge'+(d.guarantor?' acc':'')}, d.pathLabel)));
+
+  // guarantor 高亮块（命中即显著标出，红线）
+  const gh = guarHighlight(d);
+  if(gh){
+    pad.appendChild(el('div',{class:'guar'},
+      el('div',{class:'gh'}, '⚑ '+gh[0]),
+      el('div',{class:'gt', html:gh[1]})));
+  }
+
+  // 各段
+  d.sections.forEach(sec=>{
+    const s = el('div',{class:'dsec'});
+    s.appendChild(el('div',{class:'dsec-h'},
+      el('span',{class:'no'}, sec.no),
+      sec.zh, el('span',{class:'en'}, '· '+sec.en)));
+    sec.items.forEach(it=>{
+      const isAcc = it.tag && ['guarantor','service','预付'].indexOf(it.tag)>=0;
+      const body = el('div',{class:'body'});
+      body.appendChild(el('div',{class:'zh'}, [ it.zh,
+        it.tag ? el('span',{class:'tag'+(isAcc?' acc':'')}, it.tag) : null ]));
+      body.appendChild(el('div',{class:'en'}, it.en));
+      body.appendChild(el('div',{class:'why'}, [ el('span',{class:'wl'},'为什么需要'), it.why ]));
+      s.appendChild(el('div',{class:'item'},
+        el('div',{class:'chk'}), body));
+    });
+    pad.appendChild(s);
+  });
+
+  // 底部免责（不绝对化）
+  pad.appendChild(el('div',{class:'disc'},
+    el('span',{class:'ic'},'⚠'),
+    el('span',{html:'本清单基于<b>通用 NYC 租赁申请要求</b>整理，仅供准备参考。'+
+      '不同房东 / 楼盘 / 经纪的具体要求各异（含金额、月数、可否预付、接受哪种担保），'+
+      '<b>最终一律以你所申请的具体房东 / 楼盘要求为准</b>。本工具只列材料，不谈判、不替你判断房源是否值得租。'})));
+
+  pad.appendChild(el('div',{class:'toolbar'},
+    el('button',{class:'tool primary', onClick:()=>copy(checklistText(d))}, '📋 复制清单'),
+    el('button',{class:'tool', id:'exportBtn', onClick:()=>exportImage(d)}, '🖼 导出图片'),
+    el('button',{class:'tool', onClick:()=>{ document.getElementById('quiz').scrollIntoView({behavior:'smooth',block:'start'}); }}, '↻ 改身份重生成')
+  ));
+
+  wrap.appendChild(doc);
+
+  // 脚注（firm 水印）
+  wrap.appendChild(el('div',{class:'foot'},
+    el('div',{class:'pos'}, [
+      '这套工具只做一件事：',el('b',null,'按你的身份情况，把签约要准备的材料列清楚、讲明白为什么'),
+      '。它不谈判、不替你判断房源、不编造任何金额或月数 —— 判断权永远在你。']),
+    el('div',{class:'brand'}, 'AnyHome · 内部工具 · 呈现而非判断　// TODO: 替换品牌资产')));
+
+  clear(mountResults); mountResults.appendChild(wrap);
+}
+
+/* ── 文本导出 ── */
+function checklistText(d){
+  const L = ['【AnyHome · 签约材料清单】  身份：'+(d.profile.visa||'F-1'), '路径：'+d.pathLabel, ''];
+  d.sections.forEach(sec=>{
+    L.push('— '+sec.zh+' / '+sec.en+' —');
+    sec.items.forEach(it=>{
+      L.push('☐ '+it.zh + (it.tag?('（'+it.tag+'）'):''));
+      L.push('   '+it.en);
+      L.push('   · 为什么需要：'+it.why);
+    });
+    L.push('');
+  });
+  L.push('※ 本清单基于通用 NYC 租赁申请要求，具体含金额/月数/担保方式一律以你所申请的房东/楼盘要求为准。');
+  L.push('—— AnyHome · 只列材料，不谈判、不判断房源');
+  return L.join('\n');
+}
+
+/* ── 导出图片（html2canvas，try/catch 兜底） ── */
+async function exportImage(d){
+  const node = document.getElementById('doc');
+  const btn = document.getElementById('exportBtn');
+  if(typeof window.html2canvas !== 'function'){
+    toast('图片库未加载，已改为复制文字清单');
+    copy(checklistText(d));
+    return;
+  }
+  if(btn){ btn.disabled = true; btn.textContent = '⏳ 生成图片中…'; }
+  try{
+    const canvas = await window.html2canvas(node, {
+      backgroundColor:'#fffefb', scale: Math.min(2, window.devicePixelRatio||1), useCORS:true, logging:false });
+    const url = canvas.toDataURL('image/png');
+    const a = el('a',{href:url, download:'AnyHome-签约材料清单.png'});
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('已导出图片 ✓');
+  }catch(err){
+    toast('导出图片失败，已改为复制文字清单');
+    copy(checklistText(d));
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = '🖼 导出图片'; }
+  }
+}
+
+/* ════════════════ 可选润色（Claude） ════════════════ */
+function flattenItems(d){
+  const arr = [];
+  d.sections.forEach(s=> s.items.forEach(it=> arr.push({ id:it.id, zh:it.zh, en:it.en, why:it.why })));
+  return arr;
+}
+function applyPolish(d, items){
+  if(!items || !Array.isArray(items)) return;
+  const map = {};
+  items.forEach(it=>{ if(it && it.id) map[it.id] = it; });
+  d.sections.forEach(s=> s.items.forEach(it=>{
+    const m = map[it.id];
+    if(m){
+      if(m.zh && typeof m.zh==='string') it.zh = m.zh;
+      if(m.why && typeof m.why==='string') it.why = m.why;
+      // en 永不改（红线）；tag 永不改
+    }
+  }));
+}
+
+const POLISH_MSGS = ['按你的身份匹配分支…','整理需要的材料…','把措辞润色得更友好…','补上每条"为什么需要"…'];
+async function generate(p, opts){
+  opts = opts || {};
+  const d = buildChecklist(p);
+
+  // 未连接 key：直接渲染模板清单（主路径，绝不白屏）
+  if(!opts.polish || !LLM.connected()){
+    renderChecklist(d);
+    mountResults.scrollIntoView({behavior:'smooth', block:'start'});
+    return;
+  }
+
+  // 连接了 key 且选择润色：先放思考过场，失败则回退模板
+  const stage = el('div',{class:'results'});
+  clear(mountResults); mountResults.appendChild(stage);
+  const msgEl = el('div',{class:'m'}, POLISH_MSGS[0]);
+  stage.appendChild(el('div',{class:'think'}, el('div',{class:'spin'}), msgEl));
+  stage.scrollIntoView({behavior:'smooth', block:'center'});
+  let i=0; const timer = setInterval(()=>{ i=(i+1)%POLISH_MSGS.length; msgEl.textContent = POLISH_MSGS[i]; }, 850);
+
+  try{
+    const payload = JSON.stringify({ items: flattenItems(d) });
+    const raw = await LLM.run('这是需要润色的 checklist 条目（保持 id 与数组长度不变）：\n'+payload);
+    clearInterval(timer);
+    applyPolish(d, raw && raw.items);
+    renderChecklist(d);
+    mountResults.scrollIntoView({behavior:'smooth', block:'start'});
+    toast('已用 AI 润色措辞 ✓');
+  }catch(err){
+    clearInterval(timer);
+    renderChecklist(d); // 失败兜底：模板清单照常出
+    mountResults.scrollIntoView({behavior:'smooth', block:'start'});
+    toast(LLM.errMsg(err));
+  }
+}
+
+/* ════════════════ AI 连接条（照抄 probe aiBar，文案微调） ════════════════ */
+let polishWanted = false;
+function aiBar(){
+  const root = el('div',{class:'aibar'}); let panel=null;
+  function paint(){
+    clear(root); panel=null;
+    const on = LLM.connected();
+    root.appendChild(el('span',{class:'aidot'+(on?' on':'')}));
+    root.appendChild(el('span',{class:'aitxt'}, on
+      ? '已连接 AI · 生成时可选用模型把清单措辞润色得更友好（claude-sonnet-4-6）'
+      : '未连接 · 清单为确定性模板生成，无需 key 即出完整正确清单（连接后可选润色措辞）'));
+    root.appendChild(el('button',{class:'ailink', onClick:toggle}, on?'管理':'连接 AI（可选）'));
+  }
+  function toggle(){
+    if(panel){ panel.remove(); panel=null; return; }
+    const input = el('input',{class:'field-pw', type:'password', autocomplete:'off',
+      placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:LLM.get()});
+    const save = el('button',{class:'minibtn primary', onClick:()=>{
+      LLM.set(input.value.trim()); toast(input.value.trim()?'已连接 ✓':'已清除'); paint(); }}, '保存');
+    const clr = LLM.get() ? el('button',{class:'minibtn ghost', onClick:()=>{ LLM.set(''); toast('已清除'); paint(); }}, '清除') : null;
+    panel = el('div',{class:'aipanel'},
+      el('p',{html:'纯静态演示、无后端。<b>清单本身完全由确定性分支生成，不需要 key 也准确</b>。'+
+        '给一个 Anthropic API Key 仅用于<b>可选</b>把中文措辞润色得更友好——'+
+        'key <b>只存你本机浏览器</b>、不上传任何服务器；用 sonnet，单次花费极低。AI 不会改动材料项本身或英文术语。'}),
+      el('div',{class:'row'}, input, save, clr));
+    root.appendChild(panel); input.focus();
+  }
+  paint();
+  return root;
+}
+
+/* ════════════════ 问卷 UI ════════════════ */
+const STATE = Object.assign({}, DEFAULT_PROFILE);
+
+function segGroup(opts, getVal, setVal, accent){
+  // opts: [{v,label,en}]
+  const row = el('div',{class:'opts'});
+  function paint(){
+    Array.from(row.children).forEach((c,i)=>{
+      const on = opts[i].v===getVal();
+      c.className = 'opt'+(on?(' sel'+(accent?' acc':'')):'');
+    });
+  }
+  opts.forEach(o=>{
+    row.appendChild(el('div',{class:'opt', onClick:()=>{ setVal(o.v); paint(); onProfileChange(); }},
+      [ o.label, o.en?el('span',null,' · '+o.en):null ]));
+  });
+  paint();
+  return { row, paint };
+}
+
+let quizRefs = {};
+function onProfileChange(){
+  // 控制分支题目显隐
+  const noCredit = !(STATE.credit==='yes' && STATE.income==='yes');
+  // 无信用/收入 → 显示 US guarantor 题；若无 US guarantor → 显示方案题
+  quizRefs.usGuarItem.classList.toggle('hidden', !noCredit);
+  const showPlan = noCredit && STATE.usGuarantor!=='yes';
+  quizRefs.planItem.classList.toggle('hidden', !showPlan);
+  // 同步各 seg 高亮
+  Object.values(quizRefs.paints).forEach(fn=>fn && fn());
+}
+
+function buildQuiz(){
+  const box = el('div',{class:'quiz', id:'quiz'});
+  box.appendChild(el('div',{class:'quiz-top'}));
+  const pad = el('div',{class:'quiz-pad'});
+  box.appendChild(pad);
+
+  pad.appendChild(el('div',{class:'quiz-h'}, '先回答几个问题（单选）'));
+  pad.appendChild(el('div',{class:'quiz-sub'}, '据此生成你这一单要准备的签约材料。默认已按「典型国际学生」预填，可直接生成或按需修改。'));
+
+  quizRefs.paints = {};
+
+  // Q1 信用
+  const q1 = el('div',{class:'qitem'});
+  q1.appendChild(el('div',{class:'qlabel'}, ['是否有美国信用记录？', el('span',{class:'en'},'U.S. credit history')]));
+  const g1 = segGroup([{v:'yes',label:'有'},{v:'no',label:'没有'}], ()=>STATE.credit, v=>STATE.credit=v);
+  q1.appendChild(g1.row); quizRefs.paints.credit=g1.paint; pad.appendChild(q1);
+
+  // Q2 收入
+  const q2 = el('div',{class:'qitem'});
+  q2.appendChild(el('div',{class:'qlabel'}, ['是否有美国收入 / offer？', el('span',{class:'en'},'U.S. income / job offer')]));
+  const g2 = segGroup([{v:'yes',label:'有'},{v:'no',label:'没有'}], ()=>STATE.income, v=>STATE.income=v);
+  q2.appendChild(g2.row); quizRefs.paints.income=g2.paint; pad.appendChild(q2);
+
+  // Q3 US guarantor（分支）
+  const q3 = el('div',{class:'qitem'});
+  q3.appendChild(el('div',{class:'qlabel'}, ['是否有可用的 US guarantor（美国担保人）？', el('span',{class:'en'},'US-based guarantor'), el('span',{class:'br'},'分支')]));
+  const g3 = segGroup([{v:'yes',label:'有'},{v:'no',label:'没有 / 不确定'}], ()=>STATE.usGuarantor, v=>STATE.usGuarantor=v, true);
+  q3.appendChild(g3.row); quizRefs.paints.usGuarantor=g3.paint; quizRefs.usGuarItem=q3; pad.appendChild(q3);
+
+  // Q4 方案（仅无 US guarantor 时）
+  const q4 = el('div',{class:'qitem'});
+  q4.appendChild(el('div',{class:'qlabel'}, ['没有 US guarantor 时，你打算走哪种方式？', el('span',{class:'en'},'guarantor service or prepay'), el('span',{class:'br'},'分支')]));
+  const g4 = segGroup([
+    {v:'service',label:'用担保服务',en:'Insurent / TheGuarantors'},
+    {v:'prepay',label:'预付租金',en:'prepay'}
+  ], ()=>STATE.noCreditPlan, v=>STATE.noCreditPlan=v, true);
+  q4.appendChild(g4.row); quizRefs.paints.noCreditPlan=g4.paint; quizRefs.planItem=q4; pad.appendChild(q4);
+
+  // Q5 签证
+  const q5 = el('div',{class:'qitem'});
+  q5.appendChild(el('div',{class:'qlabel'}, ['签证 / 身份？', el('span',{class:'en'},'Visa / status')]));
+  const sel = el('select',{class:'field', onChange:(e)=>{ STATE.visa = e.target.value; }});
+  VISAS.forEach(v=> sel.appendChild(el('option',{value:v, selected: v===STATE.visa? '' : null}, v)));
+  sel.value = STATE.visa;
+  q5.appendChild(sel); pad.appendChild(q5);
+
+  // 生成按钮
+  const goBtn = el('button',{class:'go', id:'go', onClick:()=>generate(Object.assign({},STATE), {polish: polishWanted})}, '⌖ 生成我的材料清单');
+  pad.appendChild(goBtn);
+
+  // 润色开关 + 预设
+  const foot = el('div',{class:'quiz-foot'});
+  foot.appendChild(el('span',{class:'preset'}, '快速套用典型情况：'));
+  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'no',visa:'F-1',noCreditPlan:'service'})}, '国际学生 · 担保服务'));
+  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'yes',visa:'F-1',noCreditPlan:'guarantor'})}, '有 US guarantor'));
+  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'no',visa:'F-1',noCreditPlan:'prepay'})}, '预付租金'));
+  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'yes',income:'yes',usGuarantor:'no',visa:'OPT / STEM-OPT',noCreditPlan:'service'})}, '有信用+收入'));
+  pad.appendChild(foot);
+
+  // 润色复选
+  const polishRow = el('div',{class:'quiz-foot'});
+  const cb = el('input',{type:'checkbox', id:'polishCb', style:{margin:'0 6px 0 0', cursor:'pointer'},
+    onChange:(e)=>{ polishWanted = e.target.checked; }});
+  const lbl = el('label',{for:'polishCb', style:{fontSize:'12.5px', color:'var(--ink-3)', cursor:'pointer', display:'inline-flex', alignItems:'center'}},
+    [cb, '（可选）连接 AI 后，把清单措辞润色得更友好']);
+  polishRow.appendChild(lbl);
+  pad.appendChild(polishRow);
+
+  return box;
+}
+
+function applyPreset(p){
+  Object.assign(STATE, p);
+  // 重置 select
+  const sel = document.querySelector('#quiz select.field'); if(sel) sel.value = STATE.visa;
+  onProfileChange();
+  toast('已套用，正在生成…');
+  generate(Object.assign({},STATE), {polish: polishWanted});
+}
+
+/* ════════════════ 首屏 ════════════════ */
+function home(){
+  const app = document.getElementById('app');
+  clear(app);
+
+  app.appendChild(el('div',{class:'hero'},
+    el('div',{class:'eyebrow'}, '签约前的最后一步 · 把材料一次列清'),
+    el('h1',null, ['几个问题，', el('br'), '生成你这一单的', el('span',{class:'em'},'签约材料清单'), '——中英对照，每条都讲清', el('span',{class:'em'},'为什么需要')]),
+    el('p',{class:'lede'},
+      '回答几个关于信用 / 收入 / 担保的小问题，自动生成个性化、中英双语的签约材料 checklist。'+
+      '国际学生最常卡的 guarantor 路径会被显著标出。只列材料、不替你判断房源，'+
+      '最终一律以具体房东 / 楼盘要求为准。')
+  ));
+
+  app.appendChild(aiBar());
+  app.appendChild(buildQuiz());
+
+  mountResults = el('div'); app.appendChild(mountResults);
+
+  onProfileChange();
+  // 首屏即渲染默认身份组合的完整清单（无需任何输入或 key）
+  renderChecklist(buildChecklist(DEFAULT_PROFILE));
+}
+
+/* ════════════════ 开发自检钩子 ════════════════ */
+window.CHECKLIST_DEV = {
+  build: buildChecklist,
+  branches: {
+    has_credit: ()=>buildChecklist({credit:'yes',income:'yes',usGuarantor:'no',visa:'OPT / STEM-OPT',noCreditPlan:'service'}),
+    us_guarantor: ()=>buildChecklist({credit:'no',income:'no',usGuarantor:'yes',visa:'F-1',noCreditPlan:'guarantor'}),
+    service: ()=>buildChecklist({credit:'no',income:'no',usGuarantor:'no',visa:'F-1',noCreditPlan:'service'}),
+    prepay: ()=>buildChecklist({credit:'no',income:'no',usGuarantor:'no',visa:'F-1',noCreditPlan:'prepay'})
+  },
+  render: renderChecklist,
+  text: checklistText,
+  DEFAULT_PROFILE
+};
+
+home();
+})();
+</script>
+</body>
+</html>
