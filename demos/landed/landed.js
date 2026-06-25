@@ -324,5 +324,7 @@ window.LANDED_DEV = {
   sample: SAMPLE, normalize
 };
 
-intro();
+GG.login(SLUG, {co:'远帆跨境', dept:'跨境运营部', name:'林悦',
+  email:'lin.yue@yuanfan-cb.com', workspace:'到岸价测算工作台',
+  sub:'登录进入你的「到岸价测算工作台」——输入成本，算清各国到岸价与利润。'}, intro);
 })();

@@ -279,5 +279,7 @@ window.SONAR_DEV = {
   sample: SAMPLE, normalize
 };
 
-intro();
+GG.login(SLUG, {co:'经纬国际贸易', dept:'外贸业务部', name:'张伟',
+  email:'zhang.wei@jingwei-trade.com', workspace:'询盘操盘工作台',
+  sub:'登录进入你的「询盘操盘工作台」——一封询盘，先看清是不是真买家。'}, intro);
 })();

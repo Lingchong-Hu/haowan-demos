@@ -84,6 +84,78 @@ GG._rgb = function(hex){
   return {r:parseInt(hex.slice(0,2),16), g:parseInt(hex.slice(2,4),16), b:parseInt(hex.slice(4,6),16)};
 };
 
+/* ---------------- 员工登录 · 工作台首屏（B2B demo 可选） ----------------
+   把 demo 的 boot 包一层即可：原本 `intro();` 改成
+        GG.login(SLUG, {co,dept,name,email,workspace}, intro);
+   纯演示：账号密码已预填、不收集真实凭证、不发任何网络请求；点登录即调 onEnter()。
+   登录后把员工身份塞进 mountShell 重建的顶栏，「退出」回到登录页。 */
+GG.login = function(slug, opts, onEnter){
+  opts = opts||{};
+  const m = GG.meta(slug);
+  const accent = opts.accent || m.accent || '#3d5a80';
+  document.documentElement.style.setProperty('--accent', accent);
+  document.documentElement.style.setProperty('--accent-soft', GG._soft(accent));
+  document.title = (m.title||slug)+' · 那一下';
+  const app = GG.$('#app') || document.body;
+  GG.clear(app);
+  app.appendChild(GG.el('div',{class:'topbar'},
+    GG.el('div',{class:'row'},
+      GG.el('a',{class:'back', href:'../../index.html'}, '← 好玩的东西'),
+      GG.el('div',{class:'ttl'}, GG.el('span',{class:'em'}, m.emoji||'✨'), m.title||slug),
+      GG.el('div',{class:'spacer'}),
+      m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null)));
+
+  const co = opts.co||'示例公司', dept = opts.dept||'业务部',
+        name = opts.name||'员工', email = opts.email||'demo@example.com',
+        workspace = opts.workspace || ((m.title||slug)+'工作台');
+
+  const emailIn = GG.el('input',{class:'gl-input', type:'email', value:email, spellcheck:'false', autocomplete:'off'});
+  const pwIn = GG.el('input',{class:'gl-input', type:'password', value:'demo-account-2026', autocomplete:'off'});
+  const eye = GG.el('button',{class:'gl-eye', type:'button', title:'显示 / 隐藏密码',
+    onClick:()=>{ pwIn.type = pwIn.type==='password'?'text':'password'; }}, '👁');
+
+  function enter(){
+    onEnter();
+    const row = GG.$('.topbar .row');
+    if(row){
+      const who = GG.el('span',{class:'gl-who'},
+        GG.el('span',{class:'gl-av'}, String(name).slice(0,1)),
+        GG.el('span',{class:'gl-whotxt'}, name+' · '+dept),
+        GG.el('button',{class:'gl-logout', title:'退出登录',
+          onClick:()=>GG.login(slug, opts, onEnter)}, '退出'));
+      const badge = GG.$('.badge-industry', row);
+      if(badge) row.replaceChild(who, badge); else row.appendChild(who);
+    }
+  }
+
+  const card = GG.el('div',{class:'gl-card'},
+    GG.el('div',{class:'gl-top', style:{background:'linear-gradient(135deg,'+accent+'e6,'+accent+')'}},
+      GG.el('span',{class:'gl-glyph'}, m.emoji||'✨'),
+      GG.el('div',{class:'gl-org'},
+        GG.el('div',{class:'gl-co'}, co),
+        GG.el('div',{class:'gl-dept'}, dept+' · '+workspace)),
+      GG.el('span',{class:'gl-badge'}, 'DEMO')),
+    GG.el('div',{class:'gl-body'},
+      GG.el('div',{class:'gl-hi'}, '欢迎回来 👋'),
+      GG.el('div',{class:'gl-sub'}, opts.sub || ('登录进入你的「'+workspace+'」。')),
+      GG.el('div',{class:'gl-field'}, GG.el('label', null, '员工邮箱'), emailIn),
+      GG.el('div',{class:'gl-field'}, GG.el('label', null, '密码'),
+        GG.el('div',{class:'gl-pwrap'}, pwIn, eye),
+        GG.el('div',{class:'gl-demohint'}, GG.el('span', null, '⚠'), '演示账号已预填，请勿输入真实密码')),
+      GG.el('button',{class:'gl-go', onClick:enter}, '登录工作台', GG.el('span', null, '→')),
+      GG.el('div',{class:'gl-or'}, '或'),
+      GG.el('button',{class:'gl-sso', onClick:enter}, GG.el('span',{class:'wx'}, '❖'), '用企业微信登录'),
+      GG.el('div',{class:'gl-foot-row'},
+        GG.el('label', null, GG.el('input',{type:'checkbox', checked:''}), '记住此设备'),
+        GG.el('a',{onClick:()=>GG.toast('演示环境 · 无需找回密码')}, '忘记密码？'))));
+
+  app.appendChild(GG.el('div',{class:'gl-wrap'},
+    card,
+    GG.el('div',{class:'gl-privacy'},
+      GG.el('span', null, '🔒'),
+      GG.el('span', null, opts.privacy || '演示环境 · 你的数据只存在本机浏览器，不上传任何服务器。'))));
+};
+
 /* ---------------- toast ---------------- */
 let toastEl, toastT;
 GG.toast = function(msg){

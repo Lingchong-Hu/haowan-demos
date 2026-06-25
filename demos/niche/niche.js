@@ -272,5 +272,7 @@ window.NICHE_DEV = {
   sample: SAMPLE, normalize
 };
 
-intro();
+GG.login(SLUG, {co:'远帆跨境', dept:'跨境运营部', name:'林悦',
+  email:'lin.yue@yuanfan-cb.com', workspace:'选品雷达工作台',
+  sub:'登录进入你的「选品雷达工作台」——一个大类，扫出还没杀红的细分蓝海。'}, intro);
 })();

@@ -196,3 +196,62 @@ textarea.field{min-height:120px; line-height:1.6}
 .llm-badge{display:inline-block; font-size:11.5px; border-radius:999px; padding:2px 10px; font-weight:600;
   background:var(--line-2); color:var(--ink-3)}
 .llm-badge.ai{background:var(--accent-soft); color:var(--accent)}
+
+/* ---------- 员工登录 · 工作台首屏（GG.login，B2B demo 共用） ---------- */
+.gl-wrap{min-height:calc(100vh - 130px); display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:30px 20px 44px}
+.gl-card{width:100%; max-width:416px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l);
+  box-shadow:var(--sh-2); overflow:hidden; animation:gl-rise .5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes gl-rise{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+.gl-top{color:#fff; padding:17px 24px; display:flex; align-items:center; gap:11px}
+.gl-glyph{width:30px; height:30px; flex:none; display:grid; place-items:center; border-radius:8px;
+  background:rgba(255,255,255,.18); font-size:16px}
+.gl-org{line-height:1.3}
+.gl-org .gl-co{font-weight:680; font-size:14.5px}
+.gl-org .gl-dept{font-size:11.5px; opacity:.85; margin-top:1px}
+.gl-top .gl-badge{margin-left:auto; font-size:10.5px; font-weight:600; background:rgba(255,255,255,.20);
+  border-radius:999px; padding:3px 10px; letter-spacing:.05em}
+.gl-body{padding:25px 28px 24px}
+.gl-hi{font-size:21px; font-weight:740; letter-spacing:-.4px; color:var(--ink)}
+.gl-sub{font-size:13px; color:var(--ink-3); margin:5px 0 20px; line-height:1.55}
+.gl-field{margin-bottom:14px}
+.gl-field label{display:block; font-size:12px; font-weight:600; color:var(--ink-2); margin-bottom:6px}
+.gl-input{width:100%; border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14.5px;
+  font-family:inherit; background:var(--bg); color:var(--ink); transition:.15s}
+.gl-input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); background:var(--surface)}
+.gl-pwrap{position:relative}
+.gl-pwrap .gl-input{padding-right:40px}
+.gl-eye{position:absolute; right:9px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer;
+  font-size:15px; line-height:1; color:var(--ink-3); padding:4px}
+.gl-eye:hover{color:var(--ink-2)}
+.gl-demohint{font-size:11px; color:var(--warn); margin-top:7px; display:flex; gap:5px; align-items:center}
+.gl-go{width:100%; appearance:none; border:none; border-radius:11px; cursor:pointer; font-family:inherit;
+  background:var(--accent); color:#fff; font-size:15px; font-weight:620; padding:13px; margin-top:4px; transition:.15s;
+  display:flex; align-items:center; justify-content:center; gap:7px}
+.gl-go:hover{filter:brightness(.96)}
+.gl-go:active{transform:translateY(1px)}
+.gl-or{display:flex; align-items:center; gap:12px; margin:17px 0; color:var(--ink-3); font-size:12px}
+.gl-or::before,.gl-or::after{content:''; flex:1; height:1px; background:var(--line)}
+.gl-sso{width:100%; appearance:none; border:1px solid var(--line); border-radius:11px; cursor:pointer; font-family:inherit;
+  background:var(--surface); color:var(--ink-2); font-size:14px; font-weight:560; padding:11px; transition:.15s;
+  display:flex; align-items:center; justify-content:center; gap:8px}
+.gl-sso:hover{border-color:var(--accent); color:var(--ink); background:var(--bg)}
+.gl-sso .wx{color:#07c160; font-size:15px}
+.gl-foot-row{display:flex; align-items:center; justify-content:space-between; margin-top:16px; font-size:12px; color:var(--ink-3)}
+.gl-foot-row label{display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none}
+.gl-foot-row a{color:var(--accent); text-decoration:none; cursor:pointer}
+.gl-privacy{display:flex; align-items:flex-start; gap:7px; width:100%; max-width:416px; margin:15px auto 0; padding:0 8px;
+  font-size:11.5px; color:var(--ink-3); line-height:1.55}
+.gl-privacy > span:first-child{flex:none}
+/* 登录后顶栏身份 */
+.topbar .gl-who{display:flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-2)}
+.topbar .gl-who .gl-av{width:20px; height:20px; border-radius:50%; flex:none; display:grid; place-items:center;
+  background:var(--accent); color:#fff; font-size:11px; font-weight:600}
+.topbar .gl-who .gl-logout{border:none; background:none; color:var(--ink-3); cursor:pointer; font-size:11.5px;
+  font-family:inherit; text-decoration:underline; text-underline-offset:2px; padding:0 0 0 4px}
+.topbar .gl-who .gl-logout:hover{color:var(--accent)}
+@media (max-width:520px){
+  .gl-wrap{min-height:calc(100vh - 110px); padding:20px 16px 30px}
+  .gl-body{padding:22px 20px 22px}
+  .topbar .gl-who .gl-whotxt{display:none}
+}

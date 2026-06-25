@@ -321,5 +321,7 @@ window.LOKA_DEV = {
   sample: SAMPLE, normalize
 };
 
-intro();
+GG.login(SLUG, {co:'远帆跨境', dept:'跨境运营部', name:'林悦',
+  email:'lin.yue@yuanfan-cb.com', workspace:'出海本地化工作台',
+  sub:'登录进入你的「出海本地化工作台」——一件商品，落地成多国母语 listing。'}, intro);
 })();

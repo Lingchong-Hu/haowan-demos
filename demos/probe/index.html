@@ -296,6 +296,60 @@ textarea.ta:focus{outline:none; border-color:var(--steel); box-shadow:0 0 0 3px 
 .inbox-foot{padding:11px 18px; border-top:1px solid var(--line-2); font-size:12px; color:var(--ink-3); line-height:1.55; background:var(--surface-2)}
 .inbox-foot b{color:var(--ink-2)}
 
+/* ── 员工登录 · 工作台首屏（演示） ── */
+.login{min-height:calc(100vh - 150px); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:30px 0 40px}
+.login-card{width:100%; max-width:414px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l);
+  box-shadow:var(--sh-2); overflow:hidden; animation:lg-rise .5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes lg-rise{from{opacity:0; transform:translateY(14px)}to{opacity:1; transform:none}}
+.lg-top{background:linear-gradient(135deg,#33507320,#33507308),linear-gradient(135deg,#324d6e,#3d5a80); color:#fff;
+  padding:17px 24px; display:flex; align-items:center; gap:11px}
+.lg-top .glyph{width:30px; height:30px; flex:none; display:grid; place-items:center; border-radius:8px;
+  background:rgba(255,255,255,.16); font-size:15px; font-weight:700}
+.lg-top .org{line-height:1.3}
+.lg-top .org .co{font-weight:680; font-size:14.5px; letter-spacing:.01em}
+.lg-top .org .dept{font-size:11.5px; opacity:.82; margin-top:1px}
+.lg-top .lg-badge{margin-left:auto; font-size:10.5px; font-weight:600; background:rgba(255,255,255,.18);
+  border-radius:999px; padding:3px 10px; letter-spacing:.04em}
+.lg-body{padding:25px 28px 24px}
+.lg-hi{font-size:21px; font-weight:740; letter-spacing:-.4px; color:var(--ink)}
+.lg-sub{font-size:13px; color:var(--ink-3); margin:5px 0 20px; line-height:1.55}
+.lg-field{margin-bottom:14px}
+.lg-field label{display:block; font-size:12px; font-weight:600; color:var(--ink-2); margin-bottom:6px; letter-spacing:.02em}
+.lg-input{width:100%; border:1px solid var(--line); border-radius:10px; padding:11px 13px; font-size:14.5px; font-family:inherit;
+  background:var(--surface-2); color:var(--ink); transition:.15s}
+.lg-input:focus{outline:none; border-color:var(--steel); box-shadow:0 0 0 3px var(--steel-soft); background:var(--surface)}
+.lg-pwrap{position:relative}
+.lg-pwrap .lg-input{padding-right:40px}
+.lg-eye{position:absolute; right:9px; top:50%; transform:translateY(-50%); background:none; border:none; cursor:pointer;
+  font-size:15px; line-height:1; color:var(--ink-4); padding:4px}
+.lg-eye:hover{color:var(--ink-2)}
+.lg-demohint{font-size:11px; color:var(--craft); margin-top:7px; display:flex; gap:5px; align-items:center}
+.lg-go{width:100%; appearance:none; border:none; border-radius:11px; cursor:pointer; font-family:inherit;
+  background:var(--ink); color:#fff; font-size:15px; font-weight:620; padding:13px; margin-top:4px; transition:.15s;
+  display:flex; align-items:center; justify-content:center; gap:7px}
+.lg-go:hover{background:#0f1620}
+.lg-go:active{transform:translateY(1px)}
+.lg-or{display:flex; align-items:center; gap:12px; margin:17px 0; color:var(--ink-4); font-size:12px}
+.lg-or::before,.lg-or::after{content:''; flex:1; height:1px; background:var(--line)}
+.lg-sso{width:100%; appearance:none; border:1px solid var(--line); border-radius:11px; cursor:pointer; font-family:inherit;
+  background:var(--surface); color:var(--ink-2); font-size:14px; font-weight:560; padding:11px; transition:.15s;
+  display:flex; align-items:center; justify-content:center; gap:8px}
+.lg-sso:hover{border-color:var(--steel); color:var(--ink); background:var(--surface-2)}
+.lg-sso .wx{color:#07c160; font-size:15px}
+.lg-foot-row{display:flex; align-items:center; justify-content:space-between; margin-top:16px; font-size:12px; color:var(--ink-3)}
+.lg-foot-row label{display:flex; align-items:center; gap:6px; cursor:pointer; user-select:none}
+.lg-foot-row a{color:var(--steel); text-decoration:none; cursor:pointer}
+.lg-privacy{display:flex; align-items:flex-start; gap:7px; width:100%; max-width:414px; margin:15px auto 0; padding:0 8px;
+  font-size:11.5px; color:var(--ink-3); line-height:1.55}
+.lg-privacy .lock{flex:none}
+/* 登录后顶栏身份 */
+.bar .firm .who{display:flex; align-items:center; gap:7px; color:var(--ink-2)}
+.bar .firm .who .av{width:19px; height:19px; border-radius:50%; flex:none; display:grid; place-items:center;
+  background:var(--steel); color:#fff; font-size:10.5px; font-weight:600}
+.bar .firm .who .logout{border:none; background:none; color:var(--ink-3); cursor:pointer; font-size:11.5px;
+  font-family:inherit; text-decoration:underline; text-underline-offset:2px; padding:0 0 0 4px}
+.bar .firm .who .logout:hover{color:var(--steel)}
+
 @media (max-width:640px){
   .wrap{padding:0 16px 70px}
   .doc-pad{padding:24px 20px 28px}
@@ -311,6 +365,8 @@ textarea.ta:focus{outline:none; border-color:var(--steel); box-shadow:0 0 0 3px 
   .blank-save{width:100%}
   .ib{flex-wrap:wrap}
   .ib .rt{flex-direction:row; align-items:center}
+  .login{min-height:calc(100vh - 120px); padding:20px 0 30px}
+  .lg-body{padding:22px 20px 22px}
 }
 </style>
 </head>
@@ -1250,16 +1306,78 @@ function home(){
   renderResults(normalize(SAMPLE_RAW));
 }
 
+/* ════════════════ 员工登录 · 工作台首屏（演示） ════════════════
+   把这套"公司内部工具"的语境立起来：一个外贸业务员登录进自己的询盘工作台。
+   纯演示——账号密码已预填、不收集真实凭证、不发任何网络请求；点登录即进工作台。 */
+const STAFF = { co:'经纬国际贸易', dept:'外贸业务部', name:'张伟', email:'zhang.wei@jingwei-trade.com' };
+
+function setFirmTagline(){
+  const firm = document.querySelector('.bar .firm');
+  if(firm){ clear(firm); firm.appendChild(document.createTextNode('下厂前的最后一道结构化 · 凭证 + 采访')); }
+}
+function loginScreen(){
+  const app = document.getElementById('app');
+  clear(app);
+  setFirmTagline();
+
+  const email = el('input',{class:'lg-input', type:'email', value:STAFF.email, spellcheck:'false', autocomplete:'off'});
+  const pw = el('input',{class:'lg-input', type:'password', value:'demo-account-2026', autocomplete:'off'});
+  const eye = el('button',{class:'lg-eye', type:'button', title:'显示 / 隐藏密码',
+    onClick:()=>{ pw.type = pw.type==='password' ? 'text' : 'password'; }}, '👁');
+
+  const card = el('div',{class:'login-card'},
+    el('div',{class:'lg-top'},
+      el('span',{class:'glyph'},'询'),
+      el('div',{class:'org'},
+        el('div',{class:'co'}, STAFF.co),
+        el('div',{class:'dept'}, STAFF.dept + ' · 询盘结构化工作台')),
+      el('span',{class:'lg-badge'},'DEMO')),
+    el('div',{class:'lg-body'},
+      el('div',{class:'lg-hi'}, '欢迎回来 👋'),
+      el('div',{class:'lg-sub'}, '登录进入你的「询盘结构化工作台」——下厂前的最后一道结构化。'),
+      el('div',{class:'lg-field'},
+        el('label',null,'员工邮箱'),
+        email),
+      el('div',{class:'lg-field'},
+        el('label',null,'密码'),
+        el('div',{class:'lg-pwrap'}, pw, eye),
+        el('div',{class:'lg-demohint'}, el('span',null,'⚠'), '演示账号已预填，请勿输入真实密码')),
+      el('button',{class:'lg-go', onClick:enterWorkspace}, ['登录工作台', el('span',null,'→')]),
+      el('div',{class:'lg-or'},'或'),
+      el('button',{class:'lg-sso', onClick:enterWorkspace}, el('span',{class:'wx'},'❖'), '用企业微信登录'),
+      el('div',{class:'lg-foot-row'},
+        el('label',null, el('input',{type:'checkbox', checked:''}), '记住此设备'),
+        el('a',{onClick:()=>toast('演示环境 · 无需找回密码')}, '忘记密码？'))));
+
+  app.appendChild(el('div',{class:'login'},
+    card,
+    el('div',{class:'lg-privacy'},
+      el('span',{class:'lock'},'🔒'),
+      el('span',null,'演示环境 · 你在这里沉淀的判断与标准只存在本机浏览器，不上传任何服务器。'))));
+}
+function enterWorkspace(){
+  const firm = document.querySelector('.bar .firm');
+  if(firm){
+    clear(firm);
+    firm.appendChild(el('span',{class:'who'},
+      el('span',{class:'av'}, STAFF.name.slice(0,1)),
+      el('span',null, STAFF.name + ' · ' + STAFF.dept),
+      el('button',{class:'logout', title:'退出登录', onClick:loginScreen},'退出')));
+  }
+  home();
+}
+
 /* 开发自检钩子 */
 window.PROBE_DEV = {
   render: (raw)=>{ renderResults(normalize(raw||SAMPLE_RAW)); },
   sample: SAMPLE_RAW, normalize, ONTOLOGY, gapCount,
   inquiry: SAMPLE_INQUIRY,
   showSample, getStd, setStd, effStatus, buildRFQ, SAMPLES,
+  loginScreen, enterWorkspace, home,
   clearStds: ()=>{ try{ localStorage.removeItem(STD_LS); }catch(e){} }
 };
 
-home();
+loginScreen();
 })();
 </script>
 </body>
