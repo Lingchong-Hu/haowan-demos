@@ -31,5 +31,6 @@ window.DEMOS = [
   { slug:'niche',        industry:'跨境电商', title:'蓝海选品雷达',   tagline:'一个大类 → 扫出还没杀红的细分蓝海', emoji:'🧭', accent:'#8a5cd1', status:'live' },
   { slug:'landed',       industry:'跨境电商', title:'到岸价对比',     tagline:'输入成本 → 各国到岸价 + 利润，先打哪国', emoji:'🚢', accent:'#2c5fa8', status:'live' },
   { slug:'sonar',        industry:'外贸',     title:'外贸询盘操盘手', tagline:'贴一封询盘 → 判真伪 + 起草回复 + 报价策略', emoji:'📡', accent:'#3b5bdb', status:'live' },
+  { slug:'probe',        industry:'外贸',     title:'询盘结构化探针', tagline:'贴一封询盘 → 采购缺口清单 + 下厂询价单（价格/规格留白，只等你的判断）', emoji:'🔍', accent:'#3d5a80', status:'live' },
   { slug:'ping',         industry:'留学',     title:'留学生身份合规导航', tagline:'一句话描述身份 → 个性化路线图 + 政策雷达 + 家长安心卡', emoji:'🛟', accent:'#1f8c8c', status:'live', disclaimer:true },
 ];

@@ -1,0 +1,1266 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>询盘结构化探针 · 采购缺口 + 工厂简报骨架</title>
+<style>
+/* ════════════════════════════════════════════════════════════════
+   询盘结构化探针 (probe) — 自包含，无构建，无外部依赖。
+   气质：采购简报文档级的克制与精确。蓝图（冷·结构） + 赭石（暖·判断留白）。
+   红线在代码里强制：spec/price 留白永不给草稿数字；只渲染字面信息。
+   ════════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#1b2430; --ink-2:#4a5564; --ink-3:#8b94a3; --ink-4:#aeb6c2;
+  --paper:#f7f5f1; --surface:#fffefb; --surface-2:#faf8f3;
+  --line:#e6e1d8; --line-2:#efebe2;
+  --steel:#3d5a80;          /* 结构蓝 */
+  --steel-soft:#eaeff5;
+  --craft:#b3631b;          /* 留白·赭石（判断落点） */
+  --craft-soft:#fbf0e2;
+  --craft-line:#e8c79a;
+  --good:#2f7d5b; --good-soft:#e7f2ec;
+  --vague:#b9842a; --vague-soft:#f7eed9;
+  --miss:#9aa3b0;
+  --r:14px; --r-s:9px; --r-l:22px;
+  --sh-1:0 1px 2px rgba(27,36,48,.05), 0 3px 12px rgba(27,36,48,.05);
+  --sh-2:0 12px 40px rgba(27,36,48,.10);
+  --maxw:880px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+  --serif:Georgia,"Songti SC","STSong","Noto Serif SC","Times New Roman",serif;
+  --mono:"SFMono-Regular",ui-monospace,"Cascadia Code","Consolas","Menlo",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans); color:var(--ink); background:var(--paper);
+  -webkit-font-smoothing:antialiased; line-height:1.6; font-size:16px}
+::selection{background:var(--craft-soft)}
+
+/* ── 顶栏 ── */
+.bar{position:sticky; top:0; z-index:40; backdrop-filter:saturate(1.3) blur(10px);
+  background:rgba(247,245,241,.84); border-bottom:1px solid var(--line)}
+.bar .in{max-width:var(--maxw); margin:0 auto; padding:11px 22px; display:flex; align-items:center; gap:12px}
+.mark{display:flex; align-items:center; gap:9px; font-weight:650; font-size:15px; letter-spacing:-.2px}
+.mark .glyph{width:22px; height:22px; flex:none; display:grid; place-items:center;
+  border:1.5px solid var(--steel); border-radius:6px; color:var(--steel); font-size:12px; font-weight:800}
+.bar .spacer{flex:1}
+.bar .firm{font-size:11.5px; color:var(--ink-3); letter-spacing:.02em; white-space:nowrap}
+
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px 90px}
+
+/* ── Hero ── */
+.hero{padding:42px 0 6px}
+.hero .eyebrow{font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--steel); margin-bottom:13px}
+.hero h1{font-size:clamp(25px,4.4vw,35px); font-weight:740; letter-spacing:-.7px; line-height:1.16}
+.hero h1 .em{color:var(--craft)}
+.hero .lede{color:var(--ink-2); font-size:16px; margin:14px 0 0; max-width:660px; line-height:1.62}
+
+/* ── 连接 AI 条 ── */
+.aibar{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:22px 0 0; font-size:13px}
+.aidot{width:8px; height:8px; border-radius:50%; background:var(--ink-4); flex:none}
+.aidot.on{background:var(--good)}
+.aitxt{color:var(--ink-2)}
+.ailink{border:none; background:none; color:var(--steel); font-weight:650; cursor:pointer; font-size:13px;
+  text-decoration:underline; text-underline-offset:2px; padding:0; font-family:inherit}
+.aipanel{flex-basis:100%; border:1px dashed var(--line); background:var(--surface-2); border-radius:var(--r-s);
+  padding:14px 15px; margin-top:8px}
+.aipanel p{margin:0 0 11px; font-size:12.5px; color:var(--ink-3); line-height:1.65}
+.aipanel .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+
+/* ── 输入区 ── */
+.inblock{margin-top:20px}
+.inhead{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:9px; flex-wrap:wrap; gap:6px}
+.inhead .lab{font-size:13px; font-weight:650; color:var(--ink-2); letter-spacing:.01em}
+.inhead .restore{font-size:12.5px; color:var(--steel); cursor:pointer; background:none; border:none; font-family:inherit; padding:0}
+textarea.ta{width:100%; min-height:148px; border:1px solid var(--line); border-radius:12px; padding:15px 17px;
+  font-size:15px; font-family:var(--sans); background:var(--surface); color:var(--ink); resize:vertical; line-height:1.62}
+textarea.ta:focus{outline:none; border-color:var(--steel); box-shadow:0 0 0 3px var(--steel-soft)}
+.egrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; align-items:center}
+.egrow .hint{font-size:12.5px; color:var(--ink-3); margin-right:2px}
+.eg{border:1px solid var(--line); background:var(--surface); color:var(--ink-2); border-radius:999px;
+  padding:6px 13px; font-size:13px; cursor:pointer; font-family:inherit; transition:.13s; display:inline-flex; gap:6px; align-items:center}
+.eg:hover{border-color:var(--steel); color:var(--ink); transform:translateY(-1px)}
+.go{margin-top:16px; width:100%; appearance:none; border:none; border-radius:12px; cursor:pointer;
+  background:var(--ink); color:#fff; font-size:16px; font-weight:600; padding:15px; font-family:inherit;
+  transition:.15s; display:inline-flex; align-items:center; justify-content:center; gap:9px}
+.go:hover{background:#0f1620}
+.go:active{transform:translateY(1px)}
+.go:disabled{opacity:.5; cursor:default}
+
+/* ── 思考过场 ── */
+.think{display:flex; flex-direction:column; align-items:center; gap:17px; padding:54px 0; text-align:center}
+.spin{width:38px; height:38px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--steel);
+  animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.think .m{color:var(--ink-2); font-size:14.5px; min-height:21px}
+
+/* ── 结果壳 ── */
+.results{margin-top:30px; animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+.nav{display:flex; gap:8px; position:sticky; top:50px; z-index:30; padding:10px 0 12px;
+  background:linear-gradient(var(--paper) 72%, rgba(247,245,241,0)); margin-bottom:4px}
+.nav a{flex:1; text-align:center; text-decoration:none; font-size:13px; font-weight:600; color:var(--ink-2);
+  border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:8px 10px; transition:.13s}
+.nav a:hover{border-color:var(--steel); color:var(--steel)}
+.nav a .n{color:var(--steel); font-weight:800; margin-right:5px}
+
+.sec-eyebrow{font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);
+  margin:30px 0 4px; display:flex; align-items:center; gap:8px}
+.sec-eyebrow .badge{font-size:11px; font-weight:600; letter-spacing:.02em; text-transform:none;
+  background:var(--steel-soft); color:var(--steel); padding:2px 9px; border-radius:999px}
+.sec-eyebrow.face-craft{color:var(--craft)}
+.sec-eyebrow.face-craft .badge{background:var(--craft-soft); color:var(--craft)}
+.sec-h{font-size:21px; font-weight:730; letter-spacing:-.4px; margin:5px 0 2px}
+.sec-sub{font-size:13.5px; color:var(--ink-3); margin:5px 0 0; line-height:1.55; max-width:640px}
+
+/* ── 输出A · 缺口清单 ── */
+.tally{display:flex; align-items:center; gap:18px; margin-top:18px; padding:18px 20px; border-radius:var(--r);
+  background:var(--surface); border:1px solid var(--line); box-shadow:var(--sh-1)}
+.tally .num{font-size:46px; font-weight:780; line-height:1; letter-spacing:-1.5px; color:var(--craft); flex:none;
+  font-variant-numeric:tabular-nums}
+.tally .meta .t{font-size:15px; font-weight:650}
+.tally .meta .s{font-size:13px; color:var(--ink-3); margin-top:3px}
+.tally .legend{margin-left:auto; display:flex; gap:13px; flex-wrap:wrap; font-size:12px; color:var(--ink-3)}
+.tally .legend i{font-style:normal; display:inline-flex; align-items:center; gap:5px}
+.dotc{width:8px; height:8px; border-radius:50%; flex:none}
+
+.catgrp{margin-top:16px; border:1px solid var(--line); border-radius:var(--r); background:var(--surface); overflow:hidden; box-shadow:var(--sh-1)}
+.cathd{display:flex; align-items:center; gap:10px; padding:13px 18px; background:var(--surface-2); border-bottom:1px solid var(--line-2)}
+.cathd .ix{font-family:var(--mono); font-size:12px; color:var(--ink-4); font-weight:600}
+.cathd .nm{font-weight:680; font-size:15px}
+.cathd .cnt{margin-left:auto; font-size:12px; color:var(--ink-3); font-variant-numeric:tabular-nums}
+.cathd .cnt b{color:var(--good); font-weight:700}
+.frow{display:flex; gap:12px; padding:11px 18px; border-top:1px solid var(--line-2); align-items:flex-start}
+.frow:first-of-type{border-top:none}
+.frow .st{width:20px; height:20px; border-radius:50%; flex:none; display:grid; place-items:center; font-size:11px; font-weight:800; margin-top:1px}
+.st.present{background:var(--good-soft); color:var(--good)}
+.st.vague{background:var(--vague-soft); color:var(--vague)}
+.st.missing{background:#f1f0ec; color:var(--miss)}
+.st.expert{background:var(--craft-soft); color:var(--craft)}
+.frow .body{flex:1; min-width:0}
+.frow .fl{font-size:14.5px; font-weight:560}
+.frow .fl .en{color:var(--ink-3); font-weight:400; font-size:13px}
+.frow .ev{font-size:13px; color:var(--ink-2); margin-top:3px; line-height:1.5}
+.frow .ev .q{color:var(--good); background:var(--good-soft); border-radius:5px; padding:1px 6px; font-style:italic}
+.frow .gap{font-size:13px; margin-top:3px; line-height:1.5}
+.frow .gap.miss{color:var(--ink-3)}
+.frow .gap.vague{color:var(--vague)}
+.frow .gap.expert{color:var(--craft); font-weight:560}
+.frow .tag{font-size:11px; font-weight:600; padding:1px 8px; border-radius:999px; flex:none; margin-top:2px}
+.tag.expert{background:var(--craft-soft); color:var(--craft)}
+
+/* ── 输出B · 工厂简报文档 ── */
+.doc{margin-top:18px; background:var(--surface); border:1px solid var(--line); border-radius:var(--r-l);
+  box-shadow:var(--sh-2); overflow:hidden}
+.doc-top{height:6px; background:linear-gradient(90deg,var(--steel),var(--craft))}
+.doc-pad{padding:34px 38px 38px}
+.doc-mast{border-bottom:2px solid var(--ink); padding-bottom:16px; margin-bottom:8px}
+.doc-mast .kanji{font-family:var(--serif); font-size:13px; letter-spacing:.42em; color:var(--ink-3); text-transform:uppercase; margin-bottom:9px}
+.doc-mast h2{font-family:var(--serif); font-size:27px; font-weight:700; letter-spacing:.5px; line-height:1.2}
+.doc-mast .sub{font-size:13px; color:var(--ink-3); margin-top:7px; display:flex; gap:16px; flex-wrap:wrap}
+.doc-mast .sub b{color:var(--ink-2); font-weight:600}
+.doc-note{font-size:12.5px; color:var(--craft); background:var(--craft-soft); border:1px solid var(--craft-line);
+  border-radius:var(--r-s); padding:10px 14px; margin:18px 0 4px; line-height:1.6; display:flex; gap:9px}
+.doc-note .ic{flex:none; font-size:14px}
+
+.dsec{margin-top:26px}
+.dsec-h{font-family:var(--serif); font-size:12px; font-weight:700; letter-spacing:.22em; color:var(--steel);
+  text-transform:uppercase; padding-bottom:7px; border-bottom:1px solid var(--line); display:flex; align-items:baseline; gap:9px}
+.dsec-h .no{font-family:var(--mono); color:var(--ink-4); font-size:11px; letter-spacing:0}
+.drow{display:flex; gap:14px; padding:9px 0; border-bottom:1px solid var(--line-2); align-items:baseline}
+.drow .k{width:122px; flex:none; font-size:13px; color:var(--ink-3); line-height:1.5}
+.drow .v{flex:1; min-width:0; font-size:14.5px; color:var(--ink); line-height:1.55}
+.drow .v.dim{color:var(--ink-4)}
+.drow .v .vague-tag{font-size:11px; color:var(--vague); background:var(--vague-soft); border-radius:5px; padding:0 7px; margin-left:7px; font-weight:600}
+.dmiss{font-size:12.5px; color:var(--ink-4); padding:10px 0 2px; line-height:1.6}
+.dmiss b{color:var(--ink-3); font-weight:600}
+
+/* 留白槽 —— 本设计的锋刃 */
+.blank{margin:14px 0 6px; border:1.5px dashed var(--craft-line); background:var(--craft-soft);
+  border-radius:12px; padding:15px 17px; position:relative}
+.blank .ml{display:inline-flex; align-items:center; gap:7px; font-size:11.5px; font-weight:700; letter-spacing:.02em;
+  color:var(--craft); text-transform:uppercase; background:var(--surface); border:1px solid var(--craft-line);
+  border-radius:999px; padding:3px 11px; margin-bottom:11px}
+.blank .ml .pen{font-size:12px}
+.blank .label{font-size:14px; color:var(--ink); line-height:1.62; font-weight:500}
+.blank .q{margin-top:12px; padding-left:14px; border-left:3px solid var(--craft); font-size:14px; color:var(--ink-2);
+  line-height:1.62; font-style:italic}
+.blank .q::before{content:"问您："; font-style:normal; font-weight:700; color:var(--craft); margin-right:4px}
+.blank .draft{margin-top:11px; font-size:12.5px; color:var(--ink-3); background:var(--surface);
+  border:1px dotted var(--craft-line); border-radius:8px; padding:9px 12px; line-height:1.6}
+.blank .draft .dl{font-weight:700; color:var(--craft); margin-right:6px; font-style:normal}
+.blank .fill{margin-top:11px; height:1px; background:repeating-linear-gradient(90deg,var(--craft-line) 0 7px,transparent 7px 13px)}
+
+/* ── 工具栏 / 脚注 ── */
+.toolbar{display:flex; gap:10px; flex-wrap:wrap; margin-top:24px}
+.tool{flex:1; min-width:140px; appearance:none; border:1px solid var(--line); background:var(--surface);
+  color:var(--ink); border-radius:10px; padding:12px; font-size:14px; font-weight:560; cursor:pointer;
+  font-family:inherit; transition:.13s; display:inline-flex; align-items:center; justify-content:center; gap:7px}
+.tool:hover{border-color:var(--steel); color:var(--steel)}
+.tool.primary{background:var(--steel); border-color:var(--steel); color:#fff}
+.tool.primary:hover{filter:brightness(.95); color:#fff}
+
+.foot{margin-top:46px; padding-top:22px; border-top:1px solid var(--line); text-align:center}
+.foot .pos{font-size:13.5px; color:var(--ink-2); line-height:1.6; max-width:560px; margin:0 auto}
+.foot .pos b{color:var(--ink); font-weight:650}
+.foot .brand{font-size:11.5px; color:var(--ink-4); margin-top:13px; letter-spacing:.04em}
+
+/* ── 错误 ── */
+.oops{text-align:center; padding:34px 0}
+.oops .big{font-size:38px}
+.oops h3{font-size:18px; margin:10px 0 6px}
+.oops p{color:var(--ink-2); font-size:14px; margin:0 auto 14px; max-width:420px}
+
+/* ── toast ── */
+.toast{position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(18px);
+  background:var(--ink); color:#fff; padding:11px 20px; border-radius:999px; font-size:14px;
+  box-shadow:var(--sh-2); opacity:0; transition:.25s; z-index:100; pointer-events:none}
+.toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+.field{border:1px solid var(--line); border-radius:9px; padding:11px 13px; font-size:14px; font-family:inherit;
+  background:var(--surface); color:var(--ink); flex:1; min-width:200px}
+.field:focus{outline:none; border-color:var(--steel); box-shadow:0 0 0 3px var(--steel-soft)}
+.minibtn{appearance:none; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+  border-radius:9px; padding:11px 16px; font-size:14px; font-weight:560; cursor:pointer; font-family:inherit; white-space:nowrap}
+.minibtn.primary{background:var(--steel); border-color:var(--steel); color:#fff}
+.minibtn.ghost{background:transparent}
+
+/* ── ① 标准 / 复利 ── */
+.st.standard{background:var(--steel-soft); color:var(--steel)}
+.frow .gap.standard{color:var(--steel); font-weight:560}
+.blank.filled{border-style:solid; border-color:var(--good); background:var(--good-soft)}
+.blank-fillrow{margin-top:13px; display:flex; gap:9px; align-items:flex-end; flex-wrap:wrap}
+.blank-ta{flex:1; min-width:220px; border:1px solid var(--craft-line); border-radius:9px; padding:10px 12px;
+  font-size:13.5px; font-family:inherit; background:var(--surface); color:var(--ink); resize:vertical; min-height:64px; line-height:1.55}
+.blank-ta:focus{outline:none; border-color:var(--craft); box-shadow:0 0 0 3px var(--craft-soft)}
+.blank-save{appearance:none; border:none; background:var(--craft); color:#fff; border-radius:9px; padding:11px 16px;
+  font-size:13.5px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap}
+.blank-save:hover{filter:brightness(.96)}
+.std-on{margin-top:13px}
+.std-on .std-h{font-size:12.5px; font-weight:700; color:var(--good); display:flex; gap:6px; align-items:center}
+.std-on .std-text{font-size:14px; color:var(--ink); background:var(--surface); border:1px solid var(--good);
+  border-radius:9px; padding:10px 12px; margin-top:8px; line-height:1.58}
+.std-on .std-note{font-size:12px; color:var(--ink-3); margin-top:8px; line-height:1.5; display:flex; gap:6px}
+.std-on .std-acts{display:flex; gap:16px; margin-top:10px}
+.linkbtn{border:none; background:none; color:var(--steel); font-size:12.5px; font-weight:600; cursor:pointer;
+  font-family:inherit; padding:0; text-decoration:underline; text-underline-offset:2px}
+.linkbtn.danger{color:#c0563f}
+
+/* ── ① 复利 callout ── */
+.compound{margin-top:20px; border:1px solid var(--steel); background:var(--steel-soft); border-radius:var(--r);
+  padding:16px 18px; display:flex; gap:14px; align-items:center; flex-wrap:wrap}
+.compound .cz{font-size:24px; flex:none}
+.compound .ct{flex:1; min-width:210px}
+.compound .ct .h{font-size:14.5px; font-weight:680; color:var(--steel)}
+.compound .ct .s{font-size:13px; color:var(--ink-2); margin-top:3px; line-height:1.5}
+.compound .cbtn{appearance:none; border:1px solid var(--steel); background:var(--surface); color:var(--steel);
+  border-radius:999px; padding:10px 17px; font-size:13.5px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap}
+.compound .cbtn:hover{background:var(--steel); color:#fff}
+
+/* ── ② RFQ 面板 ── */
+.rfq-panel{margin-top:14px; border:1px solid var(--line); border-radius:var(--r); background:var(--surface-2); overflow:hidden}
+.rfq-panel .rfq-h{padding:12px 16px; background:var(--steel); color:#fff; font-size:13.5px; font-weight:600;
+  display:flex; align-items:center; gap:8px}
+.rfq-panel .rfq-body{padding:16px; font-size:12.5px; line-height:1.7; white-space:pre-wrap; color:var(--ink);
+  font-family:var(--mono); max-height:440px; overflow:auto}
+.rfq-panel .rfq-foot{padding:11px 16px; border-top:1px solid var(--line); display:flex; gap:10px; flex-wrap:wrap}
+
+/* ── ③ 询盘洪流分诊 inbox ── */
+.inbox{margin-top:20px; border:1px solid var(--line); border-radius:var(--r); background:var(--surface); box-shadow:var(--sh-1); overflow:hidden}
+.inbox-h{padding:15px 18px 14px; border-bottom:1px solid var(--line-2)}
+.inbox-h .t{font-size:15px; font-weight:680; display:flex; align-items:baseline; gap:8px}
+.inbox-h .t .big{font-variant-numeric:tabular-nums; color:var(--craft); font-weight:800}
+.inbox-h .s{font-size:12.5px; color:var(--ink-3); margin-top:4px}
+.tri-bar{display:flex; height:9px; border-radius:999px; overflow:hidden; margin:13px 0 9px; background:var(--line-2)}
+.tri-bar i{display:block; height:100%}
+.tri-leg{display:flex; gap:16px; flex-wrap:wrap; font-size:12px; color:var(--ink-2)}
+.tri-leg i{font-style:normal; display:inline-flex; align-items:center; gap:6px}
+.ib{display:flex; gap:11px; padding:12px 18px; border-top:1px solid var(--line-2); align-items:flex-start}
+.ib .em{font-size:18px; flex:none; margin-top:1px}
+.ib .mid{flex:1; min-width:0}
+.ib .from{font-size:12px; color:var(--ink-3)}
+.ib .snip{font-size:13.5px; color:var(--ink); margin-top:2px; line-height:1.45}
+.ib .why{font-size:12px; margin-top:5px; line-height:1.45; display:flex; gap:6px}
+.ib.green .why{color:var(--good)}
+.ib.amber .why{color:var(--vague)}
+.ib.red .why{color:#c0563f}
+.ib .rt{flex:none; align-self:flex-start; display:flex; flex-direction:column; gap:7px; align-items:flex-end}
+.ib-pill{font-size:11px; font-weight:600; padding:3px 9px; border-radius:999px; white-space:nowrap}
+.ib.green .ib-pill{background:var(--good-soft); color:var(--good)}
+.ib.amber .ib-pill{background:var(--vague-soft); color:var(--vague)}
+.ib.red .ib-pill{background:#fbeaea; color:#c0563f}
+.ib-go{appearance:none; border:1px solid var(--good); background:var(--surface); color:var(--good); border-radius:999px;
+  padding:6px 13px; font-size:12.5px; font-weight:600; cursor:pointer; font-family:inherit; white-space:nowrap}
+.ib-go:hover{background:var(--good); color:#fff}
+.inbox-foot{padding:11px 18px; border-top:1px solid var(--line-2); font-size:12px; color:var(--ink-3); line-height:1.55; background:var(--surface-2)}
+.inbox-foot b{color:var(--ink-2)}
+
+@media (max-width:640px){
+  .wrap{padding:0 16px 70px}
+  .doc-pad{padding:24px 20px 28px}
+  .doc-mast h2{font-size:22px}
+  .drow{flex-direction:column; gap:2px}
+  .drow .k{width:auto}
+  .tally{flex-wrap:wrap}
+  .tally .legend{margin-left:0; flex-basis:100%}
+  .toolbar .tool{min-width:0}
+  .bar .firm{display:none}
+  .compound .cbtn{width:100%}
+  .blank-fillrow{flex-direction:column; align-items:stretch}
+  .blank-save{width:100%}
+  .ib{flex-wrap:wrap}
+  .ib .rt{flex-direction:row; align-items:center}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div class="in">
+    <div class="mark"><span class="glyph">询</span>询盘结构化探针</div>
+    <div class="spacer"></div>
+    <div class="firm">下厂前的最后一道结构化 · 凭证 + 采访</div>
+  </div>
+</div>
+
+<main class="wrap" id="app"></main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ════════════════ 工具 ════════════════ */
+function el(tag, props){
+  const e = document.createElement(tag);
+  if(props){
+    for(const k in props){
+      const v = props[k];
+      if(v==null || v===false) continue;
+      if(k==='class') e.className = v;
+      else if(k==='html') e.innerHTML = v;
+      else if(k==='text') e.textContent = v;
+      else if(k==='style' && typeof v==='object') Object.assign(e.style, v);
+      else if(k.slice(0,2)==='on' && typeof v==='function') e.addEventListener(k.slice(2).toLowerCase(), v);
+      else e.setAttribute(k, v);
+    }
+  }
+  for(let i=2;i<arguments.length;i++){
+    let kids = arguments[i]; if(!Array.isArray(kids)) kids=[kids];
+    for(const kid of kids){
+      if(kid==null || kid===false) continue;
+      e.appendChild(kid.nodeType ? kid : document.createTextNode(String(kid)));
+    }
+  }
+  return e;
+}
+function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); return n; }
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let toastT;
+function toast(msg){
+  const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('show'), 1900);
+}
+async function copy(text){
+  try{ await navigator.clipboard.writeText(text); toast('已复制 ✓'); }
+  catch(e){
+    try{ const ta=el('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('已复制 ✓'); }
+    catch(_){ toast('复制失败，请手动选择'); }
+  }
+}
+
+/* ════════════════ 字段本体（§3 · 凭证面全部说服力的来源） ════════════════
+   9 大类 × 字段。JS 是结构事实源：无论模型返回什么，这 9 类一定完整渲染。
+   craftSlot: 'spec'|'cert'|'price' → 在简报文档里渲染为留白槽，而非普通行。   */
+const ONTOLOGY = [
+  { ix:'01', name:'产品识别', en:'Product', fields:[
+    { key:'category',     label:'品类',            en:'Category' },
+    { key:'product_use',  label:'产品名 / 用途',   en:'Product / Use' },
+    { key:'end_user',     label:'终端用户',        en:'End-user', hint:'成人 / 儿童 / 竞技级' },
+  ]},
+  { ix:'02', name:'规格 Specs', en:'Specifications', fields:[
+    { key:'spec_core',    label:'品类专属关键参数', en:'Category-critical specs', craftSlot:'spec' },
+    { key:'size_run',     label:'尺寸 / 尺码段',    en:'Size run' },
+    { key:'weight',       label:'重量',            en:'Weight' },
+    { key:'materials',    label:'主料 / 辅料',      en:'Materials' },
+    { key:'construction', label:'结构 / 工艺',      en:'Construction' },
+    { key:'color',        label:'颜色 / Pantone',  en:'Color' },
+    { key:'logo_print',   label:'Logo / 印刷',     en:'Logo / Print' },
+  ]},
+  { ix:'03', name:'合规认证 Compliance', en:'Compliance', fields:[
+    { key:'target_certs', label:'目的市场强制认证', en:'Mandatory certs', craftSlot:'cert' },
+  ]},
+  { ix:'04', name:'商务 Commercial', en:'Commercial', fields:[
+    { key:'target_price', label:'目标价 / 报价口径', en:'Target price', craftSlot:'price' },
+    { key:'moq',          label:'MOQ',             en:'MOQ' },
+    { key:'order_qty',    label:'订单量',          en:'Order qty' },
+    { key:'incoterms',    label:'贸易术语',        en:'Incoterms', hint:'FOB / CIF / DDP' },
+    { key:'payment',      label:'付款方式',        en:'Payment', hint:'T/T · L/C' },
+    { key:'currency',     label:'币种',            en:'Currency' },
+  ]},
+  { ix:'05', name:'时间 Timeline', en:'Timeline', fields:[
+    { key:'sample_lead',  label:'打样周期',        en:'Sample lead' },
+    { key:'prod_lead',    label:'量产周期',        en:'Production lead' },
+    { key:'ship_date',    label:'船期 / 到货日',    en:'Ship date' },
+    { key:'season',       label:'季节 / 上架截止',  en:'Season cutoff' },
+  ]},
+  { ix:'06', name:'包装标签 Packaging', en:'Packaging', fields:[
+    { key:'inner_outer',  label:'内盒 / 外箱',      en:'Inner / carton' },
+    { key:'polybag',      label:'polybag',         en:'Polybag' },
+    { key:'barcode',      label:'条码 / UPC',       en:'Barcode / UPC' },
+    { key:'retail_pack',  label:'零售包装',        en:'Retail pack' },
+    { key:'labels',       label:'原产地 / 洗唛 / 警示', en:'Labels' },
+  ]},
+  { ix:'07', name:'物流 Logistics', en:'Logistics', fields:[
+    { key:'dest_port',    label:'目的港',          en:'Dest. port' },
+    { key:'ship_mode',    label:'运输方式',        en:'Mode', hint:'海运 / 空运' },
+    { key:'loading',      label:'装柜优化',        en:'Loading' },
+  ]},
+  { ix:'08', name:'质检 QC', en:'Quality', fields:[
+    { key:'aql',          label:'AQL 等级',        en:'AQL', hint:'2.5 / 4.0' },
+    { key:'inspection',   label:'第三方验货',      en:'Inspection', hint:'SGS / BV / Intertek' },
+    { key:'golden_sample',label:'封样',            en:'Golden sample' },
+  ]},
+  { ix:'09', name:'关系 Relationship', en:'Relationship', fields:[
+    { key:'buyer_id',     label:'买家身份',        en:'Buyer identity' },
+    { key:'order_nature', label:'新单 / 返单',      en:'New / repeat' },
+    { key:'credit',       label:'信用条件',        en:'Credit terms' },
+  ]},
+];
+// 全部字段 key → 字段定义，便于查找
+const FIELD_INDEX = {};
+ONTOLOGY.forEach(c => c.fields.forEach(f => { FIELD_INDEX[f.key] = Object.assign({cat:c.name, ix:c.ix}, f); }));
+const ALL_KEYS = Object.keys(FIELD_INDEX);
+const STATUSES = ['present','vague','missing','needs_expert'];
+
+/* ════════════════ 内嵌 system prompt（§6，注入本体 key） ════════════════ */
+const SYS = [
+'你是体育用品外贸询盘的结构化引擎。输入一封买家询盘（多为英文）。',
+'铁律：只依据询盘中【字面出现】的信息提取；未出现的一律标 missing，绝不臆测、绝不补全、绝不点名任何工厂或供应商。',
+'',
+'对每个给定字段 key，输出 status ∈ present | vague | missing | needs_expert，与一段 evidence：',
+'  present = 询盘里有明确信息（evidence 填原文片段，英文原样保留）；',
+'  vague   = 提到了但不具体，下厂前仍需量化（如 "mid-weight" 未给克重）；',
+'  missing = 询盘完全没提（这类【不要写进 fields】，系统会自动补 missing）；',
+'  needs_expert = 只用于以下三类——即使你"知道"标准答案也绝不给具体值：',
+'    (a) 品类专属规格的具体数值/标准  (b) 目的市场强制认证的具体编号与适用判断  (c) 目标价/FOB/CIF/DDP 任何报价口径。',
+'',
+'字段 key 清单（只在这些 key 里选；fields 对象里【只放 present / vague / needs_expert 的字段】，判为 missing 的一律省略不写，以保持 JSON 紧凑、避免被截断）：',
+ALL_KEYS.join(', '),
+'',
+'另外生成 blanks：针对【本封询盘】的具体采访问题（不是泛问），只放三类 craft 槽位：',
+'  slot=spec  → 品类专属规格留白：检测到的品类下厂必锁、但本询盘未给的关键参数；draft 必须为 null（规格数值猜错会掉价）。',
+'  slot=cert  → 认证适用判断留白：买家提到的合规线索对应的候选认证；draft 可给一句"明显不完整、待校正"的候选草稿（认证候选猜错也安全）。',
+'  slot=price → 报价口径留白：draft 必须为 null（价格永远是空，绝不给数字）。',
+'每个 blank 的 question 要点出本询盘的具体上下文，让对方一看就知道这是为这单问的。',
+'',
+'只返回 JSON，无前后文、无 markdown 围栏。Schema：',
+'{',
+'  "category": "检测到的品类（仅名称，简体）",',
+'  "fields": { "<key>": { "status": "present|vague|needs_expert", "evidence": "原文片段或 null" }, ... },   // 只列非 missing 的字段',
+'  "blanks": [ { "slot":"spec|cert|price", "label":"一句话微标签（简体）", "question":"针对本询盘的具体提问（简体）", "draft":"草稿或 null" } ]',
+'}'
+].join('\n');
+
+/* ════════════════ LLM 连接器（自包含 BYOK，复用门户同一把 key） ════════════════ */
+const LLM = (function(){
+  const KEY_LS = 'haowan_anthropic_key';
+  const MODEL = 'claude-sonnet-4-6';
+  const get = ()=>{ try{ return localStorage.getItem(KEY_LS)||''; }catch(e){ return ''; } };
+  const set = v =>{ try{ v?localStorage.setItem(KEY_LS,v):localStorage.removeItem(KEY_LS); }catch(e){} };
+  const connected = ()=> !!get();
+  function safeParse(raw){
+    if(!raw) return null;
+    let s = String(raw).trim().replace(/^```json\s*/i,'').replace(/^```\s*/,'').replace(/```\s*$/,'').trim();
+    try{ return JSON.parse(s); }catch(e){}
+    const a=s.indexOf('{'), b=s.lastIndexOf('}');
+    if(a>=0&&b>a){ try{ return JSON.parse(s.slice(a,b+1)); }catch(e){} }
+    return null;
+  }
+  async function run(text){
+    const key = get();
+    if(!key){ const e=new Error('NEED_SETUP'); e.code='NEED_SETUP'; throw e; }
+    let r;
+    try{
+      r = await fetch('https://api.anthropic.com/v1/messages', {
+        method:'POST',
+        headers:{ 'x-api-key':key, 'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true', 'content-type':'application/json' },
+        body: JSON.stringify({ model:MODEL, max_tokens:4000, system:SYS,
+          // 注意：不用 assistant 预填「{」强制 JSON——sonnet/opus 4.6+ 家族对"末尾 assistant 预填"会 400。
+          // 改为靠 system 里的"只返回 JSON"硬约束 + safeParse 兜底。
+          messages:[ {role:'user', content:text} ] })
+      });
+    }catch(e){ const err=new Error('NET'); err.code='NET'; throw err; }
+    if(r.status===401){ const e=new Error('BAD_KEY'); e.code='BAD_KEY'; throw e; }
+    if(!r.ok){
+      let detail=''; try{ const j=await r.json(); detail=(j.error&&j.error.message)||''; }catch(_){}
+      const e=new Error('HTTP_'+r.status); e.code='HTTP'; e.status=r.status; e.detail=detail; throw e;
+    }
+    const data = await r.json();
+    const txt = (data.content && data.content[0] && data.content[0].text) || '';
+    const obj = safeParse(txt);
+    if(!obj){ const e=new Error('PARSE_FAIL'); e.code='PARSE_FAIL'; throw e; }
+    return obj;
+  }
+  function errMsg(err){
+    const c = err && err.code;
+    if(c==='NEED_SETUP') return '还没连接 AI，已显示离线示例';
+    if(c==='BAD_KEY') return 'API Key 无效（401）';
+    if(c==='NET') return '连不上模型——多为网络：api.anthropic.com 在中国大陆通常需科学上网；另外 file:// 直接打开也会被浏览器拦截，请用本地 HTTP 预览';
+    if(c==='HTTP') return '接口返回 '+(err.status||'错误')+(err.detail?('：'+err.detail):'');
+    if(c==='PARSE_FAIL') return 'AI 返回格式异常，请重试';
+    return 'AI 生成失败，请重试';
+  }
+  return { get, set, connected, run, errMsg };
+})();
+
+/* ════════════════ ① 判断捕获 → 复利（你的标准，存本机 localStorage） ════════════════
+   他往留白里填一句自己的口径 → 存成「<品类>::<槽位>」的标准 → 同类询盘自动预填、缺口随之收敛。
+   这是把他不可替代的判断，变成会复利、且归他的资产。绝不替他猜，只记忆+套用他给的。 */
+const STD_LS = 'probe_standards';
+function loadStds(){ try{ return JSON.parse(localStorage.getItem(STD_LS)||'{}'); }catch(e){ return {}; } }
+function stdKey(cat, slot){ return String(cat||'')+'::'+slot; }
+function getStd(cat, slot){ return loadStds()[stdKey(cat,slot)] || null; }
+function setStd(cat, slot, text){
+  const o = loadStds();
+  if(text) o[stdKey(cat,slot)] = { text:String(text), at:Date.now() };
+  else delete o[stdKey(cat,slot)];
+  try{ localStorage.setItem(STD_LS, JSON.stringify(o)); }catch(e){}
+}
+function craftSlotOf(key){ const f = FIELD_INDEX[key]; return f && f.craftSlot || null; }
+/* 有效状态：craft 字段一旦有了「你的标准」，就从需专家口径 → 已是标准（不再算缺口） */
+function effStatus(d, key){
+  const slot = craftSlotOf(key);
+  if(slot && getStd(d.category, slot)) return 'standard';
+  return d.fields[key].status;
+}
+
+let currentD = null;            // 当前归一后的结果，供存标准后重渲
+const editingSlots = new Set(); // 正在编辑（已存但点了「编辑」）的 cat::slot
+function rerender(){ if(!currentD) return; const y = window.scrollY; renderResults(currentD); window.scrollTo(0, y); }
+
+/* ════════════════ 归一 / 合并（把模型结果并到本体上，保证完整 + 强制红线） ════════════════ */
+function normalize(raw){
+  raw = raw || {};
+  // 字段状态：支持对象 {key:{status,evidence}} 或数组 [{key,status,evidence}]
+  const map = {};
+  if(Array.isArray(raw.fields)){
+    raw.fields.forEach(f=>{ if(f && f.key) map[f.key] = f; });
+  } else if(raw.fields && typeof raw.fields==='object'){
+    Object.keys(raw.fields).forEach(k=>{ map[k] = raw.fields[k]; });
+  }
+  const fields = {};
+  ALL_KEYS.forEach(key=>{
+    const m = map[key] || {};
+    let st = STATUSES.indexOf(m.status)>=0 ? m.status : 'missing';
+    let ev = (m.evidence==null || m.evidence==='null') ? '' : String(m.evidence).trim();
+    if(st==='missing') ev = '';
+    // 红线：三类 craft 字段（规格/认证/报价）——系统绝不"断言"具体值。
+    const def = FIELD_INDEX[key];
+    if(def && def.craftSlot){
+      // 买家若【字面】给了才算 present（evidence 即原文）；否则（含模型省略→默认 missing）一律 needs_expert，永不显示成普通"缺失"。
+      if(!ev) st = 'needs_expert';
+    }
+    fields[key] = { status: st, evidence: ev };
+  });
+
+  // 留白：校验 slot，强制 spec/price 的 draft 为 null（红线）
+  const blanksIn = Array.isArray(raw.blanks) ? raw.blanks : [];
+  const bySlot = {};
+  blanksIn.forEach(b=>{
+    if(!b || !b.slot || !b.question) return;
+    const slot = (b.slot==='spec'||b.slot==='cert'||b.slot==='price') ? b.slot : null;
+    if(!slot || bySlot[slot]) return;
+    bySlot[slot] = {
+      slot,
+      label: b.label ? String(b.label) : '',
+      question: String(b.question),
+      draft: (slot==='cert' && b.draft && b.draft!=='null') ? String(b.draft) : null
+    };
+  });
+  // 兜底：price 留白永远存在；spec 在检测到品类时存在
+  const category = raw.category ? String(raw.category) : (fields.category.evidence || '该品类');
+  if(!bySlot.price){
+    bySlot.price = { slot:'price', label:'报价口径未明示',
+      question:'这单您打算报 FOB、CIF 还是 DDP？要不要先留报价余地、还是直接报实价？口径由您定，系统不替您判断。', draft:null };
+  }
+  if(!bySlot.spec && category){
+    bySlot.spec = { slot:'spec', label:'检测到品类：'+category,
+      question:'下厂前，「'+category+'」这一品类您通常会先锁哪几个关键参数？哪几个是新手最容易踩坑的地方？这套话术系统不替您生成。', draft:null };
+  }
+
+  return { category, fields, blanks: bySlot };
+}
+
+function gapCount(d){
+  let n = 0;
+  ALL_KEYS.forEach(k=>{ const s = effStatus(d,k); if(s!=='present' && s!=='standard') n++; });
+  return n;
+}
+
+/* ════════════════ 输出 A · 采购缺口清单 ════════════════ */
+const ST_META = {
+  present:{ic:'✓', cls:'present', word:'已明确'},
+  standard:{ic:'✓', cls:'standard', word:'你的标准'},
+  vague:{ic:'~', cls:'vague', word:'含糊'},
+  missing:{ic:'○', cls:'missing', word:'缺失'},
+  needs_expert:{ic:'✦', cls:'expert', word:'需专家口径'},
+};
+function renderGapList(d){
+  const frag = document.createDocumentFragment();
+
+  const n = gapCount(d);
+  const stdN = ALL_KEYS.filter(k=>effStatus(d,k)==='standard').length;
+  const legend = el('div',{class:'legend'},
+    legendItem('var(--good)','已明确'),
+    legendItem('var(--vague)','含糊'),
+    legendItem('var(--miss)','缺失'),
+    legendItem('var(--craft)','需专家口径'),
+    stdN ? legendItem('var(--steel)','你的标准') : null);
+  frag.appendChild(el('div',{class:'tally'},
+    el('div',{class:'num'}, String(n)),
+    el('div',{class:'meta'},
+      el('div',{class:'t'}, '下厂前必须补齐 '+n+' 项'),
+      el('div',{class:'s'}, '识别到品类：'+esc(d.category)+'　·　共核对 '+ALL_KEYS.length+' 个采购字段'+
+        (stdN ? ('　·　其中 '+stdN+' 处已套用你的标准口径') : ''))),
+    legend
+  ));
+
+  ONTOLOGY.forEach(cat=>{
+    const resolved = cat.fields.filter(f=>{ const s=effStatus(d,f.key); return s==='present'||s==='standard'; }).length;
+    const grp = el('div',{class:'catgrp'});
+    grp.appendChild(el('div',{class:'cathd'},
+      el('span',{class:'ix'}, cat.ix),
+      el('span',{class:'nm'}, cat.name),
+      el('span',{class:'cnt'}, [el('b',null,String(resolved)), ' / '+cat.fields.length+' 已明确'])));
+    cat.fields.forEach(f=>{
+      const es = effStatus(d, f.key); const fs = d.fields[f.key]; const sm = ST_META[es];
+      const body = el('div',{class:'body'});
+      body.appendChild(el('div',{class:'fl'}, [ f.label, f.en?el('span',{class:'en'},'　'+f.en):null ]));
+      if(es==='standard'){
+        const std = getStd(d.category, f.craftSlot);
+        body.appendChild(el('div',{class:'gap standard'}, '你的标准口径：'+(std?std.text:'')));
+      } else if(es==='present' && fs.evidence){
+        body.appendChild(el('div',{class:'ev'}, ['询盘原文：', el('span',{class:'q'}, fs.evidence)]));
+      } else if(es==='vague'){
+        body.appendChild(el('div',{class:'gap vague'}, fs.evidence ? ('提到「'+fs.evidence+'」，但下厂前需量化') : '提到了，但不具体，需量化'));
+      } else if(es==='needs_expert'){
+        body.appendChild(el('div',{class:'gap expert'}, '系统不替您断言——此处需您的标准口径（见下方简报留白，可一次填、永久记住）'));
+      } else {
+        body.appendChild(el('div',{class:'gap miss'}, f.hint ? ('未提及（'+f.hint+'）') : '询盘未提及'));
+      }
+      const row = el('div',{class:'frow'},
+        el('div',{class:'st '+sm.cls}, sm.ic),
+        body);
+      if(es==='needs_expert') row.appendChild(el('span',{class:'tag expert'}, '需专家'));
+      grp.appendChild(row);
+    });
+    frag.appendChild(grp);
+  });
+  return frag;
+}
+function legendItem(color, label){
+  return el('i', null, el('span',{class:'dotc', style:{background:color}}), label);
+}
+
+/* ════════════════ 输出 B · 工厂简报骨架 · 留白版 ════════════════ */
+function renderBrief(d){
+  const doc = el('div',{class:'doc'});
+  doc.appendChild(el('div',{class:'doc-top'}));
+  const pad = el('div',{class:'doc-pad'});
+  doc.appendChild(pad);
+
+  // 报头
+  const knownN = ALL_KEYS.filter(k=>d.fields[k].status==='present').length;
+  pad.appendChild(el('div',{class:'doc-mast'},
+    el('div',{class:'kanji'}, 'Factory Sourcing Brief · Skeleton'),
+    el('h2',null,'工厂询价简报 · 留白版'),
+    el('div',{class:'sub'},
+      el('span',null,['品类：',el('b',null,esc(d.category))]),
+      el('span',null,['已从询盘填入：',el('b',null,knownN+' 项')]),
+      el('span',null,['留白待您：',el('b',null,Object.keys(d.blanks).length+' 处 craft 槽位')]))
+    ));
+
+  pad.appendChild(el('div',{class:'doc-note'},
+    el('span',{class:'ic'},'✍'),
+    el('span',null,'已知信息已填入对应字段。下面每一处高亮留白，都是这封询盘下厂前真正卡住的地方——也是只有您的经验能补的一角。留白即采访。')));
+
+  // 各段：用本体分组，已知填入、craft 槽位留白、其余缺失收成一行「待工厂核」
+  ONTOLOGY.forEach(cat=>{
+    const sec = el('div',{class:'dsec'});
+    sec.appendChild(el('div',{class:'dsec-h'}, el('span',{class:'no'},cat.ix), cat.en+' · '+cat.name));
+    const missLabels = [];
+    cat.fields.forEach(f=>{
+      const fs = d.fields[f.key];
+      // craft 槽位 → 留白
+      if(f.craftSlot && d.blanks[f.craftSlot]){
+        // 若买家其实字面给了价格/规格（present），仍照常显示原文，但留白槽也保留（口径仍需定）
+        if(fs.status==='present' && fs.evidence){
+          sec.appendChild(drow(f.label, fs.evidence, false));
+        }
+        sec.appendChild(blankSlot(d.blanks[f.craftSlot], d.category));
+        return;
+      }
+      if(fs.status==='present' && fs.evidence){
+        sec.appendChild(drow(f.label, fs.evidence, false));
+      } else if(fs.status==='vague'){
+        sec.appendChild(drow(f.label, (fs.evidence||'')+'　', false, true));
+      } else {
+        missLabels.push(f.label);
+      }
+    });
+    if(missLabels.length){
+      sec.appendChild(el('div',{class:'dmiss'}, [el('b',null,'待工厂核实 / 询盘未给：'), missLabels.join('、')]));
+    }
+    pad.appendChild(sec);
+  });
+
+  // ② 下厂 RFQ 面板（默认隐藏，点击切换）
+  const rfqMount = el('div');
+  function toggleRFQ(){
+    if(rfqMount.firstChild){ clear(rfqMount); return; }
+    rfqMount.appendChild(el('div',{class:'rfq-panel'},
+      el('div',{class:'rfq-h'}, '🏭 下厂询价单（发给你的工厂 · 中文）'),
+      el('div',{class:'rfq-body'}, buildRFQ(d)),
+      el('div',{class:'rfq-foot'},
+        el('button',{class:'tool primary', style:{flex:'0 0 auto', minWidth:'140px'}, onClick:()=>copy(buildRFQ(d))}, '📋 复制询价单'),
+        el('button',{class:'tool', style:{flex:'0 0 auto', minWidth:'120px'}, onClick:toggleRFQ}, '收起'))));
+    rfqMount.firstChild.scrollIntoView({behavior:'smooth', block:'nearest'});
+  }
+
+  // 工具栏
+  pad.appendChild(el('div',{class:'toolbar'},
+    el('button',{class:'tool primary', onClick:toggleRFQ}, '🏭 生成下厂询价单（给工厂）'),
+    el('button',{class:'tool', onClick:()=>copy(questionsText(d))}, '✍ 复制留白问题'),
+    el('button',{class:'tool', onClick:()=>copy(briefText(d))}, '📋 复制简报骨架'),
+    el('button',{class:'tool', onClick:()=>{ const ta=document.getElementById('ta'); if(ta){ ta.focus(); ta.scrollIntoView({behavior:'smooth',block:'center'}); } }}, '↻ 换一封')
+  ));
+  pad.appendChild(rfqMount);
+  return doc;
+}
+
+/* ② 下厂询价单文本：已确认项 + 我方口径 + 需工厂报的项。系统不替任何一方定价。 */
+function buildRFQ(d){
+  const cat = d.category;
+  const qty  = (d.fields.order_qty.status==='present' && d.fields.order_qty.evidence) ? d.fields.order_qty.evidence : '（待定，请按起订阶梯报）';
+  const lead = (d.fields.ship_date.evidence || d.fields.season.evidence || '（待定）');
+  const L = [];
+  L.push('【下厂询价单 / RFQ】');
+  L.push('品类：'+cat);
+  L.push('数量：'+qty);
+  L.push('目标交期：'+lead);
+  L.push('采购方 / 日期：____（贵厂报价时回填）');
+  L.push('');
+  L.push('一、已明确的规格与要求（买家已给 / 我方已定）');
+  let any1 = false;
+  ONTOLOGY.forEach(c=> c.fields.forEach(f=>{
+    const slot = f.craftSlot, std = slot ? getStd(cat, slot) : null;
+    if(std){ L.push('  · '+f.label+'（我方口径）：'+std.text); any1=true; return; }
+    const fs = d.fields[f.key];
+    if(fs.status==='present' && fs.evidence){ L.push('  · '+f.label+'：'+fs.evidence); any1=true; }
+    else if(fs.status==='vague' && fs.evidence){ L.push('  · '+f.label+'：'+fs.evidence+'（待量化，请贵厂按可行规格建议）'); any1=true; }
+  }));
+  if(!any1) L.push('  （暂无——可先在上方简报留白处填入我方口径，再生成）');
+  L.push('');
+  L.push('二、请贵厂报价 / 确认（下厂核心）');
+  const ASK = {
+    spec_core:'关键规格落地：按我方口径，请报可行的材料 / 结构方案与对应价格',
+    construction:'结构 / 工艺可行性与成本',
+    sample_lead:'打样周期与打样费',
+    prod_lead:'量产周期（确认数量后）',
+    moq:'起订量 MOQ 及数量价格阶梯',
+    target_certs:'认证打样与测试：按我方口径，请报送检费用与可出具的报告',
+    inner_outer:'内盒 / 外箱方案与报价',
+    retail_pack:'零售包装可行性与报价（如需）',
+    aql:'可接受的 AQL 验货标准',
+    inspection:'是否配合第三方验货（SGS / BV / Intertek）'
+  };
+  Object.keys(ASK).forEach(k=>{
+    const fs = d.fields[k];
+    if(fs && fs.status==='present' && fs.evidence) return; // 买家已明确，无需再问厂
+    L.push('  □ '+ASK[k]);
+  });
+  L.push('');
+  L.push('三、商务与交期（待我方 / 买家确认后回填，先请贵厂预留）');
+  ['incoterms','payment','dest_port','ship_mode'].forEach(k=>{
+    const fs = d.fields[k];
+    const v = (fs && fs.status==='present' && fs.evidence) ? fs.evidence : '待定';
+    L.push('  · '+FIELD_INDEX[k].label+'：'+v);
+  });
+  L.push('  · 报价口径：请贵厂按实报厂内价，便于我方核算；对买家的定价由我方决定。');
+  L.push('');
+  L.push('—— 本询价单由「询盘结构化探针」按一封买家询盘自动生成骨架，「我方口径」处由采购人填写；系统不替任何一方定价、不指定供应商。');
+  return L.join('\n');
+}
+function drow(k, v, dim, vague){
+  return el('div',{class:'drow'},
+    el('div',{class:'k'}, k),
+    el('div',{class:'v'+(dim?' dim':'')}, [ esc(v), vague?el('span',{class:'vague-tag'},'待量化'):null ]));
+}
+function blankSlot(b, category){
+  const slotWord = b.slot==='spec'?'规格留白':b.slot==='cert'?'认证留白':'报价留白';
+  const std = getStd(category, b.slot);
+  const ek = stdKey(category, b.slot);
+  const editing = editingSlots.has(ek);
+  const filled = std && !editing;
+  const node = el('div',{class:'blank'+(filled?' filled':'')});
+  node.appendChild(el('div',{class:'ml'}, el('span',{class:'pen'},'✍'),
+    (filled?'你的标准 · ':'此处需您的标准话术 / 判断 · ')+slotWord));
+  if(b.label) node.appendChild(el('div',{class:'label'}, b.label));
+  node.appendChild(el('div',{class:'q'}, b.question));
+
+  if(filled){
+    node.appendChild(el('div',{class:'std-on'},
+      el('div',{class:'std-h'}, '✓ 已存为你的标准 · AI 已记住'),
+      el('div',{class:'std-text'}, std.text),
+      el('div',{class:'std-note'}, el('span',null,'↻'),
+        '下次再来同类询盘（'+esc(category)+'），这一格 AI 自动按这条预填——你只填一次。'),
+      el('div',{class:'std-acts'},
+        el('button',{class:'linkbtn', onClick:()=>{ editingSlots.add(ek); rerender(); }}, '编辑'),
+        el('button',{class:'linkbtn danger', onClick:()=>{ setStd(category,b.slot,''); editingSlots.delete(ek); toast('已清除该标准'); rerender(); }}, '清除'))));
+  } else {
+    if(b.draft) node.appendChild(el('div',{class:'draft'}, [el('span',{class:'dl'},'系统的草稿（明显不完整，待您校正）：'), b.draft]));
+    const ta = el('textarea',{class:'blank-ta',
+      placeholder:'把你这单的标准口径写一句存下来——以后同类询盘 AI 替你预填…'});
+    if(std) ta.value = std.text;
+    node.appendChild(el('div',{class:'blank-fillrow'},
+      ta,
+      el('button',{class:'blank-save', onClick:()=>{ const v=(ta.value||'').trim();
+        if(!v){ toast('先写一句你的口径'); ta.focus(); return; }
+        setStd(category, b.slot, v); editingSlots.delete(ek); toast('已存为你的标准 ✓'); rerender(); }}, '存为我的标准 →')));
+  }
+  return node;
+}
+
+/* ── 文本导出 ── */
+function briefText(d){
+  const L = ['【工厂询价简报 · 留白版】  品类：'+d.category, ''];
+  ONTOLOGY.forEach(cat=>{
+    L.push('— '+cat.name+' —');
+    cat.fields.forEach(f=>{
+      const fs = d.fields[f.key];
+      if(f.craftSlot && d.blanks[f.craftSlot]){
+        const b = d.blanks[f.craftSlot];
+        if(fs.status==='present' && fs.evidence) L.push('  '+f.label+'：'+fs.evidence);
+        L.push('  ✍ '+f.label+'（待您）：'+b.question);
+      } else if(fs.status==='present' && fs.evidence){
+        L.push('  '+f.label+'：'+fs.evidence);
+      } else if(fs.status==='vague'){
+        L.push('  '+f.label+'：'+(fs.evidence||'（提到，待量化）'));
+      } else {
+        L.push('  '+f.label+'：____（待工厂核实 / 询盘未给）');
+      }
+    });
+    L.push('');
+  });
+  L.push('—— 询盘结构化探针 · 下厂前的最后一道结构化');
+  return L.join('\n');
+}
+function questionsText(d){
+  const L = ['这封询盘下厂前，我这边卡住、想请您定个口径的几处：',''];
+  let i=1;
+  ['spec','cert','price'].forEach(s=>{
+    const b = d.blanks[s]; if(!b) return;
+    L.push(i+'. '+(b.label?('['+b.label+'] '):'')+b.question);
+    if(b.draft) L.push('   （我先按这个草稿理解，对不对：'+b.draft+'）');
+    i++;
+  });
+  L.push(''); L.push('其余字面缺的信息我已整理成清单，确认后即可下厂。');
+  return L.join('\n');
+}
+
+/* ════════════════ 离线示例样张（§8 匹克球桨，故意只给 50%） ════════════════ */
+const SAMPLE_INQUIRY =
+`Hi — we're a sporting goods distributor based in Austin, TX, building out our
+2026 spring line. We're interested in sourcing pickleball paddles, carbon fiber
+surface, mid-weight. Looking at roughly 3,000 units to start. Could you send
+pricing and lead time? They'll need to be tournament-legal. Thanks!`;
+
+const SAMPLE_RAW = {
+  category:'匹克球桨 Pickleball Paddle',
+  fields:{
+    category:    {status:'present', evidence:'pickleball paddles'},
+    product_use: {status:'present', evidence:'pickleball paddles'},
+    end_user:    {status:'vague',   evidence:'tournament-legal'},
+    spec_core:   {status:'needs_expert', evidence:''},
+    size_run:    {status:'missing', evidence:null},
+    weight:      {status:'vague',   evidence:'mid-weight'},
+    materials:   {status:'present', evidence:'carbon fiber surface'},
+    construction:{status:'missing', evidence:null},
+    color:       {status:'missing', evidence:null},
+    logo_print:  {status:'missing', evidence:null},
+    target_certs:{status:'needs_expert', evidence:''},
+    target_price:{status:'needs_expert', evidence:''},
+    moq:         {status:'missing', evidence:null},
+    order_qty:   {status:'present', evidence:'roughly 3,000 units to start'},
+    incoterms:   {status:'missing', evidence:null},
+    payment:     {status:'missing', evidence:null},
+    currency:    {status:'missing', evidence:null},
+    sample_lead: {status:'missing', evidence:null},
+    prod_lead:   {status:'vague',   evidence:'lead time'},
+    ship_date:   {status:'missing', evidence:null},
+    season:      {status:'present', evidence:'2026 spring line'},
+    inner_outer: {status:'missing', evidence:null},
+    polybag:     {status:'missing', evidence:null},
+    barcode:     {status:'missing', evidence:null},
+    retail_pack: {status:'missing', evidence:null},
+    labels:      {status:'missing', evidence:null},
+    dest_port:   {status:'missing', evidence:null},
+    ship_mode:   {status:'missing', evidence:null},
+    loading:     {status:'missing', evidence:null},
+    aql:         {status:'missing', evidence:null},
+    inspection:  {status:'missing', evidence:null},
+    golden_sample:{status:'missing', evidence:null},
+    buyer_id:    {status:'present', evidence:'a sporting goods distributor based in Austin, TX'},
+    order_nature:{status:'missing', evidence:null},
+    credit:      {status:'missing', evidence:null},
+  },
+  blanks:[
+    { slot:'spec', label:'检测到品类：匹克球桨。下厂必锁、但本询盘未给：面材纤维类型 / 克重、芯材（polymer honeycomb）厚度、握把尺寸 / 长度、edge guard、表面 grit。',
+      question:'买家只说了「carbon fiber surface + mid-weight」——下厂前，您通常会先把「mid-weight」翻译成哪个克重区间、配多厚的芯材？这套参数与常见坑的话术，系统不替您生成。',
+      draft:null },
+    { slot:'cert', label:'买家写 tournament-legal → 候选：USA Pickleball Approved 设备清单 / 表面摩擦（grit）限值 / 偏转（deflection）测试。',
+      question:'这单的 tournament-legal 具体打哪个认证口径？grit 怎么控、找哪个机构测、要不要送检报告随样？这处适用判断需要您来定。',
+      draft:'候选草稿（明显不完整，待您校正）：先按 USA Pickleball Approved 走？是否还需附 grit 测试报告——具体编号与机构待补。' },
+    { slot:'price', label:'询盘只问了 pricing，未给目标价、未定 FOB / CIF / DDP。',
+      question:'3,000 支首单，这次报 FOB 还是含税到岸？先留报价余地、还是直接报实价把价格竞争拉成方案竞争？报价口径由您定，系统不替您判断。',
+      draft:null },
+  ]
+};
+
+/* —— 第二封同类询盘（匹克球桨 #2）：演示「复利」——存过标准后这里自动预填 —— */
+const PB2_INQUIRY =
+`Hi, great meeting you at the Canada Pickleball Expo. We're a distributor in Vancouver
+building our fall lineup — need graphite-surface paddles, edgeless design, 5,000 units.
+Must be tournament approved. Can you also do custom paddle shapes? Please quote.`;
+const SAMPLE_PB2 = {
+  category:'匹克球桨 Pickleball Paddle',   // 与 #1 同品类 → 你的标准自动套用
+  fields:{
+    category:{status:'present',evidence:'graphite-surface paddles'}, product_use:{status:'present',evidence:'paddles'},
+    end_user:{status:'vague',evidence:'tournament approved'}, spec_core:{status:'needs_expert',evidence:''},
+    size_run:{status:'missing',evidence:null}, weight:{status:'missing',evidence:null},
+    materials:{status:'present',evidence:'graphite-surface'}, construction:{status:'present',evidence:'edgeless design'},
+    color:{status:'missing',evidence:null}, logo_print:{status:'vague',evidence:'custom paddle shapes'},
+    target_certs:{status:'needs_expert',evidence:''}, target_price:{status:'needs_expert',evidence:''},
+    moq:{status:'missing',evidence:null}, order_qty:{status:'present',evidence:'5,000 units'},
+    incoterms:{status:'missing',evidence:null}, payment:{status:'missing',evidence:null}, currency:{status:'missing',evidence:null},
+    sample_lead:{status:'missing',evidence:null}, prod_lead:{status:'missing',evidence:null},
+    ship_date:{status:'missing',evidence:null}, season:{status:'present',evidence:'fall lineup'},
+    inner_outer:{status:'missing',evidence:null}, polybag:{status:'missing',evidence:null}, barcode:{status:'missing',evidence:null},
+    retail_pack:{status:'missing',evidence:null}, labels:{status:'missing',evidence:null},
+    dest_port:{status:'missing',evidence:null}, ship_mode:{status:'missing',evidence:null}, loading:{status:'missing',evidence:null},
+    aql:{status:'missing',evidence:null}, inspection:{status:'missing',evidence:null}, golden_sample:{status:'missing',evidence:null},
+    buyer_id:{status:'present',evidence:'a distributor in Vancouver'}, order_nature:{status:'missing',evidence:null}, credit:{status:'missing',evidence:null},
+  },
+  blanks:[
+    { slot:'spec', label:'检测到品类：匹克球桨。下厂必锁、但本询盘未给：面材克重、芯材厚度、握把尺寸 / 长度、edge guard、表面 grit。',
+      question:'这封是 graphite 面 + edgeless——下厂前你把它翻成哪个克重 / 芯材组合？和上一封 carbon 面的口径一样吗？', draft:null },
+    { slot:'cert', label:'买家写 tournament approved → 候选：USA Pickleball / Pickleball Canada 批准清单、grit 限值、偏转测试。',
+      question:'加拿大这单打哪个认证口径（USAP？Pickleball Canada？）、grit 怎么控、找哪个机构测？适用判断需要你定。',
+      draft:'候选草稿（明显不完整，待你校正）：先按 USA Pickleball Approved？加拿大是否另需 Pickleball Canada——具体机构待补。' },
+    { slot:'price', label:'询盘只说 please quote，未给目标价、未定贸易术语。',
+      question:'5,000 支这单报 FOB 还是含税到岸温哥华？报价口径由你定，系统不替你判断。', draft:null },
+  ]
+};
+
+/* —— 足球训练背心（含儿童合规线索），inbox 里另一封值得拆的 —— */
+const BIBS_INQUIRY =
+`Hello, we are a youth sports retailer in the UK. We'd like to order training bibs / pinnies for kids aged 6-12, around 10,000 pcs, mixed sizes and colours. Mesh polyester. They must be safe for children and meet UK/EU requirements. We need delivery before August for the new season. Please advise MOQ per colour and your sample lead time.`;
+const SAMPLE_BIBS = {
+  category:'儿童训练背心 Training Bibs',
+  fields:{
+    category:{status:'present',evidence:'training bibs / pinnies'}, product_use:{status:'present',evidence:'training bibs / pinnies'},
+    end_user:{status:'present',evidence:'kids aged 6-12'}, spec_core:{status:'needs_expert',evidence:''},
+    size_run:{status:'vague',evidence:'mixed sizes'}, weight:{status:'missing',evidence:null},
+    materials:{status:'present',evidence:'mesh polyester'}, construction:{status:'missing',evidence:null},
+    color:{status:'vague',evidence:'mixed sizes and colours'}, logo_print:{status:'missing',evidence:null},
+    target_certs:{status:'needs_expert',evidence:''}, target_price:{status:'needs_expert',evidence:''},
+    moq:{status:'vague',evidence:'advise MOQ per colour'}, order_qty:{status:'present',evidence:'around 10,000 pcs'},
+    incoterms:{status:'missing',evidence:null}, payment:{status:'missing',evidence:null}, currency:{status:'missing',evidence:null},
+    sample_lead:{status:'vague',evidence:'your sample lead time'}, prod_lead:{status:'missing',evidence:null},
+    ship_date:{status:'present',evidence:'delivery before August'}, season:{status:'present',evidence:'for the new season'},
+    inner_outer:{status:'missing',evidence:null}, polybag:{status:'missing',evidence:null}, barcode:{status:'missing',evidence:null},
+    retail_pack:{status:'missing',evidence:null}, labels:{status:'missing',evidence:null},
+    dest_port:{status:'missing',evidence:null}, ship_mode:{status:'missing',evidence:null}, loading:{status:'missing',evidence:null},
+    aql:{status:'missing',evidence:null}, inspection:{status:'missing',evidence:null}, golden_sample:{status:'missing',evidence:null},
+    buyer_id:{status:'present',evidence:'a youth sports retailer in the UK'}, order_nature:{status:'missing',evidence:null}, credit:{status:'missing',evidence:null},
+  },
+  blanks:[
+    { slot:'spec', label:'检测到品类：儿童训练背心（bibs / pinnies）。下厂必锁、但未给：网布克重(GSM)、尺码段（6-12 岁如何分码）、几色 / 配色、滚边与车缝工艺、是否带号码印刷。',
+      question:'买家只说 mesh polyester + mixed sizes / colours——下厂前你通常把「6-12 岁混码」拆成哪几个尺码、网布克重定多少、起订几个颜色？这套话术系统不替你生成。', draft:null },
+    { slot:'cert', label:'买家写 safe for children + UK/EU requirements → 候选：EN 71-3（迁移元素）、REACH / 邻苯、年龄分级、（部分品类）阻燃。',
+      question:'这单儿童合规具体强制哪几项、找哪个机构测、要不要随样附报告？适用判断需要你来定。',
+      draft:'候选草稿（明显不完整，待你校正）：先按 EN 71-3 + REACH 走？是否需要年龄分级标识——具体编号与机构待补。' },
+    { slot:'price', label:'询盘没问价，只问 MOQ / 打样。',
+      question:'10,000 件混码混色，这单报 FOB 还是含税到岸？起订与报价口径怎么定？口径由你定，系统不替你判断。', draft:null },
+  ]
+};
+
+/* 离线可直接拆的样张登记表（inbox / 复利 / 例子都从这里取） */
+const SAMPLES = {
+  pb:   { inquiry: SAMPLE_INQUIRY, raw: SAMPLE_RAW },
+  pb2:  { inquiry: PB2_INQUIRY,    raw: SAMPLE_PB2 },
+  bibs: { inquiry: BIBS_INQUIRY,   raw: SAMPLE_BIBS },
+};
+function sampleIdByText(text){
+  const norm = s => String(s||'').replace(/\s+/g,'');
+  const t = norm(text);
+  for(const id in SAMPLES){ if(norm(SAMPLES[id].inquiry)===t) return id; }
+  return null;
+}
+function showSample(id){
+  const s = SAMPLES[id] || SAMPLES.pb;
+  const ta = document.getElementById('ta'); if(ta) ta.value = s.inquiry;
+  renderResults(normalize(s.raw));
+  const a = document.getElementById('secA'); if(a) a.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* ════════════════ 主流程 ════════════════ */
+let mountResults;
+
+/* ① 复利 callout：把判断存成会复利、且归他的资产 */
+function compoundCard(d){
+  const stdN = ALL_KEYS.filter(k=>effStatus(d,k)==='standard').length;
+  const hasDemo = String(d.category||'').indexOf('匹克球')>=0;
+  return el('div',{class:'compound'},
+    el('span',{class:'cz'}, '♻️'),
+    el('div',{class:'ct'},
+      el('div',{class:'h'}, stdN ? ('你已沉淀 '+stdN+' 条标准口径 · 归你的资产') : '把你的判断，存成会复利的资产'),
+      el('div',{class:'s'}, stdN
+        ? (hasDemo ? '点右边再来一封同类询盘——看这些口径被自动套用、缺口当场收敛。你填一次，AI 永久记住。'
+                   : '同类询盘下次自动套用这些口径；你只填一次，AI 永久记住。')
+        : '在上方任一留白里写一句你的口径并「存为我的标准」；同类询盘 AI 就替你预填那一格——越用越懂你。')),
+    hasDemo ? el('button',{class:'cbtn', onClick:()=>showSample('pb2')}, '▶ 模拟下一封同类询盘') : null);
+}
+
+function renderResults(d){
+  currentD = d;
+  const wrap = el('div',{class:'results'});
+
+  wrap.appendChild(el('div',{class:'nav'},
+    el('a',{href:'#secA'}, [el('span',{class:'n'},'①'),'采购缺口清单']),
+    el('a',{href:'#secB'}, [el('span',{class:'n'},'②'),'工厂简报骨架'])));
+
+  // A
+  wrap.appendChild(el('div',{id:'secA'}));
+  wrap.appendChild(el('div',{class:'sec-eyebrow'},
+    '凭证面 · Objective extraction', el('span',{class:'badge'},'零判断')));
+  wrap.appendChild(el('h2',{class:'sec-h'},'① 采购缺口清单'));
+  wrap.appendChild(el('p',{class:'sec-sub'},
+    '把询盘里字面出现的信息逐项归位，未出现即缺失——这一屏只做客观抽取，让对方先看到：一份合格的下厂简报到底需要哪些字段。'));
+  wrap.appendChild(renderGapList(d));
+
+  // B
+  wrap.appendChild(el('div',{id:'secB'}));
+  wrap.appendChild(el('div',{class:'sec-eyebrow face-craft', style:{marginTop:'40px'}},
+    '采访面 · Where your judgment goes', el('span',{class:'badge'},'每个空 = 一个问题')));
+  wrap.appendChild(el('h2',{class:'sec-h'},'② 工厂简报骨架 · 留白版'));
+  wrap.appendChild(el('p',{class:'sec-sub'},
+    '把已知信息填进真实形状的工厂简报，规格 / 认证 / 报价的 craft 槽位精准留空。系统不臆造规格数值、不替您定报价口径——留白处，正是您的标准话术与判断的落点。'));
+  wrap.appendChild(renderBrief(d));
+
+  // ① 复利 callout
+  wrap.appendChild(compoundCard(d));
+
+  // 脚注（水印式定位）
+  wrap.appendChild(el('div',{class:'foot'},
+    el('div',{class:'pos'}, [
+      '这套工具只做两件事：',el('b',null,'把一封询盘结构化成完整的下厂清单'),'，并',el('b',null,'把只有您能答的地方精准问出来'),
+      '。它不猜报价、不点工厂、不臆造规格——可靠，本身就是要交付的那份保证。']),
+    el('div',{class:'brand'}, '询盘结构化探针 · 需求探针，非产品')));
+
+  clear(mountResults); mountResults.appendChild(wrap);
+}
+
+const THINK_MSGS = ['读这封询盘…','按 9 类采购字段逐项核对…','标出字面已给 / 含糊 / 缺失…','定位规格·认证·报价三处留白…','生成针对本询盘的采访问题…'];
+async function parse(){
+  const ta = document.getElementById('ta');
+  const text = (ta.value||'').trim();
+  if(!text){ toast('先贴一封询盘，或点「恢复示例」'); return; }
+
+  const goBtn = document.getElementById('go');
+  if(!LLM.connected()){
+    // 离线：贴的若是已知样张（含 inbox / 例子那几封）就完整拆，否则回退默认示例
+    const id = sampleIdByText(text);
+    if(id){ showSample(id); }
+    else {
+      renderResults(normalize(SAMPLE_RAW));
+      toast('未连接 AI · 现展示离线示例样张');
+      mountResults.scrollIntoView({behavior:'smooth', block:'start'});
+    }
+    return;
+  }
+
+  goBtn.disabled = true;
+  const stage = el('div',{class:'results'});
+  clear(mountResults); mountResults.appendChild(stage);
+  const msgEl = el('div',{class:'m'}, THINK_MSGS[0]);
+  stage.appendChild(el('div',{class:'think'}, el('div',{class:'spin'}), msgEl));
+  stage.scrollIntoView({behavior:'smooth', block:'center'});
+  let i=0; const timer = setInterval(()=>{ i=(i+1)%THINK_MSGS.length; msgEl.textContent = THINK_MSGS[i]; }, 900);
+
+  try{
+    const raw = await LLM.run(text);
+    clearInterval(timer);
+    renderResults(normalize(raw));
+    document.getElementById('secA').scrollIntoView({behavior:'smooth', block:'start'});
+  }catch(err){
+    clearInterval(timer);
+    const card = el('div',{class:'results'},
+      el('div',{class:'doc'}, el('div',{class:'doc-top'}), el('div',{class:'doc-pad'},
+        el('div',{class:'oops'},
+          el('div',{class:'big'},'🔌'),
+          el('h3',null,'这次没生成成功'),
+          el('p',null, LLM.errMsg(err)+'。可点上方「连接 AI」检查 Key，或重试；离线时也能看示例样张。'),
+          el('div',{style:{display:'flex',gap:'10px',justifyContent:'center',flexWrap:'wrap'}},
+            el('button',{class:'tool primary', style:{flex:'0 0 auto',minWidth:'120px'}, onClick:parse},'重试'),
+            el('button',{class:'tool', style:{flex:'0 0 auto',minWidth:'120px'}, onClick:()=>{ renderResults(normalize(SAMPLE_RAW)); }},'看离线示例'))))));
+    clear(mountResults); mountResults.appendChild(card);
+  }finally{
+    goBtn.disabled = false;
+  }
+}
+
+/* ════════════════ AI 连接条 ════════════════ */
+function aiBar(){
+  const root = el('div',{class:'aibar'}); let panel=null;
+  function paint(){
+    clear(root); panel=null;
+    const on = LLM.connected();
+    root.appendChild(el('span',{class:'aidot'+(on?' on':'')}));
+    root.appendChild(el('span',{class:'aitxt'}, on
+      ? '已连接 AI · 用真实模型（claude-sonnet-4-6）解析你贴的真实询盘'
+      : '未连接 · 现用离线示例样张（连接后可解析你自己的任意询盘）'));
+    root.appendChild(el('button',{class:'ailink', onClick:toggle}, on?'管理':'连接 AI'));
+  }
+  function toggle(){
+    if(panel){ panel.remove(); panel=null; return; }
+    const input = el('input',{class:'field', type:'password', autocomplete:'off',
+      placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:LLM.get()});
+    const save = el('button',{class:'minibtn primary', onClick:()=>{
+      LLM.set(input.value.trim()); toast(input.value.trim()?'已连接 ✓':'已清除'); paint(); }}, '保存');
+    const clr = LLM.get() ? el('button',{class:'minibtn ghost', onClick:()=>{ LLM.set(''); toast('已清除'); paint(); }}, '清除') : null;
+    panel = el('div',{class:'aipanel'},
+      el('p',{html:'纯静态演示、无后端。给一个 Anthropic API Key 即可用<b>真实模型</b>解析你自己的询盘——'+
+        'key <b>只存你本机浏览器</b>、不上传任何服务器；用 sonnet，单次花费极低。<br>'+
+        '没有 key 也能完整看离线示例（匹克球桨那封）。'}),
+      el('div',{class:'row'}, input, save, clr));
+    root.appendChild(panel); input.focus();
+  }
+  paint();
+  return root;
+}
+
+/* ════════════════ 首屏 ════════════════ */
+const EXAMPLES = [
+  {em:'🏓', label:'匹克球桨（默认 · 故意只给 50%）', text:SAMPLE_INQUIRY},
+  {em:'⚽', label:'足球训练背心（含认证要求）', text:BIBS_INQUIRY},
+  {em:'🏋️', label:'乳胶阻力带（套装）', text:
+`Hi, I run a fitness brand in Australia. Looking for resistance bands, latex, set of 5 with different resistance levels, with our logo printed. First order 2,000 sets. What's your best price CIF Sydney and do you offer retail box packaging with our artwork? Need them for a Q1 launch.`},
+];
+
+/* ════════════════ ③ 询盘洪流分诊 inbox（mock，演示杠杆） ════════════════ */
+const INBOX = {
+  total:23, green:8, amber:11, red:4,
+  items:[
+    {tag:'green', em:'🏓', from:'Austin, TX · 体育用品分销商', snip:'pickleball paddles, carbon fiber, mid-weight, ~3,000 units, tournament-legal…', why:'有公司 + 品类 + 数量 + 认证要求，信息够下判断', sample:'pb'},
+    {tag:'green', em:'⚽', from:'UK · 青少年体育零售商', snip:'training bibs for kids 6-12, 10,000 pcs, mesh polyester, UK/EU safe…', why:'品类 + 数量 + 合规线索齐，值得拆', sample:'bibs'},
+    {tag:'amber', em:'✉️', from:'Gmail 个人邮箱 · 无公司抬头', snip:'Do you make sports bags? Send catalog and your best price.', why:'无数量 / 无规格 / 无抬头——先追问，别急着下厂'},
+    {tag:'amber', em:'✉️', from:'India · 新联系人', snip:'Need yoga mats, what is your MOQ and price?', why:'信息太少，先补齐关键字段再说'},
+    {tag:'red', em:'🚨', from:'WhatsApp · 催打款', snip:'URGENT! 50,000 units for a govt project, send your bank account today…', why:'催款 + 只给 WhatsApp + 政府大单话术 → 疑似诈骗'},
+    {tag:'red', em:'🕵️', from:'疑似同行 · 群发无抬头', snip:'Send full price list and your factory address, lowest price for everything.', why:'要整份价目表 + 工厂地址 → 疑似同行套价'},
+  ]
+};
+function renderInbox(){
+  const I = INBOX, total = I.green+I.amber+I.red;
+  const card = el('div',{class:'inbox'});
+  const head = el('div',{class:'inbox-h'},
+    el('div',{class:'t'}, '📥 本周询盘 ', el('span',{class:'big'}, String(I.total)), ' 封（示例）'),
+    el('div',{class:'s'}, 'AI 先分诊——你的判断只花在真正值得的单子上，其余的先挡回去追问、或交给 Sonar 守门。'),
+    el('div',{class:'tri-bar'},
+      el('i',{style:{width:(I.green/total*100)+'%', background:'var(--good)'}}),
+      el('i',{style:{width:(I.amber/total*100)+'%', background:'var(--vague)'}}),
+      el('i',{style:{width:(I.red/total*100)+'%', background:'#c0563f'}})),
+    el('div',{class:'tri-leg'},
+      el('i',null, el('span',{class:'dotc',style:{background:'var(--good)'}}), I.green+' 值得你花判断'),
+      el('i',null, el('span',{class:'dotc',style:{background:'var(--vague)'}}), I.amber+' 信息太少 · 先追问'),
+      el('i',null, el('span',{class:'dotc',style:{background:'#c0563f'}}), I.red+' 疑似套价 / 诈骗 → Sonar')));
+  card.appendChild(head);
+  I.items.forEach(it=>{
+    const pillWord = it.tag==='green'?'值得拆':it.tag==='amber'?'先追问':'交给 Sonar';
+    const rt = el('div',{class:'rt'}, el('span',{class:'ib-pill'}, pillWord));
+    if(it.tag==='green' && it.sample){
+      rt.appendChild(el('button',{class:'ib-go', onClick:()=>{ showSample(it.sample); toast('已拆这封 ↓'); }}, '▸ 拆这封'));
+    }
+    const ic = it.tag==='green'?'✓':it.tag==='amber'?'⌛':'⚠';
+    card.appendChild(el('div',{class:'ib '+it.tag},
+      el('span',{class:'em'}, it.em),
+      el('div',{class:'mid'},
+        el('div',{class:'from'}, it.from),
+        el('div',{class:'snip'}, it.snip),
+        el('div',{class:'why'}, el('span',null, ic), it.why)),
+      rt));
+  });
+  card.appendChild(el('div',{class:'inbox-foot', html:
+    '杠杆 = 你不再逐封读 23 封。AI 把 <b>11 封信息不全</b>的挡回去追问、<b>4 封套价 / 诈骗</b>交给 Sonar，'+
+    '你只把判断花在 <b>8 封</b>值得的单子上——点任一封绿色的「拆这封」试试。'}));
+  return card;
+}
+function home(){
+  const app = document.getElementById('app');
+  clear(app);
+
+  app.appendChild(el('div',{class:'hero'},
+    el('div',{class:'eyebrow'}, '下厂前的最后一道结构化'),
+    el('h1',null, ['一封买家询盘，', el('br'), '先变成', el('span',{class:'em'},'完整的下厂清单'), '，再问出', el('span',{class:'em'},'只有您能答的地方')]),
+    el('p',{class:'lede'},
+      '粘进一封英文询盘，输出两屏：① 按 9 大类采购字段核对的「缺口清单」——下厂前还缺哪些信息；'+
+      '② 一份真实形状的「工厂简报骨架」，已知信息填进去，规格 / 认证 / 报价的判断槽位精准留空，每个空都是一句为这封询盘量身的提问。')
+  ));
+
+  app.appendChild(aiBar());
+
+  // ③ 询盘洪流分诊（先看一周的量，再下钻一封）
+  app.appendChild(renderInbox());
+
+  const inblock = el('div',{class:'inblock'});
+  inblock.appendChild(el('div',{class:'inhead'},
+    el('span',{class:'lab'}, '或，贴一封你自己的询盘原文'),
+    el('button',{class:'restore', onClick:()=>{ document.getElementById('ta').value = SAMPLE_INQUIRY; toast('已恢复示例询盘'); }}, '↺ 恢复示例')));
+  const ta = el('textarea',{class:'ta', id:'ta', placeholder:'把买家发来的英文询盘整段粘到这里…'});
+  ta.value = SAMPLE_INQUIRY;
+  inblock.appendChild(ta);
+
+  const egrow = el('div',{class:'egrow'});
+  egrow.appendChild(el('span',{class:'hint'}, '换个例子：'));
+  EXAMPLES.forEach(e=> egrow.appendChild(
+    el('button',{class:'eg', onClick:()=>{ ta.value=e.text; toast('已载入例子，点下方解析'); }},
+      el('span',null,e.em), e.label)));
+  inblock.appendChild(egrow);
+
+  inblock.appendChild(el('button',{class:'go', id:'go', onClick:parse}, ['⌖ 解析这封询盘']));
+  app.appendChild(inblock);
+
+  mountResults = el('div'); app.appendChild(mountResults);
+
+  // 首屏即渲染示例（§9.1：无需任何输入或 key）
+  renderResults(normalize(SAMPLE_RAW));
+}
+
+/* 开发自检钩子 */
+window.PROBE_DEV = {
+  render: (raw)=>{ renderResults(normalize(raw||SAMPLE_RAW)); },
+  sample: SAMPLE_RAW, normalize, ONTOLOGY, gapCount,
+  inquiry: SAMPLE_INQUIRY,
+  showSample, getStd, setStd, effStatus, buildRFQ, SAMPLES,
+  clearStds: ()=>{ try{ localStorage.removeItem(STD_LS); }catch(e){} }
+};
+
+home();
+})();
+</script>
+</body>
+</html>
