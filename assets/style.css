@@ -192,7 +192,7 @@ a{color:inherit}
 .article .body{margin-top:36px;font-size:16.5px;color:#3f3832;line-height:1.9}
 .article .body h2{font-size:24px;margin:40px 0 14px}
 .article .body h3{font-size:19px;margin:28px 0 10px;font-family:var(--serif)}
-.article .body p{margin-bottom:18px}
+.article .body p{margin-bottom:24px}
 .article .body ul,.article .body ol{margin:0 0 18px 22px;display:flex;flex-direction:column;gap:8px}
 .article .body strong,.article .body b{font-weight:600;color:var(--ink)}
 .article .body .lede{font-size:19.5px;font-family:var(--serif);color:var(--ink);line-height:1.85;margin-bottom:22px}
@@ -356,4 +356,27 @@ input,textarea,select{font-size:16px}         /* iOS 聚焦不自动放大 */
         padding-right:max(15px,env(safe-area-inset-right))}
   .card h3{font-size:20px}
   .hero h1{letter-spacing:0}
+}
+
+/* —— 阅读密度优化（让中文正文更透气：段距≈1.5×字号、行高放宽，缓解「太密」）——
+   依据：CJK 行高宜 1.8–1.95、段距宜 1.5–2×字号；窄屏每行天然 ≤40 字符 —— */
+@media(max-width:720px){
+  .hero .lede{line-height:1.82}
+  .intro-card .who p{font-size:15px;line-height:1.85}
+  .intro-card .who .ln{margin-top:16px}
+  .card .sub{line-height:1.7}
+  .card h3{margin-bottom:10px}
+  .tcard p{line-height:1.8}
+  .tcard h3{margin-bottom:10px}
+  .contact-card .c-intro{line-height:1.8}
+  .grid,.thoughts{gap:18px}
+
+  /* 长文（思考原文页）：段与段拉开，行距更松 */
+  .article .body{line-height:1.95}
+  .article .body p{margin-bottom:26px}
+  .article .body .lede{line-height:1.9;margin-bottom:24px}
+  .article .body h2{margin:38px 0 14px}
+  .article .body h3{margin:28px 0 10px}
+  .article .body ul,.article .body ol{gap:11px;margin-bottom:24px}
+  .article .dek{line-height:1.7}
 }
