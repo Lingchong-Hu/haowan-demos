@@ -100,10 +100,11 @@ window.CARDNA = {
   // ── 轻问卷：显式约束 + 购买意图（意图分级是 B2B 数据价值的发动机） ──
   QUIZ: [
     { id:'budget', q:'买车预算大概在哪一档？', options:[
-      { key:'a', label:'15 万以内',  tier:1 },
-      { key:'b', label:'15–25 万',   tier:2 },
-      { key:'c', label:'25–40 万',   tier:3 },
-      { key:'d', label:'40 万以上',  tier:4 } ]},
+      { key:'a', label:'15 万以内',         cap:15,  bl:'≤15万' },
+      { key:'b', label:'15–25 万',          cap:25,  bl:'15–25万' },
+      { key:'c', label:'25–40 万',          cap:40,  bl:'25–40万' },
+      { key:'d', label:'40–80 万',          cap:80,  bl:'40–80万' },
+      { key:'e', label:'80 万以上 / 不封顶', cap:999, bl:'80万+' } ]},
     { id:'seats', q:'主要坐几个人 / 什么用途？', options:[
       { key:'a', label:'就我自己 / 两人，通勤代步', seat:2, use:'通勤' },
       { key:'b', label:'小两口 + 偶尔带人，主打玩乐', seat:2, use:'玩乐' },
