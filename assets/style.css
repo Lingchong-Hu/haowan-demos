@@ -380,3 +380,18 @@ input,textarea,select{font-size:16px}         /* iOS 聚焦不自动放大 */
   .article .body ul,.article .body ol{gap:11px;margin-bottom:24px}
   .article .dek{line-height:1.7}
 }
+
+/* —— 思考·互动版(play)页：修复内容贴边「过宽」——
+   各 play 页内联 <style> 里 .play-hero/.play-sec/.play-close 用了 `padding:Y 0`
+   把 .wrap 的横向留白清零（内联表晚于 style.css 加载）。这里用 `.play 后代`
+   选择器(特异性 0,2,0)盖过内联的单类规则(0,1,0)，给窄屏补回安全的横向留白。 */
+@media(max-width:720px){
+  .play .play-hero,.play .play-sec,.play .play-close{
+    padding-left:max(18px,env(safe-area-inset-left));
+    padding-right:max(18px,env(safe-area-inset-right))}
+}
+@media(max-width:400px){
+  .play .play-hero,.play .play-sec,.play .play-close{
+    padding-left:max(15px,env(safe-area-inset-left));
+    padding-right:max(15px,env(safe-area-inset-right))}
+}
