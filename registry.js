@@ -3,6 +3,7 @@
    disclaimer:true → 涉医/法/财，结果区强制免责声明 */
 window.DEMOS = [
   // 产业, slug, 标题, 一句话, emoji, accent
+  { slug:'cardna',       industry:'汽车', title:'购车品味 DNA',     tagline:'滑+答 → 品味画像 · 荐车 · 车企眼里的你', emoji:'🧬', accent:'#4b54c9', status:'live' },
   { slug:'whips',        industry:'汽车', title:'汽车版 Tinder',   tagline:'左右滑学口味 → 精配 3 台车', emoji:'🚗', accent:'#e8543f', status:'live' },
   { slug:'carsnap',      industry:'汽车', title:'答题荐车',         tagline:'答几问 → 懂你的那台车',      emoji:'🔑', accent:'#d9772b', status:'live' },
   { slug:'style-dna',    industry:'时尚', title:'自拍色彩诊断',     tagline:'一张自拍 → 色彩季型 + 配色板', emoji:'🎨', accent:'#c2569b', status:'live' },

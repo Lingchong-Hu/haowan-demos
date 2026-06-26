@@ -40,11 +40,12 @@ button{font-family:inherit}
   color:var(--ink-2); font-size:14px; padding:6px 10px; border-radius:999px;
   border:1px solid var(--line); background:var(--surface); white-space:nowrap}
 .back:hover{color:var(--ink); border-color:var(--ink-3)}
-.topbar .ttl{font-weight:650; font-size:15px; display:flex; align-items:center; gap:8px}
-.topbar .ttl .em{font-size:18px}
+.topbar .ttl{font-weight:650; font-size:15px; display:flex; align-items:center; gap:8px;
+  white-space:nowrap; min-width:0; overflow:hidden}
+.topbar .ttl .em{font-size:18px; flex:none}
 .topbar .spacer{flex:1}
 .badge-industry{font-size:12px; color:var(--ink-3); border:1px solid var(--line);
-  padding:3px 9px; border-radius:999px; background:var(--surface)}
+  padding:3px 9px; border-radius:999px; background:var(--surface); white-space:nowrap; flex:none}
 
 h1,h2,h3{line-height:1.2; margin:0}
 .hero{padding:34px 0 8px}
@@ -175,6 +176,9 @@ textarea.field{min-height:120px; line-height:1.6}
   .bignum{font-size:44px}
   .sharebar .btn{min-width:0}
   .wrap{padding:0 16px 64px}
+  .back-label{display:none}                 /* 顶栏返回按钮在窄屏只留「←」，给标题腾地方 */
+  .topbar .row{gap:10px; padding:11px 16px}
+  .topbar .ttl{font-size:14.5px}
 }
 .center{text-align:center}
 .row{display:flex; gap:10px; align-items:center}

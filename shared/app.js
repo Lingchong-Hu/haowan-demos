@@ -64,7 +64,7 @@ GG.mountShell = function(slug, opts={}){
   GG.clear(app);
   const bar = GG.el('div',{class:'topbar'},
     GG.el('div',{class:'row'},
-      GG.el('a',{class:'back', href:'../../index.html'}, '← 好玩的东西'),
+      GG.el('a',{class:'back', href:'../../index.html'}, '←', GG.el('span',{class:'back-label'}, ' 好玩的东西')),
       GG.el('div',{class:'ttl'}, GG.el('span',{class:'em'}, m.emoji||'✨'), m.title||slug),
       GG.el('div',{class:'spacer'}),
       m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null
@@ -100,7 +100,7 @@ GG.login = function(slug, opts, onEnter){
   GG.clear(app);
   app.appendChild(GG.el('div',{class:'topbar'},
     GG.el('div',{class:'row'},
-      GG.el('a',{class:'back', href:'../../index.html'}, '← 好玩的东西'),
+      GG.el('a',{class:'back', href:'../../index.html'}, '←', GG.el('span',{class:'back-label'}, ' 好玩的东西')),
       GG.el('div',{class:'ttl'}, GG.el('span',{class:'em'}, m.emoji||'✨'), m.title||slug),
       GG.el('div',{class:'spacer'}),
       m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null)));
