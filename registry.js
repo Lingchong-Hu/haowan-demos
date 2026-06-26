@@ -24,7 +24,7 @@ window.DEMOS = [
   { slug:'matchmaker',   industry:'约会', title:'对话式精配',       tagline:'只给你一个人 + 可追溯理由',    emoji:'💞', accent:'#e0577f', status:'live' },
   { slug:'pet-health',   industry:'宠物', title:'宠物拍照自检',     tagline:'拍眼/皮肤 → 健康分 + 观察项',  emoji:'🐾', accent:'#c98a2b', status:'live', disclaimer:true },
   { slug:'pet-vet',      industry:'宠物', title:'AI 兽医',         tagline:'会反问澄清再给建议',          emoji:'🐶', accent:'#b07a3a', status:'live', disclaimer:true },
-  { slug:'coddle',       industry:'母婴', title:'按月龄育儿指引',   tagline:'随口记录 → 个性化指引',       emoji:'🍼', accent:'#d77a98', status:'live', disclaimer:true },
+  { slug:'coddle',       industry:'母婴', title:'育儿 + 产后陪伴',   tagline:'宝宝按月龄 / 妈妈按产后 → 个性化指引 + 附近服务', emoji:'🍼', accent:'#d77a98', status:'live', disclaimer:true },
   { slug:'mood-journal', industry:'心理', title:'心情日记',         tagline:'写心情 → 情绪曲线 + 词云',     emoji:'🌤️', accent:'#7a8fd4', status:'live', disclaimer:true },
   { slug:'unmask',       industry:'游戏', title:'不被看穿',         tagline:'剪刀石头布 · 别被想懂你的 AI 看穿', emoji:'🎭', accent:'#6457e8', status:'live' },
   // ── 出海 / 外贸 · AI 时代特有的跨境商业模式 ──
