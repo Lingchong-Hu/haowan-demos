@@ -1,10 +1,10 @@
-/* style-dna 数据：样图参数（本地 canvas 现画，无需外部图片）+ 颜色中文名库 + 季型文案 */
+/* style-dna 数据：样图参数（本地 canvas 现画，无需外部图片）+ 颜色中文名库 + 季型文案 + 妆造库 */
 window.STYLEDNA = {
   // 三张本地生成的「样图」——参数不同→主色不同→配色板不同（满足换图变色）
   SAMPLES: [
-    { key:'warm', label:'暖调样片', bg:'#f3e7d2', hair:'#5a3a22', skin:'#e7b48a', top:'#c4622e' },
-    { key:'cool', label:'冷浅样片', bg:'#e1e8f0', hair:'#4a4a55', skin:'#e9c4b0', top:'#7fb5c9' },
-    { key:'deep', label:'冷艳样片', bg:'#9aa3b3', hair:'#16161c', skin:'#f0c89e', top:'#10316b' },
+    { key:'warm', label:'暖调', tag:'暖调样片', bg:'#f3e7d2', hair:'#5a3a22', skin:'#e7b48a', top:'#c4622e' },
+    { key:'cool', label:'冷浅', tag:'冷浅样片', bg:'#e1e8f0', hair:'#4a4a55', skin:'#e9c4b0', top:'#7fb5c9' },
+    { key:'deep', label:'冷艳', tag:'冷艳样片', bg:'#9aa3b3', hair:'#16161c', skin:'#f0c89e', top:'#10316b' },
   ],
   // 颜色 → 中文名（取最近）
   NAMES: [
@@ -19,9 +19,45 @@ window.STYLEDNA = {
   ],
   // 四季型基础文案（warm/cool × light/deep）
   SEASONS: {
-    'warm-light': { name:'暖春型', vibe:'明媚、温暖、清透', advice:'适合金调、嫩绿、蜜桃这类「带阳光」的浅暖色；避开发灰、发暗的冷色。' },
-    'warm-deep':  { name:'暖秋型', vibe:'醇厚、大地感、复古', advice:'适合焦糖、橄榄、砖红这类浓郁暖色；避开荧光色与冷调粉。' },
-    'cool-light': { name:'冷夏型', vibe:'柔和、雾感、温柔', advice:'适合薰衣草、雾霾蓝、藕粉这类低饱和冷色；避开明黄与橘红。' },
-    'cool-deep':  { name:'冷冬型', vibe:'高对比、清冷、利落', advice:'适合宝石蓝、酒红、纯黑白这类高对比冷色；避开浑浊的大地色。' },
-  }
+    'warm-light': { name:'暖春型', vibe:'明媚 · 温暖 · 清透', advice:'适合金调、嫩绿、蜜桃这类「带阳光」的浅暖色；避开发灰、发暗的冷色。' },
+    'warm-deep':  { name:'暖秋型', vibe:'醇厚 · 大地感 · 复古', advice:'适合焦糖、橄榄、砖红这类浓郁暖色；避开荧光色与冷调粉。' },
+    'cool-light': { name:'冷夏型', vibe:'柔和 · 雾感 · 温柔', advice:'适合薰衣草、雾霾蓝、藕粉这类低饱和冷色；避开明黄与橘红。' },
+    'cool-deep':  { name:'冷冬型', vibe:'高对比 · 清冷 · 利落', advice:'适合宝石蓝、酒红、纯黑白这类高对比冷色；避开浑浊的大地色。' },
+  },
+  // 妆造库：每个季型对应「色彩人格」+ 共鸣钩子 + 可直接抄作业的色号 / 该留该扔
+  // best/worst 用于「戴对色 vs 戴错色」对比；色号都是好记的中文名 + hex。
+  BEAUTY: {
+    'warm-light': {
+      persona:'阳光蜜桃', hook:'你天生带光——浅一点、亮一点、暖一点，气色直接亮一个度。',
+      best:{ n:'蜜桃珊瑚', hex:'#f4805e' }, worst:{ n:'冷调灰蓝', hex:'#6b7f99' },
+      lip:{ n:'蜜桃珊瑚', hex:'#f4805e' }, lip2:{ n:'奶橘', hex:'#ec9b6e' },
+      blush:{ n:'杏桃', hex:'#f3a07a' }, metal:'香槟金 / 玫瑰金',
+      hair:{ n:'蜜糖棕', hex:'#8a5a2b' },
+      keep:['焦糖','奶杏','嫩芽绿','蜜桃','金盏黄'], toss:['纯黑','冷玫粉','灰蓝'],
+    },
+    'warm-deep': {
+      persona:'醇金大地', hook:'你压得住浓色——颜色越厚重，你越有故事感、越高级。',
+      best:{ n:'赤陶砖红', hex:'#b14a32' }, worst:{ n:'荧光冷粉', hex:'#ff5fa2' },
+      lip:{ n:'砖红', hex:'#a8442f' }, lip2:{ n:'枫糖棕', hex:'#8a4a30' },
+      blush:{ n:'焦糖', hex:'#c47a4e' }, metal:'古铜金 / 黄金',
+      hair:{ n:'红棕', hex:'#6e3a22' },
+      keep:['焦糖','橄榄绿','墨绿','砖红','暗金'], toss:['荧光色','冷调粉','冷白'],
+    },
+    'cool-light': {
+      persona:'雾感温柔', hook:'你适合一切「蒙了层雾」的柔色——低饱和，才显你的高级温柔。',
+      best:{ n:'薰衣草紫', hex:'#b39ddb' }, worst:{ n:'高饱和橘红', hex:'#e0501f' },
+      lip:{ n:'豆沙玫', hex:'#c16b7e' }, lip2:{ n:'藕粉', hex:'#d98fa0' },
+      blush:{ n:'藕粉', hex:'#e3a3b0' }, metal:'银 / 玫瑰金',
+      hair:{ n:'冷棕', hex:'#564a52' },
+      keep:['薰衣草','雾霾蓝','藕粉','燕麦灰','薄雾蓝'], toss:['明黄','橘红','暖金'],
+    },
+    'cool-deep': {
+      persona:'高对比清冷', hook:'你扛得住最纯、最艳的色——黑、白、正红，就是你的主场。',
+      best:{ n:'宝石蓝', hex:'#244a8f' }, worst:{ n:'浑浊大地色', hex:'#9a7a52' },
+      lip:{ n:'正红', hex:'#cf1f3f' }, lip2:{ n:'莓果', hex:'#9e1f4a' },
+      blush:{ n:'玫红', hex:'#c2406a' }, metal:'银 / 白金',
+      hair:{ n:'蓝黑', hex:'#16161c' },
+      keep:['宝石蓝','酒红','纯黑白','玫红','藏青'], toss:['大地色','暖橘','奶油色'],
+    },
+  },
 };
