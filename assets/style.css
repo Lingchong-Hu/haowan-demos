@@ -42,7 +42,7 @@ a{color:inherit}
 .nav-links{display:flex;gap:26px;font-size:14px;font-weight:400}
 .nav-links a{color:var(--ink-soft);text-decoration:none;transition:color .2s}
 .nav-links a:hover{color:var(--accent)}
-@media(max-width:640px){.nav-links{gap:18px;font-size:13px}}
+/* 窄屏导航（汉堡下拉）在文件末尾「移动端适配层」统一处理 */
 
 /* ── Hero ── */
 .hero{padding:84px 0 28px;text-align:center}
@@ -230,3 +230,130 @@ footer a{color:var(--accent);text-decoration:none}
 .chip.active{background:var(--accent);border-color:var(--accent);color:#fff}
 .chip-n{font-size:12px;opacity:.7}
 .chip.active .chip-n{opacity:.85}
+
+/* ════════════════════════════════════════════════════════════════
+   移动端全面适配层（mobile-first 增强）
+   标准依据：≥44px 触摸目标(Apple HIG) · 安全区 env(safe-area-inset-*)
+   · hover 仅对支持设备生效 · dvh 动态视口 · 杜绝横向溢出
+   ════════════════════════════════════════════════════════════════ */
+
+/* —— 全局基线 —— */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;scroll-padding-top:76px}
+body{overflow-x:clip}                         /* 杜绝横向滚动，又不破坏 sticky */
+img,svg,video,iframe{max-width:100%}
+input,textarea,select{font-size:16px}         /* iOS 聚焦不自动放大 */
+*{-webkit-tap-highlight-color:transparent}    /* 去掉点按灰块，改用 :active 反馈 */
+
+/* 触摸设备：避免 :hover 的位移/高亮在点按后「卡住」 */
+@media (hover:none){
+  .card:hover,.tcard:hover,.role:hover,.member:hover{transform:none}
+  .card:hover{box-shadow:none;border-color:var(--line)}
+  .tcard:hover,.role:hover,.member:hover{border-color:var(--line)}
+}
+/* 点按即时反馈 */
+.card:active,.tcard:active{transform:scale(.992)}
+.btn:active,.chip:active,.c-copy:active{transform:scale(.97)}
+
+/* —— 触摸目标基线 ≥44px —— */
+.btn{min-height:44px}
+.c-copy{min-height:44px}
+
+/* —— 汉堡按钮（默认隐藏，仅窄屏 + JS 就绪时出现）—— */
+.nav-toggle{display:none;width:44px;height:44px;flex:none;border:0;background:transparent;
+  cursor:pointer;padding:11px;margin-right:-9px;
+  flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.nav-toggle span{display:block;width:22px;height:2px;border-radius:2px;background:var(--ink);
+  transition:transform .26s ease,opacity .2s ease}
+.nav-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(7px) rotate(45deg)}
+.nav-toggle[aria-expanded="true"] span:nth-child(2){opacity:0}
+.nav-toggle[aria-expanded="true"] span:nth-child(3){transform:translateY(-7px) rotate(-45deg)}
+
+/* ════ ≤720px：顶栏折叠为下拉面板 ════ */
+@media(max-width:720px){
+  html.nav-ready .nav-toggle{display:flex}
+  html.nav-ready .nav-links{
+    position:absolute;top:100%;left:0;right:0;
+    flex-direction:column;gap:0;
+    padding:4px max(18px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(18px,env(safe-area-inset-left));
+    background:rgba(247,243,238,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+    border-bottom:1px solid var(--line);box-shadow:0 22px 34px -24px rgba(60,40,25,.55);
+    max-height:0;opacity:0;visibility:hidden;overflow:hidden;transform:translateY(-8px);
+    transition:max-height .32s ease,opacity .24s ease,transform .26s ease,visibility .32s}
+  html.nav-ready .nav-links.open{max-height:80vh;max-height:min(78dvh,520px);
+    opacity:1;visibility:visible;overflow-y:auto;transform:none}
+  html.nav-ready .nav-links a{display:flex;align-items:center;min-height:52px;font-size:16px;
+    color:var(--ink);border-top:1px solid var(--line)}
+  html.nav-ready .nav-links a:first-child{border-top:0}
+  html.nav-ready .nav-links a:active{color:var(--accent)}
+  /* 无 JS 回退：链接自动换行成一行，仍可用 */
+  html:not(.nav-ready) .nav-links{flex-wrap:wrap;justify-content:center;gap:10px 16px;padding:6px 0 10px}
+
+  /* —— 安全区 + 间距收紧 —— */
+  .wrap{padding-left:max(18px,env(safe-area-inset-left));
+        padding-right:max(18px,env(safe-area-inset-right))}
+  .nav{padding-top:env(safe-area-inset-top)}
+
+  .hero{padding:46px 0 18px}
+  .hero h1{font-size:clamp(32px,9vw,52px)}
+  .hero .lede{font-size:16.5px;margin-top:18px;line-height:1.7}
+  .hero .meta{margin-top:24px;gap:9px}
+  .pill{padding:6px 13px}
+
+  .section-head{flex-direction:column;align-items:flex-start;gap:6px;margin:44px 0 2px}
+  .section-head .note{font-size:13px}
+
+  .grid,.thoughts{gap:16px;margin-top:22px}
+  .card{padding:24px 22px 22px;border-radius:14px}
+  .card h3{font-size:22px}
+  .card .sub{font-size:14px}
+  .card .tags{margin-top:14px}
+  .card .go{margin-top:16px}
+  .tcard{padding:22px 22px}
+
+  .intro{padding:24px 0 6px}
+  .intro-card{padding:26px 22px;gap:18px;align-items:stretch}
+  .intro-card>div{flex:none}
+  .intro-card .who p{font-size:14.5px}
+  .intro-card .btn{width:100%;justify-content:center}
+
+  .contact-card{padding:26px 22px}
+  .contact-card .c-intro{font-size:15px}
+
+  .filter-bar{gap:8px;margin:4px 0 22px}
+  .chip{min-height:44px;padding:9px 15px;font-size:14px}
+  .mode-toggle a{min-height:42px;display:inline-flex;align-items:center}
+  .btn{padding:12px 22px}
+
+  footer{padding:46px 0 max(56px,env(safe-area-inset-bottom));margin-top:30px}
+  footer .big{font-size:19px}
+}
+
+/* —— 详情页：窄屏把实时 Demo 提到正文之前，并取消吸顶 —— */
+@media(max-width:880px){
+  .proj-grid{display:flex;flex-direction:column;gap:34px}
+  .preview{order:-1;position:static;top:auto}
+}
+
+/* —— 联系 / 详情页 CTA：很窄时整列按钮铺满，便于拇指点按 —— */
+@media(max-width:520px){
+  .cta{flex-direction:column}
+  .cta .btn{width:100%;justify-content:center}
+  .c-cta{flex-direction:column;align-items:stretch}
+  .c-cta .btn{width:100%;justify-content:center}
+}
+
+/* —— 文章页：宽表格可横向滚动而不撑破布局 —— */
+@media(max-width:600px){
+  .article .body{font-size:16px}
+  .article h1{line-height:1.25}
+  .article .body .lede{font-size:17.5px}
+  .article .body table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch}
+}
+
+/* —— 更窄（≤400px）再紧一点 —— */
+@media(max-width:400px){
+  .wrap{padding-left:max(15px,env(safe-area-inset-left));
+        padding-right:max(15px,env(safe-area-inset-right))}
+  .card h3{font-size:20px}
+  .hero h1{letter-spacing:0}
+}
