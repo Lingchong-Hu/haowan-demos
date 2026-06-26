@@ -18,6 +18,7 @@
     <div class="nav-links">
       <a href="#projects">精选</a>
       <a href="demos.html">全部 Demo</a>
+      <a href="thoughts.html">全部思考</a>
       <a href="#thoughts">思考</a>
       <a href="#about">关于</a>
       <a href="#contact">联系</a>
@@ -67,6 +68,9 @@
     <span class="note">关于意图、数据、安全、人性，与 AI 到底怎么落地</span>
   </div>
   <div class="thoughts" id="thought-grid"></div>
+  <div class="more-row">
+    <a class="btn btn-primary" href="thoughts.html">查看全部 <span id="thought-total">—</span> 篇思考 →</a>
+  </div>
 </section>
 
 <!-- 联系 / 留下想法 -->
@@ -163,7 +167,8 @@
       <div class="go">${p.direct ? '亲手体验 ↗' : '查看 · 亲手体验 →'}</div></a>`;
   }).join("");
 
-  // 思考卡片（只渲染 featured；有 play 字段则默认进互动版，并显示角标）
+  // 思考卡片（首页只渲染 featured；全部进 thoughts.html）
+  $("thought-total").textContent = S.thoughts.length;
   const featuredThoughts = S.thoughts.filter(t => t.featured);
   $("thought-grid").innerHTML = (featuredThoughts.length ? featuredThoughts : S.thoughts).map(t => {
     const badge = t.play ? `<span class="play-badge">✦ 互动版</span>` : "";

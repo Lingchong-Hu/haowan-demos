@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>全部思考 · 好玩的东西</title>
+<meta name="description" content="关于意图、数据、安全、人性、组织与开发流程的全部思考——有原文，也有可边玩边读的互动版。" />
+<link rel="stylesheet" href="assets/style.css" />
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="index.html#projects">精选</a>
+      <a href="demos.html">全部 Demo</a>
+      <a href="thoughts.html">全部思考</a>
+      <a href="index.html#about">关于</a>
+      <a href="index.html#contact">联系</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap" style="padding-bottom:18px">
+  <div class="kicker">全部思考 · 关于 AI 怎么落地</div>
+  <h1>全部思考</h1>
+  <p class="lede" id="lede"></p>
+</header>
+
+<section class="wrap" style="padding-top:0">
+  <div class="thoughts" id="grid"></div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><a href="index.html">← 回到首页</a></p>
+  </div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+  const T = ((window.SITE || {}).thoughts) || [];
+  const $ = id => document.getElementById(id);
+
+  $("lede").textContent = `${T.length} 篇关于意图、数据、安全、人性、组织与开发流程的思考——多数附一个可「边玩边读」的互动版。`;
+
+  $("grid").innerHTML = T.map(t => {
+    const badge = t.play ? `<span class="play-badge">✦ 互动版</span>` : "";
+    const go = t.play ? "边玩边读 →" : "阅读 →";
+    return `<a class="tcard" href="${t.play || t.href}">
+      <div class="ck">${t.kicker}</div>
+      <h3>${t.title}${badge}</h3><p>${t.desc}</p>
+      <div class="go">${go}</div></a>`;
+  }).join("");
+</script>
+</body>
+</html>
