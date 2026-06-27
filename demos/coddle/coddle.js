@@ -10,10 +10,18 @@ const { TOPICS, bandOf, MOM_TOPICS, MOM_STAGES, stageOf, servicesFor, empathyFor
 let main;
 let state = { track:null, topicId:null, note:'', months:6, days:14, marks:{} };
 
+/* ───────── 本地存档：成长记录（每条问询）+ 里程碑标记 ───────── */
+const STORE_KEY = 'coddle_store';
+let log = [];
+function loadStore(){ try{ const s = JSON.parse(localStorage.getItem(STORE_KEY)||'{}'); return (s&&typeof s==='object')? s : {}; }catch(e){ return {}; } }
+function saveStore(){ try{ localStorage.setItem(STORE_KEY, JSON.stringify({ log, marks:state.marks })); }catch(e){} }
+
 /* ───────── 启动 ───────── */
 function start(){
   main = GG.mountShell(SLUG);
   injectCSS();
+  const store = loadStore();
+  log = Array.isArray(store.log)? store.log : [];
   const st = GG.decodeState();
   if(st && st.tk){
     state.track  = st.tk;
@@ -21,11 +29,27 @@ function start(){
     state.note   = st.n || '';
     state.months = (st.m==null? 6 : st.m)|0;
     state.days   = (st.d==null? 14: st.d)|0;
-    state.marks  = st.k || {};
+    state.marks  = st.k || store.marks || {};
     if(state.topicId){ renderTool(); return; }
+  } else {
+    state.marks = store.marks || {};
   }
   welcome();
 }
+
+/* 存入成长记录（每点一次「记入」存一条快照） */
+function saveEntry(){
+  const isMom = state.track==='mom', topic = curTopic();
+  const ageText = isMom ? dayLabel(state.days) : (state.months+' 个月');
+  const stageLabel = isMom ? stageOf(state.days).label : bandOf(state.months).label;
+  const d = new Date();
+  const pad = n=> (n<10?'0':'')+n;
+  const dateText = d.getFullYear()+'.'+pad(d.getMonth()+1)+'.'+pad(d.getDate());
+  log.push({ id:'e'+d.getTime()+'_'+log.length, track:state.track, topicId:state.topicId,
+    emoji:topic.emoji, label:topic.label, note:state.note.trim(), ageText, stageLabel, dateText, ts:d.getTime() });
+  saveStore();
+}
+function updateLogCount(){ const b=GG.$('.cd-log-btn', main); if(b) b.textContent = '📔'+(log.length?' '+log.length:''); }
 
 function babyTopic(id){ return TOPICS.find(t=>t.id===id); }
 function momTopic(id){ return MOM_TOPICS.find(t=>t.id===id); }
@@ -53,11 +77,13 @@ function welcome(){
       feat('🤱', '我自己怎么办 · 产后恢复、情绪、母乳，按阶段陪你过'),
       feat('🏪', '需要搭把手时 · 帮你找附近催乳 / 月子 / 修复 / 月嫂')),
     GG.el('div',{class:'cd-tracks'},
-      track('baby','👶','记录宝宝','夜醒·吃奶·辅食·大运动·情绪·语言'),
+      track('baby','👶','宝宝怎么了','夜醒·吃奶·辅食·大运动·情绪·语言'),
       track('mom','🤱','照顾我自己（产后）','母乳·恶露伤口·情绪·身体修复·月子·睡眠')));
 
   main.appendChild(GG.el('div',{class:'cd-gate'},
     GG.el('div',{class:'cd-card'}, head, body),
+    log.length ? GG.el('button',{class:'cd-gate-log', onClick:renderLog},
+      '📔 我的成长记录（已记 '+log.length+' 条）', GG.el('span',{class:'cd-gate-log-go'}, '→')) : null,
     GG.el('div',{class:'cd-priv'},
       GG.el('span', null, '🔒'),
       GG.el('span', null, '记录只留在你的浏览器本机，不上传服务器；演示环境不收集账号信息，附近商家为演示数据。'))));
@@ -84,15 +110,16 @@ function renderTool(){
   main.appendChild(GG.el('div',{class:'cd-segwrap'},
     pill('baby','👶 宝宝'),
     pill('mom','🤱 妈妈 · 产后'),
+    GG.el('button',{class:'cd-log-btn', title:'成长记录', onClick:renderLog}, '📔'+(log.length?' '+log.length:'')),
     GG.el('button',{class:'cd-home', title:'回首页', onClick:welcome}, '⌂')));
 
   main.appendChild(GG.el('div',{class:'cd-lead'},
-    isMom ? '选一个产后关注、随手写一句，再滑动产后天数 —— 同一件事，阶段不同，答案不同。'
-          : '选一类观察、写句备注，再滑动宝宝月龄 —— 同一条记录，月龄不同，指引完全不同。'));
+    isMom ? '选一个产后关注、说一句你的情况，再滑动产后天数 —— 同一件事，阶段不同，答案不同。'
+          : '选一个方面、说一句你看到的，再滑动宝宝月龄 —— 同一种情况，月龄不同，指引完全不同。'));
 
   // ① 选主题
   const topics = isMom ? MOM_TOPICS : TOPICS;
-  main.appendChild(GG.el('div',{class:'cd-step'}, isMom ? '① 你想聊哪方面？' : '① 这条记的是哪方面？'));
+  main.appendChild(GG.el('div',{class:'cd-step'}, isMom ? '① 你想聊哪方面？' : '① 想了解宝宝哪方面？'));
   const grid = GG.el('div',{class:'cd-chips'});
   topics.forEach(t=>{
     const active = state.topicId===t.id;
@@ -107,8 +134,8 @@ function renderTool(){
   }
   const topic = curTopic();
 
-  // ② 备注
-  main.appendChild(GG.el('div',{class:'cd-step'}, '② 随手写一句（可选）'));
+  // ② 说一句
+  main.appendChild(GG.el('div',{class:'cd-step'}, '② 说一句当下的情况（可选）'));
   main.appendChild(GG.el('input',{type:'text', value:state.note, placeholder:topic.placeholder, class:'cd-input',
     onInput:(e)=>{ state.note=e.target.value; updateGuide(); }}));
 
@@ -180,6 +207,8 @@ function updateGuide(){
     sectionRow(isMom?'这个阶段的情况':'这个阶段的典型表现', cell.read),
     sectionRow('给你的指引', cell.guide),
     sectionRow('小贴士', cell.tip),
+    // 教学视频（占位，保留位置）
+    topic.video ? videoFrame(topic, stageLabel) : null,
     // 妈妈轨：就医红线
     (isMom && topic.redflag) ? GG.el('div',{class:'cd-redflag'},
       GG.el('div',{class:'cd-rf-t'}, '⚠️ 这些情况要就医'),
@@ -201,7 +230,7 @@ function updateGuide(){
     copyText: [
       '【'+(isMom?'产后指引 · ':'月龄指引 · ')+topic.label+'】',
       stageLabel,
-      state.note.trim()? '记录：“'+state.note.trim()+'”' : null,
+      state.note.trim()? '你写的：“'+state.note.trim()+'”' : null,
       '· '+(isMom?'情况':'典型表现')+'：'+cell.read,
       '· 建议：'+cell.guide,
       '· 小贴士：'+cell.tip,
@@ -212,6 +241,15 @@ function updateGuide(){
 
   box.appendChild(GG.resultCard(SLUG, inner, shareSpec));
 
+  // 记入成长记录（每条问询存一笔，攒成成长路径）
+  const recBtn = GG.el('button',{class:'cd-rec-btn', onClick:()=>{
+    saveEntry(); recBtn.textContent='✓ 已记入成长记录'; recBtn.disabled=true; updateLogCount();
+    GG.toast('已记入成长记录 ✓');
+  }}, '＋ 记入这一条');
+  box.appendChild(GG.el('div',{class:'cd-rec-row'},
+    recBtn,
+    GG.el('button',{class:'cd-rec-link', onClick:renderLog}, '📔 成长记录'+(log.length?'（'+log.length+'）':''))));
+
   // 妈妈轨：附近服务导流
   if(isMom && topic.needs) mountServices(box, topic);
 
@@ -220,7 +258,7 @@ function updateGuide(){
 
   box.appendChild(GG.el('p',{class:'cd-muted center', style:{marginTop:'10px'}},
     isMom? '↑ 拖动上面的「产后天数」—— 同一件事，阶段不同，指引会明显变化。'
-         : '↑ 拖动上面的「月龄」—— 同一条记录，指引会随月龄明显改变。'));
+         : '↑ 拖动上面的「月龄」—— 同一种情况，指引会随月龄明显改变。'));
 }
 
 /* ───────── 宝宝发育里程碑：正常范围 + 可点「会了/还没」───────── */
@@ -260,7 +298,7 @@ function milestoneTimeline(topic){
       cls='mut';
     }
 
-    const toggle = (val)=>{ state.marks[key] = (state.marks[key]===val? undefined : val); updateGuide(); };
+    const toggle = (val)=>{ state.marks[key] = (state.marks[key]===val? undefined : val); saveStore(); updateGuide(); };
     const row = GG.el('div',{class:'cd-ms'+(mid<=m?' reached':'')},
       GG.el('div',{class:'cd-ms-name'}, ms.label),
       band,
@@ -279,6 +317,145 @@ function milestoneTimeline(topic){
       '发育有个体差异，范围是「多数宝宝」的窗口，不是及格线。落在窗口内就别太焦虑。'));
   }
   return wrap;
+}
+
+/* ───────── 成长记录视图（时间线 + 删除 + 导出）───────── */
+function fmtDate(ts){ const d=new Date(ts); const p=n=>(n<10?'0':'')+n; return d.getFullYear()+'.'+p(d.getMonth()+1)+'.'+p(d.getDate()); }
+function reachedMilestones(){
+  const out=[];
+  Object.keys(state.marks||{}).forEach(k=>{ if(state.marks[k]==='yes'){
+    const i=k.indexOf(':'); const tid=k.slice(0,i), mk=k.slice(i+1);
+    const arr=C.MILESTONES[tid]; const m=arr&&arr.find(x=>x.key===mk); if(m) out.push(m.label); } });
+  return out;
+}
+function entryRow(e){
+  return GG.el('div',{class:'cd-log-item'},
+    GG.el('div',{class:'cd-log-dot'+(e.track==='mom'?' mom':'')}),
+    GG.el('div',{class:'cd-log-body'},
+      GG.el('div',{class:'cd-log-metarow'}, e.dateText+'　'+(e.track==='mom'?'🤱 产后':'👶 宝宝')),
+      GG.el('div',{class:'cd-log-mainrow'}, e.emoji+' '+e.label, GG.el('span',{class:'cd-log-age'}, e.ageText)),
+      e.note ? GG.el('div',{class:'cd-log-noterow'}, '“'+e.note+'”')
+             : GG.el('div',{class:'cd-log-noterow muted'}, '（没写备注）')),
+    GG.el('button',{class:'cd-log-del', title:'删除', onClick:()=>{ log=log.filter(x=>x.id!==e.id); saveStore(); renderLog(); }}, '✕'));
+}
+function clearBtn(){
+  let armed=false;
+  const b=GG.el('button',{class:'cd-clear-btn', onClick:()=>{
+    if(!armed){ armed=true; b.textContent='再点一次确认清空'; b.classList.add('arm');
+      setTimeout(()=>{ armed=false; b.textContent='清空'; b.classList.remove('arm'); },2600); return; }
+    log=[]; saveStore(); GG.toast('已清空成长记录'); renderLog();
+  }}, '清空');
+  return b;
+}
+function renderLog(){
+  GG.clear(main);
+  main.appendChild(GG.el('div',{class:'cd-segwrap'},
+    GG.el('button',{class:'cd-seg', onClick:()=> state.track?renderTool():welcome()}, '← 返回'),
+    GG.el('div',{class:'cd-log-title'}, '📔 成长记录'),
+    GG.el('button',{class:'cd-home', title:'回首页', onClick:welcome}, '⌂')));
+
+  if(!log.length){
+    main.appendChild(GG.el('div',{class:'cd-log-empty'},
+      GG.el('div',{class:'cd-log-empty-ic'}, '🌱'),
+      GG.el('p',{style:{fontWeight:'700', fontSize:'16px', margin:'6px 0'}}, '还没有记录'),
+      GG.el('p',{class:'cd-muted'}, '在指引页点「＋ 记入这一条」，把每一次用心都存下来，慢慢攒成一条成长路径。'),
+      GG.el('button',{class:'cd-ai-btn', style:{marginTop:'12px'}, onClick:()=> state.track?renderTool():welcome()}, '去记第一笔 →')));
+    return;
+  }
+
+  const sorted = log.slice().sort((a,b)=>b.ts-a.ts);
+  main.appendChild(GG.el('div',{class:'cd-log-summary'},
+    GG.el('div', null, GG.el('b',{style:{fontSize:'18px'}}, log.length+' 次记录'),
+      GG.el('span',{class:'cd-muted'}, '　自 '+fmtDate(sorted[sorted.length-1].ts))),
+    GG.el('div',{class:'cd-muted', style:{marginTop:'3px'}}, '每一条都是你用心陪伴的印记 —— 导出成一张「成长路径」，留作纪念。')));
+
+  main.appendChild(GG.el('div',{class:'cd-log-actions'},
+    GG.el('button',{class:'cd-export-btn', onClick:exportGrowthPath}, '🌱 导出成长路径（图片）'),
+    clearBtn()));
+
+  const list = GG.el('div',{class:'cd-log-list'});
+  sorted.forEach(e=> list.appendChild(entryRow(e)));
+  main.appendChild(list);
+}
+
+/* ───────── 导出「成长路径」纪念海报（Canvas）───────── */
+function roundRect(ctx,x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function fitText(ctx,s,maxW){ if(!s) return ''; if(ctx.measureText(s).width<=maxW) return s; let r=s; while(r.length>1 && ctx.measureText(r+'…').width>maxW) r=r.slice(0,-1); return r+'…'; }
+function drawGrowthCanvas(){
+  const acc='#d77a98', ink='#2b2630', ink2='#6a646f', ink3='#9a949f', cream='#fbf7f4';
+  const F=(w,s)=> w+' '+s+'px -apple-system,"PingFang SC","Microsoft YaHei",sans-serif';
+  const sorted=log.slice().sort((a,b)=>a.ts-b.ts);
+  const shown=sorted.slice(-14);
+  const reached=reachedMilestones();
+  const anyBaby = shown.some(e=>e.track==='baby') || reached.length>0;
+  const title = anyBaby ? '宝宝的成长路径' : '我的产后恢复之路';
+  const W=720, scale=2, padX=46, headerH=164, rowH=80;
+  const msH = reached.length ? 96 : 0;
+  const H = headerH + 40 + shown.length*rowH + (msH? msH+14 : 0) + 64 + 56;
+  const c=document.createElement('canvas'); c.width=W*scale; c.height=H*scale;
+  const ctx=c.getContext('2d'); ctx.scale(scale,scale); ctx.textBaseline='alphabetic';
+  ctx.fillStyle=cream; ctx.fillRect(0,0,W,H);
+  // header
+  const g=ctx.createLinearGradient(0,0,W,headerH); g.addColorStop(0,acc); g.addColorStop(1,'#e89ab6');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,headerH);
+  ctx.fillStyle='#fff';
+  ctx.font=F('800',40); ctx.fillText('🌱 '+title, padX, 76);
+  const range = sorted.length ? (fmtDate(sorted[0].ts)+'  –  '+fmtDate(sorted[sorted.length-1].ts)) : '';
+  ctx.globalAlpha=.96; ctx.font=F('500',20); ctx.fillText(range+'   ·   共 '+log.length+' 次用心记录', padX, 110);
+  ctx.globalAlpha=.9; ctx.font=F('500',15); ctx.fillText('Coddle 育儿陪伴 · 成长记录', padX, 138);
+  ctx.globalAlpha=1;
+  // timeline
+  const y = headerH + 40, lineX = padX + 8;
+  ctx.strokeStyle='#ecdfe6'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(lineX, headerH+22); ctx.lineTo(lineX, y+(shown.length-1)*rowH+8); ctx.stroke();
+  shown.forEach((e,i)=>{
+    const cy=y+i*rowH, tx=lineX+24;
+    ctx.fillStyle=acc; ctx.beginPath(); ctx.arc(lineX, cy, 6, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(lineX, cy, 2.4, 0, Math.PI*2); ctx.fill();
+    ctx.fillStyle=ink3; ctx.font=F('600',14); ctx.fillText(e.dateText+'   '+(e.track==='mom'?'🤱 产后':'👶 宝宝'), tx, cy-12);
+    ctx.fillStyle=ink; ctx.font=F('740',20); ctx.fillText(fitText(ctx, e.emoji+' '+e.label+'  ·  '+e.ageText, W-tx-padX), tx, cy+10);
+    if(e.note){ ctx.fillStyle=ink2; ctx.font=F('400',16); ctx.fillText(fitText(ctx, '“'+e.note+'”', W-tx-padX), tx, cy+32); }
+  });
+  let by = y + shown.length*rowH + 6;
+  if(msH){
+    ctx.fillStyle='#fbeef4'; roundRect(ctx, padX, by, W-padX*2, msH-12, 14); ctx.fill();
+    ctx.fillStyle=acc; ctx.font=F('740',18); ctx.fillText('🏆 这一路，'+(anyBaby?'宝宝':'你')+'学会了', padX+18, by+30);
+    ctx.fillStyle=ink; ctx.font=F('600',17); ctx.fillText(fitText(ctx, reached.join('  ·  '), W-padX*2-36), padX+18, by+58);
+    by += msH-12 + 14;
+  }
+  by += 36;
+  ctx.textAlign='center';
+  ctx.fillStyle=ink2; ctx.font=F('600',19);
+  ctx.fillText(anyBaby?'每一次记录，都是你陪他长大的证明。':'每一次记录，都是你好好爱自己的证明。', W/2, by);
+  ctx.fillStyle=ink3; ctx.font=F('500',13.5);
+  ctx.fillText('由 Coddle 育儿陪伴生成 · 仅作交互演示，非医疗建议', W/2, H-22);
+  ctx.textAlign='left';
+  return c;
+}
+function exportGrowthPath(){
+  if(!log.length){ GG.toast('还没有记录可导出'); return; }
+  const c = drawGrowthCanvas(); c.className='cd-ov-canvas';
+  const overlay = GG.el('div',{class:'cd-ov', onClick:(ev)=>{ if(ev.target===overlay) overlay.remove(); }},
+    GG.el('div',{class:'cd-ov-card'},
+      GG.el('div',{class:'cd-ov-h'}, '🌱 你的成长路径'),
+      c,
+      GG.el('div',{class:'cd-ov-row'},
+        GG.el('button',{class:'cd-ai-btn', onClick:()=>GG.downloadCanvas(c,'成长路径')}, '⬇️ 存成图片'),
+        GG.el('button',{class:'cd-seg', onClick:()=>GG.copyCanvas(c)}, '📷 复制图片'),
+        GG.el('button',{class:'cd-seg', onClick:()=>overlay.remove()}, '关闭'))));
+  document.body.appendChild(overlay);
+}
+
+/* ───────── 教学视频框（占位：保留教学视频位置，上线后替换为播放器）───────── */
+function videoFrame(topic, stageLabel){
+  return GG.el('div',{class:'cd-video', onClick:()=>GG.toast('教学视频即将上线（演示）')},
+    GG.el('div',{class:'cd-video-frame'},
+      GG.el('div',{class:'cd-video-soon'}, '即将上线'),
+      GG.el('div',{class:'cd-video-play'}, '▶'),
+      GG.el('div',{class:'cd-video-dur'}, '🎬 教学视频 · 约 2 分钟')),
+    GG.el('div',{class:'cd-video-meta'},
+      GG.el('div',{class:'cd-video-title'}, topic.video),
+      GG.el('div',{class:'cd-video-sub'}, '为「'+stageLabel+'」准备 · 上线后点这里看「具体怎么做」')));
 }
 
 /* ───────── 妈妈轨：附近服务导流（演示商家）───────── */
@@ -438,6 +615,17 @@ function injectCSS(){
   .cd-svc-pill.price{color:${a};font-weight:700}
   .cd-svc-cta{flex:none;align-self:center;padding:9px 14px;border-radius:10px;border:none;background:${a};color:#fff;font-size:13px;font-weight:700;cursor:pointer}
   .cd-svc-help{font-size:12px;line-height:1.55;color:#8a3326;background:#fff4f2;border:1px solid #ffd9d2;border-radius:10px;padding:10px 12px;margin-top:2px}
+  /* 教学视频框 */
+  .cd-video{margin:4px 0 14px;border:1px solid var(--line,#eceaf0);border-radius:14px;overflow:hidden;cursor:pointer;background:var(--surface,#fff);transition:.15s}
+  .cd-video:hover{border-color:${a};transform:translateY(-1px);box-shadow:0 10px 26px -18px rgba(80,40,90,.5)}
+  .cd-video-frame{position:relative;aspect-ratio:16/9;background:linear-gradient(135deg,#3a2f3c,#7a5566);display:flex;align-items:center;justify-content:center}
+  .cd-video-play{width:54px;height:54px;border-radius:50%;background:rgba(255,255,255,.94);color:${a};display:flex;align-items:center;justify-content:center;font-size:21px;padding-left:3px;box-shadow:0 6px 18px -6px rgba(0,0,0,.5)}
+  .cd-video:hover .cd-video-play{transform:scale(1.08)}
+  .cd-video-soon{position:absolute;top:9px;right:9px;font-size:10px;font-weight:700;color:#fff;background:rgba(0,0,0,.38);border:1px solid rgba(255,255,255,.55);border-radius:999px;padding:2px 9px}
+  .cd-video-dur{position:absolute;bottom:9px;left:11px;font-size:11px;color:rgba(255,255,255,.92);text-shadow:0 1px 3px rgba(0,0,0,.4)}
+  .cd-video-meta{padding:10px 13px}
+  .cd-video-title{font-size:14px;font-weight:740;color:var(--ink,#2b2630)}
+  .cd-video-sub{font-size:11.5px;color:var(--ink-3,#9a949f);margin-top:2px}
   /* AI 层 */
   .cd-ai{margin-top:12px;border-left:3px solid ${a};background:var(--bg-soft,#faf8fb);border-radius:10px;padding:12px 13px}
   .cd-ai-cap{font-size:13px;font-weight:760;color:var(--ink,#2b2630)}
@@ -445,6 +633,46 @@ function injectCSS(){
   .cd-ai-btn:disabled{opacity:.6;cursor:default}
   .cd-ai-sum{margin:8px 0 0;font-weight:640;line-height:1.55;color:var(--ink,#2b2630)}
   .cd-ai-ul{margin:6px 0 0;padding-left:20px;color:var(--ink-2,#5a545f);line-height:1.7;font-size:13.5px}
+  /* 成长记录入口 */
+  .cd-log-btn{margin-left:auto;height:34px;padding:0 12px;border-radius:999px;border:1.5px solid ${a};background:var(--accent-soft,#fbeef4);color:${a};font-size:13px;font-weight:740;cursor:pointer}
+  .cd-segwrap .cd-log-btn + .cd-home{margin-left:8px}
+  .cd-gate-log{display:flex;align-items:center;justify-content:center;gap:6px;width:100%;margin:12px 0 0;padding:11px;border-radius:13px;border:1.5px solid ${a};background:var(--surface,#fff);color:${a};font-size:13.5px;font-weight:720;cursor:pointer}
+  .cd-gate-log:hover{background:var(--accent-soft,#fbeef4)}
+  .cd-gate-log-go{font-size:16px}
+  /* 记一笔 */
+  .cd-rec-row{display:flex;gap:10px;align-items:center;margin-top:12px}
+  .cd-rec-btn{flex:1;padding:11px;border-radius:12px;border:none;background:${a};color:#fff;font-size:14px;font-weight:740;cursor:pointer}
+  .cd-rec-btn:disabled{background:#cdbcc5;cursor:default}
+  .cd-rec-link{padding:11px 12px;border-radius:12px;border:1.5px solid var(--line,#eceaf0);background:var(--surface,#fff);color:var(--ink-2,#5a545f);font-size:13px;font-weight:640;cursor:pointer;white-space:nowrap}
+  /* 成长记录视图 */
+  .cd-log-title{font-size:16px;font-weight:800;color:var(--ink,#2b2630);margin:0 auto 0 8px}
+  .cd-log-empty{text-align:center;padding:36px 18px;color:var(--ink-2,#5a545f)}
+  .cd-log-empty-ic{font-size:46px}
+  .cd-log-summary{background:linear-gradient(135deg,var(--accent-soft,#fbeef4),transparent);border-radius:14px;padding:14px 15px;margin-bottom:12px}
+  .cd-log-actions{display:flex;gap:10px;margin-bottom:14px}
+  .cd-export-btn{flex:1;padding:12px;border-radius:12px;border:none;background:${a};color:#fff;font-size:14px;font-weight:760;cursor:pointer;box-shadow:0 10px 24px -14px ${a}}
+  .cd-clear-btn{padding:12px 14px;border-radius:12px;border:1.5px solid var(--line,#eceaf0);background:var(--surface,#fff);color:var(--ink-3,#9a949f);font-size:13px;cursor:pointer}
+  .cd-clear-btn.arm{border-color:#c0392b;color:#c0392b}
+  .cd-log-list{display:flex;flex-direction:column}
+  .cd-log-item{display:flex;gap:11px;align-items:flex-start;padding:12px 2px;border-top:1px solid var(--line,#f0ecf2)}
+  .cd-log-item:first-child{border-top:none}
+  .cd-log-dot{flex:none;width:11px;height:11px;border-radius:50%;margin-top:5px;background:${a};box-shadow:0 0 0 4px var(--accent-soft,#fbeef4)}
+  .cd-log-dot.mom{background:#c0567f;box-shadow:0 0 0 4px #f7e4ec}
+  .cd-log-body{flex:1;min-width:0}
+  .cd-log-metarow{font-size:11.5px;color:var(--ink-3,#9a949f)}
+  .cd-log-mainrow{font-size:15px;font-weight:700;color:var(--ink,#2b2630);margin:2px 0;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cd-log-age{font-size:11.5px;font-weight:640;color:${a};background:var(--accent-soft,#fbeef4);border-radius:999px;padding:2px 9px}
+  .cd-log-noterow{font-size:13px;color:var(--ink-2,#5a545f);font-style:italic;line-height:1.45}
+  .cd-log-noterow.muted{color:var(--ink-3,#bdb6c2);font-style:normal}
+  .cd-log-del{flex:none;width:28px;height:28px;border-radius:50%;border:none;background:transparent;color:var(--ink-3,#bdb6c2);font-size:14px;cursor:pointer}
+  .cd-log-del:hover{background:#fdeceabb;color:#c0392b}
+  /* 导出弹层 */
+  .cd-ov{position:fixed;inset:0;z-index:50;background:rgba(30,22,30,.55);display:flex;align-items:center;justify-content:center;padding:18px}
+  .cd-ov-card{background:var(--surface,#fff);border-radius:18px;padding:16px;max-width:380px;width:100%;max-height:90vh;overflow:auto;box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
+  .cd-ov-h{font-size:15px;font-weight:800;color:var(--ink,#2b2630);margin-bottom:10px}
+  .cd-ov-canvas{width:100%;height:auto;border-radius:12px;border:1px solid var(--line,#eceaf0);display:block}
+  .cd-ov-row{display:flex;gap:8px;margin-top:12px}
+  .cd-ov-row .cd-ai-btn{flex:1}
   `;
   document.head.appendChild(GG.el('style',{id:'cd-style', html:css}));
 }
