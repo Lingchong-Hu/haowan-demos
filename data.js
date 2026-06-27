@@ -399,77 +399,43 @@ window.PROJECTS = [
     ]
   },
 
-  /* ───────────────────────── 07 origin ───────────────────────── */
+  /* ───────────────────────── 07 fortuna（合并 origin 体检 + robo-core 配置）─────────── */
   {
-    id: "origin", no: "07", cat: "金融",
-    kicker: "个人理财 · 财务健康",
-    title: "财务体检",
-    subtitle: "答几道题，得一个财务健康分和最该做的下一步",
-    url: "demos/origin/", tags: ["财务健康分","引用真实数字","可执行下一步","纯离线"],
-    phoneHint: "填收入 / 储蓄 / 负债等，看健康分与建议",
+    id: "fortuna", no: "07", cat: "金融", featured: true,
+    kicker: "个人财富 · AI 财务管家",
+    title: "AI 财务管家",
+    subtitle: "财务体检 → 设目标 → 资产配置 + 蒙特卡洛达成概率 + 行动计划，一条闭环",
+    url: "demos/fortuna/", tags: ["财务体检","目标驱动","蒙特卡洛","风险配置","纯离线"],
+    phoneHint: "填快照 → 设目标 → 看达成概率随目标/期限/定投实时变化",
     sections: [
-      { label: "是什么",   html: `<p>像体检报告一样给你的财务打个分，并指出最该改善的一项。</p>` },
-      { label: "程序逻辑", html: `<h3>问卷 → 健康分 → 下一步</h3>
-        <div class="flow"><span class="step">答财务问卷</span><span class="arr">→</span><span class="step">算健康分</span><span class="arr">→</span><span class="step">分数 + 下一步</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>把「财务体检」和「智能投顾」打通成一条闭环：先用几项数字给你算出财务健康分与<b>可投资余力</b>，再让你定一个目标（买房/退休/教育/应急），系统按你的风险画像给出资产配置，并用<b>蒙特卡洛模拟跑 1000 次市场情景</b>，告诉你「在 N 年内攒够的概率有多大」，最后给一份按理财金字塔排序的行动计划。</p>
+        <p class="small" style="color:var(--ink-soft)">改目标 / 期限 / 每月定投 / 风险，达成概率与扇形带即时重算。</p>` },
+      { label: "程序逻辑", html: `<h3>体检 → 目标 → 配置 → 蒙特卡洛 → 行动</h3>
+        <div class="flow"><span class="step">财务快照</span><span class="arr">→</span><span class="step">健康分 + 风险画像</span><span class="arr">→</span><span class="step">设目标</span><span class="arr">→</span><span class="step">配置 + 达成概率</span><span class="arr">→</span><span class="step">行动计划</span></div>
         <ul>
-          <li>覆盖应急金、储蓄率、负债比、保险等维度，逐项打分加权成总分</li>
-          <li>结果<b>引用你填的具体数字</b>（如储蓄率 12%），不是泛泛而谈</li>
-          <li>下一步按最弱项给出，换答案分数与建议都变</li>
+          <li><b>体检</b>：储蓄率/负债比/应急金/支出占比加权成健康分；算出净资产与每月可投余力</li>
+          <li><b>风险画像</b>：承受「意愿」（问卷）× 承受「能力」（年龄/期限/应急金/负债客观推算），取较低者为上限 → C1~C5</li>
+          <li><b>蒙特卡洛</b>：用配置的预期收益与波动跑 1000 条路径，给出达成概率与 p10/p50/p90 扇形带（同样输入 → 同样结果，可复现）</li>
+          <li><b>行动计划</b>：按「应急金 → 还高息债 → 配置定投 → 加保障」金字塔排序，引用你的真实数字</li>
         </ul>
-        <p style="margin-top:16px">本地评分模型，<b>零外部依赖、纯离线</b>；结果区带「非财务建议」声明。</p>` },
+        <p style="margin-top:16px">评分、配置、蒙特卡洛<b>全本地确定性计算、零外部依赖</b>；连了 AI key 再叠加一段合规解读。结果区强制「非投资建议」声明。</p>` },
       { label: "商业模式", html: `<ul>
-          <li><b>金融产品导流</b>：按薄弱项精准推荐储蓄 / 保险 / 还债工具，CPA / CPS 变现（Credit Karma 模式）</li>
-          <li><b>订阅</b>：账户聚合、目标追踪、定期复检</li>
-          <li><b>B 端</b>：作为银行 / 雇主福利的「财务健康」入口</li>
+          <li><b>管理费（AUM）+ 增值订阅</b>：目标规划、税务优化、人工顾问加配（Betterment / Wealthfront 模式）</li>
+          <li><b>金融产品导流</b>：按薄弱项精准对接储蓄 / 保险 / 还债工具，CPA / CPS 变现（Credit Karma 模式）</li>
+          <li><b>B 端 / 白标</b>：作为银行、券商、雇主福利的「财务健康 + 投顾」引擎</li>
         </ul>` },
       { label: "市场分析", html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
         <ul>
-          <li><b>Credit Karma（被 Intuit 收购）</b>：免费给信用 / 财务评分，靠精准金融产品推荐变现，是「免费评分 → 导流」模式的标杆。</li>
-          <li><b>Origin / Monarch / Rocket Money</b>：把收入、储蓄、负债聚合成财务全景与行动建议的订阅工具。</li>
-          <li><b>NerdWallet（美股 NRDS）</b>：财务测评 + 内容 + 金融产品对比导流，公开市场盈利。</li>
+          <li><b>Betterment / Wealthfront</b>：美国两大独立智能投顾，问卷定风险 → 自动配置，Wealthfront 的 Path 正是「目标 + 蒙特卡洛达成概率」这套，各管理数百亿美元。</li>
+          <li><b>Origin / Monarch / Rocket Money</b>：把收入、储蓄、负债、目标聚合成财务全景与规划的订阅工具。</li>
+          <li><b>Credit Karma（Intuit 收购）/ NerdWallet（NRDS）</b>：免费评分/测评 → 金融产品导流，公开市场验证的变现路径。</li>
+          <li><b>蚂蚁财富「帮你投」/ 理财魔方</b>：国内基金投顾，目标式陪伴 + 组合配置。</li>
         </ul>
         <ul>
-          <li><b>痛点</b>：多数人没有财务全景，焦虑却不知从何下手</li>
-          <li><b>人群</b>：刚工作 / 成家、有理财焦虑的中青年</li>
-          <li><b>本地化</b>：接国内储蓄 / 保险 / 公积金语境，避开投顾牌照红线</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：涉财需合规，本 demo 仅作交互展示、非财务建议</li>
-        </ul>` }
-    ]
-  },
-
-  /* ───────────────────────── 08 robo-core ───────────────────────── */
-  {
-    id: "robo-core", no: "08", cat: "金融",
-    kicker: "财富管理 · 智能投顾",
-    title: "智能配置",
-    subtitle: "答几道风险题，资产配置饼图与增长曲线实时变化",
-    url: "demos/robo-core/", tags: ["风险画像","实时配置","增长曲线","纯离线"],
-    phoneHint: "拖动风险问卷，看饼图与曲线随之变化",
-    sections: [
-      { label: "是什么",   html: `<p>把「你能承受多大波动」翻译成一张资产配置饼图和一条增长曲线。</p>` },
-      { label: "程序逻辑", html: `<h3>风险问卷 → 配置 → 饼图 + 曲线</h3>
-        <div class="flow"><span class="step">答风险题</span><span class="arr">→</span><span class="step">算风险分</span><span class="arr">→</span><span class="step">饼图 + 增长曲线</span><span class="arr">→</span><span class="step">分享</span></div>
-        <ul>
-          <li>问卷算出风险承受分，映射到股 / 债 / 现金 / 另类的配置比例</li>
-          <li>饼图随答案<b>实时重画</b>，增长曲线按预期收益与波动模拟</li>
-          <li>越激进股票占比越高、曲线越陡也越抖</li>
-        </ul>
-        <p style="margin-top:16px">本地配置模型 + 曲线模拟，<b>零外部依赖、纯离线</b>；带「非投资建议」声明。</p>` },
-      { label: "商业模式", html: `<ul>
-          <li><b>管理费（AUM）</b>：按资产规模收年费，是智能投顾主力收入（Betterment / Wealthfront 模式）</li>
-          <li><b>增值订阅</b>：税务优化、目标规划、人工顾问加配</li>
-          <li><b>B 端 / 白标</b>：给银行、券商提供智能投顾引擎</li>
-        </ul>` },
-      { label: "市场分析", html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-        <ul>
-          <li><b>Betterment / Wealthfront</b>：美国两大独立智能投顾，问卷定风险 → 自动配置 ETF 组合，各管理数百亿美元，靠管理费盈利。</li>
-          <li><b>Vanguard Digital Advisor / Schwab Intelligent Portfolios</b>：传统巨头的低费率智能投顾，规模更大。</li>
-        </ul>
-        <ul>
-          <li><b>痛点</b>：普通人不会做资产配置，传统理财门槛高、不透明</li>
-          <li><b>人群</b>：有结余、想省心理财的中青年</li>
-          <li><b>本地化</b>：国内需基金投顾牌照，可与持牌机构合作落地</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：涉投资强监管，本 demo 仅作交互展示、非投资建议</li>
+          <li><b>痛点</b>：体检知道分数却不知怎么动手；投顾给了配置却不回答「我到底能不能达成目标」——两件事一向是割裂的</li>
+          <li><b>人群</b>：有结余、有目标（买房/养娃/退休）、想省心又想看清概率的中青年</li>
+          <li><b>本地化</b>：国内需基金投顾牌照，与持牌机构合作落地；接公积金/保险/储蓄语境</li>
+          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：涉投资强监管，本 demo 仅为产品原型与测算、非投资建议；市场假设为简化模型，不预示未来收益</li>
         </ul>` }
     ]
   },
