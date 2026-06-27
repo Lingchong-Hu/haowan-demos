@@ -1,152 +1,163 @@
-/* pet-vet 数据：每个症状 = 1~2 个澄清问题（每题 2~3 个选项）+ 依澄清答案分支的建议。
-   关键点：必须先反问澄清，再给建议。不同症状 / 不同澄清答案 → 不同建议。
+/* pet-vet 数据 —— AI 兽医病历助手（Scribe）。
+   一段问诊速记 → SOAP 病历 + 鉴别诊断 + 给主人的出院医嘱 + 费用预估。
+   CASES：预置病例，既是首屏示例、也是「未连 key」时的离线兜底；结构与 AI 返回 JSON 完全对齐。
+   连 key 后，任意速记交给真实模型生成同一结构。
 
-   结构：
-   SPECIES   物种选项（可选）
-   LEVELS    三级语气分级：home（在家护理）/ vet（建议就医）/ er（尽快急诊）
-   SYMPTOMS  { key: { emoji, label, blurb, questions:[ {id,q,opts:[{v,label}]} ], rule(ans)->{level,advice} } }
-             rule 收到所有澄清答案（id->v），返回命中的等级与一段建议文案。
-   有的症状只需 1 个澄清问题就能给建议；有的会按第一个答案决定要不要追问第二个（见 needSecond）。
+   doc 结构（CASES 每项 / AI 返回都用它）：
+     signalment {species,breed,sex,age,weight,bcs}
+     urgency    'er' | 'today' | 'routine'
+     soap       {s,o,a,p}                              主诉病史 / 客观检查 / 评估 / 计划
+     differentials [{dx,like('高'|'中'|'低'),why,test}]  鉴别诊断（按可能性降序，仅提示非确诊）
+     discharge  {summary, care[], meds[], recheck, redflags[]}  给主人的大白话出院医嘱
+     estimate   [{item, low, high}]                    费用预估区间（元）
 */
 (function(){
 
-const SPECIES = [
-  { v:'dog', label:'🐶 狗狗' },
-  { v:'cat', label:'🐱 猫猫' },
-  { v:'unknown', label:'🐾 不指定' }
+const LIKE = {
+  '高': { color:'#d24a3a', soft:'rgba(210,74,58,.12)', pct:90 },
+  '中': { color:'#c08a2a', soft:'rgba(192,138,42,.12)', pct:56 },
+  '低': { color:'#3a7bd5', soft:'rgba(58,123,213,.12)', pct:26 }
+};
+
+const URGENCY = {
+  er:      { key:'er',      label:'急诊处理', emoji:'🚑', color:'#d24a3a', soft:'rgba(210,74,58,.12)', note:'存在危及生命的风险信号，需即刻处置' },
+  today:   { key:'today',   label:'当日就诊', emoji:'🩺', color:'#c08a2a', soft:'rgba(192,138,42,.12)', note:'建议今日内检查处理，别拖' },
+  routine: { key:'routine', label:'常规 / 择期', emoji:'🗓', color:'#2e8b57', soft:'rgba(46,139,87,.12)', note:'可常规预约，按计划随访' }
+};
+
+const CASES = [
+  {
+    id:'vomit-dog', chip:'🐕 呕吐 · 金毛', kind:'急腹症',
+    raw:'金毛/8岁/公绝育。呕吐3天今天加重，吐黄水泡沫，今天一口没吃、没精神。T39.8 HR120，肚子前面一按就疼、绷得紧。体重32.4，有没有乱吃东西不确定。',
+    signalment:{ species:'犬', breed:'金毛寻回犬', sex:'公 · 已绝育', age:'8 岁', weight:'32.4 kg', bcs:'5/9' },
+    urgency:'er',
+    soap:{
+      s:'8 岁公性已绝育金毛犬。主人诉呕吐 3 天、频率渐增且今日加重，呕吐物由食物转为黄色泡沫样；今日完全拒食、饮水减少、精神沉郁。误食史不详。',
+      o:'T 39.8℃(↑)，HR 120 bpm，RR 28/min；可视黏膜略干、CRT<2s。腹部前段触诊紧张、有明显疼痛反应。BW 32.4 kg，BCS 5/9。',
+      a:'急性呕吐伴前腹痛、发热、拒食。首要怀疑急性胰腺炎，需排除胃肠道异物 / 梗阻与急性胃肠炎。',
+      p:'血常规 + 生化（含 cPL / 胰酶）+ 腹部 X 光，必要时腹部超声。先行止吐（马罗匹坦）、静脉补液纠正脱水、禁食观察。依检查结果调整治疗，48h 内复评。'
+    },
+    differentials:[
+      { dx:'急性胰腺炎',          like:'高', why:'前腹疼痛 + 呕吐 + 发热，中老年犬高发', test:'cPL / 胰酶、腹部超声' },
+      { dx:'胃肠道异物 / 梗阻',    like:'中', why:'呕吐渐进性加重、完全拒食', test:'腹部 X 光 ± 钡餐造影' },
+      { dx:'急性胃肠炎',          like:'中', why:'呕吐黄沫常见，但本例发热腹痛程度偏重', test:'血常规、粪便检查' },
+      { dx:'肝胆 / 全身性疾病',    like:'低', why:'需生化进一步排查肝肾胰功能', test:'生化全项' }
+    ],
+    discharge:{
+      summary:'今天豆豆的情况偏急，我们怀疑是胰腺或肠胃的急性问题，已经先打了止吐针、挂了补液，正在等血液和影像检查结果。',
+      care:['今晚先禁食，只给少量清水，别喂任何食物','明早起若不再吐，喂处方易消化粮、少量多次','让它安静休息，记下呕吐次数和精神状态'],
+      meds:['马罗匹坦止吐针：已注射第 1 针，之后每日 1 次、连用 3 天（按医嘱）'],
+      recheck:'48 小时内带检查结果回诊复评',
+      redflags:['喝水也马上吐、一天吐 5 次以上','肚子明显鼓胀，或一碰就痛得尖叫','牙龈发白、瘫软站不起来']
+    },
+    estimate:[
+      { item:'诊疗 / 挂号',            low:50,  high:80 },
+      { item:'血常规 + 生化（含胰酶）',  low:300, high:520 },
+      { item:'腹部 X 光（2 张）',       low:200, high:350 },
+      { item:'腹部超声',              low:260, high:420 },
+      { item:'止吐 + 静脉补液（当日）',  low:160, high:300 }
+    ]
+  },
+
+  {
+    id:'urinary-cat', chip:'🐈 尿闭 · 公猫', kind:'泌尿急症',
+    raw:'公猫3岁英短，今天一直往猫砂盆跑、蹲很久尿不出来、一直叫，老舔下面，碰肚子很凶。昨天开始就没怎么吃了。',
+    signalment:{ species:'猫', breed:'英国短毛', sex:'公 · 已绝育', age:'3 岁', weight:'5.6 kg', bcs:'6/9' },
+    urgency:'er',
+    soap:{
+      s:'3 岁公性已绝育英短。主人诉今日频繁进出猫砂盆、努责排尿但尿量极少 / 无尿，伴持续鸣叫、频繁舔舐会阴；昨起食欲下降。',
+      o:'精神沉郁；膀胱触诊高度充盈、紧张、明显疼痛、不易排空，下腹紧张。BW 5.6 kg，BCS 6/9。临床高度提示尿道阻塞。',
+      a:'高度怀疑公猫尿道阻塞（FLUTD / 尿闭）——属泌尿急症，可继发高钾血症与急性肾损伤，危及生命。',
+      p:'即刻评估生化（K⁺ / BUN / CREA）+ 血气、腹部 X 光查结石。镇静下导尿解除阻塞、留置导尿管、静脉补液纠正电解质，住院监护。'
+    },
+    differentials:[
+      { dx:'尿道阻塞（尿闭）',     like:'高', why:'公猫努责无尿 + 膀胱充盈疼痛，典型急症', test:'生化 K⁺、腹部 X 光、导尿试探' },
+      { dx:'特发性膀胱炎（FIC）',  like:'中', why:'年轻公猫高发、常与应激相关', test:'尿检，排除阻塞后诊断' },
+      { dx:'膀胱 / 尿道结石',      like:'中', why:'可造成阻塞，需影像确认', test:'腹部 X 光 / 超声' },
+      { dx:'单纯尿路感染',        like:'低', why:'青年公猫单纯感染相对少见', test:'尿液镜检 + 培养' }
+    ],
+    discharge:{
+      summary:'糖豆是公猫尿道堵住了，这是会要命的急症，我们已经给它通了尿、留了尿管，正在住院补液监护。下面是接它回家后的注意事项。',
+      care:['严格喂泌尿处方湿粮，让它多喝水（多放水碗 / 流动水）是关键','保持猫砂盆干净、减少环境应激','每天观察排尿量和是否顺畅'],
+      meds:['解痉 / 止痛药：按医嘱给','泌尿处方粮：长期吃，别再喂普通干粮'],
+      recheck:'拔尿管后 3–5 天复查尿液，之后定期随访防复发',
+      redflags:['又出现蹲盆尿不出、努责鸣叫','呕吐、不吃、瘫软（可能高钾或肾损伤）','肚子鼓胀']
+    },
+    estimate:[
+      { item:'急诊诊疗 + 评估',          low:80,  high:150 },
+      { item:'生化（电解质 / 肾值）+ 血气', low:280, high:480 },
+      { item:'腹部 X 光',               low:180, high:320 },
+      { item:'镇静 + 导尿 + 留置尿管',    low:400, high:800 },
+      { item:'住院 + 静脉补液（每日）',    low:300, high:600 }
+    ]
+  },
+
+  {
+    id:'skin-dog', chip:'🐩 瘙痒 · 法斗', kind:'慢性皮肤',
+    raw:'法斗2岁母绝育，最近一个月一直挠、舔爪子、蹭脸，腋下和肚皮发红、有点掉毛但没破。体外驱虫上个月做的。感觉换季就犯。',
+    signalment:{ species:'犬', breed:'法国斗牛犬', sex:'母 · 已绝育', age:'2 岁', weight:'11.2 kg', bcs:'5/9' },
+    urgency:'routine',
+    soap:{
+      s:'2 岁母性已绝育法斗。主人诉近 1 月持续瘙痒、舔咬足部、蹭脸；腋下及腹部皮肤发红、轻度脱毛、无破溃。规律体外驱虫（上月）。有季节性发作倾向。',
+      o:'腋下、腹股沟、足背可见红斑，轻度自损性脱毛；指间略潮红。未见明显跳蚤 / 螨虫迹象，无脓疱、无渗出。',
+      a:'慢性瘙痒、皮损分布符合犬特应性皮炎（CAD）。需与跳蚤过敏、食物过敏及继发感染（马拉色菌 / 细菌）鉴别。',
+      p:'皮肤刮片 + 胶带镜检排寄生虫 / 马拉色菌。控痒（奥拉替尼类）、必要时短期抗感染。建议 8 周食物排除试验，并加强长效驱虫。'
+    },
+    differentials:[
+      { dx:'犬特应性皮炎（CAD）',     like:'高', why:'年轻、季节性、典型分布（足 / 腋 / 腹 / 面）', test:'临床诊断 + 排除法，必要时过敏原检测' },
+      { dx:'马拉色菌 / 细菌继发感染', like:'中', why:'瘙痒 + 潮红常继发酵母或细菌', test:'胶带镜检、皮肤细胞学' },
+      { dx:'食物过敏',              like:'中', why:'非季节性瘙痒需排除', test:'8 周食物排除试验' },
+      { dx:'跳蚤过敏性皮炎',         like:'低', why:'有规律驱虫，可能性降低但不能完全排除', test:'跳蚤梳查、驱虫回顾' }
+    ],
+    discharge:{
+      summary:'多多的皮肤问题更像是过敏体质（特应性皮炎），不是一次能根治、但能控制得很好。今天先做了镜检、开了止痒药，接下来要配合排查。',
+      care:['按医嘱给止痒药，别自己停药','戴软圈或穿衣，防止它继续舔咬足部','每天给瘙痒程度打个分（0–10），复诊时看趋势'],
+      meds:['止痒药（奥拉替尼类）：每日按体重给','药浴 / 外用：按周使用'],
+      recheck:'2–3 周复诊看控痒效果；若安排食物试验，满 8 周再评估',
+      redflags:['皮肤出现脓疱、流脓、明显异味（继发感染）','大面积抓破出血','突然肿脸、呼吸急促（急性过敏）']
+    },
+    estimate:[
+      { item:'皮肤科诊疗',          low:60,  high:120 },
+      { item:'皮肤刮片 + 细胞学镜检', low:120, high:240 },
+      { item:'止痒药（首月）',       low:200, high:420 },
+      { item:'药浴 / 外用产品',      low:80,  high:180 },
+      { item:'（可选）过敏原检测',    low:600, high:1200 }
+    ]
+  },
+
+  {
+    id:'senior-cat', chip:'🐱 消瘦 · 老猫', kind:'老年内科',
+    raw:'13岁老猫母绝育，最近两三个月瘦了好多，特别能喝水、猫砂盆老是湿一大坨，吃得不少但还掉秤，有时叫得多、有点焦躁。',
+    signalment:{ species:'猫', breed:'家养短毛', sex:'母 · 已绝育', age:'13 岁', weight:'3.2 kg', bcs:'3/9' },
+    urgency:'today',
+    soap:{
+      s:'13 岁母性已绝育家猫。主人诉近 2–3 月进行性体重下降，食欲正常甚至增加（多食），明显多饮多尿（PU/PD），偶发夜嚎与躁动。',
+      o:'消瘦，BW 3.2 kg、BCS 3/9；被毛略乱。颈部可疑甲状腺结节感（待确认），心率偏快。脱水不明显。',
+      a:'老年猫「多食 + 消瘦 + PU/PD」：首要排查甲状腺机能亢进，同时评估慢性肾病（CKD）与糖尿病（三者可并存）。',
+      p:'生化全项 + 血清 T4、尿比重 / 尿检、血压。依结果区分甲亢 / CKD / DM 并分别处理；甲亢可药物（甲巯咪唑）或处方粮起始。'
+    },
+    differentials:[
+      { dx:'甲状腺机能亢进',        like:'高', why:'老年猫多食却消瘦 + PU/PD + 躁动，最典型', test:'血清 T4（必要时 fT4）' },
+      { dx:'慢性肾病（CKD）',       like:'中', why:'老年猫高发，PU/PD 常见，可与甲亢并存', test:'生化 BUN/CREA/SDMA、尿比重' },
+      { dx:'糖尿病',               like:'中', why:'多饮多尿 + 体重下降需排除', test:'血糖 + 果糖胺、尿糖' },
+      { dx:'消化道淋巴瘤 / 吸收不良', like:'低', why:'食欲好却仍消瘦的少见病因', test:'腹部超声，必要时活检' }
+    ],
+    discharge:{
+      summary:'咪咪这个年纪「能吃还掉秤、又特别能喝水」最常见的原因是甲状腺亢进，但要一起查肾和血糖——老猫常常不止一个问题。今天先安排抽血。',
+      care:['保证随时有干净饮水，记录每天饮水量和体重','按它的食欲准备易吸收的食物','如可行，收集一次新鲜尿样带来'],
+      meds:['（待检查后）若确诊甲亢，起始甲巯咪唑或处方粮（按医嘱）'],
+      recheck:'抽血结果出来即沟通方案；用药后 2–4 周复查 T4 与肾值',
+      redflags:['完全不吃、呕吐、迅速虚弱','呼吸急促、张口呼吸（甲亢可累及心脏）','大量饮水却仍脱水、尿不出']
+    },
+    estimate:[
+      { item:'老年猫诊疗',         low:60,  high:120 },
+      { item:'生化全项 + 电解质',   low:300, high:520 },
+      { item:'血清 T4',           low:150, high:300 },
+      { item:'尿检 + 尿比重',      low:80,  high:180 },
+      { item:'血压测量',          low:60,  high:140 }
+    ]
+  }
 ];
 
-const LEVELS = {
-  home: { key:'home', name:'可在家观察护理', emoji:'🏠', short:'在家护理',
-          color:'#2e8b57', soft:'rgba(46,139,87,.10)' },
-  vet:  { key:'vet',  name:'建议尽快就医',   emoji:'🩺', short:'建议就医',
-          color:'#c08a2a', soft:'rgba(192,138,42,.12)' },
-  er:   { key:'er',   name:'尽快急诊',       emoji:'🚑', short:'尽快急诊',
-          color:'#d24a3a', soft:'rgba(210,74,58,.12)' }
-};
-
-/* 小工具：把用户对某题选的选项 label 取出来，便于在建议里"引用用户的回答" */
-function labelOf(sym, qid, v){
-  const q = sym.questions.find(q=>q.id===qid);
-  if(!q) return v;
-  const o = q.opts.find(o=>o.v===v);
-  return o ? o.label : v;
-}
-
-const SYMPTOMS = {
-  vomit: {
-    emoji:'🤮', label:'呕吐', blurb:'吐了食物 / 黄水 / 反复干呕',
-    questions:[
-      { id:'dur', q:'吐了多久了？', opts:[
-        {v:'once', label:'就吐了一两次，刚开始'},
-        {v:'day',  label:'已经一整天了'},
-        {v:'multi', label:'不止一天，反复吐'} ]},
-      { id:'spirit', q:'它现在精神状态怎么样？', opts:[
-        {v:'ok',  label:'照常活泼、还想吃'},
-        {v:'low', label:'有点蔫、没什么精神'},
-        {v:'bad', label:'很虚弱 / 站不稳 / 不停吐'} ]}
-    ],
-    rule(ans){
-      const dur = labelOf(this,'dur',ans.dur), sp = labelOf(this,'spirit',ans.spirit);
-      const quote = `你说「${dur}、${sp}」`;
-      if(ans.spirit==='bad' || ans.dur==='multi' && ans.spirit==='low')
-        return { level:'er', advice:`${quote}——反复呕吐又没精神，容易引发脱水甚至更严重的问题，建议尽快带去急诊，路上可少量喂水但别强行喂食。` };
-      if(ans.dur==='once' && ans.spirit==='ok')
-        return { level:'home', advice:`${quote}——偶发一两次、精神食欲都在，多半是肠胃一时不适。可先禁食 6~8 小时、之后少量多次喂温水和易消化食物观察，若再次呕吐或变蔫再就医。` };
-      return { level:'vet', advice:`${quote}——持续呕吐或开始没精神，建议尽快就医排查肠胃炎、误食或异物，先停食停水别硬喂。` };
-    }
-  },
-
-  diarrhea: {
-    emoji:'💩', label:'拉稀', blurb:'软便 / 水样便 / 次数变多',
-    questions:[
-      { id:'blood', q:'便便里有血或发黑吗？', opts:[
-        {v:'no',   label:'没有，就是软 / 水样'},
-        {v:'some', label:'带一点血丝 / 黏液'},
-        {v:'black', label:'明显血便或发黑' }]},
-      { id:'eat', q:'还正常吃东西、喝水吗？', opts:[
-        {v:'yes', label:'照吃照喝，挺有精神'},
-        {v:'less', label:'吃得少了一些'},
-        {v:'no', label:'基本不吃不喝' }]}
-    ],
-    rule(ans){
-      const bl = labelOf(this,'blood',ans.blood), ea = labelOf(this,'eat',ans.eat);
-      const quote = `你说「${bl}、${ea}」`;
-      if(ans.blood==='black' || ans.eat==='no')
-        return { level:'er', advice:`${quote}——明显血便/发黑或完全不吃不喝，可能是急性肠炎、中毒或脱水，建议尽快急诊，最好带上便便样本给医生看。` };
-      if(ans.blood==='no' && ans.eat==='yes')
-        return { level:'home', advice:`${quote}——单纯软便、精神食欲都在，常见于吃坏肚子或换粮。可清淡饮食 1~2 天、保证饮水观察；若 48 小时不好转或出现血便再就医。` };
-      return { level:'vet', advice:`${quote}——拉稀带血丝或食欲下降，建议近一两天内就医，查清是寄生虫、肠炎还是饮食问题。` };
-    }
-  },
-
-  noteat: {
-    emoji:'🍽️', label:'不吃东西', blurb:'食欲下降 / 拒食',
-    questions:[
-      { id:'span', q:'多久没好好吃了？', opts:[
-        {v:'meal', label:'就这一两顿不太想吃'},
-        {v:'day',  label:'差不多一天没怎么吃'},
-        {v:'two', label:'超过两天几乎不吃' }]},
-      { id:'other', q:'除了不吃，还有别的不对劲吗？', opts:[
-        {v:'none', label:'其它都正常，就是挑'},
-        {v:'tired', label:'同时变得很蔫 / 躲起来'},
-        {v:'sign', label:'还伴呕吐 / 拉稀 / 发抖' }]}
-    ],
-    rule(ans){
-      const sp = labelOf(this,'span',ans.span), ot = labelOf(this,'other',ans.other);
-      const quote = `你说「${sp}、${ot}」`;
-      if(ans.span==='two' || ans.other==='sign')
-        return { level:'er', advice:`${quote}——长时间拒食或同时有呕吐拉稀发抖，尤其猫超过 1~2 天不吃可能伤肝，建议尽快就医检查。` };
-      if(ans.span==='meal' && ans.other==='none')
-        return { level:'home', advice:`${quote}——偶尔一两顿没胃口、其它正常，可能只是嘴叼或天气热。可换点适口食物、保证饮水，观察一天；若继续不吃或变蔫再就医。` };
-      return { level:'vet', advice:`${quote}——食欲明显下降并开始没精神，建议尽快就医排查口腔、肠胃或全身性问题。` };
-    }
-  },
-
-  scratch: {
-    emoji:'🐾', label:'一直抓挠', blurb:'抓痒 / 蹭 / 啃咬皮肤',
-    questions:[
-      { id:'skin', q:'扒开毛看，皮肤是什么样？', opts:[
-        {v:'fine', label:'看起来没破、没红'},
-        {v:'red',  label:'有点红 / 掉毛 / 皮屑'},
-        {v:'wound', label:'抓破流血或大片红肿' }]},
-      { id:'flea', q:'最近做过体外驱虫吗？', opts:[
-        {v:'yes', label:'最近做过，挺规律'},
-        {v:'no',  label:'好久没做 / 没做过'} ]}
-    ],
-    rule(ans){
-      const sk = labelOf(this,'skin',ans.skin), fl = labelOf(this,'flea',ans.flea);
-      const quote = `你说「${sk}、${fl}」`;
-      if(ans.skin==='wound')
-        return { level:'vet', advice:`${quote}——已经抓破或大片红肿，容易继发感染，建议近期就医处理伤口；可先戴伊丽莎白圈防止继续抓。` };
-      if(ans.skin==='fine' && ans.flea==='yes')
-        return { level:'home', advice:`${quote}——皮肤没破又有规律驱虫，可能是季节性干燥或一时痒。可观察几天、留意有无加重，保持环境清洁即可。` };
-      return { level:'vet', advice:`${quote}——皮肤发红掉毛或长期没驱虫，常见于跳蚤/螨虫或皮肤过敏，建议就医做皮肤检查并补上体外驱虫，别只擦人用药膏。` };
-    }
-  },
-
-  cough: {
-    emoji:'😮‍💨', label:'咳嗽', blurb:'干咳 / 喘 / 像卡东西',
-    questions:[
-      { id:'breath', q:'呼吸有没有费劲、舌头发紫？', opts:[
-        {v:'no',  label:'呼吸顺畅，只是咳'},
-        {v:'fast', label:'呼吸有点快 / 喘'},
-        {v:'blue', label:'明显憋气 / 舌头发紫' }]},
-      { id:'freq', q:'咳得有多频繁？', opts:[
-        {v:'rare', label:'偶尔咳几声'},
-        {v:'often', label:'一阵一阵反复咳'} ]}
-    ],
-    rule(ans){
-      const br = labelOf(this,'breath',ans.breath), fq = labelOf(this,'freq',ans.freq);
-      const quote = `你说「${br}、${fq}」`;
-      if(ans.breath==='blue')
-        return { level:'er', advice:`${quote}——出现憋气或舌头/牙龈发紫，是缺氧的急症信号，立刻去急诊，路上保持安静、别让它剧烈活动。` };
-      if(ans.breath==='no' && ans.freq==='rare')
-        return { level:'home', advice:`${quote}——只是偶尔干咳、呼吸顺畅，可能是喝水呛到或一点刺激。可保持空气湿润、避开烟尘观察一两天；若变频繁或开始喘再就医。` };
-      return { level:'vet', advice:`${quote}——反复咳嗽或呼吸变快，建议尽快就医排查气管、心脏或传染性呼吸道问题，别拖。` };
-    }
-  }
-};
-
-window.PETVET = { SPECIES, LEVELS, SYMPTOMS };
+window.PETVET = { LIKE, URGENCY, CASES };
 })();

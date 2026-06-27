@@ -745,37 +745,37 @@ window.PROJECTS = [
   /* ───────────────────────── 21 pet-vet ───────────────────────── */
   {
     id: "pet-vet", no: "21", cat: "宠物",
-    kicker: "宠物医疗 · AI 兽医",
-    title: "AI 兽医",
-    subtitle: "不一上来就甩通用建议 —— 先反问澄清，再给针对性建议",
-    url: "demos/pet-vet/", tags: ["先反问澄清","针对性建议","可解释","纯离线"],
-    phoneHint: "描述宠物症状，先回答它的追问",
+    kicker: "宠物医疗 · 兽医病历 Scribe",
+    title: "AI 兽医病历助手",
+    subtitle: "贴一段问诊速记 → SOAP 病历 + 鉴别诊断 + 给主人的出院医嘱 + 费用预估，把文书时间还给看诊",
+    url: "demos/pet-vet/", tags: ["问诊→病历","SOAP/鉴别诊断","出院医嘱+费用","示例离线兜底","连 key 真模型"],
+    phoneHint: "点一个示例病例或贴速记 → 生成全套文书",
     sections: [
-      { label: "是什么",   html: `<p>像真兽医一样，先问清楚（多大、多久、有没有别的症状）再给建议，而不是模板话术。</p>` },
-      { label: "程序逻辑", html: `<h3>描述 → 反问澄清 → 建议</h3>
-        <div class="flow"><span class="step">描述症状</span><span class="arr">→</span><span class="step">反问澄清</span><span class="arr">→</span><span class="step">针对性建议</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>兽医最恨写病历——一天 2~3 小时耗在文书上。这是给<b>执业兽医</b>的「<b>AI Scribe</b>」：把一段口语问诊速记，30 秒整理成一摞规范文书。<b>AI 起草、兽医复核</b>，不替代临床判断。</p>` },
+      { label: "程序逻辑", html: `<h3>一段速记 → 四件套文书</h3>
+        <div class="flow"><span class="step">问诊速记</span><span class="arr">→</span><span class="step">SOAP 病历</span><span class="arr">→</span><span class="step">鉴别诊断排序</span><span class="arr">→</span><span class="step">出院医嘱</span><span class="arr">→</span><span class="step">费用预估</span></div>
         <ul>
-          <li><b>至少反问一次</b>澄清关键信息，再给建议</li>
-          <li>建议随澄清答案变化，不是开局甩通用话</li>
-          <li>含「非诊断」声明与就医提示</li>
+          <li><b>SOAP</b>：主诉病史 / 客观检查 / 评估 / 计划，严格区分客观与推断</li>
+          <li><b>鉴别诊断</b>：按可能性（高/中/低）排序 + 支持依据 + 推荐检查，仅提示供兽医判断</li>
+          <li><b>出院医嘱</b>：把术语翻成给主人的大白话（护理 / 用药 / 复诊 / 回诊红线）</li>
+          <li><b>费用预估</b>：按推荐检查列出区间合计，每段都可一键复制进院内系统</li>
         </ul>
-        <p style="margin-top:16px">本地对话状态机 + 规则，<b>零外部依赖、纯离线</b>。</p>` },
+        <p style="margin-top:16px">4 个示例病例<b>纯离线</b>即出完整文书（兜底 + 演示）；任意速记连 BYOK 后由真实模型生成同结构。用药只给类别/原则不写精确剂量，强免责。</p>` },
       { label: "商业模式", html: `<ul>
-          <li><b>订阅问诊</b>：无限在线咨询 + 应急（Pawp / Dutch 模式）</li>
-          <li><b>导诊与处方</b>：导向线下医院、处方药 / 保健品配送</li>
-          <li><b>分诊降本</b>：先 AI 澄清再转真人，提升兽医效率</li>
+          <li><b>按兽医 / 诊所订阅（SaaS）</b>：每天省下 2~3 小时文书，直接换算成多看的诊次——付费意愿极强</li>
+          <li><b>嵌入诊所管理系统（PIMS）</b>：病历 / 医嘱 / 估价单一键回填，按席位收费</li>
+          <li><b>增值</b>：客户沟通话术、随访提醒、保险理赔材料自动生成</li>
         </ul>` },
       { label: "市场分析", html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
         <ul>
-          <li><b>Pawp</b>：宠物在线兽医 + 应急基金，月费订阅模式。</li>
-          <li><b>Vetster / Airvet</b>：宠物视频问诊平台，按次 / 订阅收费。</li>
-          <li><b>Dutch.com</b>：远程宠物诊疗 + 处方配送，订阅制。</li>
+          <li><b>Scribenote / Talkatoo / ScribbleVet</b>：兽医专用 AI 病历 Scribe，按月订阅，正是当下兽医圈的爆款赛道。</li>
+          <li><b>人医已验证</b>：Abridge、Nuance DAX 等环境式 AI 病历在医生端已规模化收费——兽医端是同一痛点的平移。</li>
+          <li><b>痛点真实</b>：文书负担是兽医 burnout 头号来源，写病历直接挤占看诊与营收。</li>
         </ul>
         <ul>
-          <li><b>痛点</b>：半夜宠物不舒服、去医院前想先问问、怕过度医疗</li>
-          <li><b>人群</b>：宠物主人，尤其异地 / 夜间场景</li>
-          <li><b>本地化</b>：接国内宠物医院与互联网诊疗规范</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：诊疗需持证兽医，本 demo 仅作交互展示、非诊断</li>
+          <li><b>人群</b>：中小宠物医院、连锁诊所、独立执业兽医</li>
+          <li><b>本地化</b>：对接国内宠物医院 HIS、中文病历规范与常见病种库</li>
+          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：诊疗须持证兽医负责，本工具仅出<b>草稿</b>供复核；本 demo 为交互展示、非诊断</li>
         </ul>` }
     ]
   },

@@ -187,6 +187,203 @@ async function aiAnalyze(role, question, answerText){
   };
 }
 
+/* ============== ＋1：面试官追问一轮（真实面试的第二刀） ==============
+   一次性打分像 Google Interview Warmup；真面试官会盯着你回答里最虚的一点再追一刀。
+   这里基于第①轮分析挑出"最该被追"的点 → 以面试官口吻追问 + 解释他为什么追 →
+   你再答一次 → 给「面试官心证」。连 key 用 AI 出更锋利的追问，没连用启发式。 */
+
+// 判定追问回答有没有"接住"用的关键词
+const KW_OWN  = ['我决定','我拍板','我主导','我提出','我推动','亲自','我一个人','主要是我','我牵头','是我做','我来做','我负责'];
+const KW_HARD = ['难','约束','限制','没有','缺','第一次','没人','时间紧','deadline','卡','坑','复杂','风险','背景','当时','压力'];
+const KW_GOAL = ['目标','指标','kpi','KPI','要做到','负责','考核','okr','OKR','要求','北极星'];
+
+function pickProbeLocal(a){
+  const miss = new Set(a.missingKeys.map(p=>p.key));
+  // 优先级：缺结果 > 数字孤单/没基线 > 个人贡献存疑 > 缺背景 > 缺目标 > 都有则深挖可复用性
+  if(miss.has('R')){
+    return { kind:'R', focus:'缺量化结果',
+      q:'你把"做了什么"讲清楚了，但我没真正听到结果。这件事最后落到一个可衡量的成效是多少——提升了百分之几、省下多少、还是几天内拿下？',
+      why:'真实面试官最爱在这儿追第二刀：没有数字的成果，约等于没发生。' };
+  }
+  if(a.numbers.length <= 1){
+    const n = a.numbers[0];
+    return { kind:'base', focus: n?('「'+n+'」缺基线'):'数据太单薄',
+      q: n
+        ? ('你提到「'+n+'」——这个数字的对比基线是什么？之前是多少、用了多久达成、是你一个人的功劳吗？')
+        : '你的成果基本是定性描述。能给一个能量化的点吗——规模、增幅、耗时、金额，任意一个数字都行。',
+      why:'孤零零一个数字，面试官会怀疑是"包装"。基线 + 投入 + 对比，数字才站得住。' };
+  }
+  if(miss.has('A')){
+    return { kind:'A', focus:'个人贡献存疑',
+      q:'这件事听下来更像团队的成果。具体哪一步是你个人拍板 / 主导的？如果当时没有你，结果会差在哪？',
+      why:'行为面试考的是"你"不是"你们"。讲不清个人动作，功劳就被稀释了。' };
+  }
+  if(miss.has('S')){
+    return { kind:'S', focus:'背景太空',
+      q:'先补一句当时的处境吧——这件事真正的难点或约束是什么？为什么它不好做？',
+      why:'没有难度的故事不加分。先让面试官知道"这有多难"，你的功劳才显出来。' };
+  }
+  if(miss.has('T')){
+    return { kind:'T', focus:'目标不清',
+      q:'在这件事里，你个人被考核的目标 / 要达成的指标具体是什么？',
+      why:'说不清目标，后面的"结果"就没有参照系，数字再好也悬空。' };
+  }
+  return { kind:'deep', focus:'深挖可复用性',
+    q:'结果不错。那它之后呢——有没有沉淀成一套可复用的机制 / 流程，还是一次性的？换个场景你还能复现吗？',
+    why:'到这步面试官在分辨：你是运气好，还是真有方法论。讲出可迁移的部分最加分。' };
+}
+
+function probeCheckLocal(kind, fuText, fuNums){
+  const t = fuText;
+  if(kind==='R' || kind==='base') return fuNums.length > 0;
+  if(kind==='A') return KW_OWN.some(k=>t.includes(k));
+  if(kind==='S') return KW_HARD.some(k=>t.includes(k));
+  if(kind==='T') return KW_GOAL.some(k=>t.includes(k));
+  return /机制|流程|沉淀|复用|复制|迁移|标准化|后来一直|形成了|方法论/.test(t) || t.replace(/\s/g,'').length>=24;
+}
+
+function localVerdict(a, patched){
+  const ov = a.overall;
+  if(patched && ov>=70) return { pass:'good', verdict:'✅ 这轮稳了。故事完整、追问也接住了，面试官心里基本给过。', tip:'临场把语速放稳、开头 10 秒先说结论，就是一段很强的回答。' };
+  if(patched && ov>=45) return { pass:'ok',   verdict:'🟢 基本能过。你接住了追问、补上了关键一块——整体故事再压实一点会更稳。', tip:'把第①轮里偏虚的地方，也用这次追问的"具体劲儿"重讲一遍。' };
+  if(patched)           return { pass:'ok',   verdict:'🟡 追问答得不错，但整体故事还偏薄。先把 STAR 四要素补全，再谈细节。', tip:'回到第①轮缺的要素，从骨架重讲一遍。' };
+  if(ov>=70)            return { pass:'warn', verdict:'🟡 前面很强，但这一刀没接住。真实面试里，恰恰是这种追问最容易让人翻车。', tip:'盯着面试官追问的"那个点"正面回答，别绕开。' };
+  return { pass:'bad', verdict:'🔴 还差一口气。追问戳的正是你回答最弱的地方，这次也没补上——这就是会被卡住的位置。', tip:'下次准备故事，先自问一句"面试官会从哪追？"，把答案提前想好。' };
+}
+
+const SYS_PROBE = [
+  '你是严格但专业的面试官。基于候选人对一道行为题的回答，提出「一个」最锋利的追问——',
+  '专戳他回答里最薄弱、最含糊、最缺证据的一点（例：没有量化结果 / 把团队功劳说成个人 / 关键动作一笔带过 / 数字没有基线）。',
+  '像真实面试的第二刀，口语、直接、对候选人说。',
+  '只输出严格 JSON（无 markdown、无前言）：',
+  '{ "q":"追问(1到2句)", "focus":"你在戳的点(5到10字,如 缺量化结果/个人贡献存疑)", "why":"给候选人的提示:你为什么追这里、想听到什么(1句)" }',
+  '全部简体中文。'
+].join('\n');
+
+const SYS_PROBE_JUDGE = [
+  '你是面试官。candidate 刚回答了你的追问。判断这次补充有没有真正「接住」——即补上了你想要的证据 / 澄清 / 数字。',
+  '只输出严格 JSON：{ "patched":true或false, "verdict":"面试官心证:这轮整体能不能过+一句点评(1到2句,直接专业,可带emoji)", "tip":"还能更好的一点(1句,可留空)" }',
+  '简体中文。'
+].join('\n');
+
+async function genProbe(a, answerText){
+  if(GG.llm.connected()){
+    try{
+      const r = await GG.llm.json(SYS_PROBE,
+        '岗位：'+state.role.label+'\n面试题：'+state.question+'\n候选人回答：\n'+answerText, {max_tokens:300});
+      if(r && r.q) return { kind:'ai', focus:String(r.focus||'最薄弱的一点'), q:String(r.q), why:String(r.why||''), _ai:true };
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  return pickProbeLocal(a);
+}
+
+async function judgeProbe(a, probe, fuText, answerText){
+  if(probe._ai && GG.llm.connected()){
+    try{
+      const r = await GG.llm.json(SYS_PROBE_JUDGE,
+        '岗位：'+state.role.label+'\n面试题：'+state.question+'\n原回答：\n'+answerText+
+        '\n\n我的追问：'+probe.q+'\n候选人的追问回答：\n'+fuText, {max_tokens:400});
+      if(r) return { patched:!!r.patched, verdict:String(r.verdict||''), tip:String(r.tip||''), pass:r.patched?'good':'warn', _ai:true };
+    }catch(e){ GG.toast(GG.llm.errMsg(e)); }
+  }
+  const fuNums = extractNumbers(fuText);
+  const patched = probeCheckLocal(probe.kind, fuText, fuNums);
+  const v = localVerdict(a, patched);
+  return { patched, verdict:v.verdict, tip:v.tip, pass:v.pass };
+}
+
+function followUpStage(a, answerText){
+  GG.clear(main);
+  main.appendChild(GG.el('div',{class:'row', style:{justifyContent:'space-between', marginTop:'18px', alignItems:'center'}},
+    GG.el('span',{class:'pill'}, state.role.emoji+' '+state.role.label),
+    GG.el('span',{class:'small muted'}, '第 ① 轮：STAR '+a.presentKeys.length+'/4 · 综合 '+a.overall)
+  ));
+  const slot = GG.el('div'); main.appendChild(slot);
+  const think = GG.thinking(slot, ['面试官在盯着你的回答…','找出最该追问的一点…', GG.llm.connected()?'AI 组织追问…':'组织追问…'], 1100);
+  genProbe(a, answerText).then(async (probe)=>{
+    await think; GG.clear(slot);
+    renderFollowUpAsk(slot, a, answerText, probe);
+  });
+}
+
+function renderFollowUpAsk(slot, a, answerText, probe){
+  slot.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'12px', background:'linear-gradient(160deg,#fff6ee,#fff 64%)', borderColor:'var(--warn)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center', gap:'10px'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🎯 面试官追问'),
+      GG.el('span',{class:'pill', style:{background:'var(--warn)', color:'#fff', borderColor:'transparent', flex:'none'}}, probe.focus)
+    ),
+    GG.el('div',{style:{fontSize:'18px', fontWeight:'600', lineHeight:'1.5', marginTop:'4px'}}, probe.q)
+  ));
+  if(probe.why){
+    slot.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'10px', background:'#fbfbf9'}},
+      GG.el('div',{class:'small', style:{color:'var(--ink-2)', lineHeight:'1.6'}},
+        GG.el('b', null, '💡 他为什么追这里：'), ' '+probe.why)
+    ));
+  }
+  const ta = GG.el('textarea',{class:'field', placeholder:'直接正面接住这个追问，别绕开——一两句、补上他想听的那块就够。', style:{marginTop:'14px', minHeight:'120px'}});
+  const counter = GG.el('div',{class:'small muted', style:{marginTop:'6px', textAlign:'right'}}, '0 字');
+  ta.addEventListener('input', ()=>{ counter.textContent = ta.value.replace(/\s/g,'').length+' 字'; });
+  slot.appendChild(GG.el('label',{class:'label', style:{marginTop:'14px'}}, '你的应对'));
+  slot.appendChild(ta); slot.appendChild(counter);
+  slot.appendChild(GG.el('button',{class:'btn primary lg block', style:{marginTop:'14px'}, onClick:()=>{
+    if(ta.value.replace(/\s/g,'').length < 2){ GG.toast('正面接住这一刀再提交～'); ta.focus(); return; }
+    runProbeVerdict(a, probe, ta.value, answerText);
+  }}, '接住这一刀 →'));
+  slot.appendChild(GG.el('div',{class:'center', style:{marginTop:'10px'}},
+    GG.el('button',{class:'btn ghost small', onClick:nextQuestion}, '跳过，直接下一题 →')));
+  setTimeout(()=>ta.focus(), 60);
+}
+
+async function runProbeVerdict(a, probe, fuText, answerText){
+  GG.clear(main);
+  const slot = GG.el('div'); main.appendChild(slot);
+  const think = GG.thinking(slot, ['面试官在掂量你的应对…', (GG.llm.connected()&&probe._ai)?'AI 给出心证…':'生成心证…'], 1200);
+  const res = await judgeProbe(a, probe, fuText, answerText);
+  await think; GG.clear(slot);
+  showProbeVerdict(slot, a, probe, fuText, answerText, res);
+}
+
+function showProbeVerdict(slot, a, probe, fuText, answerText, res){
+  const passColor = res.pass==='bad'?'var(--bad)':(res.pass==='warn'?'var(--warn)':'var(--good)');
+  slot.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px', paddingBottom:'4px'}},
+    GG.el('h1',{style:{fontSize:'24px'}}, '🧑‍⚖️ 面试官心证')));
+  slot.appendChild(GG.el('div',{style:{marginBottom:'8px'}}, GG.llm.badge(!!res._ai)));
+
+  slot.appendChild(GG.el('div',{class:'card pad'},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center', gap:'10px'}},
+      GG.el('div',{style:{fontWeight:'680', fontSize:'15.5px'}}, '追问应对 · '+probe.focus),
+      GG.el('span',{style:{fontWeight:'800', fontSize:'15px', flex:'none', color: res.patched?'var(--good)':'var(--bad)'}}, res.patched?'✓ 接住了':'✗ 没接住')
+    ),
+    GG.el('div',{class:'small muted', style:{margin:'8px 0 0', lineHeight:'1.6'}}, GG.el('b', null, '追问：'), ' '+probe.q),
+    GG.el('div',{class:'small', style:{margin:'8px 0 0', lineHeight:'1.6', color:'var(--ink-2)', whiteSpace:'pre-wrap'}}, GG.el('b', null, '你的应对：'), ' '+fuText.trim())
+  ));
+  slot.appendChild(GG.el('div',{style:{height:'12px'}}));
+
+  slot.appendChild(GG.el('div',{class:'card pad', style:{borderColor:passColor, background: res.pass==='bad'?'#fdf3f1':(res.pass==='warn'?'#fff8ee':'#f1faf6')}},
+    GG.el('div',{style:{fontWeight:'750', fontSize:'17px', lineHeight:'1.5', color:passColor}}, res.verdict)
+  ));
+  if(res.tip){
+    slot.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'10px', background:'#fbfbf9'}},
+      GG.el('div',{class:'small', style:{color:'var(--ink-2)', lineHeight:'1.6'}}, GG.el('b',null,'下一步：'), ' '+res.tip)));
+  }
+
+  const shareSpec = {
+    slug: SLUG, title:'模拟面试 · 扛住追问',
+    subtitle: state.role.label+' · '+probe.focus,
+    bars: [ {label:'第①轮综合', pct:a.overall}, {label:'STAR 完整度', pct:a.starPct}, {label:'具体性', pct:a.specPct} ],
+    note: (res.patched?'接住了面试官的追问：':'追问没接住：')+probe.focus,
+    tags: [ res.patched?'扛住追问':'追问待补', state.role.label ],
+  };
+  slot.appendChild(GG.resultCard(SLUG,
+    GG.el('div',{class:'center muted small'}, '截图分享这轮面试 ↓'), shareSpec));
+
+  slot.appendChild(GG.el('div',{class:'row', style:{justifyContent:'center', gap:'12px', marginTop:'18px', flexWrap:'wrap'}},
+    GG.el('button',{class:'btn primary', onClick:nextQuestion}, '下一题 →'),
+    GG.el('button',{class:'btn', onClick:askStage}, '↻ 重答这题'),
+    GG.el('button',{class:'btn ghost', onClick:start}, '换岗位')
+  ));
+}
+
 /* ---------------- 流程 ---------------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -198,7 +395,7 @@ function intro(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '选个岗位，进入模拟面试'),
-    GG.el('p', null, 'AI 出一道行为面试题，你用文字作答，立刻拿到结构化反馈：STAR 完整度、具体性、和一条可执行的改进建议——全部针对你写的内容。')
+    GG.el('p', null, 'AI 出一道行为面试题，你用文字作答，立刻拿到结构化反馈（STAR 完整度 / 具体性 / 改进建议，全部针对你写的内容）——然后像真面试一样，面试官会盯着你最虚的一点，追问第二刀。')
   ));
   main.appendChild(GG.llm.bar());
   main.appendChild(GG.el('div',{class:'section-t'}, '应聘岗位'));
@@ -349,6 +546,17 @@ function showResult(stage, a, answerText){
   );
   blocks.appendChild(feedbackBlock('③ 改进建议', '', a.overall, adviceInner, colorFor(a.overall)));
   stage.appendChild(blocks);
+
+  // ＋1：把"一次性打分"升级成真面试——面试官追问第二刀（headline 下一步）
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'14px', background:'linear-gradient(160deg,#fff6ee,#fff 60%)', borderColor:'var(--warn)'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center', gap:'12px', flexWrap:'wrap'}},
+      GG.el('div',{style:{flex:'1', minWidth:'170px'}},
+        GG.el('div',{style:{fontWeight:'700', fontSize:'16px'}}, '🔥 真面试不会就此放过你'),
+        GG.el('div',{class:'small muted', style:{marginTop:'3px', lineHeight:'1.55'}}, '面试官会盯着你回答里最虚的一点，追第二刀。敢接吗？')
+      ),
+      GG.el('button',{class:'btn primary', style:{flex:'none'}, onClick:()=>followUpStage(a, answerText)}, '面试官追问我 →')
+    )
+  ));
 
   // 分享 / 结果卡
   const shareSpec = {
