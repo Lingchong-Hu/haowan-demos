@@ -706,19 +706,21 @@ window.PROJECTS = [
     id: "mindtrip", no: "15", cat: "旅行",
     kicker: "旅行 · AI 行程规划",
     title: "行程 + 地图",
-    subtitle: "答几个偏好，生成逐时行程，地图标点与行程一一对应",
-    url: "demos/mindtrip/", tags: ["逐时行程","交互地图","偏好驱动","纯离线"],
-    phoneHint: "选目的地与偏好，看行程表与地图标点",
+    subtitle: "想去哪打哪 → AI 补全当地去处，本地引擎排出懂行的逐时行程 + 交互地图",
+    url: "demos/mindtrip/", tags: ["任意城市","懂行排程","交互地图","就地微调"],
+    phoneHint: "输入城市 + 特殊要求，看懂行的逐时行程与地图标点",
     sections: [
-      { label: "是什么",   html: `<p>说清楚去哪、玩几天、喜欢啥，它就排出逐时行程并在地图上标好点。</p>` },
-      { label: "程序逻辑", html: `<h3>偏好 → 排程 → 行程 + 地图</h3>
-        <div class="flow"><span class="step">答偏好</span><span class="arr">→</span><span class="step">排行程</span><span class="arr">→</span><span class="step">逐时表 + 地图标点</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>打字输入<b>任意城市</b>（再写上「带 3 岁娃和腿脚不便的爸妈」这种特殊要求），AI 补全当地最值得去的去处，本地引擎把它们排成<b>懂行的逐时行程</b>——餐厅落饭点、寺庙/自然在白天、夜市/夜景在晚上，按片区分天、串成顺路，并一一画进地图。生成后还能就地 📌锁定 / ↻换一个 / ✕删除。</p>
+        <p class="small" style="color:var(--ink-soft)">没连 AI 时，内置京都 / 里斯本 / 清迈 / 雷克雅未克 4 城可离线秒出。</p>` },
+      { label: "程序逻辑", html: `<h3>城市 → AI 补点 → 本地懂行排程 → 行程 + 地图</h3>
+        <div class="flow"><span class="step">输入城市 + 要求</span><span class="arr">→</span><span class="step">AI 补全 POI</span><span class="arr">→</span><span class="step">懂行排程</span><span class="arr">→</span><span class="step">逐时表 + 地图</span><span class="arr">→</span><span class="step">就地微调</span></div>
         <ul>
-          <li>按天数 / 节奏 / 兴趣从景点库选点并排序成逐时表</li>
-          <li>每个行程项<b>在地图上有对应标点</b>，一一映射</li>
-          <li>换偏好 → 行程与标点都变</li>
+          <li><b>AI 只负责「找点」</b>：按城市与你的特殊要求，列出带类型 / 营业时段 / 片区 / 相对坐标的去处</li>
+          <li><b>排程是本地引擎（可复现、不靠 AI）</b>：按时段亲和排饭点 / 白天 / 夜晚，避免「晚上逛寺庙」；把全部点串成顺路链再切成每天，每天天然是一个相邻片区</li>
+          <li>每个行程项<b>在地图上有对应编号标点</b>，点条目 ⇄ 点图钉双向高亮；地图按天分段着色</li>
+          <li>就地 <b>锁定 / 换一个 / 删除 / 换一批</b>，即时重排</li>
         </ul>
-        <p style="margin-top:16px">本地排程算法 + 内置地图渲染，<b>零外部依赖、纯离线</b>。</p>` },
+        <p style="margin-top:16px">分工清晰：AI 管「长尾知识」，本地引擎管「确定性的排程与渲染」，<b>地图为内置 inline SVG、零外部依赖</b>。</p>` },
       { label: "商业模式", html: `<ul>
           <li><b>预订佣金</b>：行程里的酒店 / 门票 / 交通直接挂预订，CPS 分成（OTA 模式）</li>
           <li><b>订阅</b>：高级规划、多人协作、离线行程</li>
@@ -733,8 +735,8 @@ window.PROJECTS = [
         <ul>
           <li><b>痛点</b>：做攻略费时费力，攻略与地图割裂</li>
           <li><b>人群</b>：自由行、家庭游、深度游人群</li>
-          <li><b>本地化</b>：接高德 / 大众点评 POI 与国内预订生态</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：POI 时效与可预订性是关键；本 demo 用样例景点演示</li>
+          <li><b>本地化</b>：把 AI 补的 POI 接上高德 / 大众点评的真实坐标 / 营业时间 / 评分与国内预订生态</li>
+          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：AI 补的 POI 需与真实营业时效 / 可预订性核对；本 demo 的坐标为相对示意、地图为抽象底图</li>
         </ul>` }
     ]
   },

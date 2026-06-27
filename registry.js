@@ -16,7 +16,7 @@ window.DEMOS = [
   { slug:'clause-risk',  industry:'法律', title:'合同风险高亮',     tagline:'贴条款 → 标红 + 大白话 + 改写', emoji:'⚖️', accent:'#7a6cf0', status:'live', disclaimer:true },
   { slug:'ubie',         industry:'医疗', title:'症状自助分诊',     tagline:'描述症状 → 追问 → 分级建议',   emoji:'🩺', accent:'#1f9bb3', status:'live', disclaimer:true },
   { slug:'nl-home',      industry:'房产', title:'一句话找房',       tagline:'描述梦想的家 → 匹配房源',     emoji:'🏠', accent:'#2f8fd4', status:'live' },
-  { slug:'mindtrip',     industry:'旅行', title:'行程 + 地图',      tagline:'答偏好 → 逐时行程 + 地图标点', emoji:'🗺️', accent:'#0fa3a3', status:'live' },
+  { slug:'mindtrip',     industry:'旅行', title:'行程 + 地图',      tagline:'想去哪打哪 → 懂行逐时行程 + 交互地图', emoji:'🗺️', accent:'#0fa3a3', status:'live' },
   { slug:'ollie',        industry:'餐饮', title:'冰箱出菜谱',       tagline:'勾选食材 → 现在能做的菜',     emoji:'🍳', accent:'#e0922b', status:'live' },
   { slug:'mealplan',     industry:'餐饮', title:'7 天饮食计划',     tagline:'问卷 → 周计划 + 购物清单',    emoji:'🥗', accent:'#5aaa2b', status:'live' },
   { slug:'dinner',       industry:'餐饮', title:'今天吃什么',       tagline:'贴一段美食帖 → AI 现做图文菜谱', emoji:'🍲', accent:'#e0651f', status:'live' },
