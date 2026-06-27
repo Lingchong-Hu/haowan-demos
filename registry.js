@@ -4,8 +4,6 @@
 window.DEMOS = [
   // 产业, slug, 标题, 一句话, emoji, accent
   { slug:'cardna',       industry:'汽车', title:'购车品味 DNA',     tagline:'滑+答 → 品味画像 · 荐车 · 车企眼里的你', emoji:'🧬', accent:'#4b54c9', status:'live' },
-  { slug:'whips',        industry:'汽车', title:'汽车版 Tinder',   tagline:'左右滑学口味 → 精配 3 台车', emoji:'🚗', accent:'#e8543f', status:'live' },
-  { slug:'carsnap',      industry:'汽车', title:'答题荐车',         tagline:'答几问 → 懂你的那台车',      emoji:'🔑', accent:'#d9772b', status:'live' },
   { slug:'style-dna',    industry:'时尚', title:'自拍色彩诊断',     tagline:'一张自拍 → 色彩季型 + 配色板', emoji:'🎨', accent:'#c2569b', status:'live' },
   { slug:'alta',         industry:'时尚', title:'场合穿搭',         tagline:'衣橱 + 场合 → 整套搭配',      emoji:'👗', accent:'#9b5cc2', status:'live' },
   { slug:'fortuna',      industry:'金融', title:'AI 财务管家',     tagline:'体检 → 设目标 → 配置 + 蒙特卡洛达成概率 + 行动计划', emoji:'🧭', accent:'#1f9e8f', status:'live', disclaimer:true },
