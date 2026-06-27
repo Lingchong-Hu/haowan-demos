@@ -136,9 +136,10 @@ function splitSizes(total, days){
   for(let i=0;i<days && rem>0;i++,rem--) sizes[i]++;
   return sizes;
 }
-// 时段容量：中午只放 1 个（第二家餐厅自然落到晚上当晚饭）；白天时段各放 2 个，
-// 这样寺庙/庭园/自然这类「只能白天」的点永远有白天位可去，不会被挤到夜里。
-const SLOT_CAP   = { 上午:2, 中午:1, 下午:2, 傍晚:1, 晚上:1 };
+// 每个时段最多 1 个 → 一天里时段标签互不重复（不会出现「两个上午」），读起来才像逐时表。
+// 傍晚/中午相当于缓冲位：寺庙/庭园/自然这类「只能白天」的点宁可落傍晚/中午，也永远不会被挤到夜里
+// （晚上亲和≈0.3，永远输给傍晚/中午）；只有餐饮/夜景(晚上亲和高)才会进晚上。
+const SLOT_CAP   = { 上午:1, 中午:1, 下午:1, 傍晚:1, 晚上:1 };
 const SLOT_ORDER = { 上午:0, 中午:1, 下午:2, 傍晚:3, 晚上:4 };
 function bestSlot(a){ let b='下午', bw=-Infinity; SLOTS_ALL.forEach(s=>{ if(a[s]>bw){ bw=a[s]; b=s; } }); return b; }
 // 最佳匹配排时段：把全局「最高亲和」的(点,时段)边一条条吃掉，受容量限制。
@@ -155,9 +156,10 @@ function assignDaySlots(dayPois){
   for(const e of edges){ if(slotOf[e.pi]!=null || cap[e.s]<=0) continue; slotOf[e.pi]=e.s; cap[e.s]--; }
   pts.forEach((pt,pi)=>{ if(slotOf[pi]==null) slotOf[pi]=bestSlot(pt.a); });   // 兜底（点数 > 总容量时）
   const res = pts.map((pt,pi)=>({ poi:pt.p, slot:slotOf[pi], a:pt.a }));
-  // 一天若完全没有傍晚/晚上安排，但存在够格的夜间/晚餐候选（晚上亲和≥2.4），挪一个过去 → 像样的一天有收尾
-  if(!res.some(r=>r.slot==='傍晚'||r.slot==='晚上')){
-    let best=null, bw=2.4;
+  // 一天若没有晚上安排，但存在够格的夜间/晚餐候选（晚上亲和高），把它挪到晚上 → 像样的一天有收尾。
+  // 只挑餐饮/夜景这类高夜亲和的点，绝不会把白天点拽到晚上。
+  if(!res.some(r=>r.slot==='晚上')){
+    let best=null, bw=2.3;
     res.forEach(r=>{ if(r.a.晚上>bw){ bw=r.a.晚上; best=r; } });
     if(best) best.slot='晚上';
   }
