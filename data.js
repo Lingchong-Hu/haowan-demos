@@ -478,21 +478,22 @@ window.PROJECTS = [
   /* ───────────────────────── 12 clause-risk ───────────────────────── */
   {
     id: "clause-risk", no: "12", cat: "法律",
-    kicker: "法律科技 · 合同审查",
-    title: "合同风险高亮",
-    subtitle: "贴一段条款，自动标红风险点、用大白话解释、给改写",
-    url: "demos/clause-risk/", tags: ["风险标红","大白话解释","逐条改写","纯离线"],
-    phoneHint: "粘贴一段合同条款，看标红与改写",
+    kicker: "法律科技 · 签前军师",
+    title: "合同签前军师",
+    subtitle: "贴条款 + 选你是哪一方 → 该不该签、哪几条是底线、还缺哪些保护，最后给你一封能直接发的改约邮件",
+    url: "demos/clause-risk/", tags: ["选边读倾斜","倾斜度裁决","底线/争取分级","缺失条款检测","一键改约邮件"],
+    phoneHint: "选立场、贴条款，看倾斜裁决与改约邮件",
     sections: [
-      { label: "是什么",   html: `<p>把一段合同贴进去，自动标出风险条款、讲人话、并给更安全的改写。</p>` },
-      { label: "程序逻辑", html: `<h3>贴条款 → 扫描 → 标红 + 改写</h3>
-        <div class="flow"><span class="step">贴条款</span><span class="arr">→</span><span class="step">扫描风险</span><span class="arr">→</span><span class="step">标红 + 解释 + 改写</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>它不只标红风险，更替你拿主意：先选你是租客 / 乙方 / 求职者…哪一方，再读这份纸<b>偏向谁、该不该签</b>，把风险切成<b>「底线必改」和「能争取」</b>，揪出<b>本该有却没写的保护条款</b>，最后一键生成一封<b>可直接发出去的改约邮件</b>。</p>` },
+      { label: "程序逻辑", html: `<h3>选边 → 标红 → 倾斜裁决 → 底线/缺失 → 改约邮件</h3>
+        <div class="flow"><span class="step">选你是哪一方</span><span class="arr">→</span><span class="step">标红真实片段</span><span class="arr">→</span><span class="step">倾斜度裁决</span><span class="arr">→</span><span class="step">底线/争取 + 缺失条款</span><span class="arr">→</span><span class="step">一键改约邮件</span></div>
         <ul>
-          <li>用风险模式库扫描你贴的<b>真实文本片段</b>（单方解除、自动续约、无限责任、管辖等）</li>
-          <li>标红的就是你那段文字里的句子，解释与改写<b>逐条对应</b></li>
-          <li>换一段合同，命中的风险点随文本变化</li>
+          <li>标红的永远是你那段文字里的<b>真实句子</b>（正则 matchAll；连 AI 也强制在原文里能搜到才标），<b>绝不凭空标红</b></li>
+          <li>同一条款<b>随立场翻转解读</b>：对弱势签字方是「坑」，对出条款的强势方就是「盾」——切换身份，裁决与邮件实时重算</li>
+          <li>倾斜度 + 一句话裁决（先别签 / 谈了再签 / 可签）；风险分成底线必改与能争取</li>
+          <li>「缺失条款」补判正则看不到的：本该有的<b>责任上限、对等解除权、对方违约责任、数据删除</b>等</li>
         </ul>
-        <p style="margin-top:16px">本地规则 / 模式匹配，<b>零外部依赖、纯离线</b>；带「非法律建议」声明。</p>` },
+        <p style="margin-top:16px">判断层<b>全本地可算、纯离线</b>；连 API Key 后用真实模型抽取风险、并润色改约邮件。带「非法律建议」声明。</p>` },
       { label: "商业模式", html: `<ul>
           <li><b>企业订阅</b>：法务 / 销售合同自动初审，按席位 / 用量收费（LawGeex / Spellbook 模式）</li>
           <li><b>CLM 中台</b>：合同起草—审查—签署—归档全流程（Ironclad 模式）</li>
