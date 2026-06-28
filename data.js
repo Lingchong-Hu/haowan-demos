@@ -925,9 +925,9 @@ window.PROJECTS = [
     id: "unmask", no: "25", cat: "游戏",
     kicker: "游戏 · 隐私博弈 / 行为建模",
     title: "不被看穿",
-    subtitle: "剪刀石头布，但对手是一个拼命想给你建模的 AI——这一次，被猜中是你输",
+    subtitle: "剪刀石头布，但对手是一个实时给你建模的 AI——出手前它就把「它眼中的你」摆出来、封盘下注，被猜中是你输",
     url: "demos/unmask/",
-    tags: ["反建模博弈", "实时自适应预测器", "可预测度仪表", "强裂变战报", "纯前端无后端"],
+    tags: ["反建模博弈", "出手前亮实时画像", "封盘下注后揭概率", "AI 读心师侧写", "强裂变战报"],
     phoneHint: "建议手机 / 微信打开，连续出手别让它猜中",
     sections: [
       {
@@ -942,19 +942,20 @@ window.PROJECTS = [
         label: "程序逻辑",
         html: `<h3>把"采集"本身变成对抗机制——张力即玩法</h3>
           <div class="flow">
+            <span class="step">看「它眼中的你」</span><span class="arr">→</span>
+            <span class="step">AI 🔒 封盘下注</span><span class="arr">→</span>
             <span class="step">你出手</span><span class="arr">→</span>
-            <span class="step">AI 押注你这手</span><span class="arr">→</span>
-            <span class="step">出克制手</span><span class="arr">→</span>
-            <span class="step">揭示 + 记分</span><span class="arr">→</span>
-            <span class="step">复盘它抓到的规律</span>
+            <span class="step">揭示它赌你出什么</span><span class="arr">→</span>
+            <span class="step">复盘 + 读心师侧写</span>
           </div>
           <p style="margin-top:14px">核心是一个<b>真实的自适应预测器（不是大模型，是一套在线学习的算法）</b>：
           频率偏好、一阶/二阶马尔可夫连招、"急着扳回上一局"、连续重复——5 个预测器并行，
           按各自<b>近期命中率动态加权、自动切换</b>最准的那个来押你。</p>
           <ul>
             <li>它出的手克制你 = <b>被看穿</b>；你克制它 = 骗过它；同手 = 平。</li>
-            <li><b>可预测度 = 被看穿率</b>，<b>33% 是真随机基线</b>；越高说明它越摸透你。</li>
-            <li>终局复盘把它抓到的规律摊开给你看：你的偏手、下意识连招、被看穿后的反应、它主要靠哪招识破你。</li>
+            <li><b>出手前先演给你看</b>：「它眼中的你」实时画像（偏手 / 连招 / 输了就改）+ 它现在最信哪条线 + 🔒 封盘下注；你出手后才揭晓它<b>赌你出什么的概率分布</b>（看得见它懂你，却没法白嫖）。</li>
+            <li><b>可预测度 = 被看穿率</b>，<b>33% 是真随机基线</b>；越高说明它越摸透你。它高把握下你还能骗过 = 破防高光。</li>
+            <li>终局复盘 + <b>读心师侧写</b>：把偏手、下意识连招、被看穿后的反应写成一段第二人称侧写（连 key 由真实模型重写，没 key 走本地兜底）。</li>
           </ul>
           <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
             母题是反讽式的——你越想藏，越暴露自己的模式；不需要任何事后合规话术，对抗本身就是玩法。纯前端、无需后端。</p>`

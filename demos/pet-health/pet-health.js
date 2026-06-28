@@ -158,6 +158,115 @@ function mountAdvice(stage, rep, partLabel){
     body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 建议没拿到（'+(e&&e.code||'NET')+'），自检报告不受影响。')); });
 }
 
+/* ---------- ＋1：健康档案 / 复查趋势（单次打分 → 在好转还是在恶化） ----------
+   对标 TTcare 这类宠物自检 App，核心从来不是"拍一次给个分"，而是"过几天再拍，看变好还是变差"。
+   每次自检自动存进本地档案；复查时和上次并排对比（分数 / 指标 ↑↓ + 趋势判定），据趋势给出比单次更有意义的提醒。
+   纯本地 localStorage；首检前预置一条"样例基线"，让对比第一次就看得见。全程非诊断。 */
+const LOG_KEY = 'pethealth_log_v1';
+function nowMs(){ return Date.now(); }
+function seedLog(){
+  const d = 4*24*3600*1000;
+  const log = {
+    eye:[  { score:61, redPct:14, extraPct:1, findings:['结膜轻度发红'], level:'建议预约', tone:'warn', srcLabel:'样例首检', t: nowMs()-d, seed:true } ],
+    skin:[ { score:57, redPct:11, extraPct:9, findings:['皮屑偏多'],   level:'建议预约', tone:'warn', srcLabel:'样例首检', t: nowMs()-d, seed:true } ],
+  };
+  try{ localStorage.setItem(LOG_KEY, JSON.stringify(log)); }catch(e){}
+  return log;
+}
+function loadLog(){
+  try{ const o = JSON.parse(localStorage.getItem(LOG_KEY)||'null'); if(o && o.eye && o.skin) return o; }catch(e){}
+  return seedLog();
+}
+function saveLog(log){ try{ localStorage.setItem(LOG_KEY, JSON.stringify(log)); }catch(e){} }
+function clearLog(){ try{ localStorage.removeItem(LOG_KEY); }catch(e){} }
+function lastOf(part){ const a = loadLog()[part]; return a && a.length ? a[a.length-1] : null; }
+function pushRecord(part, rep, srcLabel){
+  const log = loadLog();
+  log[part] = (log[part]||[]).concat([{
+    score:rep.score, redPct:rep.metrics.redPct, extraPct:rep.metrics.extraPct,
+    findings:rep.findings.slice(), level:rep.triage.level, tone:rep.triage.tone,
+    srcLabel:srcLabel||'本次自检', t: nowMs()
+  }]);
+  if(log[part].length > 12) log[part] = log[part].slice(-12);
+  saveLog(log);
+  return log[part];
+}
+function agoText(t){
+  const ms = nowMs()-t, d=Math.floor(ms/86400000), h=Math.floor(ms/3600000), m=Math.floor(ms/60000);
+  if(d>=1) return d+' 天前'; if(h>=1) return h+' 小时前'; return m>=1 ? m+' 分钟前' : '刚刚';
+}
+function trendCompare(prev, rep){
+  const dScore = rep.score - prev.score;
+  const dRed = rep.metrics.redPct - prev.redPct;
+  const dExtra = rep.metrics.extraPct - prev.extraPct;
+  let dir, verdict, tone;
+  if(dScore >= 6){ dir='up'; tone='good';
+    verdict = '较上次好转（健康分 '+prev.score+' → '+rep.score+'，+'+dScore+'）。当前的护理方向看起来有效，继续保持并定期复查。'; }
+  else if(dScore <= -6){ dir='down'; tone='bad';
+    verdict = '较上次变差（健康分 '+prev.score+' → '+rep.score+'，'+dScore+'）。自检数值在往坏的方向走——别再"再观察看看"了，建议尽快带去面诊。'; }
+  else { dir='flat'; tone='warn';
+    verdict = '较上次基本持平（健康分 '+prev.score+' → '+rep.score+'）。变化不明显，按原计划继续观察、过两天再复查一次。'; }
+  return { dScore, dRed, dExtra, dir, tone, verdict, prev };
+}
+function sparkline(records, w, h){
+  const pts = records.slice(-8);
+  if(pts.length < 2) return null;
+  w=w||120; h=h||34; const pad=4;
+  const xs = pts.map((_,i)=> pad + i*(w-2*pad)/(pts.length-1));
+  const ys = pts.map(r=> pad + (1 - GG.clamp(r.score,0,100)/100)*(h-2*pad));
+  const dAttr = xs.map((x,i)=> (i?'L':'M')+x.toFixed(1)+' '+ys[i].toFixed(1)).join(' ');
+  const last = pts[pts.length-1];
+  const col = last.tone==='good'?'#2e9e7b':last.tone==='bad'?'#d8503f':'#d98a1f';
+  const NS='http://www.w3.org/2000/svg';
+  const svg=document.createElementNS(NS,'svg'); svg.setAttribute('viewBox','0 0 '+w+' '+h); svg.setAttribute('width',String(w)); svg.setAttribute('height',String(h));
+  const path=document.createElementNS(NS,'path'); path.setAttribute('d',dAttr); path.setAttribute('fill','none'); path.setAttribute('stroke',col); path.setAttribute('stroke-width','2'); path.setAttribute('stroke-linecap','round'); path.setAttribute('stroke-linejoin','round'); svg.appendChild(path);
+  const dot=document.createElementNS(NS,'circle'); dot.setAttribute('cx',xs[xs.length-1].toFixed(1)); dot.setAttribute('cy',ys[ys.length-1].toFixed(1)); dot.setAttribute('r','2.6'); dot.setAttribute('fill',col); svg.appendChild(dot);
+  return svg;
+}
+function archiveCard(){
+  const log = loadLog();
+  const parts = PARTS.filter(p=> (log[p.id]||[]).length);
+  if(!parts.length) return null;
+  const card = GG.el('div',{class:'card pad', style:{marginTop:'4px'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🗂 健康档案'),
+      GG.el('button',{class:'btn ghost small', style:{padding:'4px 10px'}, onClick:()=>{ clearLog(); intro(); }}, '清空')));
+  parts.forEach(p=>{
+    const recs = log[p.id], last = recs[recs.length-1], spark = sparkline(recs);
+    card.appendChild(GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center', gap:'12px', padding:'11px 0 2px', borderTop:'1px solid var(--line)'}},
+      GG.el('div',{class:'row', style:{gap:'10px', alignItems:'center'}},
+        GG.el('span',{style:{fontSize:'20px', flex:'none'}}, p.emoji),
+        GG.el('div', null,
+          GG.el('div',{style:{fontWeight:'650'}}, p.label),
+          GG.el('div',{class:'small muted'}, '上次 '+last.score+' 分 · '+agoText(last.t)+(last.seed?' · 样例':'')))),
+      GG.el('div',{class:'row', style:{gap:'12px', alignItems:'center'}},
+        spark || GG.el('span',{class:'small muted'}, '复查后看趋势'),
+        GG.el('button',{class:'btn small', style:{padding:'6px 12px', flex:'none'}, onClick:()=>{ curPart=p.id; intro(); }}, '🔁 复查'))));
+  });
+  return card;
+}
+function trendCard(tr, recs, part){
+  const arrow = tr.dir==='up'?'▲':tr.dir==='down'?'▼':'▬';
+  const col = toneColor(tr.tone);
+  const spark = sparkline(recs, 160, 40);
+  const metricName = part==='eye' ? '发红' : '红斑';
+  const extraName  = part==='eye' ? '分泌物' : '皮屑';
+  function deltaPill(label, d){               // 指标下降=异常变少=好（绿）；上升=红
+    const good = d <= 0, sign = d>0?'+':'';
+    return GG.el('span',{class:'pill', style:{background: d===0?'var(--surface)':(good?'#e8f6f0':'#fdecea'), color: d===0?'var(--ink-3)':(good?'#2e9e7b':'#d8503f')}}, label+' '+sign+d+'%');
+  }
+  return GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'4px solid '+col, background: tr.dir==='up'?'#f1faf6':tr.dir==='down'?'#fdf3f1':'#fff8ee'}},
+    GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '📈 较上次复查'),
+      spark || GG.el('span')),
+    GG.el('div',{class:'row', style:{alignItems:'baseline', gap:'10px', margin:'4px 0 8px'}},
+      GG.el('span',{style:{fontWeight:'800', fontSize:'26px', color:col}}, arrow+' '+(tr.dScore>0?'+':'')+tr.dScore),
+      GG.el('span',{class:'small muted'}, '健康分 '+tr.prev.score+' → '+(tr.prev.score+tr.dScore)+' · 距上次 '+agoText(tr.prev.t)+(tr.prev.seed?'（样例基线）':''))),
+    GG.el('div',{class:'kpi', style:{marginBottom:'10px', gap:'8px', flexWrap:'wrap'}},
+      deltaPill(metricName, tr.dRed), deltaPill(extraName, tr.dExtra)),
+    GG.el('p',{style:{margin:'0', color:'var(--ink-2)', lineHeight:'1.6'}}, tr.verdict));
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -168,9 +277,10 @@ function intro(){
   curPart = curPart || 'eye';
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '给宠物拍张照，做个健康自检'),
-    GG.el('p', null, '选一个检查部位，拍照或直接点本地样图，我会真实读取图像像素，给出健康分、观察项清单和就医建议。连上 AI 还会多一份个性化护理建议。')
+    GG.el('p', null, '选一个检查部位，拍照或直接点本地样图，我会真实读取图像像素，给出健康分、观察项和就医建议。每次自检都会自动存进健康档案——复查时直接告诉你：比上次是好转还是恶化。连上 AI 再加一份个性化护理建议。')
   ));
   main.appendChild(GG.llm.bar());
+  const arch = archiveCard(); if(arch) main.appendChild(arch);   // ＋1：健康档案（复查趋势入口）
 
   // 部位选择
   const partRow = GG.el('div',{class:'chips', style:{marginTop:'4px'}});
@@ -265,6 +375,13 @@ function renderResult(stage, rep, dataURL, part, srcLabel){
         GG.el('span',{class:'pill'}, srcLabel))
     )
   ));
+
+  // ＋1：复查对比（趋势）——先取"本次之前"的最后一条，再把本次入档
+  const prevRec = lastOf(part);
+  const recs = pushRecord(part, rep, srcLabel);
+  if(prevRec){
+    stage.appendChild(trendCard(trendCompare(prevRec, rep), recs, part));
+  }
 
   // 量化指标条
   const m1Label = part==='eye' ? '发红区域占比' : '红斑区域占比';

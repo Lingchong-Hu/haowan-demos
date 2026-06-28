@@ -35,6 +35,36 @@ function reasonSentence(qid, userKey, name){
   }
 }
 
+/* ＋1：红娘悄悄话——你俩最该磨合的那一点（可追溯到一处真实的答案差异）。
+   别的 App 只卖"般配"；真红娘会提前把唯一要磨合的那点说清楚。
+   排除 deal（雷点不同 ≠ 会吵架），按"差异越要紧权重越高"挑一个最值得提的。 */
+const FRICTION_W = { pace:3, comm:2.5, value:2, weekend:1.5, self:1 };
+function frictionSentence(qid, userKey, taKey, name){
+  const yours = labelOf(qid, userKey), theirs = labelOf(qid, taKey);
+  switch(qid){
+    case 'weekend':
+      return `周末你想「${yours}」，${name} 更想「${theirs}」。不必强求一致——轮流安排，反而能把对方的世界也逛一遍。`;
+    case 'comm':
+      return `沟通上你要的是「${yours}」，${name} 习惯「${theirs}」。一开始可能会错频，但说开之后，这两种方式其实挺互补。`;
+    case 'value':
+      return `你最看重「${yours}」，${name} 身上更突出的是「${theirs}」。看重的点不一样，恰好能在对方身上补上自己缺的那块。`;
+    case 'pace':
+      return `节奏上你想「${yours}」，${name} 想「${theirs}」。这点最值得第一次见面就轻轻聊一句——各让一步，别让"快慢差"攒成误会。`;
+    case 'self':
+      return `你给自己贴「${yours}」，${name} 是「${theirs}」。两种活法凑到一起，新鲜感往往比"同类"更耐放。`;
+    default:
+      return `你们在「${dimOf(qid)}」上选得不一样：你「${yours}」、${name}「${theirs}」——差异有时反而是聊不完的开头。`;
+  }
+}
+function pickFriction(answers, cand){
+  const misses = QUESTIONS.filter(q=> answers[q.id] && cand.picks[q.id] !== answers[q.id] && FRICTION_W[q.id]);
+  if(!misses.length) return null;
+  misses.sort((a,b)=> (FRICTION_W[b.id]||0)-(FRICTION_W[a.id]||0));
+  const q = misses[0];
+  return { qid:q.id, dim:q.dim, yours:labelOf(q.id, answers[q.id]), theirs:labelOf(q.id, cand.picks[q.id]),
+           text: frictionSentence(q.id, answers[q.id], cand.picks[q.id], cand.name) };
+}
+
 /* ---------- 引擎 ---------- */
 // answers: {qid:key}. 内部算分排序选 top1（界面不显示分数）。
 function match(answers){
@@ -67,31 +97,35 @@ function match(answers){
         `你在「${q.dim}」选了「${labelOf(q.id, ak)}」，${best.c.name} 的取向略有不同，但 TA 说这种差异反而聊得起来。` });
     }
   }
-  // 共同标签：候选人 tags + 命中维度名，作为分享标签
-  const commonTags = best.c.tags.slice();
-  return { cand: best.c, reasons: reasons.slice(0,4), seed };
+  // ＋1：算出"最该磨合的一点"（可能为 null：罕见的几乎全对上）
+  const friction = pickFriction(answers, best.c);
+  return { cand: best.c, reasons: reasons.slice(0,4), seed, friction };
 }
 
 /* ---------- AI 通路（候选人选择永远本地确定性；连了 key 让 AI 写更走心的理由 + 破冰开场白） ----------
    AI 只负责"措辞"，不改人选；严禁出现任何匹配度/分数/百分比。 */
-const MM_SYS = '你是温暖、走心的红娘。系统已从候选库里为用户选定了唯一一位 TA（不可更换）。下面给你 TA 的资料、用户的问卷答案、以及你俩答案完全对上的维度。请写出"你们为什么对得上"的理由，以及一句可直接发出去的破冰开场白。只输出严格 JSON：{"reasons":["3到4条理由，每条引用用户的具体答案+TA的特点，温暖具体，35字内"],"icebreaker":"一句自然、不油腻、可直接发出去的破冰开场白"}。绝对不要出现任何匹配度、分数、百分比或数字评分。全部简体中文。';
+const MM_SYS = '你是温暖、走心、说真话的红娘。系统已从候选库里为用户选定了唯一一位 TA（不可更换）。下面给你 TA 的资料、用户的问卷答案、你俩完全对上的维度、以及你俩最该磨合的那个差异维度。请写出：①你们为什么对得上的理由 ②一句可直接发出去的破冰开场白 ③一句"红娘悄悄话"，点出你俩最该磨合的那一点。只输出严格 JSON：{"reasons":["3到4条理由，每条引用用户的具体答案+TA的特点，温暖具体，35字内"],"icebreaker":"一句自然、不油腻、可直接发出去的破冰开场白","friction":"一句话点出你俩最该磨合的那点，引用下面给的差异维度与双方具体选择，温和成熟、并给一句怎么相处的建议，40字内，绝不说成缺点或劝退"}。绝对不要出现任何匹配度、分数、百分比或数字评分。全部简体中文。';
 
 async function getMatch(answers, useAI){
   const local = match(answers);
+  const fMeta = local.friction;
   if(useAI){
     try{
       const c = local.cand;
       const userAns = QUESTIONS.map(q=>{ const ak=answers[q.id]; return ak? `${q.dim}：${labelOf(q.id, ak)}` : null; }).filter(Boolean).join('\n');
       const hitDims = QUESTIONS.filter(q=> c.picks[q.id]===answers[q.id]).map(q=>q.dim);
-      const user = `TA 资料：${c.name}，${c.age} 岁，${c.city}。简介：${c.bio}。标签：${(c.tags||[]).join('、')}\n\n用户的问卷答案：\n${userAns}\n\n你俩答案完全对上的维度：${hitDims.join('、') || '（没有完全一致的，靠互补聊得来）'}`;
-      const obj = await GG.llm.json(MM_SYS, user, {max_tokens:700});
+      const fLine = fMeta ? `${fMeta.dim}（你：${fMeta.yours}；TA：${fMeta.theirs}）` : '（几乎没有明显差异）';
+      const user = `TA 资料：${c.name}，${c.age} 岁，${c.city}。简介：${c.bio}。标签：${(c.tags||[]).join('、')}\n\n用户的问卷答案：\n${userAns}\n\n你俩答案完全对上的维度：${hitDims.join('、') || '（没有完全一致的，靠互补聊得来）'}\n你俩最该磨合的差异维度：${fLine}`;
+      const obj = await GG.llm.json(MM_SYS, user, {max_tokens:760});
       const reasons = (Array.isArray(obj.reasons)?obj.reasons:[]).map(String).map(s=>s.trim()).filter(Boolean).slice(0,4).map(text=>({text}));
       if(reasons.length){
-        return { cand:c, reasons, icebreaker:String(obj.icebreaker||'').trim(), _ai:true };
+        return { cand:c, reasons, icebreaker:String(obj.icebreaker||'').trim(),
+                 friction:(String(obj.friction||'').trim() || (fMeta&&fMeta.text) || ''), frictionMeta:fMeta, _ai:true };
       }
     }catch(e){ GG.toast(GG.llm.errMsg(e)); }
   }
-  return { cand:local.cand, reasons:local.reasons, icebreaker:'', _ai:false };
+  return { cand:local.cand, reasons:local.reasons, icebreaker:'',
+           friction:(fMeta?fMeta.text:''), frictionMeta:fMeta, _ai:false };
 }
 
 /* ---------- 流程 ---------- */
@@ -111,7 +145,7 @@ function intro(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '回答几道题，我只给你一个人'),
-    GG.el('p', null, `不是滑不完的列表，也不算什么"匹配度"。${QUESTIONS.length} 道关于你的小问题，答完我会从候选库里，挑出最该认识你的那一位——并告诉你，为什么是 TA。`)
+    GG.el('p', null, `不是滑不完的列表，也不算什么"匹配度"。${QUESTIONS.length} 道关于你的小问题，答完我会从候选库里，挑出最该认识你的那一位——告诉你为什么是 TA，连你俩唯一要磨合的那一点，也照实说。`)
   ));
   main.appendChild(GG.llm.bar());
   main.appendChild(GG.el('div',{class:'center', style:{marginTop:'22px'}},
@@ -196,7 +230,7 @@ async function showResult(answers, fromLink){
     res = await getMatch(answers, useAI);
   }
 
-  const { cand, reasons, icebreaker } = res;
+  const { cand, reasons, icebreaker, friction, frictionMeta } = res;
   GG.clear(stage);
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
@@ -235,6 +269,15 @@ async function showResult(answers, fromLink){
   );
   stage.appendChild(why);
 
+  // ＋1：红娘悄悄话——你俩要磨合的一点（般配之外，也把唯一要磨合的点照实说）
+  if(friction){
+    stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'16px', borderLeft:'3px solid var(--warn)', background:'#fffaf2'}},
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🤫 红娘悄悄话：你俩要磨合的一点'),
+      GG.el('p',{style:{margin:'0 0 8px', fontSize:'15px', color:'var(--ink)', lineHeight:'1.7'}}, friction),
+      GG.el('p',{class:'small muted', style:{margin:'0'}}, '别的 App 只会让你看着般配——这一条，才是真红娘会提前说的话。')
+    ));
+  }
+
   // ✨ AI 破冰开场白（连了 key 才有）
   if(icebreaker){
     stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'16px', borderLeft:'3px solid var(--accent)'}},
@@ -251,6 +294,8 @@ async function showResult(answers, fromLink){
     tags: cand.tags,
     note: cand.name+'——不是匹配度最高，是你的答案里，TA 一条条都接得住。',
   };
+  // 悄悄话也进分享卡：般配 + 要磨合的，一起截出去才是这版的记忆点
+  if(frictionMeta) shareSpec.rows.push({ label:'🤫 要磨合的', value: frictionMeta.dim+'：你「'+frictionMeta.yours+'」· TA「'+frictionMeta.theirs+'」' });
 
   stage.appendChild(GG.resultCard(SLUG,
     GG.el('div',{class:'center muted small'}, '把 TA 截图分享出去 ↓'),
