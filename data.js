@@ -635,18 +635,19 @@ window.PROJECTS = [
     id: "insure-need", no: "18", cat: "保险",
     kicker: "保险科技 · 保额测算",
     title: "该买多少保",
-    subtitle: "答几个生活问题，算出建议保额与险种 + 一句理由",
-    url: "demos/insure-need/", tags: ["保额测算","随家庭变化","可解释","纯离线"],
-    phoneHint: "填年龄 / 收入 / 家庭 / 负债，看保额建议",
+    subtitle: "答几个生活问题，算出建议保额与险种；再把保额翻译成「一年大概多少钱、占你收入几成、钱不够先买哪个」",
+    url: "demos/insure-need/", tags: ["需求法测算","保费预算体检","占收入%vs双十线","钱不够先买哪个","纯离线"],
+    phoneHint: "填年龄 / 收入 / 家庭 / 负债，看保额 + 保费体检",
     sections: [
-      { label: "是什么",   html: `<p>回答几个关于收入、家庭、负债的问题，告诉你大概该买多少保额、买哪类险。</p>` },
-      { label: "程序逻辑", html: `<h3>生活问题 → 测算 → 保额 + 险种</h3>
-        <div class="flow"><span class="step">答生活问题</span><span class="arr">→</span><span class="step">测算需求</span><span class="arr">→</span><span class="step">保额 / 险种 + 理由</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>回答几个关于收入、家庭、负债的问题，用「需求法」算出该买多少保额、买哪类险；<b>更进一步</b>——别家只给保额（靠卖产品赚钱、不肯说成本），这里把保额翻译成<b>估算年保费、占你收入几成（对照「双十原则」健康线≤10%）、钱不够先买哪个</b>，还点破反常识真相「先保大人再保小孩」。</p>` },
+      { label: "程序逻辑", html: `<h3>生活问题 → 测算缺口 → 险种 + 保费预算体检</h3>
+        <div class="flow"><span class="step">答 6 个问题</span><span class="arr">→</span><span class="step">需求法算缺口</span><span class="arr">→</span><span class="step">险种优先级 + ¥/年</span><span class="arr">→</span><span class="step">占收入% + 先买哪个</span></div>
         <ul>
-          <li>按收入替代 / 负债覆盖 / 家庭责任等规则估算保额</li>
-          <li>建议<b>随年龄 / 家庭 / 收入 / 负债变化</b>，并给一句理由</li>
+          <li>需求法：寿险缺口 = 收入替代 + 负债 + 子女教育 − 已有保额；重疾 ≈ 3~5 年收入，<b>随年龄/家庭/收入/负债实时变</b></li>
+          <li><b>保费预算体检</b>：把保额按年龄估成年保费 → 占年收入百分比 vs「双十原则」健康线（保费≤收入 10%）→ 偏重就给「医疗意外先兜底→定寿杠杆最高→重疾最贵后补」的投保顺序</li>
+          <li>有娃则点破「先保大人再保小孩」——你才是孩子最大的保单</li>
         </ul>
-        <p style="margin-top:16px">本地测算模型（如 DIME 思路），<b>零外部依赖、纯离线</b>；带「非保险建议」声明。</p>` },
+        <p style="margin-top:16px">保额/缺口本地确定性即时算（DIME 思路），<b>纯离线</b>；保费为粗略估算仅示意、<b>强免责</b>；连 key 才叠加 AI 个性化点评。</p>` },
       { label: "商业模式", html: `<ul>
           <li><b>投保佣金</b>：测完导向比价 / 投保，按保单分佣（Policygenius / Ladder 模式）</li>
           <li><b>线索分发</b>：高意向用户给保险公司 / 经纪</li>

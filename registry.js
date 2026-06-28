@@ -15,7 +15,7 @@ window.DEMOS = [
   { slug:'nl-home',      industry:'房产', title:'一句话找房',       tagline:'一句话描述 → 解析约束匹配房源 + 哪条心愿最该松(松开重搜解锁更多)', emoji:'🏠', accent:'#2f8fd4', status:'live' },
   { slug:'mindtrip',     industry:'旅行', title:'行程 + 地图',      tagline:'想去哪打哪 → 懂行逐时行程 + 交互地图', emoji:'🗺️', accent:'#0fa3a3', status:'live' },
   { slug:'dinner',       industry:'餐饮', title:'今天吃什么',       tagline:'冰箱有啥 · 刷到馋了 · 排一周，都从这问起', emoji:'🍲', accent:'#e0651f', status:'live' },
-  { slug:'insure-need',  industry:'保险', title:'该买多少保',       tagline:'答生活问题 → 保额/险种建议',  emoji:'🛡️', accent:'#2b7fae', status:'live', disclaimer:true },
+  { slug:'insure-need',  industry:'保险', title:'该买多少保',       tagline:'答生活问题 → 保额/险种建议 + 一年多少钱(占收入几成·先买哪个)', emoji:'🛡️', accent:'#2b7fae', status:'live', disclaimer:true },
   { slug:'matchmaker',   industry:'约会', title:'对话式精配',       tagline:'只给你一个人 · 既说般配，也说哪里要磨合', emoji:'💞', accent:'#e0577f', status:'live' },
   { slug:'pet-health',   industry:'宠物', title:'宠物拍照自检',     tagline:'拍眼/皮肤 → 健康分 + 观察项 → 复查看好转还是恶化', emoji:'🐾', accent:'#c98a2b', status:'live', disclaimer:true },
   { slug:'pet-vet',      industry:'宠物', title:'AI 兽医病历助手', tagline:'问诊速记 → SOAP病历 + 鉴别诊断 + 出院医嘱 + 费用预估', emoji:'🩺', accent:'#157a6e', status:'live', disclaimer:true },
