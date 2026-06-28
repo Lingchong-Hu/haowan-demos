@@ -34,6 +34,16 @@ window.UBIE = {
   // 总分阈值（无红旗时）：>=THRESH.tele → 远程；否则自护
   THRESH: { tele: 3 },
 
+  // ＋1：每个主诉建议挂号的科室（routing 导诊，非诊断）。emergency 级直接走急诊。
+  DEPT: {
+    '头痛':  { primary:'神经内科', alt:'内科 / 疼痛科', emergency:'急诊科（必要时神经内科会诊）' },
+    '腹痛':  { primary:'消化内科', alt:'普外科',        emergency:'急诊外科' },
+    '发热':  { primary:'发热门诊 / 感染科', alt:'内科', emergency:'急诊科' },
+    '咳嗽':  { primary:'呼吸内科', alt:'内科',          emergency:'急诊科' },
+    '胸痛':  { primary:'心血管内科', alt:'呼吸内科',    emergency:'急诊科 / 胸痛中心' },
+    '喉咙痛':{ primary:'耳鼻喉科', alt:'内科',          emergency:'急诊科' }
+  },
+
   FLOWS: {
     '头痛': {
       emoji:'🤕', blurb:'头部疼痛、胀痛或搏动痛',

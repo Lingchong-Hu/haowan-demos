@@ -1,7 +1,7 @@
 /* ubie — 医疗症状自助分诊。选主诉 → 自适应 yes/no 追问（带分支）→ 自护/远程/急诊三级建议。 */
 (function(){
 const SLUG='ubie';
-const {FLOWS, LEVELS, THRESH} = window.UBIE;
+const {FLOWS, LEVELS, THRESH, DEPT} = window.UBIE;
 let main;
 
 /* ---------- AI 个性化解读（分诊分级仍由本地规则给出，连了 key 再叠加一段贴合你回答的解读） ---------- */
@@ -97,7 +97,7 @@ function intro(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '哪里不舒服？'),
-    GG.el('p', null, '选一个主要症状，我会像分诊护士一样一步步追问——你的每个回答都会决定下一题问什么，最后给出「自护 / 远程问诊 / 尽快就医」三级里的一条明确建议。')
+    GG.el('p', null, '选一个主要症状，我会像分诊护士一样一步步追问——你的每个回答都会决定下一题问什么，最后给出「自护 / 远程问诊 / 尽快就医」三级建议，还会告诉你该挂哪个科、并整理一张能带去医院给医生看的「就诊速览卡」。')
   ));
   main.appendChild(GG.llm.bar());
   const grid = GG.el('div',{style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:'12px', marginTop:'18px'}});
@@ -174,8 +174,62 @@ function replayFromState(key, savedAnswers){
   showResult(eng, key, stage);
 }
 
+/* ＋1：该挂哪个科 + 给医生的就诊速览卡（routing + 面诊准备，非诊断） */
+function deptFor(key, level){
+  const d = DEPT[key] || {};
+  return level.key==='emergency' ? (d.emergency||'急诊科') : (d.primary||'内科');
+}
+function deptCard(key, level){
+  const d = DEPT[key] || {};
+  const isEmerg = level.key==='emergency';
+  const dept = deptFor(key, level);
+  return GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'5px solid var(--accent)', background:'var(--accent-soft)'}},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🏥 该挂哪个科'),
+    GG.el('div',{style:{fontSize:'20px', fontWeight:'800', color:'var(--accent)'}}, dept),
+    isEmerg
+      ? GG.el('p',{style:{margin:'8px 0 0', color:'var(--ink-2)', fontSize:'14.5px', lineHeight:'1.6'}}, '别自己挂普通门诊——直接去最近医院急诊，或拨打 120；带上下面这张速览卡。')
+      : GG.el('p',{style:{margin:'8px 0 0', color:'var(--ink-2)', fontSize:'14.5px', lineHeight:'1.6'}},
+          '挂号 / 在线问诊时选这个科最对口'+(d.alt?('；拿不准也可挂「'+d.alt+'」'):'')+'。')
+  );
+}
+const ASK_QS = ['这种情况大概是什么原因，要紧吗？','需要做哪些检查？','在家要注意什么、出现什么情况要立刻再来？'];
+function buildSummaryText(eng, key, level){
+  const {yesQs} = eng.score();
+  const lines = [];
+  lines.push('【就诊速览 · '+key+'】');
+  lines.push('分诊建议：'+level.name);
+  lines.push('建议科室：'+deptFor(key, level));
+  lines.push('');
+  lines.push('我目前的情况：');
+  if(yesQs.length) yesQs.forEach(q=> lines.push('· '+(q.redFlag?'🚩 ':'')+q.q.replace(/[？?]$/,'')));
+  else lines.push('· 对所有追问都回答否，无明显加重信号');
+  lines.push('');
+  lines.push('我想问医生：');
+  ASK_QS.forEach(q=> lines.push('· '+q));
+  lines.push('');
+  lines.push('（AI 自助整理，非诊断，仅供与医生沟通参考）');
+  return lines.join('\n');
+}
+function copyText(text){
+  if(GG.copyText){ try{ GG.copyText(text); return; }catch(e){} }
+  try{ navigator.clipboard.writeText(text).then(function(){ GG.toast('已复制速览卡'); }, function(){ GG.toast('复制失败，可手动长按选择'); }); }
+  catch(e){ GG.toast('复制失败，可手动长按选择'); }
+}
+function visitCard(eng, key, level){
+  const text = buildSummaryText(eng, key, level);
+  const pre = GG.el('div',{style:{whiteSpace:'pre-wrap', fontSize:'13.5px', lineHeight:'1.7', color:'var(--ink-2)',
+    background:'#fbfbf9', border:'1px solid var(--line)', borderRadius:'12px', padding:'12px 14px'}}, text);
+  return GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '📝 给医生的「就诊速览卡」'),
+    GG.el('p',{class:'small muted', style:{margin:'0 0 10px'}}, '把你的情况一次说清，面诊更高效——复制带去医院，或截图发给在线医生。'),
+    pre,
+    GG.el('div',{class:'center', style:{marginTop:'10px'}},
+      GG.el('button',{class:'btn', onClick:()=>copyText(text)}, '📋 复制这张卡，看病时给医生')));
+}
+
 function showResult(eng, key, stage){
   const {level, total, yesQs, redHit} = eng.score();
+  const dept = deptFor(key, level);
   GG.clear(stage);
 
   // 顶部
@@ -239,15 +293,17 @@ function showResult(eng, key, stage){
     title: '分诊结果 · '+key,
     subtitle: level.emoji+' '+level.name,
     tags: tags,
-    rows: yesQs.length
+    rows: [{label:'🏥 建议科室', value:dept}].concat(yesQs.length
       ? yesQs.map(q=>({label: q.redFlag?'🚩 红旗':'症状', value: q.q.replace(/[？?]$/,'')}))
-      : [{label:'结论', value:'所有追问均回答否，无加重信号'}],
+      : [{label:'结论', value:'所有追问均回答否，无加重信号'}]),
     note: level.advice.length>60 ? level.advice.slice(0,58)+'…' : level.advice
   };
 
   stage.appendChild(ladder);
   stage.appendChild(verdict);
+  stage.appendChild(deptCard(key, level));        // ＋1：该挂哪个科
   stage.appendChild(reasonCard);
+  stage.appendChild(visitCard(eng, key, level));  // ＋1：给医生的就诊速览卡
 
   // 连了 AI：在本地分诊之上叠加一段贴合你回答的个性化解读
   if(GG.llm.connected()){

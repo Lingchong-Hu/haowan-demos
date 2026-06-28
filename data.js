@@ -518,19 +518,19 @@ window.PROJECTS = [
     id: "ubie", no: "13", cat: "医疗",
     kicker: "数字医疗 · 症状自查",
     title: "症状自助分诊",
-    subtitle: "描述症状，自适应追问，最后给「自护 / 远程 / 急诊」三级建议",
-    url: "demos/ubie/", tags: ["自适应追问","三级分诊","可解释","纯离线"],
-    phoneHint: "选主诉、回答追问，看分诊建议",
+    subtitle: "描述症状，自适应追问，给「自护 / 远程 / 急诊」三级建议，并告诉你该挂哪个科、整理一张给医生的就诊速览卡",
+    url: "demos/ubie/", tags: ["自适应追问","三级分诊","该挂哪个科","就诊速览卡"],
+    phoneHint: "选主诉 → 回答追问 → 看分级 + 挂号科室 + 速览卡",
     sections: [
-      { label: "是什么",   html: `<p>描述不舒服 → 它像分诊护士一样追问 → 给出该自己观察、还是远程问诊、还是赶紧去急诊。</p>` },
-      { label: "程序逻辑", html: `<h3>主诉 → 追问 → 三级建议</h3>
-        <div class="flow"><span class="step">描述症状</span><span class="arr">→</span><span class="step">自适应追问</span><span class="arr">→</span><span class="step">病因分级 + 三级建议</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>描述不舒服 → 它像分诊护士一样追问 → 给出该自己观察、远程问诊、还是赶紧去急诊，<b>并接着告诉你「该挂哪个科」、生成一张能带去医院给医生看的速览卡</b>——分级之后，真正解决"那我现在去哪、怎么说"。</p>` },
+      { label: "程序逻辑", html: `<h3>主诉 → 追问 → 三级建议 + 该挂哪个科 + 速览卡</h3>
+        <div class="flow"><span class="step">描述症状</span><span class="arr">→</span><span class="step">自适应追问</span><span class="arr">→</span><span class="step">三级建议</span><span class="arr">→</span><span class="step">该挂哪个科</span><span class="arr">→</span><span class="step">就诊速览卡</span></div>
         <ul>
-          <li>不同主诉 / 不同 yes-no 走出<b>不同追问路径</b>（决策树）</li>
-          <li>据回答收敛可能方向，给紧急度评估</li>
-          <li>末尾必给「自护 / 远程问诊 / 急诊」三级建议</li>
+          <li>不同主诉 / 不同 yes-no 走出<b>不同追问路径</b>（决策树），据回答给紧急度分级</li>
+          <li><b>＋1：该挂哪个科</b>——按主诉与分级导诊（如 胸痛→心血管内科 / 急诊走胸痛中心、头痛→神经内科），对标 Ubie「症状→科室」的核心价值</li>
+          <li><b>＋1：就诊速览卡</b>——把主诉 / 关键症状 / 红旗 / 想问医生的问题整理成可一键复制的卡片，带去医院或发给在线医生（解决"面诊说不清"）</li>
         </ul>
-        <p style="margin-top:16px">本地决策树 + 规则，<b>零外部依赖、纯离线</b>；带「非医疗诊断」声明。</p>` },
+        <p style="margin-top:16px">本地决策树 + 规则 + 导诊全在浏览器算，<b>纯离线</b>；连 key 才叠加 AI 个性化解读。导诊与速览卡均为 routing / 整理，<b>非诊断</b>，带「非医疗诊断」声明。</p>` },
       { label: "商业模式", html: `<ul>
           <li><b>分诊导流</b>：把用户导向远程问诊 / 线下科室，按问诊 / 转化分成（K Health 模式）</li>
           <li><b>B 端</b>：作为医院 / 保险 / 药企的智能分诊入口（Ubie / Ada 与机构合作模式）</li>
