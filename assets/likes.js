@@ -10,7 +10,12 @@
    · 一个 IP 一票、可取消（再点一次取消，由服务端按 IP 哈希判定）。
    ════════════════════════════════════════════════════════════════════════ */
 (function () {
-  var API = '/api/likes';
+  // ⬇⬇⬇ 部署 Cloudflare Worker 后，把这里换成它的地址（见 cloudflare-worker/README.md）
+  //     例：var LIKES_API = 'https://haowan-likes.xxx.workers.dev';
+  //     正式站 lingchonghu.com 是纯静态(GitHub Pages)，必须填这个绝对地址点赞才会出现。
+  //     留空时回退到同源 /api/likes（仅本地 dev server 用）。
+  var LIKES_API = '';
+  var API = LIKES_API || '/api/likes';
   var state = { counts: {}, mine: {}, ok: false };
 
   var HEART =
