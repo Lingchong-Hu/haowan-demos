@@ -8,7 +8,7 @@ window.DEMOS = [
   { slug:'alta',         industry:'时尚', title:'场合穿搭',         tagline:'衣橱 + 场合 → 整套搭配',      emoji:'👗', accent:'#9b5cc2', status:'live' },
   { slug:'fortuna',      industry:'金融', title:'AI 财务管家',     tagline:'体检 → 设目标 → 配置 + 蒙特卡洛达成概率 + 行动计划', emoji:'🧭', accent:'#1f9e8f', status:'live', disclaimer:true },
   { slug:'oboe',         industry:'教育', title:'秒变一门课',       tagline:'输入主题 → 迷你课 → 学完测掌握度、揪薄弱章', emoji:'📚', accent:'#3a7bd5', status:'live' },
-  { slug:'adaptive-quiz',industry:'教育', title:'自适应测验',       tagline:'答题 → 难度自适应 + 预测分',   emoji:'🧠', accent:'#5a6fd5', status:'live' },
+  { slug:'adaptive-quiz',industry:'教育', title:'自适应测验',       tagline:'答题 → 难度自适应 → 预测分 + 定位能力边界、专项攻顶', emoji:'🧠', accent:'#5a6fd5', status:'live' },
   { slug:'final-round',  industry:'招聘', title:'模拟面试',         tagline:'选岗 → 答行为题 → 即时反馈 → 面试官追你第二刀', emoji:'🎤', accent:'#3d6fe0', status:'live' },
   { slug:'clause-risk',  industry:'法律', title:'合同风险高亮',     tagline:'贴条款 → 标红 + 大白话 + 改写', emoji:'⚖️', accent:'#7a6cf0', status:'live', disclaimer:true },
   { slug:'ubie',         industry:'医疗', title:'症状自助分诊',     tagline:'描述症状 → 追问 → 分级建议',   emoji:'🩺', accent:'#1f9bb3', status:'live', disclaimer:true },

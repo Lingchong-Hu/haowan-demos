@@ -404,19 +404,19 @@ window.PROJECTS = [
     id: "adaptive-quiz", no: "10", cat: "教育",
     kicker: "教育 · 自适应学习",
     title: "自适应测验",
-    subtitle: "答对升难度、答错降难度，结尾给一个预测分",
-    url: "demos/adaptive-quiz/", tags: ["难度自适应","预测分","即时反馈","纯离线"],
-    phoneHint: "连续答题，留意难度随对错变化",
+    subtitle: "答对升难度、答错降难度，结尾给预测分，并定位你的「能力边界」、针对边界难度专项攻顶",
+    url: "demos/adaptive-quiz/", tags: ["难度自适应","预测分","能力边界定位","专项攻顶"],
+    phoneHint: "连续答题 → 看预测分 → 点「专项攻顶」练边界难度",
     sections: [
-      { label: "是什么",   html: `<p>题目难度随你的对错实时调整，最后预测你的水平分。</p>` },
-      { label: "程序逻辑", html: `<h3>答题 → 自适应 → 预测分</h3>
-        <div class="flow"><span class="step">答题</span><span class="arr">→</span><span class="step">难度自适应</span><span class="arr">→</span><span class="step">收敛 + 预测分</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>题目难度随你的对错实时调整，最后不只给预测分，<b>还告诉你卡在哪一档、该专项练哪个难度</b>——诊断不止于一个分数。</p>` },
+      { label: "程序逻辑", html: `<h3>答题 → 自适应 → 预测分 + 能力定位 + 专项攻顶</h3>
+        <div class="flow"><span class="step">答题</span><span class="arr">→</span><span class="step">难度自适应</span><span class="arr">→</span><span class="step">预测分</span><span class="arr">→</span><span class="step">能力边界</span><span class="arr">→</span><span class="step">专项攻顶 ×5</span></div>
         <ul>
-          <li>每题维护一个能力估计：答对上调、答错下调，下一题按当前难度出</li>
-          <li>难度<b>真的随对错变化</b>，逐步收敛到你的水平</li>
-          <li>结尾据答题轨迹给出预测分</li>
+          <li>每题维护一个能力估计：答对上调、答错下调，下一题按当前难度出，逐步收敛到你的水平</li>
+          <li><b>＋1：能力定位</b>——从难度轨迹算出你「稳定接住到难度 X、边界在难度 X+1」（自适应降级会末尾重测低难，故按"答对过的最高难度"定边界，恒不矛盾）</li>
+          <li><b>＋1：专项攻顶</b>——只挑你边界难度连答 5 道（难度固定不再自适应），看能否突破，对标 Riiid 的「弱项专练」</li>
         </ul>
-        <p style="margin-top:16px">本地简化版 IRT / CAT 逻辑，<b>零外部依赖、纯离线</b>。</p>` },
+        <p style="margin-top:16px">本地简化版 IRT / CAT 逻辑 + 边界定位全在浏览器算，<b>纯离线</b>；连 key 才让 AI 按难度现场出任意主题的题。</p>` },
       { label: "商业模式", html: `<ul>
           <li><b>订阅备考</b>：自适应刷题 + 预测分 + 弱项专练（Riiid / Santa 模式）</li>
           <li><b>B 端</b>：给学校 / 机构做分层测评与诊断</li>

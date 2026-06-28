@@ -1,6 +1,6 @@
 /* adaptive-quiz — 自适应测验。
    选科目 → 从难度 3 起连续答题；答对→难度+1(封顶5)、答错→难度-1(封底1)，难度实时可见。
-   答满 8 题 → 预测分(百分制+等级) + 难度轨迹折线图。 */
+   答满 8 题 → 预测分 + 难度轨迹 + ＋1：能力边界定位 + 专项攻顶（只挑边界难度连答 5 道）。 */
 (function(){
 const SLUG='adaptive-quiz';
 const QUIZ = window.QUIZ;
@@ -48,7 +48,7 @@ function intro(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
     GG.el('h1', null, '自适应测验：题目跟着你变难'),
-    GG.el('p', null, `从「中等」难度起步，答对一题就升级、答错就降级——难度始终在追你的真实水平。答满 ${TOTAL} 题，给你一个预测分和难度轨迹。`)
+    GG.el('p', null, `从「中等」难度起步，答对升级、答错降级——难度始终在追你的真实水平。答满 ${TOTAL} 题，给你预测分、难度轨迹，还会定位你的「能力边界」，再针对边界难度专项攻顶。`)
   ));
   main.appendChild(GG.llm.bar());
 
@@ -105,22 +105,26 @@ function drawQuestion(bank, level, usedIdx){
   return -1;
 }
 
-function play(subjKey, aiTopic){
+/* focus = {level, count} 时进入「专项攻顶」：难度固定、连答 count 道、单独结算 */
+function play(subjKey, aiTopic, focus){
   const ai = !!aiTopic;
+  const isFocus = !!focus;
+  const total = isFocus ? focus.count : TOTAL;
   const subj = ai ? {name:aiTopic, emoji:'🧠', bank:[]} : QUIZ[subjKey];
   const bank = subj.bank || [];
   const asked = new Set();
-  let level = START_LEVEL;
+  let level = isFocus ? GG.clamp(focus.level, MIN_L, MAX_L) : START_LEVEL;
   const usedIdx = new Set();
   const trace = [];   // 每题：{level(题目难度), correct(bool)}
   let qNum = 0;
 
   GG.clear(main);
   const head = GG.el('div',{class:'hero', style:{paddingBottom:'4px'}},
-    GG.el('h1',{style:{fontSize:'22px'}}, subj.emoji+' '+subj.name+' · 自适应测验'+(ai?'（AI 出题）':'')));
+    GG.el('h1',{style:{fontSize:'22px'}}, subj.emoji+' '+subj.name+' · '+
+      (isFocus ? ('专项攻顶 · 难度 '+level+'（'+LEVEL_NAME[level]+'）') : ('自适应测验'+(ai?'（AI 出题）':'')))));
   main.appendChild(head);
 
-  // 顶部状态条：进度 + 当前难度（醒目，体现“难度在变”）
+  // 顶部状态条：进度 + 当前难度
   const statusBar = GG.el('div',{class:'card pad', style:{marginBottom:'16px', display:'flex',
     justifyContent:'space-between', alignItems:'center', gap:'12px', flexWrap:'wrap',
     background:'linear-gradient(160deg,var(--accent-soft),#fff 70%)'}});
@@ -132,11 +136,11 @@ function play(subjKey, aiTopic){
   const qBox = GG.el('div'); main.appendChild(qBox);
 
   function renderStatus(flash){
-    progEl.innerHTML = `第 <b style="color:var(--ink-2)">${qNum+1}</b> / ${TOTAL} 题`;
+    progEl.innerHTML = `第 <b style="color:var(--ink-2)">${qNum+1}</b> / ${total} 题`;
     levelEl.innerHTML =
-      `<div class="small muted" style="margin-bottom:2px">当前难度 · ${LEVEL_NAME[level]}</div>` +
+      `<div class="small muted" style="margin-bottom:2px">${isFocus?'专项 · 难度固定':'当前难度'} · ${LEVEL_NAME[level]}</div>` +
       `<div style="font-size:22px;letter-spacing:2px;color:var(--accent);font-weight:700">${stars(level)}</div>`;
-    if(flash){ // 难度变化时给个动效，让“变”看得见
+    if(flash){
       levelEl.animate(
         [{transform:'scale(1.18)'},{transform:'scale(1)'}],
         {duration:380, easing:'cubic-bezier(.2,.7,.2,1)'});
@@ -145,11 +149,12 @@ function play(subjKey, aiTopic){
 
   function finishQuiz(){
     const key = ai ? ('ai:'+aiTopic) : subjKey;
+    if(isFocus){ challengeResult(key, focus.level, trace); return; }
     GG.encodeState({subj:key, trace, correct:trace.filter(t=>t.correct).length});
     showResult(key, trace, trace.filter(t=>t.correct).length, false);
   }
   async function nextQuestion(){
-    if(qNum>=TOTAL){ finishQuiz(); return; }
+    if(qNum>=total){ finishQuiz(); return; }
     renderStatus(false);
     let item;
     if(ai){
@@ -161,8 +166,8 @@ function play(subjKey, aiTopic){
       try{ item = await genQuestion(aiTopic, level, asked); }
       catch(e){
         GG.toast(GG.llm.errMsg(e));
-        if(!trace.length){ intro(); return; }   // 第一题就失败 → 回首页
-        finishQuiz(); return;                    // 中途失败 → 提前结算
+        if(!trace.length){ intro(); return; }
+        finishQuiz(); return;
       }
     } else {
       const qi = drawQuestion(bank, level, usedIdx);
@@ -199,31 +204,39 @@ function play(subjKey, aiTopic){
     function choose(i, optEl, item, card){
       if(locked) return; locked = true;
       const right = (i===item.answer);
-      // 标注对错
       GG.$$('.opt', opts).forEach((el, idx)=>{
         el.style.cursor='default';
         if(idx===item.answer){ el.style.borderColor='var(--good)'; el.style.background='rgba(46,158,123,.10)'; }
         if(idx===i && !right){ el.style.borderColor='var(--bad)'; el.style.background='rgba(216,80,63,.10)'; }
       });
       trace.push({level:item.level, correct:right});
-      // 反馈条 + 难度变化提示
-      const prevLevel = level;
-      level = GG.clamp(level + (right?1:-1), MIN_L, MAX_L);
-      const moved = level!==prevLevel;
-      const dirTxt = right
-        ? (moved? `答对！下一题难度升到 ${LEVEL_NAME[level]}（${stars(level)}）↑` : `答对！难度已封顶 ${LEVEL_NAME[level]}`)
-        : (moved? `答错。下一题难度降到 ${LEVEL_NAME[level]}（${stars(level)}）↓` : `答错。难度已是最低 ${LEVEL_NAME[level]}`);
-      card.appendChild(GG.el('div',{class:'card', style:{marginTop:'14px', padding:'12px 14px',
-        borderColor: right?'var(--good)':'var(--bad)',
-        background: right?'rgba(46,158,123,.07)':'rgba(216,80,63,.07)',
-        color: right?'var(--good)':'var(--bad)', fontWeight:'600'}},
-        (right?'✓ ':'✕ ') + dirTxt));
-      // 顶部状态条同步刷新（先把难度更新动效演出来）
+
+      let moved = false;
+      if(!isFocus){
+        const prevLevel = level;
+        level = GG.clamp(level + (right?1:-1), MIN_L, MAX_L);
+        moved = level!==prevLevel;
+        const dirTxt = right
+          ? (moved? `答对！下一题难度升到 ${LEVEL_NAME[level]}（${stars(level)}）↑` : `答对！难度已封顶 ${LEVEL_NAME[level]}`)
+          : (moved? `答错。下一题难度降到 ${LEVEL_NAME[level]}（${stars(level)}）↓` : `答错。难度已是最低 ${LEVEL_NAME[level]}`);
+        card.appendChild(GG.el('div',{class:'card', style:{marginTop:'14px', padding:'12px 14px',
+          borderColor: right?'var(--good)':'var(--bad)',
+          background: right?'rgba(46,158,123,.07)':'rgba(216,80,63,.07)',
+          color: right?'var(--good)':'var(--bad)', fontWeight:'600'}},
+          (right?'✓ ':'✕ ') + dirTxt));
+      } else {
+        // 专项模式：难度固定，只给对错
+        card.appendChild(GG.el('div',{class:'card', style:{marginTop:'14px', padding:'12px 14px',
+          borderColor: right?'var(--good)':'var(--bad)',
+          background: right?'rgba(46,158,123,.07)':'rgba(216,80,63,.07)',
+          color: right?'var(--good)':'var(--bad)', fontWeight:'600'}},
+          (right?'✓ 答对！':'✕ 答错。') + ` 难度保持 ${LEVEL_NAME[level]}`));
+      }
       renderStatus(moved);
       qNum++;
       card.appendChild(GG.el('div',{class:'center', style:{marginTop:'14px'}},
         GG.el('button',{class:'btn primary lg', onClick:nextQuestion},
-          qNum>=TOTAL? '看我的预测分 →' : `下一题（第 ${qNum+1}/${TOTAL}）→`)));
+          qNum>=total? (isFocus?'看攻顶结果 →':'看我的预测分 →') : `下一题（第 ${qNum+1}/${total}）→`)));
     }
   }
 
@@ -236,9 +249,8 @@ function grade(trace){
   const n = trace.length || 1;
   const correct = trace.filter(t=>t.correct).length;
   const acc = correct/n;
-  const reached = Math.max(...trace.map(t=>t.level));       // 到达的最高难度
-  const avgL = trace.reduce((a,t)=>a+t.level,0)/n;          // 平均作答难度
-  // 预测分：正确率为主(60)，到达难度(28)，平均难度(12)
+  const reached = Math.max(...trace.map(t=>t.level));
+  const avgL = trace.reduce((a,t)=>a+t.level,0)/n;
   let score = acc*60 + ((reached-1)/(MAX_L-1))*28 + ((avgL-1)/(MAX_L-1))*12;
   score = Math.round(GG.clamp(score, 0, 100));
   let grade, gloss;
@@ -250,7 +262,71 @@ function grade(trace){
   return {correct, n, acc, reached, avgL, score, grade, gloss};
 }
 
-/* 难度轨迹折线/柱图（inline SVG，对错用颜色区分） */
+/* ＋1：从轨迹定位「稳定区 / 边界」。
+   reached = 你答对过的最高难度（已证明的能力）；边界 = 再往上一级（自适应降级会在末尾重测低难，
+   所以不能用"最低错题难度"当边界——那会得出"稳定到4却卡在3"的矛盾）。stable ≤ challenge 恒成立。 */
+function abilityPos(trace){
+  const correct = trace.filter(t=>t.correct);
+  const wrong = trace.filter(t=>!t.correct);
+  const reached = correct.length ? Math.max(...correct.map(t=>t.level)) : 0;
+  if(reached===0){   // 一题没对
+    const lowAttempt = GG.clamp(Math.min(...trace.map(t=>t.level)), MIN_L, 2);
+    return { stable:MIN_L, challenge:lowAttempt, atTop:false, neverRight:true,
+      verdict:`这一轮还没站稳——系统已把难度降到适合你的区间。先从 难度 1~2 把基础打牢，再一档档往上走。` };
+  }
+  const atTop = reached>=MAX_L;
+  const stable = reached;
+  const challenge = GG.clamp(reached + (atTop?0:1), MIN_L, MAX_L);
+  let verdict;
+  if(atTop)
+    verdict = `你摸到了最高 难度 ${MAX_L}（${LEVEL_NAME[MAX_L]}）并答对——已经站上顶区。专项再测 5 道，确认你能稳定守住、而不是偶然碰对。`;
+  else if(wrong.length)
+    verdict = `你能稳定接住到 难度 ${stable}（${LEVEL_NAME[stable]}）；再往上的 难度 ${challenge}（${LEVEL_NAME[challenge]}）就是你现在的边界——把它练到稳，水平分会上一个台阶。`;
+  else
+    verdict = `你一路没失手，最高摸到 难度 ${stable}（${LEVEL_NAME[stable]}）。下一步直接挑战 难度 ${challenge}（${LEVEL_NAME[challenge]}），看看你的天花板在哪。`;
+  return { stable, challenge, atTop, neverRight:false, verdict };
+}
+function posPill(label, val, col){
+  return GG.el('div',{class:'card', style:{flex:'1', minWidth:'140px', padding:'10px 12px', borderColor:col, background:'#fff'}},
+    GG.el('div',{class:'small muted'}, label),
+    GG.el('div',{style:{fontWeight:'700', color:col, marginTop:'2px'}}, val));
+}
+
+function startChallenge(subjKey, level){
+  if(typeof subjKey==='string' && subjKey.indexOf('ai:')===0){
+    if(!GG.llm.connected()){ GG.toast('AI 出题需要先连接 AI'); return; }
+    play(null, subjKey.slice(3), {level, count:5});
+  } else {
+    play(subjKey, null, {level, count:5});
+  }
+}
+
+function challengeResult(key, level, trace){
+  GG.clear(main);
+  const got = trace.filter(t=>t.correct).length, n = trace.length || 1;
+  const pass = got>=4 ? 'break' : got>=2 ? 'partial' : 'base';
+  const col = pass==='break'?'var(--good)':pass==='partial'?'var(--warn)':'var(--bad)';
+  const verdict = pass==='break'
+      ? `突破了！难度 ${level}（${LEVEL_NAME[level]}）你已经拿下，下一步可以往 难度 ${Math.min(level+1,MAX_L)} 冲。`
+    : pass==='partial'
+      ? `${got}/${n}，难度 ${level}（${LEVEL_NAME[level]}）还差临门一脚——再来一轮，或回去把这一层的基础补补。`
+      : `难度 ${level}（${LEVEL_NAME[level]}）暂时偏难，先回低一档练熟，再来攻这层。`;
+  const subjName = (typeof key==='string'&&key.indexOf('ai:')===0)? key.slice(3) : (QUIZ[key]?QUIZ[key].name:'测验');
+  const stage = GG.el('div'); main.appendChild(stage);
+  stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
+    GG.el('h1',{style:{fontSize:'23px'}}, '🎯 专项攻顶结果')));
+  stage.appendChild(GG.el('div',{class:'card pad', style:{textAlign:'center', marginBottom:'16px',
+      background:'linear-gradient(160deg,var(--accent-soft),#fff 65%)'}},
+    GG.el('div',{class:'small muted'}, subjName+' · 难度 '+level+'（'+LEVEL_NAME[level]+'）专项 5 题'),
+    GG.el('div',{style:{fontSize:'50px', fontWeight:'800', color:col, lineHeight:'1.1', margin:'6px 0'}}, got+' / '+n),
+    GG.el('div',{style:{fontSize:'17px', fontWeight:'700', color:col}}, pass==='break'?'突破 ✓':pass==='partial'?'接近':'再练'),
+    GG.el('p',{style:{margin:'10px auto 0', maxWidth:'420px', color:'var(--ink-2)', lineHeight:'1.6'}}, verdict)));
+  stage.appendChild(GG.el('div',{class:'row', style:{justifyContent:'center', gap:'12px', flexWrap:'wrap', marginTop:'4px'}},
+    GG.el('button',{class:'btn primary', onClick:()=>startChallenge(key, level)}, '🔁 再攻一轮'),
+    GG.el('button',{class:'btn', onClick:()=>{ location.hash=''; start(); }}, '↻ 换科目')));
+}
+
+/* 难度轨迹折线图（inline SVG，对错用颜色区分） */
 function traceSVG(trace){
   const W=560, H=170, padL=34, padR=14, padT=18, padB=26;
   const n = trace.length;
@@ -285,6 +361,7 @@ async function showResult(subjKey, trace, correctCount, fromLink){
     await GG.thinking(stage, ['汇总你的作答…','分析难度轨迹…','结合到达难度与正确率…','算出你的预测分…'], 1500);
   }
   const r = grade(trace);
+  const ap = abilityPos(trace);
   GG.clear(stage);
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
@@ -321,18 +398,37 @@ async function showResult(subjKey, trace, correctCount, fromLink){
       '折线越往上走，说明你连续答对、系统把题不断调难；下探则是答错后系统主动降难帮你站稳。')
   ));
 
+  // ＋1：能力定位
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'4px solid var(--accent)'}},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '📍 你的能力定位'),
+    GG.el('div',{class:'row', style:{gap:'10px', flexWrap:'wrap', margin:'4px 0 12px'}},
+      posPill('稳定接住', '难度 '+ap.stable+' · '+LEVEL_NAME[ap.stable], 'var(--good)'),
+      posPill('当前边界', '难度 '+ap.challenge+' · '+LEVEL_NAME[ap.challenge], 'var(--warn)')),
+    GG.el('p',{style:{margin:'0', color:'var(--ink-2)', lineHeight:'1.6'}}, ap.verdict)
+  ));
+
+  // ＋1：专项攻顶
+  stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', textAlign:'center',
+      background:'linear-gradient(160deg,var(--accent-soft),#fff 70%)'}},
+    GG.el('div',{style:{fontWeight:'700', fontSize:'16px', marginBottom:'4px'}}, '🎯 专项攻顶'),
+    GG.el('div',{class:'small muted', style:{marginBottom:'12px'}},
+      '只挑你边界「难度 '+ap.challenge+' · '+LEVEL_NAME[ap.challenge]+'」的题，连答 5 道，看你能不能突破'),
+    GG.el('button',{class:'btn primary lg', onClick:()=>startChallenge(subjKey, ap.challenge)},
+      '攻坚 难度 '+ap.challenge+' ×5 →')
+  ));
+
   const shareSpec = {
     slug:SLUG, title:'自适应测验结果',
     big:{value:r.score, label:'预测分'},
     subtitle: `${subj.name} · 正确率 ${Math.round(r.acc*100)}%`,
     rows:[
       {label:'等级', value:r.grade+'（'+LEVEL_NAME[Math.round(GG.clamp(r.avgL,1,5))]+'区间）'},
-      {label:'答对题数', value:r.correct+' / '+r.n},
-      {label:'到达难度', value:stars(r.reached)+`（${r.reached}/5）`},
+      {label:'稳定接住', value:'难度 '+ap.stable+' · '+LEVEL_NAME[ap.stable]},
+      {label:'当前边界', value:'难度 '+ap.challenge+' · '+LEVEL_NAME[ap.challenge]},
       {label:'难度轨迹', value:trace.map(t=>t.level).join(' → ')},
     ],
     tags:[subj.name, '难度自适应', '等级'+r.grade],
-    note: r.gloss,
+    note: ap.verdict,
   };
 
   stage.appendChild(GG.resultCard(SLUG,
