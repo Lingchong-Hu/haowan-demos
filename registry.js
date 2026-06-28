@@ -5,7 +5,7 @@ window.DEMOS = [
   // 产业, slug, 标题, 一句话, emoji, accent
   { slug:'cardna',       industry:'汽车', title:'购车品味 DNA',     tagline:'滑+答 → 品味画像 · 荐车 · 车企眼里的你', emoji:'🧬', accent:'#4b54c9', status:'live' },
   { slug:'style-dna',    industry:'时尚', title:'自拍色彩诊断',     tagline:'一张自拍 → 色彩季型 + 配色板', emoji:'🎨', accent:'#c2569b', status:'live' },
-  { slug:'alta',         industry:'时尚', title:'场合穿搭',         tagline:'衣橱 + 场合 → 整套搭配',      emoji:'👗', accent:'#9b5cc2', status:'live' },
+  { slug:'alta',         industry:'时尚', title:'场合穿搭',         tagline:'衣橱 + 场合 → 整套搭配，再 point 出补哪一件升级更多场合', emoji:'👗', accent:'#9b5cc2', status:'live' },
   { slug:'fortuna',      industry:'金融', title:'AI 财务管家',     tagline:'体检 → 设目标 → 配置 + 蒙特卡洛达成概率 + 行动计划', emoji:'🧭', accent:'#1f9e8f', status:'live', disclaimer:true },
   { slug:'oboe',         industry:'教育', title:'秒变一门课',       tagline:'输入主题 → 迷你课 → 学完测掌握度、揪薄弱章', emoji:'📚', accent:'#3a7bd5', status:'live' },
   { slug:'adaptive-quiz',industry:'教育', title:'自适应测验',       tagline:'答题 → 难度自适应 → 预测分 + 定位能力边界、专项攻顶', emoji:'🧠', accent:'#5a6fd5', status:'live' },

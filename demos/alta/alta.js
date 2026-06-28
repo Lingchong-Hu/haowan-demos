@@ -124,6 +124,103 @@ function formalityScale(reasons, occ){
   );
 }
 
+/* ---------- ＋1：衣橱缺口雷达（补一件，升级更多场合） ----------
+   数字衣橱 App（Whering / Cladwell）真正变现的是「补一件就成套」的导购。
+   原 demo 只用你「有的」搭完就停；这里再走一步：从你「没勾」的单品里，
+   找出补哪一件能让最多场合的整套升级。纯本地确定性，连 key 再叠一句造型话术。*/
+
+// 各部位在「缺口价值」里的权重：核心骨架(上装/下装/鞋)最重，外套次之，配饰最轻
+// → 优先补「让这身去对场合」的核心单品，而不是一件能给多场合从 0 加分的百搭配饰
+const SLOT_W = {'上装':1, '下装':1, '鞋':1, '外套':0.7, '配饰':0.45};
+
+// 给定单品 key 集合 + 场合，按与 buildOutfit 相同的纳入规则，算这套的加权契合总分
+function outfitScore(keys, occ){
+  let s = 0;
+  for(const slot of SLOTS){
+    const pool = WARDROBE.filter(w=> keys.has(w.key) && w.slot===slot);
+    if(!pool.length) continue;
+    const best = Math.max(...pool.map(w=> fit(w, occ)));
+    if(slot==='外套'){
+      const wantOuter = occ.want.needOuter || 0;
+      if(wantOuter < 0.45 && best < 7) continue;   // 不太需要外套且这件也不亮眼 → 不计入
+    }
+    if(slot==='配饰' && best < 4) continue;
+    s += best * (SLOT_W[slot] || 1);
+  }
+  return s;
+}
+
+// 扫描所有「没勾」的单品，返回按总提升排序的缺口候选 [{w, total, ups:[{occ,gain,cur}]}]
+// curOcc = 用户当前正在看的场合，加权，让推荐既切合眼前这套、又兼顾跨场合通用性
+function wardrobeGaps(curOcc){
+  const owned = new Set(picked);
+  const base = {};
+  OCCASIONS.forEach(o=> base[o.key] = outfitScore(owned, o));
+  return WARDROBE.filter(w=> !owned.has(w.key)).map(w=>{
+    const withIt = new Set(owned); withIt.add(w.key);
+    let total = 0; const ups = [];
+    OCCASIONS.forEach(o=>{
+      const d = outfitScore(withIt, o) - base[o.key];
+      if(d > 0.4){                                  // 真能让这个场合更到位才算
+        const cur = !!(curOcc && o.key===curOcc.key);
+        total += d * (cur ? 2.2 : 1);               // 当前场合权重更高
+        ups.push({occ:o, gain:d, cur});
+      }
+    });
+    ups.sort((a,b)=> (b.cur-a.cur) || (b.gain-a.gain));   // 当前场合排最前
+    return {w, total, ups};
+  }).filter(x=> x.ups.length).sort((a,b)=> b.total - a.total);
+}
+
+const GAP_SYS = '你是私人衣橱顾问。用户给你 ta 最该补的一件单品和补上后能升级的场合，请用一句话(26字内)说明为什么值得补、怎么搭，要点到场合；务实不浮夸，别劝人买大牌。只输出严格 JSON：{"pitch":"一句话"}。简体中文。';
+async function gapPitch(top, occNames){
+  try{
+    const w = top.w;
+    const obj = await GG.llm.json(GAP_SYS,
+      `最该补：${w.label}（${w.slot}，正式度${w.formality}/5，风格${w.styleTags.join('·')}）。补上后升级场合：${occNames.join('、')}。`,
+      {max_tokens:160});
+    return String(obj.pitch||'').trim();
+  }catch(e){ return ''; }
+}
+
+// 缺口卡片：主推荐 + 升级场合标签 + 一键试搭 + 次选
+function gapCard(occ){
+  const gaps = wardrobeGaps(occ);
+  const card = GG.el('div',{class:'card pad', style:{marginTop:'16px'}},
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🛒 衣橱缺口 · 补一件，升级更多场合'));
+  if(!gaps.length){
+    card.appendChild(GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}},
+      '你勾的这套衣橱，已经能把这些场合都接住了 ✓ 暂时没有明显缺口。'));
+    return card;
+  }
+  const top = gaps[0];
+  const occNames = top.ups.map(u=> u.occ.label);
+  const pitchEl = GG.el('p',{style:{margin:'4px 0 0', color:'var(--ink-2)', lineHeight:'1.6'}},
+    `补上${top.w.label}，${occNames.join('、')}都能更到位。`);
+  card.appendChild(GG.el('div',{style:{display:'flex', gap:'14px', alignItems:'center', marginTop:'10px'}},
+    GG.el('div',{style:{fontSize:'34px', flex:'none', width:'46px', textAlign:'center'}}, top.w.emoji),
+    GG.el('div',{style:{flex:'1', minWidth:'0'}},
+      GG.el('div',{class:'row', style:{gap:'8px', flexWrap:'wrap', alignItems:'center'}},
+        GG.el('h3',{style:{fontSize:'17px'}}, '最该补：'+top.w.label),
+        GG.el('span',{class:'pill', style:{background:'var(--accent)', color:'#fff', padding:'2px 9px', borderRadius:'999px', fontSize:'12px', fontWeight:'700'}}, '升级 '+top.ups.length+' 个场合')),
+      pitchEl)
+  ));
+  card.appendChild(GG.el('div',{class:'chips', style:{marginTop:'10px'}},
+    top.ups.map(u=> GG.el('span',{class:'pill', style:{background:u.cur?'var(--accent)':'var(--accent-soft)', color:u.cur?'#fff':'var(--accent)', padding:'3px 10px', borderRadius:'999px', fontSize:'12px', fontWeight:u.cur?'700':'600'}},
+      (u.cur?'▸ ':'')+u.occ.emoji+' '+u.occ.label))));
+  card.appendChild(GG.el('div',{style:{marginTop:'12px'}},
+    GG.el('button',{class:'btn', onClick:()=>{ picked.add(top.w.key); GG.toast('已把「'+top.w.label+'」加入试搭'); showResult(occ, false); }},
+      '＋ 试搭这套（加上'+top.w.label+'）')));
+  if(gaps.length>1){
+    card.appendChild(GG.el('p',{class:'small muted', style:{margin:'12px 0 0'}},
+      '其次可考虑：'+gaps.slice(1,3).map(g=> g.w.emoji+g.w.label).join('、')));
+  }
+  if(GG.llm.connected()){
+    gapPitch(top, occNames).then(p=>{ if(p) pitchEl.textContent = '✨ '+p; }).catch(()=>{});
+  }
+  return card;
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
@@ -273,6 +370,7 @@ async function showResult(occ, fromLink){
   if(fscale) stage.appendChild(fscale);
   stage.appendChild(GG.el('div',{style:{height:'14px'}}));
   stage.appendChild(list);
+  stage.appendChild(gapCard(occ));   // ＋1：补一件，升级更多场合
   stage.appendChild(GG.resultCard(SLUG,
     GG.el('div',{class:'center muted small'}, '截图分享这套穿搭 ↓'), shareSpec));
 

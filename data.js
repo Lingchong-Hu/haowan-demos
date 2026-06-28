@@ -290,15 +290,16 @@ window.PROJECTS = [
     url: "demos/alta/", tags: ["数字衣橱","场合自适应","整套 look","纯离线"],
     phoneHint: "选衣橱单品 + 一个场合，看整套搭配",
     sections: [
-      { label: "是什么",   html: `<p>把你的衣橱数字化，按「今天去哪」一键给出整套穿搭。</p>` },
-      { label: "程序逻辑", html: `<h3>衣橱 + 场合 → 整套搭配</h3>
-        <div class="flow"><span class="step">选单品</span><span class="arr">→</span><span class="step">选场合</span><span class="arr">→</span><span class="step">规则成套</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>把你的衣橱数字化，按「今天去哪」一键给出整套穿搭。再走一步：用同一套契合引擎扫出<b>「补哪一件，能升级最多场合」</b>——数字衣橱真正变现的那一步。</p>` },
+      { label: "程序逻辑", html: `<h3>衣橱 + 场合 → 整套搭配 → 缺口雷达</h3>
+        <div class="flow"><span class="step">选单品</span><span class="arr">→</span><span class="step">选场合</span><span class="arr">→</span><span class="step">规则成套</span><span class="arr">→</span><span class="step">缺口·补一件</span><span class="arr">→</span><span class="step">试搭</span></div>
         <ul>
           <li>每件单品带风格 / 正式度 / 色系标签</li>
           <li>场合（通勤 / 约会 / 运动 / 正式…）设定正式度与色调约束</li>
           <li>按约束在衣橱里挑出上装 + 下装 + 鞋 + 配饰成套，<b>换场合就换一套</b></li>
+          <li><b>＋1 衣橱缺口</b>：把你「没有的」每件单品逐一模拟「加进衣橱」，算它能让几个场合的整套升级（核心位权重高于配饰），排出<b>最该补的一件</b>，可一键「试搭」看升级后的样子</li>
         </ul>
-        <p style="margin-top:16px">本地规则匹配，<b>零外部依赖、纯离线</b>。</p>` },
+        <p style="margin-top:16px">成套与缺口排序<b>全本地确定性、零外部依赖、纯离线</b>；连了 AI key 再叠一句造型话术。</p>` },
       { label: "商业模式", html: `<ul>
           <li><b>订阅</b>：无限搭配、衣橱分析、缺件提醒（Whering / Cladwell 模式）</li>
           <li><b>导购分佣</b>：「补一件就成套」直接挂电商链接，CPS 分成</li>
