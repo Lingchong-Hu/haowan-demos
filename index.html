@@ -12,6 +12,7 @@
 <link rel="stylesheet" href="assets/style.css" />
 <script>document.documentElement.classList.add('nav-ready')</script>
 <script defer src="assets/site.js"></script>
+<script defer src="assets/likes.js"></script>
 </head>
 <body>
 
@@ -156,14 +157,14 @@
   $("proj-grid").innerHTML = (featured.length ? featured : P).map(p => {
     const tags = p.tags.map(t => `<span>${t}</span>`).join("");
     if (!p.url) {
-      return `<div class="card soon">
+      return `<div class="card soon" data-slug="${p.id}">
         <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
         <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
         <div class="tags">${tags}</div><div class="go">即将上线</div></div>`;
     }
     const href = p.direct ? p.url : `project.html?id=${p.id}`;
     const ext = p.direct ? ' target="_blank" rel="noopener"' : '';
-    return `<a class="card" href="${href}"${ext}>
+    return `<a class="card" href="${href}"${ext} data-slug="${p.id}">
       <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
       <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
       <div class="tags">${tags}</div>
