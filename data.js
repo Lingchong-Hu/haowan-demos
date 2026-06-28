@@ -286,23 +286,24 @@ window.PROJECTS = [
     id: "alta", no: "06", cat: "时尚",
     kicker: "时尚 · AI 穿搭",
     title: "场合穿搭",
-    subtitle: "同一个衣橱，换个场合就给你换一整套搭配",
-    url: "demos/alta/", tags: ["数字衣橱","场合自适应","整套 look","纯离线"],
-    phoneHint: "选衣橱单品 + 一个场合，看整套搭配",
+    subtitle: "连淘宝导入你买过的衣服 + 上传想穿的 → AI 配整套，缺的直接给购买链接",
+    url: "demos/alta/", tags: ["连购物记录导入","上传想搭的","AI 整套 look","带链接导购"],
+    phoneHint: "连淘宝导入衣橱 + 选场合，看整套 + 购买链接",
     sections: [
-      { label: "是什么",   html: `<p>把你的衣橱数字化，按「今天去哪」一键给出整套穿搭。再走一步：用同一套契合引擎扫出<b>「补哪一件，能升级最多场合」</b>——数字衣橱真正变现的那一步。</p>` },
-      { label: "程序逻辑", html: `<h3>衣橱 + 场合 → 整套搭配 → 缺口雷达</h3>
-        <div class="flow"><span class="step">选单品</span><span class="arr">→</span><span class="step">选场合</span><span class="arr">→</span><span class="step">规则成套</span><span class="arr">→</span><span class="step">缺口·补一件</span><span class="arr">→</span><span class="step">试搭</span></div>
+      { label: "是什么",   html: `<p>不用手动一件件录衣橱：<b>授权连接淘宝等</b>，自动把你买过的服饰导入成数字衣橱；再<b>上传一件最近想穿的</b>，AI 以它为核心、按「今天去哪」配出整套 look，<b>缺的单品直接给购买链接</b>——搭配即导购，一条闭环。</p>
+        <p class="small" style="color:var(--ink-soft)">demo 用模拟订单数据演示授权导入；真实产品走电商开放授权 + 带返佣的商品直链。</p>` },
+      { label: "程序逻辑", html: `<h3>导入买过的 + 上传想穿的 → AI 整套 + 购买链接</h3>
+        <div class="flow"><span class="step">连淘宝导入</span><span class="arr">→</span><span class="step">上传想搭的</span><span class="arr">→</span><span class="step">选场合</span><span class="arr">→</span><span class="step">AI 出整套</span><span class="arr">→</span><span class="step">缺的给链接</span></div>
         <ul>
-          <li>每件单品带风格 / 正式度 / 色系标签</li>
-          <li>场合（通勤 / 约会 / 运动 / 正式…）设定正式度与色调约束</li>
-          <li>按约束在衣橱里挑出上装 + 下装 + 鞋 + 配饰成套，<b>换场合就换一套</b></li>
-          <li><b>＋1 衣橱缺口</b>：把你「没有的」每件单品逐一模拟「加进衣橱」，算它能让几个场合的整套升级（核心位权重高于配饰），排出<b>最该补的一件</b>，可一键「试搭」看升级后的样子</li>
+          <li><b>授权导入</b>：读取购物记录里的服饰订单 → 自动识别部位 / 风格，省掉手动录入（演示用模拟订单）</li>
+          <li><b>上传想搭的</b>：传一件最想穿的单品，钉死所在部位，AI 围着它把整套配好</li>
+          <li>按场合在你的单品里挑出上装 + 下装 + 鞋 + 配饰成套，<b>换场合就换一套</b>，附正式度匹配刻度</li>
+          <li><b>带链接推荐</b>：扫出补哪一件能升级最多场合（核心位权重高于配饰），<b>直接给淘宝同款链接</b> + 一键试搭</li>
         </ul>
-        <p style="margin-top:16px">成套与缺口排序<b>全本地确定性、零外部依赖、纯离线</b>；连了 AI key 再叠一句造型话术。</p>` },
+        <p style="margin-top:16px">成套与缺口排序<b>全本地确定性</b>；连了 AI key 再让模型搭配 + 写导购话术。隐私：只读服饰类订单、不读支付信息、不上传。</p>` },
       { label: "商业模式", html: `<ul>
+          <li><b>导购分佣（核心）</b>：搭配里缺的单品直接挂带返佣的商品链接，搭配即下单，CPS 分成</li>
           <li><b>订阅</b>：无限搭配、衣橱分析、缺件提醒（Whering / Cladwell 模式）</li>
-          <li><b>导购分佣</b>：「补一件就成套」直接挂电商链接，CPS 分成</li>
           <li><b>二手 / 租赁</b>：低频单品导向闲置与租衣平台</li>
           <li><b>数据资产</b>：真实衣橱与搭配偏好，是品牌选品的稀缺数据</li>
         </ul>` },
@@ -315,8 +316,8 @@ window.PROJECTS = [
         <ul>
           <li><b>痛点</b>：「衣柜满了却没衣服穿」，搭配决策天天发生</li>
           <li><b>人群</b>：注重穿搭、衣物多但缺搭配力的都市人群</li>
-          <li><b>本地化</b>：接小红书穿搭灵感、国内电商 SKU</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：录入衣橱有摩擦成本；搭配审美主观；本 demo 为规则演示</li>
+          <li><b>本地化</b>：接淘宝 / 京东购物记录授权、小红书穿搭灵感、国内电商 SKU</li>
+          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：读取购物记录需用户授权、涉隐私合规；搭配审美主观；本 demo 用模拟订单演示</li>
         </ul>` }
     ]
   },
