@@ -366,19 +366,19 @@ window.PROJECTS = [
     id: "oboe", no: "09", cat: "教育",
     kicker: "教育 · AI 生成课程",
     title: "秒变一门课",
-    subtitle: "输入任意主题，立刻生成一门有章节、有测验的结构化迷你课",
-    url: "demos/oboe/", tags: ["主题即课程","章节 + 测验","结构化输出","纯离线"],
-    phoneHint: "输入一个想学的主题，看生成的课程大纲",
+    subtitle: "输入任意主题 → 生成有章节、有测验的迷你课，学完还给你一张「掌握度报告」：哪几章没学透、要重点复习",
+    url: "demos/oboe/", tags: ["主题即课程","章节 + 测验","掌握度报告","重做错题"],
+    phoneHint: "生成课程 → 做测验 → 点「看掌握度报告」",
     sections: [
-      { label: "是什么",   html: `<p>把「我想学 X」一句话变成一门带章节和小测的迷你课。</p>` },
-      { label: "程序逻辑", html: `<h3>主题 → 大纲 → 章节 + 测验</h3>
-        <div class="flow"><span class="step">输入主题</span><span class="arr">→</span><span class="step">生成大纲</span><span class="arr">→</span><span class="step">章节 + 每章测验</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>把「我想学 X」一句话变成一门带章节和小测的迷你课——<b>并在学完后告诉你真的掌握了多少</b>。生成内容只是开始，<b>学会</b>才是目的。</p>` },
+      { label: "程序逻辑", html: `<h3>主题 → 大纲 → 章节 + 测验 → 掌握度报告</h3>
+        <div class="flow"><span class="step">输入主题</span><span class="arr">→</span><span class="step">生成大纲</span><span class="arr">→</span><span class="step">章节 + 每章测验</span><span class="arr">→</span><span class="step">掌握度报告</span><span class="arr">→</span><span class="step">重做错题</span></div>
         <ul>
-          <li>任意主题都拆成 ≥3 个章节，每章给要点 + 至少 1 道测验</li>
-          <li>用主题关键词驱动模板化结构，<b>换主题课程内容随之变</b></li>
-          <li>测验可作答、给反馈，形成最小学习闭环</li>
+          <li>任意主题都拆成 5 个章节，每章给要点 + 1~2 道即时判分测验</li>
+          <li><b>＋1：结课掌握度</b>——跟踪每章答题 → 算掌握度（如 6/8=75%）→ 揪出待复习的薄弱章 → 重点回顾</li>
+          <li><b>重做错题</b>：答对就从薄弱里划掉，掌握度实时回升（对标 Oboe / 可汗的「学会」闭环，而非只生成内容）</li>
         </ul>
-        <p style="margin-top:16px">本地结构化生成（模板 + 主题填充），<b>零外部依赖、纯离线</b>。</p>` },
+        <p style="margin-top:16px">本地结构化生成 + 掌握度全在浏览器算，<b>纯离线可玩</b>；连自己的 key 才用真实模型出课、并针对薄弱点重讲。</p>` },
       { label: "商业模式", html: `<ul>
           <li><b>订阅</b>：无限生成课程、保存学习路径、进度追踪（Oboe / Duolingo 模式）</li>
           <li><b>B 端培训</b>：企业按主题秒出内训微课，按席位收费</li>
