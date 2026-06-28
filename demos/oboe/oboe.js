@@ -297,12 +297,44 @@ function buildReport(slot){
   slot.scrollIntoView({behavior:'smooth', block:'start'});
 }
 
+/* ---------- 品牌欢迎门面（与 nl-home / insure-need 同一套 .gate 样式，颜色取本 demo 的 --accent） ---------- */
+const GATE_CSS = `
+.gate{ max-width:460px; margin:8px auto 0; border:1px solid var(--line); border-radius:20px; overflow:hidden; background:var(--surface); box-shadow:var(--sh-1); }
+.gate-head{ padding:28px 24px 24px; text-align:center; color:#fff; background:linear-gradient(150deg, var(--accent), color-mix(in srgb, var(--accent) 60%, #0c2c40)); }
+.gate-glyph{ font-size:44px; line-height:1; }
+.gate-name{ font-size:22px; font-weight:800; margin-top:10px; letter-spacing:.5px; }
+.gate-tag{ font-size:13.5px; opacity:.92; margin-top:6px; }
+.gate-body{ padding:22px 22px 24px; }
+.gate-hook{ font-size:18px; font-weight:800; color:var(--ink-1,#1d1d1f); text-align:center; line-height:1.5; }
+.gate-sub{ font-size:13.5px; color:var(--ink-2); line-height:1.7; margin:10px 0 18px; text-align:center; }
+.gate-cta{ display:block; width:100%; box-sizing:border-box; padding:14px; border:none; border-radius:14px; background:var(--accent); color:#fff; font-size:16px; font-weight:700; cursor:pointer; transition:.15s; }
+.gate-cta:hover{ filter:brightness(1.05); transform:translateY(-1px); }
+.gate-priv{ font-size:11.5px; color:var(--ink-soft,#8a8a93); text-align:center; margin-top:14px; line-height:1.55; }
+`;
+function injectGate(){ if(GG.$('#gate-style')) return; document.head.appendChild(GG.el('style',{id:'gate-style', html:GATE_CSS})); }
+function welcome(){
+  GG.clear(main);
+  main.appendChild(GG.el('div',{class:'gate'},
+    GG.el('div',{class:'gate-head'},
+      GG.el('div',{class:'gate-glyph'}, '📚'),
+      GG.el('div',{class:'gate-name'}, '秒变一门课'),
+      GG.el('div',{class:'gate-tag'}, '任何主题 · 秒生一门微课')),
+    GG.el('div',{class:'gate-body'},
+      GG.el('div',{class:'gate-hook'}, '想学点什么？给我一个主题。'),
+      GG.el('p',{class:'gate-sub'}, '输入任意主题，当场拆成一门有章节、有要点、能答题的迷你课；学完再给你一张「掌握度报告」，揪出最没学透的那几章。'),
+      GG.el('button',{class:'gate-cta', onClick:()=>{ GG.clear(main); intro(); }}, '📚 开始上课 →'),
+      GG.el('div',{class:'gate-priv'}, '🔒 纯本地可玩 · 连不连 AI 都能用 · 学习记录只留在这台浏览器')
+    )
+  ));
+}
+
 /* ---------- 流程 ---------- */
 function start(){
   main = GG.mountShell(SLUG);
+  injectGate();
   const st = GG.decodeState();
   if(st && st.topic){ showCourse(st.topic, true); return; }
-  intro();
+  welcome();
 }
 
 function intro(){
