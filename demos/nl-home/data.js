@@ -20,6 +20,7 @@ window.NLHOME = {
     { id:'h9',  title:'高新区·金融城纯新三房',   city:'成都', beds:3, price:230, ageYears:2,  area:96,  tags:['地铁','南北通透','精装','小区新'],          blurb:'成都顶级板块纯新房，地铁直达金融城。' },
     { id:'h10', title:'天府新区·公园纯新四房',   city:'成都', beds:4, price:340, ageYears:1,  area:128, tags:['学区','带阳台','精装','小区新'],            blurb:'公园旁纯新大四房，改善家庭舒适之选。' },
     { id:'h11', title:'武侯区·地铁口小两房',     city:'成都', beds:2, price:115, ageYears:6,  area:66,  tags:['地铁','拎包入住'],                        blurb:'低总价上车盘，地铁口拎包入住。' },
+    { id:'h17', title:'高新区·中德英伦次新三房', city:'成都', beds:3, price:268, ageYears:2,  area:99,  tags:['地铁','南北通透','精装','小区新'],          blurb:'同板块次新三房，比金融城便宜些，预算稍抬一点就够得着。' },
 
     { id:'h12', title:'朝阳·望京次新两房',       city:'北京', beds:2, price:680, ageYears:5,  area:80,  tags:['地铁','精装','高楼层'],                    blurb:'望京核心次新房，互联网人通勤天选。' },
     { id:'h13', title:'海淀·学区老三房',         city:'北京', beds:3, price:1180,ageYears:25, area:88,  tags:['学区','低楼层'],                          blurb:'顶级学区老破小，为了那张入场券。' },

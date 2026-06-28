@@ -558,19 +558,19 @@ window.PROJECTS = [
     id: "nl-home", no: "14", cat: "房产",
     kicker: "房产科技 · 自然语言找房",
     title: "一句话找房",
-    subtitle: "用大白话描述梦想的家，约束被真正解析并用于过滤",
-    url: "demos/nl-home/", tags: ["自然语言解析","约束过滤","匹配理由","纯离线"],
-    phoneHint: "输入一句话需求，看解析出的约束与匹配房源",
+    subtitle: "用大白话描述梦想的家，约束被真正解析过滤；再照实说你这份心愿单哪条最该松、松开能多几套",
+    url: "demos/nl-home/", tags: ["自然语言解析","约束过滤","心愿取舍雷达","松开重搜解锁更多","纯离线"],
+    phoneHint: "输入一句话需求，看匹配房源与「哪条最该松」",
     sections: [
-      { label: "是什么",   html: `<p>把「两室、预算 300 万、地铁附近、次新」这种人话解析成筛选条件并真去过滤房源。</p>` },
-      { label: "程序逻辑", html: `<h3>一句话 → 解析约束 → 匹配房源</h3>
-        <div class="flow"><span class="step">输入一句话</span><span class="arr">→</span><span class="step">解析约束</span><span class="arr">→</span><span class="step">过滤 + 匹配理由</span><span class="arr">→</span><span class="step">分享</span></div>
+      { label: "是什么",   html: `<p>把「两室、预算 300 万、地铁附近、次新」这种人话解析成筛选条件并真去过滤房源；<b>更进一步</b>——别家只给匹配或报「0 结果」，这里照实告诉你这份心愿单内部在打架：<b>哪一条最该松、松开它能多几套</b>，预算还给「再加 X 万解锁 N 套」的最实在台阶，一键松开即重搜。</p>` },
+      { label: "程序逻辑", html: `<h3>一句话 → 解析约束 → 匹配 + 心愿取舍雷达</h3>
+        <div class="flow"><span class="step">输入一句话</span><span class="arr">→</span><span class="step">解析约束</span><span class="arr">→</span><span class="step">过滤 + 匹配理由</span><span class="arr">→</span><span class="step">哪条最该松(松开重搜)</span></div>
         <ul>
-          <li>从自由文本里抽取卧室数 / 预算 / 城市 / 房龄等约束</li>
-          <li><b>违背约束的房源不出现</b>（真过滤，不是摆设）</li>
-          <li>每套给「为什么匹配」，引用你说的条件</li>
+          <li>从自由文本里抽取卧室数 / 预算 / 城市 / 房龄等约束；<b>违背硬约束的房源不出现</b>（真过滤，不是摆设）</li>
+          <li><b>取舍雷达</b>：对每条硬约束做反事实模拟——松开它能多解锁几套；预算给「再加 X 万 → +N 套」的最便宜台阶；荐最划算的一条让步，一键松开重搜实时重算</li>
+          <li>再点破「你列了 N 个『最好有』，但没一套全中，最多命中 M 个」——分清硬筛选与加分项</li>
         </ul>
-        <p style="margin-top:16px">本地轻量 NLP（关键词 + 数值抽取）+ 过滤，<b>零外部依赖、纯离线</b>。</p>` },
+        <p style="margin-top:16px">本地轻量 NLP（关键词 + 数值抽取）+ 过滤 + 取舍模拟，<b>判断层全本地、纯离线</b>；连 key 仅用真实模型升级解析。</p>` },
       { label: "商业模式", html: `<ul>
           <li><b>经纪 / 房源导流</b>：高意向需求按线索 / 成交计费（Zillow / Rightmove 模式）</li>
           <li><b>置顶与广告</b>：房源曝光、经纪人会员</li>

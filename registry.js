@@ -12,7 +12,7 @@ window.DEMOS = [
   { slug:'final-round',  industry:'招聘', title:'模拟面试',         tagline:'选岗 → 答行为题 → 即时反馈 → 面试官追你第二刀', emoji:'🎤', accent:'#3d6fe0', status:'live' },
   { slug:'clause-risk',  industry:'法律', title:'合同签前军师',     tagline:'贴条款 + 选你是哪一方 → 倾斜裁决(该不该签) + 底线必改 + 缺失条款 + 一键改约邮件', emoji:'⚖️', accent:'#7a6cf0', status:'live', disclaimer:true },
   { slug:'ubie',         industry:'医疗', title:'症状自助分诊',     tagline:'描述症状 → 追问 → 分级 + 该挂哪个科 + 就诊速览卡', emoji:'🩺', accent:'#1f9bb3', status:'live', disclaimer:true },
-  { slug:'nl-home',      industry:'房产', title:'一句话找房',       tagline:'描述梦想的家 → 匹配房源',     emoji:'🏠', accent:'#2f8fd4', status:'live' },
+  { slug:'nl-home',      industry:'房产', title:'一句话找房',       tagline:'一句话描述 → 解析约束匹配房源 + 哪条心愿最该松(松开重搜解锁更多)', emoji:'🏠', accent:'#2f8fd4', status:'live' },
   { slug:'mindtrip',     industry:'旅行', title:'行程 + 地图',      tagline:'想去哪打哪 → 懂行逐时行程 + 交互地图', emoji:'🗺️', accent:'#0fa3a3', status:'live' },
   { slug:'dinner',       industry:'餐饮', title:'今天吃什么',       tagline:'冰箱有啥 · 刷到馋了 · 排一周，都从这问起', emoji:'🍲', accent:'#e0651f', status:'live' },
   { slug:'insure-need',  industry:'保险', title:'该买多少保',       tagline:'答生活问题 → 保额/险种建议',  emoji:'🛡️', accent:'#2b7fae', status:'live', disclaimer:true },
