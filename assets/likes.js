@@ -14,7 +14,7 @@
   //     例：var LIKES_API = 'https://haowan-likes.xxx.workers.dev';
   //     正式站 lingchonghu.com 是纯静态(GitHub Pages)，必须填这个绝对地址点赞才会出现。
   //     留空时回退到同源 /api/likes（仅本地 dev server 用）。
-  var LIKES_API = '';
+  var LIKES_API = 'https://api.interantai.com';
   var API = LIKES_API || '/api/likes';
   var state = { counts: {}, mine: {}, ok: false };
 
