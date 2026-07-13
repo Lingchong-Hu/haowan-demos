@@ -49,5 +49,31 @@ Worker 上，前端跨域调用。
 
 ## 一致性 & 额度
 KV 最终一致（跨边缘最多 ~60s 同步）、同 slug 并发点赞偶尔少记一次——对点赞计数无所谓。
-免费额度：读 10 万/天、写 1000/天、1GB。每次点赞 = 1~2 次写，个人站绰绰有余。
+免费额度：读 10 万/天、写 1000/天、1GB。每次点赞/访问/留言 = 1~2 次写，现阶段绰绰有余。
 免费版无中国大陆节点，国内请求绕到海外节点 → 能开、慢几百毫秒，对点赞无感。
+
+---
+
+## E. 升级到 v2（访问统计 + 需求留言）——已部署过 v1 的照这里做
+
+v2 在原点赞接口之外新增三个接口（`POST /hit` 访问计数、`POST /feedback` 收留言、
+`GET /admin` 自己看数据），复用同一个 KV，**不用建新存储**。前端 `assets/feedback.js`
+会给全站（含所有 demo、思考页）挂访问统计 + 右下角「留下想法」留言按钮。
+
+13. Cloudflare → Workers & Pages → `haowan-likes` → **Edit code**，
+    把新版 `worker.js` 全部内容粘进去覆盖 → **Deploy**。（旧点赞数据不受影响。）
+14. 设后台口令：该 Worker → **Settings → Variables and Secrets → Add**：
+    - Type 选 **Secret**，Variable name 填 **`ADMIN_KEY`**，Value 自己编一串（如 20 位随机字符，
+      记到密码管理器）→ Deploy。不设的话留言/统计照常收，只是 `/admin` 打不开。
+15. 静态站正常重新发布（feedback.js + 各页面的一行引用已在仓库里）。
+
+### v2 自检
+- `https://api.interantai.com/admin?key=你的ADMIN_KEY` 应返回 `{"ok":true,"likes":…,"hits":…,"feedback":[…]}`。
+- 返回 `admin-key-not-set` → 第 14 步没做；`forbidden` → key 打错。
+- 随便开一个线上 demo，右下角应出现「💬 留下想法」；提交一条，再刷 `/admin` 应能看到。
+
+### 平时怎么看数据
+开 `tools/数据后台.html`（本地预览时走 mock，看线上就填 API 地址 + ADMIN_KEY）：
+留言列表、每日每页 view/open/fb、点赞排行，一页全有。
+看数节奏建议：每天扫一眼留言（有联系方式的 48h 内回），每周看一次 view→fb 的转化漏斗——
+view 大 fb 小 = 卡转化（demo 里的问法/位置要调），view 本身小 = 卡流量（该去发渠道帖了）。

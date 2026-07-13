@@ -589,4 +589,23 @@ GG.llm = (function(){
   return api;
 })();
 
+/* ---------------- 反馈组件自动挂载 ----------------
+   所有引了本文件的 demo 自动获得 assets/feedback.js（访问统计 + 右下角「留下想法」）。
+   路径按本脚本自身的 src 推算，demo 不需要自己加 script 标签。 */
+(function(){
+  try{
+    var cur = document.currentScript && document.currentScript.src;
+    if(!cur){
+      var ss = document.getElementsByTagName('script');
+      for(var i=0;i<ss.length;i++){ if(/shared\/app\.js/.test(ss[i].src||'')){ cur = ss[i].src; break; } }
+    }
+    if(!cur || window.GGFB || document.querySelector('script[data-gg-fb]')) return;
+    var s = document.createElement('script');
+    s.src = cur.replace(/shared\/app\.js.*$/, 'assets/feedback.js');
+    s.defer = true;
+    s.setAttribute('data-gg-fb','1');
+    document.head.appendChild(s);
+  }catch(e){}
+})();
+
 })();
