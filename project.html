@@ -7,19 +7,25 @@
 <title>项目 · 好玩的东西</title>
 <!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
 <link rel="stylesheet" href="assets/style.css" />
+<script src="assets/i18n.js"></script>
 <script>document.documentElement.classList.add('nav-ready')</script>
 <script defer src="assets/site.js"></script>
+<script defer src="assets/feedback.js"></script>
 </head>
 <body>
 
 <nav class="nav">
   <div class="wrap">
-    <a class="brand" href="index.html">好玩的东西</a>
+    <a class="brand" href="index.html" data-i18n="nav.brand">好玩的东西</a>
     <div class="nav-links">
-      <a href="index.html#projects">精选</a>
-      <a href="demos.html">全部 Demo</a>
-      <a href="index.html#thoughts">思考</a>
-      <a href="index.html#about">关于</a>
+      <a href="index.html#projects" data-i18n="nav.featured">精选</a>
+      <a href="demos.html" data-i18n="nav.allDemos">全部 Demo</a>
+      <a href="index.html#thoughts" data-i18n="nav.thoughts">思考</a>
+      <a href="index.html#about" data-i18n="nav.about">关于</a>
+      <span class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en">EN</button>
+        <button type="button" data-lang-btn="zh">中文</button>
+      </span>
     </div>
   </div>
 </nav>
@@ -28,9 +34,9 @@
 
 <footer>
   <div class="wrap">
-    <p><a href="index.html">← 回到全部项目</a></p>
+    <p><a href="index.html" data-i18n="proj.backFull">← 回到全部项目</a></p>
     <hr class="hair" style="margin:24px auto;max-width:200px">
-    <p class="disc">可点击产品原型（Demo），用于演示与可行性探讨，非生产系统。数据为演示用途。</p>
+    <p class="disc" data-i18n="disc.short">可点击产品原型（Demo），用于演示与可行性探讨，非生产系统。数据为演示用途。</p>
   </div>
 </footer>
 
@@ -41,11 +47,12 @@
   const root = document.getElementById("root");
 
   if (!p) {
-    root.innerHTML = `<a class="back" href="index.html">← 回到全部项目</a>
-      <h2>没找到这个项目</h2>
-      <p style="margin-top:12px;color:var(--ink-soft)">链接可能有误，回首页看看全部项目吧。</p>`;
+    document.title = window.t('title.project');
+    root.innerHTML = `<a class="back" href="index.html">${window.t('proj.backFull')}</a>
+      <h2>${window.t('proj.notFound')}</h2>
+      <p style="margin-top:12px;color:var(--ink-soft)">${window.t('proj.notFoundSub')}</p>`;
   } else {
-    document.title = p.title + " · 好玩的东西";
+    document.title = p.title + " · " + (window.LANG === 'en' ? 'Playground' : '好玩的东西');
     const tags = p.tags.map(t => `<span class="tag">${t}</span>`).join("");
     const blocks = p.sections.map(s =>
       `<div class="block"><div class="label">${s.label}</div>${s.html}</div>`).join("");
@@ -54,21 +61,21 @@
       <div class="preview">
         <div class="phone"><div class="phone-screen">
           <div class="phone-notch"></div>
-          <div class="phone-load"><span class="dot"></span>正在载入实时 Demo…</div>
+          <div class="phone-load"><span class="dot"></span>${window.t('proj.loading')}</div>
           <iframe loading="lazy" title="${p.title} Demo" src="${p.url}"
                   onload="this.previousElementSibling.style.display='none'"></iframe>
         </div></div>
         <div class="cta">
-          <a class="btn btn-primary" href="${p.url}" target="_blank" rel="noopener">全屏体验 ↗</a>
-          <button class="btn btn-ghost" onclick="copyLink('${p.url}')">复制链接</button>
+          <a class="btn btn-primary" href="${p.url}" target="_blank" rel="noopener">${window.t('proj.fullscreen')}</a>
+          <button class="btn btn-ghost" onclick="copyLink('${p.url}')">${window.t('proj.copy')}</button>
         </div>
-        <p class="hint">${p.phoneHint || "建议在手机 / 微信中打开"}</p>
+        <p class="hint">${p.phoneHint || window.t('proj.hint')}</p>
       </div>` : `
       <div class="preview"><div class="phone"><div class="phone-screen">
-        <div class="phone-load">即将上线</div></div></div></div>`;
+        <div class="phone-load">${window.t('card.soon')}</div></div></div></div>`;
 
     root.innerHTML = `
-      <a class="back" href="index.html">← 全部项目</a>
+      <a class="back" href="index.html">${window.t('proj.back')}</a>
       <div class="proj-head">
         <div class="kicker">Project ${p.no} · ${p.kicker}</div>
         <h2>${p.title}</h2>
@@ -84,8 +91,8 @@
   function copyLink(u){
     const abs = new URL(u, location.href).href;   // 相对路径转完整可分享地址
     navigator.clipboard?.writeText(abs).then(() => {
-      event.target.textContent = "已复制 ✓";
-      setTimeout(() => event.target.textContent = "复制链接", 1600);
+      event.target.textContent = window.t('proj.copied');
+      setTimeout(() => event.target.textContent = window.t('proj.copy'), 1600);
     });
   }
 </script>

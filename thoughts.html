@@ -4,30 +4,36 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#f7f3ee" />
-<title>全部思考 · 好玩的东西</title>
+<title data-i18n="title.thoughts">全部思考 · 好玩的东西</title>
 <meta name="description" content="关于意图、数据、安全、人性、组织与开发流程的全部思考——有原文，也有可边玩边读的互动版。" />
 <link rel="stylesheet" href="assets/style.css" />
+<script src="assets/i18n.js"></script>
 <script>document.documentElement.classList.add('nav-ready')</script>
 <script defer src="assets/site.js"></script>
+<script defer src="assets/feedback.js"></script>
 </head>
 <body>
 
 <nav class="nav">
   <div class="wrap">
-    <a class="brand" href="index.html">好玩的东西</a>
+    <a class="brand" href="index.html" data-i18n="nav.brand">好玩的东西</a>
     <div class="nav-links">
-      <a href="index.html#projects">精选</a>
-      <a href="demos.html">全部 Demo</a>
-      <a href="thoughts.html">全部思考</a>
-      <a href="index.html#about">关于</a>
-      <a href="index.html#contact">联系</a>
+      <a href="index.html#projects" data-i18n="nav.featured">精选</a>
+      <a href="demos.html" data-i18n="nav.allDemos">全部 Demo</a>
+      <a href="thoughts.html" data-i18n="nav.allThoughts">全部思考</a>
+      <a href="index.html#about" data-i18n="nav.about">关于</a>
+      <a href="index.html#contact" data-i18n="nav.contact">联系</a>
+      <span class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en">EN</button>
+        <button type="button" data-lang-btn="zh">中文</button>
+      </span>
     </div>
   </div>
 </nav>
 
 <header class="hero wrap" style="padding-bottom:18px">
-  <div class="kicker">全部思考 · 关于 AI 怎么落地</div>
-  <h1>全部思考</h1>
+  <div class="kicker" data-i18n="th.kicker">全部思考 · 关于 AI 怎么落地</div>
+  <h1 data-i18n="th.h1">全部思考</h1>
   <p class="lede" id="lede"></p>
 </header>
 
@@ -37,7 +43,7 @@
 
 <footer>
   <div class="wrap">
-    <p><a href="index.html">← 回到首页</a></p>
+    <p><a href="index.html" data-i18n="demos.back">← 回到首页</a></p>
   </div>
 </footer>
 
@@ -46,11 +52,13 @@
   const T = ((window.SITE || {}).thoughts) || [];
   const $ = id => document.getElementById(id);
 
-  $("lede").textContent = `${T.length} 篇关于意图、数据、安全、人性、组织与开发流程的思考——多数附一个可「边玩边读」的互动版。`;
+  $("lede").textContent = window.LANG === 'en'
+    ? `${T.length} essays on intent, data, safety, human nature, org design, and the dev process — most with a play-along interactive version.`
+    : `${T.length} 篇关于意图、数据、安全、人性、组织与开发流程的思考——多数附一个可「边玩边读」的互动版。`;
 
   $("grid").innerHTML = T.map(t => {
-    const badge = t.play ? `<span class="play-badge">✦ 互动版</span>` : "";
-    const go = t.play ? "边玩边读 →" : "阅读 →";
+    const badge = t.play ? `<span class="play-badge">${window.t('th.badge')}</span>` : "";
+    const go = t.play ? window.t('th.play') : window.t('th.read');
     return `<a class="tcard" href="${t.play || t.href}">
       <div class="ck">${t.kicker}</div>
       <h3>${t.title}${badge}</h3><p>${t.desc}</p>

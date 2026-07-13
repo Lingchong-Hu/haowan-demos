@@ -4,28 +4,34 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#f7f3ee" />
-<title>好玩的东西 · 项目 · 思考</title>
+<title data-i18n="title.index">好玩的东西 · 项目 · 思考</title>
 <meta name="description" content="可亲手体验的产品 Demo、关于 AI 组织架构与开发流程的思考，以及自我介绍。" />
 <meta property="og:title" content="好玩的东西 · 项目 · 思考" />
 <meta property="og:description" content="可亲手体验的产品 Demo + 关于 AI 的思考。" />
 <!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
 <link rel="stylesheet" href="assets/style.css" />
+<script src="assets/i18n.js"></script>
 <script>document.documentElement.classList.add('nav-ready')</script>
 <script defer src="assets/site.js"></script>
 <script defer src="assets/likes.js"></script>
+<script defer src="assets/feedback.js"></script>
 </head>
 <body>
 
 <nav class="nav">
   <div class="wrap">
-    <a class="brand" href="index.html">好玩的东西</a>
+    <a class="brand" href="index.html" data-i18n="nav.brand">好玩的东西</a>
     <div class="nav-links">
-      <a href="#projects">精选</a>
-      <a href="demos.html">全部 Demo</a>
-      <a href="thoughts.html">全部思考</a>
-      <a href="#thoughts">思考</a>
-      <a href="#about">关于</a>
-      <a href="#contact">联系</a>
+      <a href="#projects" data-i18n="nav.featured">精选</a>
+      <a href="demos.html" data-i18n="nav.allDemos">全部 Demo</a>
+      <a href="thoughts.html" data-i18n="nav.allThoughts">全部思考</a>
+      <a href="#thoughts" data-i18n="nav.thoughts">思考</a>
+      <a href="#about" data-i18n="nav.about">关于</a>
+      <a href="#contact" data-i18n="nav.contact">联系</a>
+      <span class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en">EN</button>
+        <button type="button" data-lang-btn="zh">中文</button>
+      </span>
     </div>
   </div>
 </nav>
@@ -48,7 +54,7 @@
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;flex:none">
       <a class="btn btn-primary" id="a-site" href="#" target="_blank" rel="noopener"></a>
-      <a class="btn btn-ghost" href="team.html">查看完整团队 →</a>
+      <a class="btn btn-ghost" href="team.html" data-i18n="idx.about.team">查看完整团队 →</a>
     </div>
   </div>
 </section>
@@ -56,43 +62,43 @@
 <!-- 精选项目 -->
 <section class="wrap" id="projects">
   <div class="section-head">
-    <h2>有趣的 demo</h2>
-    <span class="note">每个行业都在试新的 AI 商业模式——你看到你那行的变化了吗？进来探索一下</span>
+    <h2 data-i18n="idx.proj.h2">有趣的 demo</h2>
+    <span class="note" data-i18n="idx.proj.note">每个行业都在试新的 AI 商业模式——你看到你那行的变化了吗？进来探索一下</span>
   </div>
   <div class="grid" id="proj-grid"></div>
   <div class="more-row">
-    <a class="btn btn-primary" href="demos.html">查看全部 <span id="proj-total">—</span> 个 Demo →</a>
+    <a class="btn btn-primary" id="proj-more" href="demos.html"></a>
   </div>
 </section>
 
 <!-- 思考 -->
 <section class="wrap" id="thoughts">
   <div class="section-head">
-    <h2>一些思考</h2>
-    <span class="note">关于意图、数据、安全、人性，与 AI 到底怎么落地</span>
+    <h2 data-i18n="idx.thoughts.h2">一些思考</h2>
+    <span class="note" data-i18n="idx.thoughts.note">关于意图、数据、安全、人性，与 AI 到底怎么落地</span>
   </div>
   <div class="thoughts" id="thought-grid"></div>
   <div class="more-row">
-    <a class="btn btn-primary" href="thoughts.html">查看全部 <span id="thought-total">—</span> 篇思考 →</a>
+    <a class="btn btn-primary" id="thought-more" href="thoughts.html"></a>
   </div>
 </section>
 
 <!-- 联系 / 留下想法 -->
 <section class="wrap" id="contact">
   <div class="section-head">
-    <h2>联系 · 留下你的想法</h2>
-    <span class="note">想合作、想做点什么、或有具体需求都欢迎</span>
+    <h2 data-i18n="idx.contact.h2">联系 · 留下你的想法</h2>
+    <span class="note" data-i18n="idx.contact.note">想合作、想做点什么、或有具体需求都欢迎</span>
   </div>
   <div class="contact-card" id="contact-card"></div>
 </section>
 
 <footer>
   <div class="wrap">
-    <div class="big">与其用一页文档说服你，不如让你亲手点几下</div>
-    <p>这里的东西会持续增加。欢迎体验，也欢迎转发。</p>
-    <p style="margin-top:14px"><a id="f-site" href="#" target="_blank" rel="noopener">个人网站 ↗</a></p>
+    <div class="big" data-i18n="idx.footer.big">与其用一页文档说服你，不如让你亲手点几下</div>
+    <p data-i18n="idx.footer.p">这里的东西会持续增加。欢迎体验，也欢迎转发。</p>
+    <p style="margin-top:14px"><a id="f-site" href="#" target="_blank" rel="noopener" data-i18n="idx.footer.site">个人网站 ↗</a></p>
     <hr class="hair" style="margin:32px auto;max-width:200px">
-    <p class="disc">说明：项目均为可点击产品原型（Demo），用于演示与可行性探讨，非生产系统——
+    <p class="disc" data-i18n="disc.full">说明：项目均为可点击产品原型（Demo），用于演示与可行性探讨，非生产系统——
        无真实后端、支付、物流与 AI 模型，数据为演示用途。</p>
   </div>
 </footer>
@@ -118,25 +124,27 @@
 
   // 联系 / 留下想法
   const c = S.contact || {};
+  // 没配第三方表单时，用内置留言面板（assets/feedback.js → Cloudflare Worker /feedback）
   const formBtn = c.formUrl
-    ? `<a class="btn btn-primary" href="${c.formUrl}" target="_blank" rel="noopener">${c.formLabel || "留下需求"} →</a>`
-    : `<span class="btn btn-primary" style="opacity:.55;cursor:default">${c.formLabel || "留下需求"}（即将开放）</span>`;
+    ? `<a class="btn btn-primary" href="${c.formUrl}" target="_blank" rel="noopener">${c.formLabel} →</a>`
+    : `<button class="btn btn-primary" style="border:0;cursor:pointer"
+         onclick="window.GGFB ? GGFB.open() : location.href='mailto:${c.email}'">${c.formLabel} →</button>`;
   const emailBtn = c.email
-    ? `<a class="btn btn-ghost" href="mailto:${c.email}?subject=关于你的项目，我有个想法">发邮件 ✉</a>` : "";
+    ? `<a class="btn btn-ghost" href="mailto:${c.email}?subject=${encodeURIComponent(window.t('c.subject'))}">${window.t('c.emailMe')}</a>` : "";
   const linkedinLine = c.linkedin
     ? `<div class="c-line"><span class="c-k">LinkedIn</span>
         <a class="c-v" href="${c.linkedin}" target="_blank" rel="noopener"
-           style="color:var(--accent);text-decoration:none">查看主页 ↗</a></div>` : "";
+           style="color:var(--accent);text-decoration:none">${window.t('c.profile')}</a></div>` : "";
   const qr = c.wechatQR
-    ? `<img class="wx-qr" src="${c.wechatQR}" alt="微信二维码"
+    ? `<img class="wx-qr" src="${c.wechatQR}" alt="WeChat QR"
          onerror="this.style.display='none'">` : "";
   $("contact-card").innerHTML = `
     <p class="c-intro">${c.intro || ""}</p>
     <div class="c-row">
       <div class="c-methods">
-        <div class="c-line"><span class="c-k">微信</span>
-          <button class="c-copy" onclick="copyText('${c.wechatId}', this)">${c.wechatId}　复制</button></div>
-        ${c.email ? `<div class="c-line"><span class="c-k">邮箱</span><span class="c-v">${c.email}</span></div>` : ""}
+        <div class="c-line"><span class="c-k">${window.t('c.wechat')}</span>
+          <button class="c-copy" onclick="copyText('${c.wechatId}', this)">${c.wechatId}　${window.t('c.copy')}</button></div>
+        ${c.email ? `<div class="c-line"><span class="c-k">${window.t('c.email')}</span><span class="c-v">${c.email}</span></div>` : ""}
         ${linkedinLine}
         <div class="c-cta">${formBtn}${emailBtn}</div>
       </div>
@@ -145,14 +153,16 @@
 
   function copyText(t, el){
     navigator.clipboard?.writeText(t).then(() => {
-      const old = el.textContent; el.textContent = "已复制 ✓";
+      const old = el.textContent; el.textContent = window.t('c.copied');
       setTimeout(() => el.textContent = old, 1600);
     });
   }
   window.copyText = copyText;
 
   // 精选项目卡片（只渲染 featured；全部在 demos.html）
-  $("proj-total").textContent = P.length;
+  $("proj-more").textContent = window.LANG === 'en'
+    ? ('See all ' + P.length + ' demos →')
+    : ('查看全部 ' + P.length + ' 个 Demo →');
   const featured = P.filter(p => p.featured);
   $("proj-grid").innerHTML = (featured.length ? featured : P).map(p => {
     const tags = p.tags.map(t => `<span>${t}</span>`).join("");
@@ -160,7 +170,7 @@
       return `<div class="card soon" data-slug="${p.id}">
         <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
         <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
-        <div class="tags">${tags}</div><div class="go">即将上线</div></div>`;
+        <div class="tags">${tags}</div><div class="go">${window.t('card.soon')}</div></div>`;
     }
     const href = p.direct ? p.url : `project.html?id=${p.id}`;
     const ext = p.direct ? ' target="_blank" rel="noopener"' : '';
@@ -168,15 +178,17 @@
       <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
       <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
       <div class="tags">${tags}</div>
-      <div class="go">${p.direct ? '亲手体验 ↗' : '查看 · 亲手体验 →'}</div></a>`;
+      <div class="go">${p.direct ? window.t('card.try') : window.t('card.view')}</div></a>`;
   }).join("");
 
   // 思考卡片（首页只渲染 featured；全部进 thoughts.html）
-  $("thought-total").textContent = S.thoughts.length;
+  $("thought-more").textContent = window.LANG === 'en'
+    ? ('See all ' + S.thoughts.length + ' essays →')
+    : ('查看全部 ' + S.thoughts.length + ' 篇思考 →');
   const featuredThoughts = S.thoughts.filter(t => t.featured);
   $("thought-grid").innerHTML = (featuredThoughts.length ? featuredThoughts : S.thoughts).map(t => {
-    const badge = t.play ? `<span class="play-badge">✦ 互动版</span>` : "";
-    const go = t.play ? "边玩边读 →" : "阅读 →";
+    const badge = t.play ? `<span class="play-badge">${window.t('th.badge')}</span>` : "";
+    const go = t.play ? window.t('th.play') : window.t('th.read');
     return `<a class="tcard" href="${t.play || t.href}">
       <div class="ck">${t.kicker}</div>
       <h3>${t.title}${badge}</h3><p>${t.desc}</p>

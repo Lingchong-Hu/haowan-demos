@@ -4,10 +4,11 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#f7f3ee" />
-<title>团队 · 好玩的东西</title>
+<title data-i18n="title.team">团队 · 好玩的东西</title>
 <meta name="description" content="我们在实验新时代的 AI 组织架构——一支精英敏捷团队：一半握着需求、市场与客户，一半把它快速、完整、可问责地落地。用现金收入验证价值，而不是用叙事换投资。" />
 <!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
 <link rel="stylesheet" href="assets/style.css" />
+<script src="assets/i18n.js"></script>
 <style>
 /* ── 团队页局部样式（复用全站 design tokens）── */
 .team-lede{max-width:680px;font-size:18px;line-height:1.85;color:var(--ink-soft);
@@ -64,26 +65,31 @@
 </style>
 <script>document.documentElement.classList.add('nav-ready')</script>
 <script defer src="assets/site.js"></script>
+<script defer src="assets/feedback.js"></script>
 </head>
 <body>
 
 <nav class="nav">
   <div class="wrap">
-    <a class="brand" href="index.html">好玩的东西</a>
+    <a class="brand" href="index.html" data-i18n="nav.brand">好玩的东西</a>
     <div class="nav-links">
-      <a href="index.html#projects">项目</a>
-      <a href="index.html#thoughts">思考</a>
-      <a href="index.html#about">关于</a>
-      <a href="index.html#contact">联系</a>
+      <a href="index.html#projects" data-i18n="nav.projects">项目</a>
+      <a href="index.html#thoughts" data-i18n="nav.thoughts">思考</a>
+      <a href="index.html#about" data-i18n="nav.about">关于</a>
+      <a href="index.html#contact" data-i18n="nav.contact">联系</a>
+      <span class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en">EN</button>
+        <button type="button" data-lang-btn="zh">中文</button>
+      </span>
     </div>
   </div>
 </nav>
 
 <header class="hero wrap" style="padding:48px 0 20px;text-align:center">
-  <a class="back" href="index.html#about" style="display:block;text-align:left;margin-bottom:18px">← 回到首页</a>
-  <div class="kicker">团队 · Iterant AI</div>
-  <h1 style="font-size:clamp(32px,5.6vw,52px)">精英敏捷团队</h1>
-  <p class="team-lede" style="margin-left:auto;margin-right:auto">我们不是一支普通的开发团队。我们在<b>实验新时代的 AI 组织架构</b>——
+  <a class="back" href="index.html#about" style="display:block;text-align:left;margin-bottom:18px" data-i18n="team.back">← 回到首页</a>
+  <div class="kicker" data-i18n="team.kicker">团队 · Iterant AI</div>
+  <h1 style="font-size:clamp(32px,5.6vw,52px)" data-i18n="team.h1">精英敏捷团队</h1>
+  <p class="team-lede" style="margin-left:auto;margin-right:auto" data-i18n="team.lede">我们不是一支普通的开发团队。我们在<b>实验新时代的 AI 组织架构</b>——
     一半握着需求、市场与客户，一半把它快速、完整、可问责地落地；用<b>实打实的现金收入</b>去验证产品价值，
     而不是用一套宏大的叙事去换一笔投资。</p>
 </header>
@@ -92,85 +98,85 @@
 
   <!-- 我们在做什么 -->
   <section class="team-sec">
-    <h2>我们在做什么</h2>
-    <p>我们带着团队，<b>学习并创造新的 AI 开发流程</b>——在 AI 把"造东西"打到地板价的今天，
+    <h2 data-i18n="team.s1.h2">我们在做什么</h2>
+    <p data-i18n="team.s1.p1">我们带着团队，<b>学习并创造新的 AI 开发流程</b>——在 AI 把"造东西"打到地板价的今天，
       重新回答一个问题：一支团队该怎么组织，才能把 AI 的原生能力，稳稳地变成能交付、能负责的真实产品。</p>
-    <p>这不是空谈方法论。它落在每一个具体项目里：怎么拆需求、怎么让 AI 写的代码有人能为它答话、
+    <p data-i18n="team.s1.p2">这不是空谈方法论。它落在每一个具体项目里：怎么拆需求、怎么让 AI 写的代码有人能为它答话、
       怎么把一个人的经验变成全队的共识。我们把这套做法，写进了
       <a href="thoughts/dev-process.html" style="color:var(--accent)">可问责的开发流程</a>。</p>
   </section>
 
   <!-- 我们怎么组队 -->
   <section class="team-sec">
-    <h2>我们怎么组队</h2>
-    <p>一支精英敏捷团队，由两半焊在一起——这也是<a href="thoughts/ai-org.html" style="color:var(--accent)">为什么律所那套结构，
+    <h2 data-i18n="team.s2.h2">我们怎么组队</h2>
+    <p data-i18n="team.s2.p">一支精英敏捷团队，由两半焊在一起——这也是<a href="thoughts/ai-org.html" style="color:var(--accent)">为什么律所那套结构，
       恰好是 AI 时代最对的答案</a>。</p>
     <div class="roles">
       <div class="role partner">
         <div class="re">🤝</div>
-        <div class="rn">需求 · 市场 · 客户侧</div>
-        <div class="rk">合伙人角色</div>
-        <p>带来需求、市场与客户，以及打通一个新商业模式所需的资源和社会能力。听得懂客户真正要什么，
+        <div class="rn" data-i18n="team.role1.rn">需求 · 市场 · 客户侧</div>
+        <div class="rk" data-i18n="team.role1.rk">合伙人角色</div>
+        <p data-i18n="team.role1.p">带来需求、市场与客户，以及打通一个新商业模式所需的资源和社会能力。听得懂客户真正要什么，
           并替整个结果负责。</p>
       </div>
       <div class="role architect">
         <div class="re">🛠️</div>
-        <div class="rn">精英架构师 · 执行侧</div>
-        <div class="rk">执行落地</div>
-        <p>把它快速、完整、可问责地落地。一个真正顶尖的架构师，今天能独自扛起过去一整个团队
+        <div class="rn" data-i18n="team.role2.rn">精英架构师 · 执行侧</div>
+        <div class="rk" data-i18n="team.role2.rk">执行落地</div>
+        <p data-i18n="team.role2.p">把它快速、完整、可问责地落地。一个真正顶尖的架构师，今天能独自扛起过去一整个团队
           才扛得动的完整产品。</p>
       </div>
     </div>
-    <div class="weld-line">两半各自登峰，再用<b>问责</b>焊成一个对结果负责的整体。<br>
+    <div class="weld-line" data-i18n="team.weld">两半各自登峰，再用<b>问责</b>焊成一个对结果负责的整体。<br>
       以前你要打一场硬仗，得找精英律师；今天你要把一个产品真正做成，得找精英架构师。</div>
   </section>
 
   <!-- 我们信什么 -->
   <section class="team-sec">
-    <h2>我们信什么</h2>
+    <h2 data-i18n="team.s3.h2">我们信什么</h2>
     <ul class="beliefs">
-      <li><span class="bn">01</span><span class="bt"><b>用现金收入验证价值，不用叙事换投资。</b>
+      <li><span class="bn">01</span><span class="bt" data-i18n="team.b1"><b>用现金收入验证价值，不用叙事换投资。</b>
         一个产品值不值钱，最诚实的答案是有没有人愿意为它付钱——而不是它的故事讲得多大。</span></li>
-      <li><span class="bn">02</span><span class="bt"><b>真正值钱的，是落地性、稳定性、自动化程度。</b>
+      <li><span class="bn">02</span><span class="bt" data-i18n="team.b2"><b>真正值钱的，是落地性、稳定性、自动化程度。</b>
         demo 谁都能做；能交付、扛得住真实用户、市场变了能快速改对的完整产品，才是壁垒。</span></li>
-      <li><span class="bn">03</span><span class="bt"><b>核心能力 = 把 AI 大模型的原生能力，结构化地接到具体行业需求上。</b>
+      <li><span class="bn">03</span><span class="bt" data-i18n="team.b3"><b>核心能力 = 把 AI 大模型的原生能力，结构化地接到具体行业需求上。</b>
         这道"结构化连接"的活，正是这个时代真正稀缺、也最考验一支团队的地方。</span></li>
     </ul>
   </section>
 
   <!-- 成员 -->
   <section class="team-sec">
-    <h2>成员</h2>
+    <h2 data-i18n="team.s4.h2">成员</h2>
     <div class="members">
       <!-- ▸ 加成员：复制下面一张 .member 卡片，改 mn/mr/mb/mt 即可 -->
       <div class="member">
         <div class="mn">Lingchong Hu · 胡凌冲</div>
-        <div class="mr">创始人 · 需求与架构</div>
-        <div class="mb">在「需求」与「落地」之间组织团队，带队学习并创造新的 AI 开发流程，
+        <div class="mr" data-i18n="team.m1.mr">创始人 · 需求与架构</div>
+        <div class="mb" data-i18n="team.m1.mb">在「需求」与「落地」之间组织团队，带队学习并创造新的 AI 开发流程，
           对每一份交付的结果负责到底。</div>
-        <div class="mt"><span>Iterant AI 创始人</span><span>Penn · MCIT '25</span><span>Philadelphia</span></div>
-        <a class="mlink" href="https://lingchong-hu.github.io/" target="_blank" rel="noopener">个人网站 ↗</a>
+        <div class="mt" data-i18n="team.m1.mt"><span>Iterant AI 创始人</span><span>Penn · MCIT '25</span><span>Philadelphia</span></div>
+        <a class="mlink" href="https://lingchong-hu.github.io/" target="_blank" rel="noopener" data-i18n="team.m1.link">个人网站 ↗</a>
       </div>
       <div class="member">
         <div class="mn">胡君朴</div>
-        <div class="mr">创始人 · 架构师</div>
-        <div class="mb">北师大-浸会（UIC）人工智能本科、专业第一名毕业，加州大学伯克利数据科学硕士。
+        <div class="mr" data-i18n="team.m2.mr">创始人 · 架构师</div>
+        <div class="mb" data-i18n="team.m2.mb">北师大-浸会（UIC）人工智能本科、专业第一名毕业，加州大学伯克利数据科学硕士。
           本科就为学校做了一款类 Rate My Professor 的评教产品「咋样」，在学生中一夜爆火（火到差点被教授告上法庭）。</div>
-        <div class="mt"><span>UIC · AI 专业第一</span><span>UC Berkeley · 数据科学硕士</span></div>
+        <div class="mt" data-i18n="team.m2.mt"><span>UIC · AI 专业第一</span><span>UC Berkeley · 数据科学硕士</span></div>
       </div>
       <div class="member">
         <div class="mn">杨文郁 · Wenyu Yang</div>
-        <div class="mr">创始人 · 架构师</div>
-        <div class="mb">华盛顿大学（UW）生物化学 + 电子工程双学位，宾夕法尼亚大学（UPenn）电子工程硕士在读。
+        <div class="mr" data-i18n="team.m3.mr">创始人 · 架构师</div>
+        <div class="mb" data-i18n="team.m3.mb">华盛顿大学（UW）生物化学 + 电子工程双学位，宾夕法尼亚大学（UPenn）电子工程硕士在读。
           横跨硬科学与工程，把复杂系统稳稳地落地。</div>
-        <div class="mt"><span>UW · Biochem + EE 双学位</span><span>UPenn · EE 硕士</span></div>
+        <div class="mt" data-i18n="team.m3.mt"><span>UW · Biochem + EE 双学位</span><span>UPenn · EE 硕士</span></div>
       </div>
       <div class="member">
         <div class="mn">陶毅恒</div>
-        <div class="mr">创始人 · 架构师</div>
-        <div class="mb">东北大学计算机本科，伊利诺伊大学（UIUC）计算机硕士、AI 博士；有公开发表的 AI 研究。
+        <div class="mr" data-i18n="team.m4.mr">创始人 · 架构师</div>
+        <div class="mb" data-i18n="team.m4.mb">东北大学计算机本科，伊利诺伊大学（UIUC）计算机硕士、AI 博士；有公开发表的 AI 研究。
           把前沿的模型能力，落进真正能交付的产品里。</div>
-        <div class="mt"><span>东北大学 · 计算机</span><span>UIUC · 计算机硕士 / AI 博士</span></div>
+        <div class="mt" data-i18n="team.m4.mt"><span>东北大学 · 计算机</span><span>UIUC · 计算机硕士 / AI 博士</span></div>
         <a class="mlink" href="https://scholar.google.com/citations?user=at8XlIMAAAAJ&hl=en" target="_blank" rel="noopener">Google Scholar ↗</a>
       </div>
     </div>
@@ -179,14 +185,14 @@
   <!-- CTA -->
   <section class="team-sec team-cta" style="border-top:1px solid var(--line)">
     <p style="max-width:560px;margin:0 auto 22px;font-family:var(--serif);font-size:17px;line-height:1.8;color:var(--ink)">
-      有真实的需求要落地，或者想加入一支正在重写 AI 开发流程的团队？</p>
-    <a class="btn btn-primary" href="index.html#contact">把你的需求讲给我们 →</a>
+      <span data-i18n="team.cta.p">有真实的需求要落地，或者想加入一支正在重写 AI 开发流程的团队？</span></p>
+    <a class="btn btn-primary" href="index.html#contact" data-i18n="team.cta.btn">把你的需求讲给我们 →</a>
   </section>
 
 </main>
 
 <footer>
-  <div class="wrap"><p><a href="index.html">← 回到首页</a></p></div>
+  <div class="wrap"><p><a href="index.html" data-i18n="team.back">← 回到首页</a></p></div>
 </footer>
 </body>
 </html>

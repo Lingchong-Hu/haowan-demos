@@ -94,7 +94,8 @@ window.SITE = {
   // ▸ wechatId：填你的微信号（主推，手机/电脑都能复制后搜索添加）
   // ▸ email：填长期邮箱（school 邮箱 10 月过期，已换个人 Gmail）
   // ▸ linkedin：领英主页链接；留空则整行隐藏
-  // ▸ formUrl：去 腾讯问卷(wj.qq.com) 或 金数据(jinshuju.net) 建个表单，把链接填这里；留空则按钮显示「即将开放」
+  // ▸ formUrl：留空（默认）= 按钮直接打开内置留言面板（assets/feedback.js → Worker /feedback，
+  //            后台在 tools/数据后台.html 看）；填了第三方表单链接则改为跳转该表单
   // ▸ wechatQR：可选——把微信二维码图片存为 assets/wechat-qr.png 就会额外显示一张图
   contact: {
     intro: "看完有什么想法、想做的，或者有具体需求——欢迎直接找我，或者留下你的需求，我会一条条看。",
@@ -1456,5 +1457,1894 @@ window.PROJECTS = [
     ]
   },
 
+  /* ───────────────────────── 37 deposit-letter（留学生租房 · 押金异议函）───────────────────────── */
+  {
+    id: "deposit-letter", no: "37", cat: "留学租房", featured: true,
+    kicker: "留学生租房 · 押金追索",
+    title: "把押金追回来",
+    subtitle: "房东赌你离境后不会追。选州 + 填退房日期与扣款清单 → 州法时限核查（超期即双倍/三倍筹码）+ 逐项扣款异议 + 一封引用法条、可直接寄出的英文 demand letter，附小额法庭升级路径",
+    url: "demos/deposit-letter/",
+    tags: ["8 州押金法规则库 · 法条锚定","法定截止日时间线","超期 = 攻守互换","逐项异议 · 信函实时重写","英文 demand letter","小额法庭升级路径","纯离线"],
+    phoneHint: "点内置案例直接看时限裁决与信函；改任意一项立场，信当场重写（全程本地，不上传）",
+    sections: [
+      {
+        label: "是什么",
+        html: `<p>留学生租房最大的结构性弱点是<b>「离境即归零」</b>——人回国了，押金扣多少只能认多少，房东最大的底气就是赌你不会追。
+          但每个州的押金法都给房东上了一条硬时限：<b>超过法定天数不退还、不给逐项扣款清单，很多州直接触发双倍甚至三倍赔偿</b>——攻守当场互换。
+          这个工具做三件事：①按你的州核出<b>法定截止日时间线</b>（大多数人根本不知道这条线存在）；②把房东的扣款清单摆上<b>逐项异议台</b>（正常磨损不可扣 / 无凭据要求出示发票）；
+          ③生成一封<b>引用州法条文、可直接寄出的英文 demand letter</b>，附小额法庭升级路径——包括人已回国怎么办。</p>`
+      },
+      {
+        label: "程序逻辑",
+        html: `<h3>州规则库 → 时限核查 → 逐项异议 → 信函 + 升级路径</h3>
+          <div class="flow">
+            <span class="step">选州 + 填事实</span><span class="arr">→</span>
+            <span class="step">法定截止日核查</span><span class="arr">→</span>
+            <span class="step">逐项扣款异议</span><span class="arr">→</span>
+            <span class="step">英文 demand letter</span><span class="arr">→</span>
+            <span class="step">小额法庭路径</span>
+          </div>
+          <ul>
+            <li><b>法条锚死幻觉</b>：8 个留学生大州（PA/NY/MA/CA/IL/TX/WA/NJ）的法定天数、条文号、罚则倍数、小额法庭上限全部<b>写死在前端规则库</b>——AI 绝不生成法条，连输出里带「§」的行都会被代码丢弃</li>
+            <li><b>时间线即裁决</b>：退房日 → 法定截止日 → 今天，超期区间标红——四种情形（超期未理 / 清单迟到 / 未到期 / 按时收到）各给对应策略</li>
+            <li><b>异议台实时联动</b>：每笔扣款选立场（认了 / 正常磨损 / 拿凭据来），<b>信函当场重写</b>、争议金额实时重算</li>
+            <li><b>UPL 红线</b>：self-help 文书定位（LegalZoom 模式）——按事实套用公开法条模板，不判断个案胜负，界面明示 not legal advice</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            时限计算、信函模板、升级路径<b>全本地生成、纯离线可用</b>；连 API Key 后 AI 只做一件事：把你的中文补充说明润成信中的正式英文事实段。</p>`
+      },
+      {
+        label: "商业模式",
+        html: `<ul>
+            <li><b>按次 / 订阅</b>：单封信按次收费（对比律师 $200–400 定价空间巨大），订阅解锁退房时间线提醒、证据保管、后续跟进信（LegalZoom / DoNotPay 自助文书模式）</li>
+            <li><b>唯一攻击「离境即归零」总根源的杠杆</b>：其他工具帮你避坑，这个工具把已经被扣的钱追回来——付费意愿最直接（真金白银 vs 风险预防）</li>
+            <li><b>节令闭环</b>：5–8 月毕业退房季集中爆发；与签前核对、入住证据工具串成全生命周期产品</li>
+            <li><b>扩州即扩市场</b>：规则库逐州上线，边际成本近零；同一引擎可扩加拿大 / 英国 / 澳洲留学生市场</li>
+          </ul>`
+      },
+      {
+        label: "市场分析",
+        html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
+          <ul>
+            <li><b>LegalZoom（NASDAQ:LZ）/ Rocket Lawyer</b>：自助法律文书证明「结构化 self-help、不做个案判断」是规模化订阅生意。</li>
+            <li><b>DoNotPay</b>：消费维权自动化文书（罚单申诉、押金追索正是其经典场景），订阅制，证明 C 端愿为「帮我要回钱」付费。</li>
+            <li><b>小额法庭代书服务</b>：美国各州长期存在的付费代书生态，验证 demand letter 这一环节本身就有市场。</li>
+          </ul>
+          <ul>
+            <li><b>结构性痛点</b>：留学生离境后追索能力归零、不知道州法时限存在、不敢/不会写正式英文函——房东吃定这三点</li>
+            <li><b>人群</b>：每年数十万在美中国留学生，毕业退房季集中；押金 $1,500–3,000，被扣金额往往数百至上千美元</li>
+            <li><b>AI 时代特有</b>：以前这活只有律师或懂行的学长能干；规则库 + 模板把它变成 2 分钟自助——<b>法条是死的（规则库），事实是你的（表单），AI 只做润色</b></li>
+            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：UPL 边界必须守住——只做文书工具不做法律判断；演示规则库为简化摘要，生产级需逐州法条核校与更新机制；跨境执行（房东拒不履行判决）仍是现实难点</li>
+          </ul>`
+      }
+    ]
+  },
+
+  /* ───────────────────────── 38 order-check（华人餐饮供应链 · 订单-送货单核对）───────────────────────── */
+  {
+    id: "order-check", no: "38", cat: "餐饮供应链", featured: true,
+    kicker: "华人餐饮供应链 · 晚间事后审计",
+    title: "晚上三分钟，对一下单",
+    subtitle: "中餐馆的采购跑在微信语音和手写送货单上：厨师订、帮厨收、老板付，中间零核对。把昨晚的订货记录和今天的送货单贴进来——没订的货、订三到二、悄悄涨的价，逐项标出来，明早给销售的对账消息一键生成",
+    url: "demos/order-check/",
+    tags: ["微信订货×送货单 逐项核对","零行为改变 · 事后审计","没订到货 / 订送不符 / 价格异常","近四周价格记忆","规格歧义提醒（虾的 size）","一键对账消息","纯离线可玩"],
+    phoneHint: "点内置案例直接看核对结果；差异话术永远是「是不是搬错/写错」，不做指控（全程本地，不上传）",
+    sections: [
+      {
+        label: "是什么",
+        html: `<p>全美数万家中餐馆的采购跑在微信语音 + 手写送货单 + 纸质月结上，主流餐饮 SaaS 不做中文、不懂微信订货、不认手写单。
+          最要命的结构是<b>订-收-付三点分离</b>：厨师晚上微信订货、帮厨早上七点收货、老板月底付钱——三个人之间<b>没有任何核对环节</b>，差异就藏在这条缝里。
+          这个工具的关键设计是<b>零行为改变</b>：绝不要求收货时称重对单（改变早上七点帮厨的动作 = 产品死亡），
+          而是打烊后把微信订货记录和送货单放到一起，<b>三分钟事后审计</b>：没订的货上了单、订三箱到两箱、油悄悄涨了 10%、订虾没说 size——逐项标出，明早给销售的对账消息一键生成。</p>`
+      },
+      {
+        label: "程序逻辑",
+        html: `<h3>订货语料 → 送货单行项 → 确定性比对 → 对账消息</h3>
+          <div class="flow">
+            <span class="step">贴微信 + 送货单</span><span class="arr">→</span>
+            <span class="step">抽订货项</span><span class="arr">→</span>
+            <span class="step">逐项比对</span><span class="arr">→</span>
+            <span class="step">价格记忆核查</span><span class="arr">→</span>
+            <span class="step">明早对账消息</span>
+          </div>
+          <ul>
+            <li><b>五类结果</b>：没订到货（红·要钱的）/ 规格发错（红）/ 订送不符（琥珀·影响明天出菜）/ 价格异常（紫·对比近四周价格记忆，带走势小图）/ 订货习惯提醒（订虾没说 16/20 还是 21/25——这个口子每次都可能漏）</li>
+            <li><b>对照台</b>：左边微信气泡（语音转文字样式还原）、右边黄色复写纸质感的送货单，同号图钉双向跳转——每条差异都有原文可查</li>
+            <li><b>话术红线</b>：差异 ≠ 指控。生成的对账消息永远是「是不是搬错车 / 单子写错了」，给对方台阶、把账对清——绝不做回扣暗示，判断留给老板</li>
+            <li><b>敏感区红线</b>：严格停留在采购侧，不碰营收、不碰税务——既是合规边界也是老板敢用的前提</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            解析层为本地词典引擎（中餐采购高频品类 + 中文数量词 + 规格正则），比对为确定性计算，<b>纯离线可玩</b>；连 API Key 后用真实模型解析任意格式（抽取结果强制回原文核验），<b>数量金额的比对永远在本地算</b>。真实产品为拍照 → OCR → 低置信度进人工复核。</p>`
+      },
+      {
+        label: "商业模式",
+        html: `<ul>
+            <li><b>订阅（复购型）</b>：按店/月收费——这是横向核对引擎第一次踩中<b>日频刚需</b>：订货日频 + 对账月频 + 持续经营买方，频次结构远优于低频消费场景</li>
+            <li><b>付费意愿验证点</b>：对账差异通常每月数百至上千美元真金白银——工具费一晚上就赚回来，ROI 一句话讲得清</li>
+            <li><b>数据副产品</b>：核对累积出同供应商同品价格曲线 → 自然长出「采购价格监测」（系列 Demo 06），无需额外录入</li>
+            <li><b>渠道假设</b>：配送商销售每天物理穿行数十家餐馆——「账目经得起核对」对诚实配送商是销售武器，存在渠道主动分发可能</li>
+          </ul>`
+      },
+      {
+        label: "市场分析",
+        html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
+          <ul>
+            <li><b>MarginEdge / xtraCHEF（Toast 收购）</b>：美国餐饮发票数字化与成本管理 SaaS，按店月费，证明「把纸质单据变成可核对数据」是成熟付费品类。</li>
+            <li><b>Toast（NYSE:TOST）</b>：餐饮垂直 SaaS 巨头，验证按店订阅 + 增值模块的规模化路径。</li>
+            <li><b>国内美菜 / 蜀海 / 快驴</b>：重资本供应链绞肉机——本品明确不做交易、只做核对层，避开其战场。</li>
+          </ul>
+          <ul>
+            <li><b>双重忽视缝隙</b>：主流 SaaS 不做中文不懂微信订货不认手写单；国内玩家出不来——全美数万家中餐馆 + 数百家区域华人配送商就运转在这条缝里</li>
+            <li><b>同构复用</b>：非结构化对话抽取承诺 → 与正式文档比对 → 差异清单——同一引擎第三次成立（询盘、租房之后），首次承载复购型商业模式</li>
+            <li><b>本地化入口</b>：区域配送商销售代表、大费城中餐协会——demo 可步行验证</li>
+            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：中英混排 + 手写送货单 OCR 是硬骨头（缓解：低置信度进人工复核，不追求全自动）；规格歧义（如虾的 size 标准）需真实语料打磨；本 demo 从已识别文本开始、价格记忆为演示数据</li>
+          </ul>`
+      }
+    ]
+  },
+
+  /* ───────────────────────── 39 statement-recon（华人餐饮供应链 · 月结对账核销）───────────────────────── */
+  {
+    id: "statement-recon", no: "39", cat: "餐饮供应链",
+    kicker: "华人餐饮供应链 · 月结核销",
+    title: "月底这笔账，核完再付",
+    subtitle: "把这个月的送货单堆和配送商 statement 放上核销台：对上的逐笔打勾变淡，剩下的就是问题——重复计费、没见过单子的收费、金额不符、说好没兑现的 credit。核完给你一个数：该付多少，而不是账单要多少",
+    url: "demos/statement-recon/",
+    tags: ["送货单堆 × statement 逐笔核销","重复计费 / 无单收费 / 金额不符","微信承诺的 credit 追兑现","三个大数字：要多少/争议/该付","对账消息 · 表达付款意愿","纯离线可玩"],
+    phoneHint: "点内置案例直接看核销结果；差异话术永远是「核清就结」，维护供应关系（全程本地，不上传）",
+    sections: [
+      {
+        label: "是什么",
+        html: `<p>月结是华人餐饮供应链里<b>唯一一次钱和单据对面的机会</b>——但一张张翻单子核对是一晚上的活，所以多数老板扫一眼总数就付了。
+          差异恰恰藏在这一步：<b>同一单号收两次、statement 上有收费但送货单堆里没这张单、单子 $301 账上 $321、微信里说好的 credit 到月底没兑现</b>。
+          这个工具把送货单堆和 statement 放上核销台：<b>对上的逐笔打勾变淡，剩下没勾掉的就是该问的</b>；
+          最后给三个大数字——Statement 要多少、核出多少争议、<b>这个月该付多少</b>——和一条「核清就结」的对账消息。</p>`
+      },
+      {
+        label: "程序逻辑",
+        html: `<h3>单据堆 → 逐笔核销 → 争议汇总 → 该付金额 + 对账消息</h3>
+          <div class="flow">
+            <span class="step">贴单堆 + statement</span><span class="arr">→</span>
+            <span class="step">按单号逐笔核销</span><span class="arr">→</span>
+            <span class="step">credit 追兑现</span><span class="arr">→</span>
+            <span class="step">该付金额</span><span class="arr">→</span>
+            <span class="step">对账消息</span>
+          </div>
+          <ul>
+            <li><b>四类争议 + 一类留底</b>：重复计费（同单号两笔）/ 无单收费（要求出示签收单）/ 金额不符（以签收单为准）/ <b>说好的 credit 没兑现</b>（微信承诺 vs statement 的 credit 行——与 Demo 04 闭环：晚间审计发现的差异，月结时追兑现）/ 未入账留底（月底的单下月该出现）</li>
+            <li><b>核销的视觉本质</b>：左边送货单堆（小票卡片），右边 statement（账本行）——对上的打勾变淡，问题行高亮，缺失的 credit 画出「这里本该有一行」的虚线占位</li>
+            <li><b>话术红线</b>：录重、忘挂 credit 是月结常态，不是罪证——消息永远是「核一下再结」+ 明确付款意愿（先按核清的数结，差的确认后补），把账对明白、把关系处长远</li>
+            <li><b>敏感区红线</b>：严格采购侧，不碰营收、不碰税务</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            解析与核销为本地确定性引擎，<b>纯离线可玩</b>；连 API Key 后用真实模型解析任意格式（整行回原文核验），核销匹配永远在本地算。真实产品为拍照 → OCR → <b>低置信度字段进人工复核队列</b>——中英混排手写单是硬骨头，不追求全自动。</p>`
+      },
+      {
+        label: "商业模式",
+        html: `<ul>
+            <li><b>与 Demo 04 打包订阅</b>：日审计（订单核对）+ 月核销（statement 对账）是同一条信任链的两端——日频留存 + 月频出真金白银的价值时刻</li>
+            <li><b>付费意愿最硬的一环</b>：对账差异通常每月数百至上千美元——「这个月该付 $4,800 而不是 $5,575」这句话本身就是定价依据</li>
+            <li><b>结构平移</b>：yzh 短租托管的 Invoice OCR + 人工复核 + ledger 层直接平移——受托中间层的「可解释对账」母题跨行业成立</li>
+            <li><b>争议汇总页即谈判工具</b>：老板拿着核销记录跟配送商谈账，工具成为月底结账仪式的一部分——嵌入越深，替换成本越高</li>
+          </ul>`
+      },
+      {
+        label: "市场分析",
+        html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
+          <ul>
+            <li><b>MarginEdge / xtraCHEF（Toast 收购）</b>：发票数字化 + 对账是其核心付费模块，按店月费，品类已被验证。</li>
+            <li><b>Bill.com（NYSE:BILL）/ Ramp</b>：中小企业应付账款自动化，证明「对账 + 付款前核验」是大生意。</li>
+            <li><b>AppZen / Stampli</b>：AI 发票审核，B 端付费成熟。</li>
+          </ul>
+          <ul>
+            <li><b>订-收-付三点分离的月度总账</b>：厨师订、帮厨收、老板付——月结 statement 是三点分离积累一个月后的总对账时刻，也是差异唯一可能被发现的时刻</li>
+            <li><b>双重忽视缝隙</b>：主流 AP 工具不认中英混排手写送货单、不懂「微信里说好的 credit」这种口头账——这正是华人供应链的日常</li>
+            <li><b>与 Demo 04 的闭环</b>：晚间审计发现「白洋葱 $22 没订」→ 销售微信答应冲掉 → 月底核销追这笔 credit 兑没兑现——一条差异从发现到闭环全程留痕</li>
+            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：手写单 OCR 是硬骨头（低置信度进人工复核，成本模型要算清）；credit 承诺散落在语音和口头里，覆盖率有限；本 demo 从已识别文本开始、金额为演示数据</li>
+          </ul>`
+      }
+    ]
+  },
+
+  /* ───────────────────────── 40 price-pulse（华人餐饮供应链 · 采购价格透明面板）───────────────────────── */
+  {
+    id: "price-pulse", no: "40", cat: "餐饮供应链",
+    kicker: "华人餐饮供应链 · 价格记忆",
+    title: "悄悄涨的价，摆到台面上",
+    subtitle: "Demo 04/05 的数据副产品：每晚拍的送货单攒三个月，自动长成每个品的 12 周价格曲线——跳涨、爬价、量价分解，异常自己浮出来，一个字不用录。⛔ 明确不做「回扣检测」：数据只呈现异常，判断永远留给老板",
+    url: "demos/price-pulse/",
+    tags: ["零录入 · 送货单自动累积","12 周价格曲线 + 基准带","跳涨 / 爬价 / 量价分解","爬价对人的记忆免疫","谈价弹药 · 中性话术","⛔ 不做回扣检测","纯离线"],
+    phoneHint: "切换两家店看两种状态（有事 / 干净）；点品类 chip 换曲线，点异常条目跳到对应曲线",
+    sections: [
+      {
+        label: "是什么",
+        html: `<p>最阴险的涨价不是跳涨，是<b>爬价</b>：每周涨一点，单看哪周都"正常"，十二周下来贵了一成——<b>它对人的记忆免疫，这正是它的设计</b>。
+          这块面板是 Demo 04/05 的<b>数据副产品</b>：老板每晚拍的送货单，攒三个月自动长成每个品的价格曲线，<b>零录入</b>。
+          三类异常自己浮出来：<b>跳涨</b>（本周对前四周均 +8%）、<b>爬价</b>（单周不超阈值、12 周累计 +10%）、<b>量价分解</b>（支出涨了，拆开看是量还是价）。
+          伦理红线写在产品脸上：<b>不做「回扣检测」</b>——数据只能呈现异常，不能证明动机；错误的指控毁掉的是后厨。异常摆到台面上，判断永远留给老板。</p>`
+      },
+      {
+        label: "程序逻辑",
+        html: `<h3>送货单累积 → 价格记忆 → 三类异常 → 谈价弹药</h3>
+          <div class="flow">
+            <span class="step">每晚送货单照片</span><span class="arr">→</span>
+            <span class="step">自动累积价格库</span><span class="arr">→</span>
+            <span class="step">阈值检测</span><span class="arr">→</span>
+            <span class="step">曲线 + 异常清单</span><span class="arr">→</span>
+            <span class="step">中性谈价话术</span>
+          </div>
+          <ul>
+            <li><b>阈值公开可查</b>（写进页脚）：跳涨 = 本周对前四周均价 +8%；爬价 = 12 周累计 +10% 且多数周环比上行、单周从未超 8%；量价分解 = 支出 +20% 时拆成量与价两部分中性呈现</li>
+            <li><b>曲线即证据</b>：12 周折线 + 前 8 周均价 ±8% 的基准灰带——爬价的品，整条线从带内爬出带外，一眼看懂「为什么每晚核对抓不到它」</li>
+            <li><b>正向对冲</b>：主动降价的品标绿色「值得记住」——面板不是猎巫工具，价格纪律好的供应商值得把量给他</li>
+            <li><b>动机词汇红线在代码层</b>：连 AI 润色的小结，任何含「回扣 / 偷 / 贪 / 吃差价」的输出行都被正则丢弃；开口话术全部中性（「市场是都这样吗？帮我看看」）</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            检测与小结全部本地确定性计算，<b>纯离线</b>；连 API Key 后 AI 只润色小结文字——不新增数字、过同一道词汇红线。V1 明确不做跨餐馆比价（需多家数据，网络效应留待后期）。</p>`
+      },
+      {
+        label: "商业模式",
+        html: `<ul>
+            <li><b>订阅增值层</b>：Demo 04（日审计）+ 05（月核销）的用户免费解锁——数据副产品零边际成本，却是续费理由最直观的一屏</li>
+            <li><b>粘性即护城河</b>：价格记忆随使用时间增值——用满一年的店，换工具等于扔掉自己一年的价格资产</li>
+            <li><b>谈价弹药 = 可量化 ROI</b>：「把异常品谈回基准价 ≈ 年省 $X」——工具自己算出自己的价值</li>
+            <li><b>后期网络效应（V2）</b>：多店匿名聚合后可做区域价格基准——「同城中餐馆花生油都在 $46–48」，那是另一个量级的产品，V1 克制不碰</li>
+          </ul>`
+      },
+      {
+        label: "市场分析",
+        html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
+          <ul>
+            <li><b>MarginEdge</b>：其「price alert / price movers」正是发票数据副产品的价格监测，是续费卖点之一。</li>
+            <li><b>xtraCHEF（Toast）</b>：发票行项数据自动生成价格趋势，按店月费。</li>
+            <li><b>Datassential / NielsenIQ</b>：食材价格情报本身就是可售卖的数据生意——多店聚合后的 V2 方向已被验证。</li>
+          </ul>
+          <ul>
+            <li><b>为什么现在没人给中餐馆做</b>：前提是把中英混排手写送货单变成结构化数据——主流工具卡在 OCR 这一步，而这正是 Demo 04/05 的存量产出</li>
+            <li><b>伦理校准即差异化</b>：市面上「防内鬼」话术的工具会毁掉老板与后厨的信任、也会被后厨抵制——「采购透明化、判断留给人」的定位既是底线也是可被采纳的前提</li>
+            <li><b>与前两个 demo 的关系</b>：04 抓当晚、05 核当月、06 看三个月——三个时间尺度覆盖同一条采购信任链，订阅打包顺理成章</li>
+            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：价值依赖 04/05 的数据积累，冷启动期面板是空的（需设计首月体验）；阈值需真实语料调参（本 demo 为演示数据）；规格混淆会污染价格曲线（已在 04 做规格感知，仍需人工复核兜底）</li>
+          </ul>`
+      }
+    ]
+  },
+
   /* ── 加新 demo：复制上面一段，改 id / no / cat / 内容 / url，即出现在首页 ── */
 ];
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   英文镜像（EN mirror）—— 与上方中文一一对应，仅文案翻译，结构/id/no/url 一致。
+   切换机制见 assets/i18n.js（新访客默认英文）。加新 demo 时，两处都要加。
+   ═══════════════════════════════════════════════════════════════════════════ */
+window.SITE_EN = {
+  brand: "好玩的东西 · Playground",
+  hero: {
+    kicker: "Intent → Delivery · Iterant AI",
+    title: "Real needs,<br>shipped into real products",
+    lede: "We are a lean, elite team: half of us own the demand side — requirements, market insight, and client relationships — half of us use AI to deliver fast, completely, and accountably. The clickable demos below are proof of capability; the essays are how we think about intent, data, security, and human nature. A page of copy is no substitute for clicking through yourself.",
+    pills: ["✦ Fully interactive interfaces", "✦ Real state transitions", "✦ Works on mobile and WeChat"]
+  },
+
+  author: {
+    name: "Lingchong Hu · 胡凌冲",
+    role: "Founder, Iterant AI",
+    blurb: "We are experimenting with new AI-native org structures, teaching the team new AI development workflows as we go. I would rather validate product value with real revenue than exchange a grand narrative for a large check. What's actually worth something is the ability to take a requirement all the way to delivery — the completeness, stability, and degree of automation is what reveals whether a team can connect the raw capability of large AI models, in a structured way, to concrete industry needs.",
+    facts: ["Founder, Iterant AI", "Penn · MCIT '25", "Philadelphia"],
+    site: "https://lingchong-hu.github.io/",
+    siteLabel: "Personal site ↗"
+  },
+
+  thoughts: [
+    {
+      kicker: "Thinking · Intent",
+      title: "Intent is the next input",
+      desc: "Brain-computer interfaces, eye tracking, voice, EMG — every flashy new input modality runs into the same wall: the weight of habit. The real game isn't swapping hardware; it's reading what you actually want to do right now. That's intnt.",
+      href: "thoughts/intent.html",
+      play: "thoughts/intent-play.html",
+      featured: true
+    },
+    {
+      kicker: "Thinking · Data",
+      title: "Your data predicts your tomorrow",
+      desc: "Every click, every dwell, every late-night search is a leak of intent. Stitch the fragments together and you can know what someone wants before they ask. That's predictive commerce — and the very thin line that runs through it.",
+      href: "thoughts/data-future.html",
+      play: "thoughts/data-future-play.html"
+    },
+    {
+      kicker: "Thinking · Security",
+      title: "When attack and defense both get cheap",
+      desc: "Most of the security you've enjoyed was underwritten by one fact: attacking you wasn't worth it. AI has floored the cost of attack — and also the cost of defense. The danger isn't the technology; it's which side the scales tip toward.",
+      href: "thoughts/safety.html",
+      play: "thoughts/safety-play.html"
+    },
+    {
+      kicker: "Thinking · Human nature",
+      title: "Requirements, dug down to human nature",
+      desc: "What users say they want is never what they actually want. Peel the requirement back layer by layer and you find: the surface varies endlessly, but there are only a handful of strings underneath. AI changes how those strings get plucked — not the strings themselves.",
+      href: "thoughts/human-needs.html",
+      play: "thoughts/human-needs-play.html"
+    },
+    {
+      kicker: "Thinking · Org design",
+      title: "Org structure for the AI era",
+      desc: "Once code gets cheap, the decisive edge is the combination of 'deep demand insight + complete delivery' — and those two things almost never live in the same person. Why the structure of a law firm turns out to be exactly the right answer for this moment.",
+      href: "thoughts/ai-org.html",
+      play: "thoughts/ai-org-play.html"
+    },
+    {
+      kicker: "Thinking · Process",
+      title: "Accountable development",
+      desc: "What does 'owning it' actually mean? Between AI-generated output and something you dare to ship, there is a gap. Whether you cross it by 'understanding it yourself' or by 'independent verification' — that is the judgment call we make on every project.",
+      href: "thoughts/dev-process.html",
+      play: "thoughts/dev-process-play.html",
+      featured: true
+    }
+  ],
+
+  contact: {
+    intro: "If any of this sparked an idea, a question, or a concrete need — reach out directly, or leave your thoughts here and I'll read every one.",
+    wechatId: "Linchhlc2001",
+    email: "hulingchong302@gmail.com",
+    linkedin: "https://www.linkedin.com/in/lingchong-hu",
+    formUrl: "",
+    formLabel: "Share your thoughts / leave a request",
+    wechatQR: "assets/wechat-qr.png"
+  }
+};
+
+window.PROJECTS_EN = [
+{
+  id: "atelier", cat: "Fashion", featured: true,
+  no: "01",
+  kicker: "Personal Styling / Fashion Retail",
+  title: "Premium Personal Styling Platform",
+  subtitle: "The Stitch Fix model · a dedicated stylist curates a box for you — keep what you love, return the rest",
+  url: "demos/atelier/",
+  tags: ["Three-sided closed loop", "Rule-based matching", "Subscription + styling fee credit", "Data flywheel"],
+  phoneHint: "Best experienced on mobile / WeChat",
+  sections: [
+    {
+      label: "What it is",
+      html: `<p>For people who have no time to shop but want to dress well — we hand them a <b>dedicated stylist</b> who truly gets them.
+        Users fill out a style profile; the stylist selects a curated set of pieces and ships them home.
+        After trying everything on, <b>keep what you love, return the rest</b> — and the styling fee credits toward any purchase.
+        It turns "browsing racks" into "being understood and chosen for."</p>`
+    },
+    {
+      label: "How it works",
+      html: `<h3>Three sides, one closed loop</h3>
+        <ul>
+          <li><b>Client side (the runway)</b>: style quiz → book a Fix → preview candidates → receive box → keep/return each piece + leave feedback → settle</li>
+          <li><b>Stylist side (the curation desk)</b>: review client profile, pick 6 items + write an overall note + explain each pick</li>
+          <li><b>Ops side (fulfillment)</b>: inventory and shipping dashboard, track delivery → return items to stock</li>
+        </ul>
+        <p style="margin-top:14px">The core is a strict <b>Fix state machine</b> — each step can only advance via a backend action:</p>
+        <div class="flow">
+          <span class="step">Booked</span><span class="arr">→</span>
+          <span class="step">Styling</span><span class="arr">→</span>
+          <span class="step">Preview ready</span><span class="arr">→</span>
+          <span class="step">Shipped</span><span class="arr">→</span>
+          <span class="step">Try-on</span><span class="arr">→</span>
+          <span class="step">Settle / Return</span>
+        </div>
+        <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+          The recommendation engine is rule-based matching: filter candidates by size + budget + category + exclusions,
+          then layer in the stylist's human curation — prove the operational loop works first, model later.</p>`
+    },
+    {
+      label: "Business model",
+      html: `<ul>
+          <li><b>Styling fee credit</b>: charge a styling fee upfront, credit it in full against any purchase — boosts conversion and order value</li>
+          <li><b>Keep-all discount</b>: incentivize keeping the entire box, lifting per-Fix GMV</li>
+          <li><b>Subscription</b>: one-time / monthly / quarterly cadences — steady, high-AOV recurring revenue</li>
+          <li><b>Data flywheel</b>: every keep/return decision and piece of feedback sharpens the next match — the longer you use it, the better it gets</li>
+        </ul>`
+    },
+    {
+      label: "Market",
+      html: `<ul>
+          <li><b>Benchmarks</b>: Stitch Fix (SFIX) has already validated the scalability of stylist-plus-data personalized retail</li>
+          <li><b>Market gap</b>: Chinese e-commerce is a self-serve shelf; premium shoppers who "want to dress well but have no bandwidth to shop" are almost entirely unserved</li>
+          <li><b>Who</b>: tier-1/2 middle and upper-middle class — willing to pay for being understood, saving time, and having taste</li>
+          <li><b>Localization</b>: WeChat / Alipay payments, phone-number login, curated brand catalog — fits domestic consumer habits</li>
+        </ul>`
+    }
+  ]
+},
+{
+  id: "intnt", cat: "Productivity", featured: true,
+  no: "00",
+  kicker: "Our product · intnt model",
+  title: "intnt · Intent Model",
+  subtitle: "No new device, no new habits — reads your intent from real-time context and long-term behavior, collapsing multi-step actions into one.",
+  url: "",
+  tags: ["Intent recognition", "Context + memory", "Data stays local", "Squeeze every bit from keyboard and mouse"]
+},
+{
+  id: "guardian", cat: "Eldercare",
+  no: "02",
+  kicker: "Smart Eldercare / Age-friendly Tech",
+  title: "Remote Guardian · Snug",
+  subtitle: "Zojirushi's 'invisible' check-in × Snug's proactive safety ping × China's realities — dignified protection for seniors living alone",
+  url: "demos/guardian/",
+  tags: ["Dual-track signals", "Four-level escalation ladder", "Signal aggregation hub", "To-G/B deployment"],
+  phoneHint: "Multi-role sandbox — use the in-page console to advance the scenario",
+  sections: [
+    {
+      label: "What it is",
+      html: `<p>It resolves a core tension: <b>seniors don't want to be watched; adult children can't stop worrying</b>.
+        Day-to-day, routine home signals (water, electricity, door) provide <b>invisible protection</b> — zero intrusion on the senior's life.
+        Only when signals go quiet long enough does the system <b>gently ask the senior to check in</b>.
+        If there's still no response, escalation kicks in, one level at a time.
+        The senior's interface never shows the words "surveillance," "activity data," or "under care."</p>`
+    },
+    {
+      label: "How it works",
+      html: `<h3>Dual-track signals + four-level escalation (a pure-function state machine)</h3>
+        <p>Passive signals (water meter / electricity meter / door sensor / PIR / smoke detector / kettle) are primary; smartwatch/band data is supplementary.
+          Only when signals fall silent past a threshold does the system switch to "ask the senior to confirm they're okay" — and only if that fails does it escalate:</p>
+        <div class="flow">
+          <span class="step">L0 All good</span><span class="arr">→</span>
+          <span class="step">L1 Watch</span><span class="arr">→</span>
+          <span class="step">L2 Request check-in</span><span class="arr">→</span>
+          <span class="step">L3 Family contact</span><span class="arr">→</span>
+          <span class="step">L4 Neighbor/building mgmt</span><span class="arr">→</span>
+          <span class="step">L5 Community grid officer</span><span class="arr">→</span>
+          <span class="step">L6 Emergency services</span>
+        </div>
+        <p style="margin-top:14px">Four role dashboards work in tandem:</p>
+        <ul>
+          <li><b>Senior</b>: care mode (extra-large text + voice readout + one-tap family call) — they see "companionship," never "monitoring"</li>
+          <li><b>Family</b>: weekly activity rhythm chart + status card + escalation center + health record</li>
+          <li><b>Community grid officer</b>: China's distinctly local human-safety-net layer</li>
+          <li><b>Device signal console</b>: live visualization of passive signal sources and activity</li>
+        </ul>
+        <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+          Safety invariants are baked into the state machine: <b>any outreach to third parties (neighbor / grid officer / emergency services) requires manual family approval — the system never contacts anyone automatically</b>.
+          A single "I'm fine" from the senior resets any level instantly.</p>`
+    },
+    {
+      label: "Business model",
+      html: `<ul>
+          <li><b>Platform, not hardware</b>: aggregate <b>existing deployed devices</b> in communities and districts — low marginal cost; differentiation is in "graduated non-intrusion + dual-narrative UX"</li>
+          <li><b>Primary payer = district offices / neighborhood committees + home-care service providers</b>: they have government budgets and KPIs; the family and grid-officer dashboards are simply their management interface (To-G/B)</li>
+          <li><b>Free consumer tier + upsell</b>: care-mode hardware add-ons, health record cloud storage, etc. — no heavy C-side acquisition cost</li>
+        </ul>`
+    },
+    {
+      label: "Market",
+      html: `<ul>
+          <li><b>Policy tailwind</b>: Shanghai's "Smart Eldercare Innovation Action Plan 2024–2027" explicitly covers both "safety monitoring" and "health services" — two of our core product pillars</li>
+          <li><b>Official endorsement pathway</b>: listing in the Smart Healthy Eldercare Promotion Catalog (jointly issued by MIIT + MCA + NHC) = entry into district procurement lists</li>
+          <li><b>Proven model</b>: Putuo District's smart water meters / smoke detectors + one-key emergency calling already protect seniors living alone — we're upgrading a validated approach, not educating a new market</li>
+          <li><b>Risks (honest)</b>: data compliance is a hard gate; grid-officer availability needs BD validation; government payment cycles are slow and decision chains are long</li>
+        </ul>`
+    }
+  ]
+},
+{
+  id: "style-dna", no: "05", cat: "Fashion",
+  kicker: "Fashion · Personal Color Analysis",
+  title: "Selfie Color Analysis",
+  subtitle: "One selfie — sample real pixels, get your color season and a personalized palette",
+  url: "demos/style-dna/", tags: ["Real pixel sampling","Color season","Save & share image","Local processing"],
+  phoneHint: "Upload a selfie or pick a sample — see your season and palette (photo processed locally only)",
+  sections: [
+    { label: "What it is",   html: `<p>A selfie-powered version of the "personal color analysis" session that costs hundreds offline — real pixel sampling, your color season, your palette.</p>` },
+    { label: "How it works", html: `<h3>Upload → sample → season + palette</h3>
+      <div class="flow"><span class="step">Upload / pick sample</span><span class="arr">→</span><span class="step">Pixel quantization</span><span class="arr">→</span><span class="step">Season + palette</span><span class="arr">→</span><span class="step">Save image</span></div>
+      <ul>
+        <li><b>Real pixel sampling</b>: downsample the photo, build a hue-quantized histogram, extract the dominant colors by population</li>
+        <li><b>Warm/cool + depth</b>: derive overall tone (population-weighted R−B) + skin-region refinement, map to one of the four seasons</li>
+        <li><b>Generate palette</b>: produce recommended colors in HSL space by warmth and depth, then match each to the nearest Chinese color name — <b>swap photos and the palette changes</b></li>
+      </ul>
+      <p style="margin-top:16px">Everything runs in the browser locally — <b>photo never leaves your device, fully offline</b>.</p>` },
+    { label: "Business model", html: `<ul>
+        <li><b>Diagnosis as top-of-funnel</b>: free season result, paid unlock for full palette guide / makeup recommendations (online version of the House of Colour model)</li>
+        <li><b>Affiliate commerce</b>: recommend items by palette, earn e-commerce CPS commission</li>
+        <li><b>Subscription</b>: seasonal wardrobe palette updates, daily outfit pairing reminders</li>
+        <li><b>B2B</b>: "find your shade" discovery widget for cosmetics and apparel brands</li>
+      </ul>` },
+    { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+      <ul>
+        <li><b>House of Colour</b>: a franchise chain built entirely on four-season color analysis — hundreds of consultants worldwide charging per session, proof that color diagnosis is a standalone business.</li>
+        <li><b>Korean personal color diagnosis (퍼스널컬러)</b>: a mature paid service with per-session fees often reaching several hundred yuan and studios on every block.</li>
+        <li><b>Style DNA / Drape and similar apps</b>: color and styling diagnosis packaged as subscription tools.</li>
+      </ul>
+      <ul>
+        <li><b>Pain</b>: "what colors suit me" is a high-frequency, fuzzy question; in-person diagnosis is expensive and high-barrier</li>
+        <li><b>Who</b>: primarily young women interested in fashion and makeup, with strong social-sharing intent</b></li>
+        <li><b>Localization</b>: plugs into Xiaohongshu seeding ecosystem and domestic cosmetics shade libraries</li>
+        <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: a single selfie is sensitive to lighting and filters; professional diagnosis still requires standardized light and a trained eye — this demo is pixel heuristics, not a clinical result</li>
+      </ul>` }
+  ]
+},
+{
+    id: "alta", no: "06", cat: "Fashion",
+    kicker: "Fashion · AI Styling",
+    title: "Outfit for Every Occasion",
+    subtitle: "Import your Taobao purchase history + upload a piece you want to wear → AI builds a complete look, with buy links for whatever's missing",
+    url: "demos/alta/", tags: ["Import purchase history","Upload a piece to anchor","AI full-look styling","Buy links included"],
+    phoneHint: "Import your wardrobe from Taobao + pick an occasion, see a complete look + buy links",
+    sections: [
+      { label: "What it is",   html: `<p>No need to log items one by one: <b>connect Taobao</b> and your purchase history becomes a digital wardrobe automatically. Then <b>upload one piece you want to wear</b> and AI builds a complete look around it — occasion by occasion — <b>with direct buy links for anything you're missing</b>. Styling becomes shopping in one closed loop.</p>
+        <p class="small" style="color:var(--ink-soft)">Demo uses simulated order data to demonstrate the import flow; the real product uses open e-commerce auth with affiliate-linked product URLs.</p>` },
+      { label: "How it works", html: `<h3>Import history + upload anchor piece → AI full look + buy links</h3>
+        <div class="flow"><span class="step">Connect Taobao</span><span class="arr">→</span><span class="step">Upload anchor piece</span><span class="arr">→</span><span class="step">Pick occasion</span><span class="arr">→</span><span class="step">AI full look</span><span class="arr">→</span><span class="step">Buy links for gaps</span></div>
+        <ul>
+          <li><b>Authorized import</b>: reads clothing orders from purchase history → auto-identifies garment type and style, no manual entry needed (demo uses simulated orders)</li>
+          <li><b>Upload anchor piece</b>: pin one item to its slot; AI builds the rest of the outfit around it</li>
+          <li>Picks tops + bottoms + shoes + accessories from your wardrobe per occasion — <b>switch occasion, swap look</b> — with a formality-match gauge</li>
+          <li><b>Buy-link recommendations</b>: identifies which missing piece unlocks the most occasions (core slots weighted above accessories), <b>links directly to Taobao equivalents</b> + one-click try-on</li>
+        </ul>
+        <p style="margin-top:16px">Look assembly and gap ranking are <b>fully deterministic and local</b>; add an AI key to let the model style and write the shopping copy. Privacy: reads clothing orders only — no payment data, no uploads.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Affiliate commerce (core)</b>: missing items carry affiliate links — styling triggers purchase, CPS commission</li>
+          <li><b>Subscription</b>: unlimited styling, wardrobe analysis, gap alerts (Whering / Cladwell model)</li>
+          <li><b>Resale / rental</b>: low-frequency items routed to secondhand and clothing-rental platforms</li>
+          <li><b>Data asset</b>: real wardrobe composition and styling preferences — rare signal for brand merchandising</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Whering / Acloset / Indyx</b>: digital wardrobe apps that let users photograph their closet, get AI outfit suggestions, and monetize via subscription and affiliate — millions of users.</li>
+          <li><b>Stitch Fix (SFIX)</b>: stylist + data → personalized outfit delivery, publicly traded and market-validated.</li>
+          <li><b>Cladwell</b>: capsule wardrobe + daily outfit recommendation subscription tool.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: 'full closet, nothing to wear' — outfit decisions happen every single day</li>
+          <li><b>Who</b>: style-conscious urbanites with plenty of clothes but weak coordination instincts</li>
+          <li><b>Localization</b>: Taobao / JD purchase-history auth, Xiaohongshu style inspiration, domestic e-commerce SKUs</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: reading purchase history requires user consent and privacy compliance; styling taste is subjective; this demo uses simulated orders</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "fortuna", no: "07", cat: "Finance", featured: true,
+    kicker: "Personal Finance · AI Wealth Manager",
+    title: "AI Wealth Manager",
+    subtitle: "Financial health check → set a goal → asset allocation + Monte Carlo probability of success + action plan, in one closed loop",
+    url: "demos/fortuna/", tags: ["Financial health check","Goal-driven","Monte Carlo","Risk allocation","Fully offline"],
+    phoneHint: "Fill in a snapshot → set a goal → watch probability update live as you adjust target / timeline / monthly contributions",
+    sections: [
+      { label: "What it is",   html: `<p>One closed loop that connects 'financial health check' and 'robo-advisor': a few numbers produce a health score and your <b>investable surplus</b>, then you set a goal (home / retirement / education / emergency fund), the system builds an asset allocation from your risk profile, and runs <b>1,000 Monte Carlo market scenarios</b> to tell you 'what's the probability of hitting this in N years' — finishing with a prioritized action plan ordered by the financial pyramid.</p>
+        <p class="small" style="color:var(--ink-soft)">Change the goal, timeline, monthly contribution, or risk tolerance — probability and the fan chart recalculate instantly.</p>` },
+      { label: "How it works", html: `<h3>Health check → goal → allocation → Monte Carlo → action</h3>
+        <div class="flow"><span class="step">Financial snapshot</span><span class="arr">→</span><span class="step">Health score + risk profile</span><span class="arr">→</span><span class="step">Set goal</span><span class="arr">→</span><span class="step">Allocation + probability</span><span class="arr">→</span><span class="step">Action plan</span></div>
+        <ul>
+          <li><b>Health check</b>: savings rate / debt ratio / emergency fund / expense ratio weighted into a health score; computes net worth and monthly investable surplus</li>
+          <li><b>Risk profile</b>: subjective 'willingness' (questionnaire) × objective 'capacity' (age / timeline / emergency fund / debt), capped at the lower of the two → C1–C5</li>
+          <li><b>Monte Carlo</b>: runs 1,000 paths using the allocation's expected return and volatility; produces probability of success and a p10/p50/p90 fan chart (deterministic — same inputs, same results)</li>
+          <li><b>Action plan</b>: ordered by the 'emergency fund → pay down high-interest debt → invest regularly → add protection' pyramid, referencing your actual numbers</li>
+        </ul>
+        <p style="margin-top:16px">Scoring, allocation, and Monte Carlo are <b>fully deterministic, local, zero external dependencies</b>; add an AI key to layer on compliant plain-language interpretation. Output section enforces a 'not investment advice' disclaimer.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>AUM fee + premium subscription</b>: goal planning, tax optimization, human advisor add-on (Betterment / Wealthfront model)</li>
+          <li><b>Financial product referrals</b>: precisely matched to weak spots — savings accounts, insurance, debt payoff tools — CPA / CPS monetization (Credit Karma model)</li>
+          <li><b>B2B / white-label</b>: financial health + advisory engine for banks, brokerages, and employer benefits programs</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Betterment / Wealthfront</b>: the two leading US independent robo-advisors — questionnaire-driven risk profiling → automated allocation. Wealthfront's Path product is exactly the 'goal + Monte Carlo probability' framework; together they manage tens of billions.</li>
+          <li><b>Origin / Monarch / Rocket Money</b>: subscription tools that aggregate income, savings, debt, and goals into a full financial picture and planning workflow.</li>
+          <li><b>Credit Karma (Intuit) / NerdWallet (NRDS)</b>: free score / assessment → financial product referrals — a publicly validated monetization path.</li>
+          <li><b>Ant Wealth 'Help You Invest' / Licai Mofang</b>: domestic fund advisory, goal-based accompaniment + portfolio allocation.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: a health check gives you a score but not a next step; an advisor gives you an allocation but never answers 'can I actually hit my goal' — these two have always been separate</li>
+          <li><b>Who</b>: mid-career adults with surplus income, a concrete goal (home / kids / retirement), and a desire for clarity without complexity</li>
+          <li><b>Localization</b>: requires fund advisory license domestically — partner with licensed institutions; adapt for housing fund / insurance / savings context</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: investing is heavily regulated — this demo is a product prototype and calculator only, not investment advice; market assumptions are simplified models and do not predict future returns</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "oboe", no: "09", cat: "Education",
+    kicker: "Education · AI Course Generation",
+    title: "Topic to Course in Seconds",
+    subtitle: "Enter any topic → get a mini-course with chapters and quizzes, then a 'mastery report' at the end showing which chapters need more work",
+    url: "demos/oboe/", tags: ["Topic becomes a course","Chapters + quizzes","Mastery report","Retry weak questions"],
+    phoneHint: "Generate a course → take quizzes → tap 'View Mastery Report'",
+    sections: [
+      { label: "What it is",   html: `<p>Turn 'I want to learn X' into a structured mini-course with chapters and quizzes — <b>then tell you how much you actually retained</b>. Generated content is just the start; <b>real learning</b> is the goal.</p>` },
+      { label: "How it works", html: `<h3>Topic → outline → chapters + quizzes → mastery report</h3>
+        <div class="flow"><span class="step">Enter topic</span><span class="arr">→</span><span class="step">Generate outline</span><span class="arr">→</span><span class="step">Chapters + quizzes</span><span class="arr">→</span><span class="step">Mastery report</span><span class="arr">→</span><span class="step">Retry weak questions</span></div>
+        <ul>
+          <li>Any topic is broken into 5 chapters; each chapter gets key points + 1–2 instantly graded quiz questions</li>
+          <li><b>+1: end-of-course mastery</b> — tracks answers per chapter → computes mastery (e.g. 6/8 = 75%) → surfaces weak chapters → focus review</li>
+          <li><b>Retry wrong answers</b>: get one right and it's removed from your weak list; mastery score rises in real time (mirrors the Oboe / Khan Academy 'actually learned' loop, not just content generation)</li>
+        </ul>
+        <p style="margin-top:16px">Local structured generation and mastery tracking run entirely in the browser — <b>works fully offline</b>; add your own key to use a real model for course content and targeted re-explanation of weak spots.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Subscription</b>: unlimited course generation, saved learning paths, progress tracking (Oboe / Duolingo model)</li>
+          <li><b>B2B training</b>: enterprises generate micro-courses on any topic in seconds — seat-based pricing</li>
+          <li><b>Content marketplace</b>: high-quality generated courses redistributed with creator revenue share</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Oboe (oboe.fyi)</b>: the namesake product — exactly 'enter any topic → instantly generate an AI course.' This demo replicates its core interaction.</li>
+          <li><b>Coursera (COUR) / Udemy (UDMY)</b>: online course platforms that prove 'packaging knowledge into structured courses' is a scalable business.</li>
+          <li><b>Duolingo (DUOL)</b>: structured lesson-based learning + subscription — profitable with strong retention.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: demand for bite-sized learning is high, but the cost of 'finding or building a structured course' is also high</li>
+          <li><b>Who</b>: lifelong learners, exam preppers, corporate training teams</li>
+          <li><b>Localization</b>: connect to domestic vocational / certification content; add community check-in features</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: accuracy and depth of generated content require human review; this demo uses templatized generation</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "adaptive-quiz", no: "10", cat: "Education",
+    kicker: "Education · Adaptive Learning",
+    title: "Adaptive Quiz",
+    subtitle: "Right answer moves difficulty up, wrong answer brings it down — finish with a predicted score, your exact 'ability boundary,' and a targeted ceiling-breaker drill",
+    url: "demos/adaptive-quiz/", tags: ["Adaptive difficulty","Predicted score","Ability boundary detection","Ceiling-breaker drill"],
+    phoneHint: "Answer questions → see predicted score → tap 'Ceiling-Breaker Drill' to target your boundary",
+    sections: [
+      { label: "What it is",   html: `<p>Question difficulty adjusts in real time based on your answers, and at the end you get more than a predicted score — <b>you find out exactly where you're stuck and which difficulty level to drill next</b>. Diagnosis goes beyond a single number.</p>` },
+      { label: "How it works", html: `<h3>Answer → adaptive → predicted score + ability boundary + ceiling-breaker</h3>
+        <div class="flow"><span class="step">Answer</span><span class="arr">→</span><span class="step">Adaptive difficulty</span><span class="arr">→</span><span class="step">Predicted score</span><span class="arr">→</span><span class="step">Ability boundary</span><span class="arr">→</span><span class="step">Ceiling-breaker ×5</span></div>
+        <ul>
+          <li>An ability estimate is maintained per question: correct → adjust up, wrong → adjust down; next question is drawn at current difficulty, converging to your true level</li>
+          <li><b>+1: ability boundary</b> — derives from the difficulty trajectory: 'you consistently handle up to difficulty X; your boundary is difficulty X+1' (since adaptive downgrading re-tests lower difficulties at the end, boundary is pegged to the highest difficulty you've answered correctly — always consistent)</li>
+          <li><b>+1: ceiling-breaker drill</b> — five consecutive questions fixed at your boundary difficulty (no further adaptation), to see if you can break through — modeled on Riiid's 'targeted weak-point practice'</li>
+        </ul>
+        <p style="margin-top:16px">Simplified IRT / CAT logic and boundary detection run entirely in the browser — <b>fully offline</b>; add a key to have AI generate on-demand questions at any difficulty for any topic.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Exam prep subscription</b>: adaptive drilling + predicted score + weak-spot targeting (Riiid / Santa model)</li>
+          <li><b>B2B</b>: diagnostic and leveling assessments for schools and training institutions</li>
+          <li><b>Certification testing</b>: wire the predicted score into formal exam prep pipelines</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Riiid 'Santa' (Korea/Japan)</b>: AI adaptive TOEIC drilling — recommends questions by predicted score, subscription-based, millions of users.</li>
+          <li><b>GRE / GMAT Computer Adaptive Test (ETS / GMAC)</b>: harder after correct, easier after wrong — CAT is the established paradigm for high-stakes standardized tests.</li>
+          <li><b>Duolingo (DUOL)</b>: uses adaptive and predictive models for personalized practice and retention.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: grinding through endless questions with no idea which difficulty level you're actually stuck at</li>
+          <li><b>Who</b>: exam preppers for professional certifications, overseas study, and K–12 testing</li>
+          <li><b>Localization</b>: connect to domestic postgrad entrance / civil service / CET-4&6 question banks</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: prediction accuracy depends on large question banks and real response data; this demo is a simplified prototype</li>
+        </ul>` }
+    ]
+  },
+{
+    id: "final-round", no: "11", cat: "Hiring",
+    kicker: "Hiring · AI Mock Interview",
+    title: "Mock Interview",
+    subtitle: "Pick a role, get AI-generated questions, receive structured feedback on your actual answer",
+    url: "demos/final-round/", tags: ["Mock interview","STAR feedback","Feedback on your real answer","Fully offline"],
+    phoneHint: "Pick a role, answer one question, see three-dimension structured feedback",
+    sections: [
+      { label: "What it is",   html: `<p>Pick a role → AI generates an interview question → get three-part STAR / specificity / improvement feedback keyed to what you actually said.</p>` },
+      { label: "How it works", html: `<h3>Pick role → Generate question → Structured feedback</h3>
+        <div class="flow"><span class="step">Pick role</span><span class="arr">→</span><span class="step">AI question</span><span class="arr">→</span><span class="step">STAR / Specificity / Suggestion</span><span class="arr">→</span><span class="step">Share</span></div>
+        <ul>
+          <li>Different roles surface different questions</li>
+          <li>Feedback is three structured scores <b>grounded in what you actually wrote</b> (quotes your own sentences) — not a generic template</li>
+          <li>Delivers actionable rewrite suggestions</li>
+        </ul>
+        <p style="margin-top:16px">Local text heuristics (structure / keywords / length signals), <b>zero external dependencies, fully offline</b>.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>B2C subscription</b>: unlimited mock sessions, role question bank, expression reports (Final Round AI / Yoodli model)</li>
+          <li><b>B2B screening</b>: standardized AI interviews and scoring for employers (HireVue model)</li>
+          <li><b>Campus partnerships</b>: university career centers, training institutions</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Final Round AI</b>: same-name product — interview simulation + real-time coaching on subscription; this demo replicates its question → answer → feedback core loop.</li>
+          <li><b>Yoodli</b>: AI communication / interview coach, structured feedback on delivery quality, subscription revenue.</li>
+          <li><b>HireVue</b>: enterprise AI interview assessment used by large employers for initial screening, B2B paid.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: interview anxiety, no feedback loop, no practice partner</li>
+          <li><b>Who</b>: new graduates, career switchers, job hoppers</li>
+          <li><b>Localization</b>: integrate domestic industry question banks and Chinese expression scoring</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: assessment fairness under scrutiny; this demo uses heuristic feedback and makes no judgment on real human ability</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "clause-risk", no: "12", cat: "Legal",
+    kicker: "Legal Tech · Pre-sign Advisor",
+    title: "Contract Pre-sign Advisor",
+    subtitle: "Paste a clause + pick your side → sign or not, which lines are non-negotiable, what protection is missing, then get a ready-to-send redline email",
+    url: "demos/clause-risk/", tags: ["Side-aware reading","Tilt verdict","Must-fix / Nice-to-have tiering","Missing clause detection","One-click redline email"],
+    phoneHint: "Pick your side, paste a clause — see the tilt verdict and redline email",
+    sections: [
+      { label: "What it is",   html: `<p>It does more than flag red flags — it makes the call for you: first pick whether you are the tenant / vendor / job applicant… whichever side, then it reads the document to judge <b>who it favors and whether you should sign</b>, splits risks into <b>'must-fix' and 'worth pushing for'</b>, surfaces <b>protections that should be there but aren't</b>, and generates a <b>ready-to-send redline email</b> with one click.</p>` },
+      { label: "How it works", html: `<h3>Pick side → Highlight → Tilt verdict → Must-fix / Missing → Redline email</h3>
+        <div class="flow"><span class="step">Pick your side</span><span class="arr">→</span><span class="step">Highlight real text</span><span class="arr">→</span><span class="step">Tilt verdict</span><span class="arr">→</span><span class="step">Must-fix / Nice-to-have + Missing clauses</span><span class="arr">→</span><span class="step">One-click redline email</span></div>
+        <ul>
+          <li>Highlights are always <b>real sentences from your pasted text</b> (regex matchAll; even AI is forced to verify the string exists in the source before marking it) — <b>never fabricated highlights</b></li>
+          <li>The same clause <b>flips interpretation with your side</b>: a trap for the weaker signing party becomes a shield for the party that drafted it — switch roles and the verdict and email recalculate instantly</li>
+          <li>Tilt score + one-line verdict (hold off / negotiate first / safe to sign); risks split into must-fix and nice-to-have</li>
+          <li>'Missing clauses' catches what regex can't see: <b>liability caps, reciprocal termination rights, counterparty breach remedies, data deletion</b> — protections that should be standard but aren't there</li>
+        </ul>
+        <p style="margin-top:16px">Logic layer is <b>fully local, fully offline</b>; connect an API key to use a real model for risk extraction and email polishing. Includes a 'not legal advice' disclaimer.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Enterprise subscription</b>: automated first-pass review of legal / sales contracts, priced per seat or usage (LawGeex / Spellbook model)</li>
+          <li><b>CLM platform</b>: full contract lifecycle — draft, review, sign, archive (Ironclad model)</li>
+          <li><b>B2C / SMB</b>: lightweight 'pre-sign checkup' subscription for individuals and small businesses</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>LawGeex</b>: AI auto-reviews contracts against company standards and flags risk — enterprise paid, a flagship in AI contract review.</li>
+          <li><b>Spellbook / Robin AI</b>: AI assistants for drafting and reviewing contracts, subscription model, actively fundraising.</li>
+          <li><b>Luminance / Ironclad</b>: legal AI and full-lifecycle CLM serving large corporate legal teams, valued at unicorn level.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: individuals and small businesses can't parse contracts; hiring a lawyer is expensive; no gatekeeper before signing</li>
+          <li><b>Who</b>: SMBs, freelancers, individuals signing contracts</li>
+          <li><b>Localization</b>: integrate Chinese contract law context and standard boilerplate clause library</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: legal judgment requires a professional; this demo is an interactive showcase only — not legal advice</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "ubie", no: "13", cat: "Health",
+    kicker: "Digital Health · Symptom Check",
+    title: "Symptom Self-triage",
+    subtitle: "Describe your symptoms, answer adaptive follow-ups, get a 3-tier care recommendation — plus which department to see and a visit summary card for your doctor",
+    url: "demos/ubie/", tags: ["Adaptive follow-up","3-tier triage","Which department to see","Visit summary card"],
+    phoneHint: "Pick chief complaint → answer follow-ups → see tier + department + summary card",
+    sections: [
+      { label: "What it is",   html: `<p>Describe what's wrong → it asks follow-up questions like a triage nurse → tells you whether to self-monitor, use a telemedicine service, or go to the ER right now, <b>then tells you which department to book and generates a summary card you can bring to the hospital or share with an online doctor</b> — because after the triage tier, the real question is 'where do I go and what do I say?'</p>` },
+      { label: "How it works", html: `<h3>Chief complaint → Follow-ups → 3-tier recommendation + Department + Summary card</h3>
+        <div class="flow"><span class="step">Describe symptoms</span><span class="arr">→</span><span class="step">Adaptive follow-ups</span><span class="arr">→</span><span class="step">3-tier recommendation</span><span class="arr">→</span><span class="step">Which department</span><span class="arr">→</span><span class="step">Visit summary card</span></div>
+        <ul>
+          <li>Different chief complaints / yes-no answers branch into <b>different follow-up paths</b> (decision tree), urgency tier assigned from responses</li>
+          <li><b>+1: Which department</b> — routes by complaint and tier (e.g. chest pain → Cardiology / ER chest pain center; headache → Neurology), matching Ubie's core 'symptom → department' value</li>
+          <li><b>+1: Visit summary card</b> — organizes chief complaint / key symptoms / red flags / questions to ask the doctor into a one-tap-copy card to bring to the hospital or send to an online doctor (solves 'can't explain it clearly in person')</li>
+        </ul>
+        <p style="margin-top:16px">Local decision tree + rules + routing all run in browser, <b>fully offline</b>; connecting an API key adds AI-personalized interpretation. Routing and the summary card are navigation / organization only — <b>not a diagnosis</b>. Includes a 'not a medical diagnosis' disclaimer.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Triage-to-consult funnel</b>: route users to telemedicine or in-person departments, revenue share per consult / conversion (K Health model)</li>
+          <li><b>B2B</b>: intelligent triage entry point for hospitals / insurers / pharma (Ubie / Ada Health institutional partnership model)</li>
+          <li><b>Cost reduction</b>: reduce unnecessary ER overload — valuable to public health insurance and private insurers</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Ubie (Japan)</b>: the namesake AI symptom checker and triage tool, large user base, partnerships with hospitals and pharma — this demo replicates its interaction model.</li>
+          <li><b>Ada Health (Germany)</b>: AI symptom assessment, tens of millions of assessments globally, partnered with insurers and health systems.</li>
+          <li><b>K Health (USA)</b>: symptom checker + telemedicine in one product, subscription plus per-consult revenue.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: 'Do I need to go to the hospital?' is a high-frequency anxiety moment — self-searching online tends to terrify rather than inform</li>
+          <li><b>Who</b>: ordinary families, chronic condition patients, underserved areas</li>
+          <li><b>Localization</b>: integrate with domestic internet hospitals and tiered-care policy</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: healthcare is heavily regulated; safety first — this demo is an interactive showcase only, not a medical diagnosis</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "nl-home", no: "14", cat: "Real Estate",
+    kicker: "PropTech · Natural Language Search",
+    title: "Find a Home in Plain English",
+    subtitle: "Describe your dream home in your own words — constraints are actually parsed and filtered; then see honestly which wish-list item to drop and how many more listings that unlocks",
+    url: "demos/nl-home/", tags: ["Natural language parsing","Constraint filtering","Wish-list trade-off radar","Relax & re-search to unlock more","Fully offline"],
+    phoneHint: "Type a one-sentence need, see matched listings and 'what to drop'",
+    sections: [
+      { label: "What it is",   html: `<p>Parses 'two bedrooms, budget ¥3M, near a subway stop, not too old' into real filter criteria and actually runs them against listings. <b>Goes further</b> — instead of just showing matches or returning '0 results', it tells you honestly when your wish list is fighting itself: <b>which single item to relax, and how many more listings that opens up</b>. Budget gets the most actionable version: 'add ¥Xk and unlock N more listings' — one tap to relax and re-search.</p>` },
+      { label: "How it works", html: `<h3>One sentence → Parse constraints → Match + Wish-list trade-off radar</h3>
+        <div class="flow"><span class="step">Type one sentence</span><span class="arr">→</span><span class="step">Parse constraints</span><span class="arr">→</span><span class="step">Filter + match reason</span><span class="arr">→</span><span class="step">What to drop (relax & re-search)</span></div>
+        <ul>
+          <li>Extracts bedrooms / budget / city / age and other constraints from free text; <b>listings that violate hard constraints are hidden</b> (real filtering, not cosmetic)</li>
+          <li><b>Trade-off radar</b>: counterfactual simulation on each hard constraint — how many listings does relaxing it unlock; budget gets the cheapest step ('add ¥Xk → +N listings'); recommends the single best concession, one tap to relax and re-run</li>
+          <li>Also surfaces 'you listed N nice-to-haves but no listing hits all of them — the best match hits M' — cleanly separates hard filters from bonus points</li>
+        </ul>
+        <p style="margin-top:16px">Lightweight local NLP (keyword + numeric extraction) + filtering + trade-off simulation — <b>logic layer fully local, fully offline</b>; API key only used to upgrade parsing with a real model.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Agent / listing lead-gen</b>: high-intent demand billed per lead or transaction (Zillow / Rightmove model)</li>
+          <li><b>Featured placement and ads</b>: listing exposure, agent memberships</li>
+          <li><b>Financial referrals</b>: mortgage / renovation / insurance commission</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Zillow (ZG) / Redfin (RDFN)</b>: the largest online real estate platforms in North America, both have shipped natural language search, monetized through agent lead-gen and advertising.</li>
+          <li><b>Rightmove (RMV)</b>: UK property portal with a high-margin lead / membership model.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: traditional search forces users to tick filters one by one — impossible to express 'the vibe I'm looking for'</li>
+          <li><b>Who</b>: urban home buyers and renters</li>
+          <li><b>Localization</b>: integrate Beike / Anjuke-style listings and city-level datasets</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: listing accuracy and freshness are existential; this demo uses sample listings for parsing demonstration only</li>
+        </ul>` }
+    ]
+  },
+{
+    id: "mindtrip", no: "15", cat: "Travel",
+    kicker: "Travel · AI Itinerary Planner",
+    title: "Itinerary + Map",
+    subtitle: "Tell it where you want to go → AI fills in the local highlights, a smart local engine builds an expert hour-by-hour itinerary + interactive map",
+    url: "demos/mindtrip/", tags: ["Any city","Expert scheduling","Interactive map","Edit on the fly"],
+    phoneHint: "Enter a city + special requirements, see an expert hour-by-hour itinerary with map pins",
+    sections: [
+      { label: "What it is",   html: `<p>Type any <b>city</b> (add requirements like "traveling with a 3-year-old and elderly parents with limited mobility"), and AI fills in the best local spots. A local engine then arranges them into an <b>expert hour-by-hour itinerary</b> — restaurants at mealtimes, temples and nature in the daytime, night markets and scenic spots in the evening — clustered by neighborhood, routed efficiently, and plotted on a map. Afterward you can 📌 pin / ↻ swap / ✕ remove any item on the spot.</p>
+        <p class="small" style="color:var(--ink-soft)">Without an AI connection, four built-in cities — Kyoto, Lisbon, Chiang Mai, Reykjavik — load instantly offline.</p>` },
+      { label: "How it works", html: `<h3>City → AI fills POIs → Local smart scheduler → Itinerary + Map</h3>
+        <div class="flow"><span class="step">Enter city + requirements</span><span class="arr">→</span><span class="step">AI fills POIs</span><span class="arr">→</span><span class="step">Smart scheduling</span><span class="arr">→</span><span class="step">Hour-by-hour list + Map</span><span class="arr">→</span><span class="step">Edit on the fly</span></div>
+        <ul>
+          <li><b>AI handles only "finding spots"</b>: given the city and your requirements, it returns places with type, operating hours, neighborhood, and relative coordinates</li>
+          <li><b>Scheduling is a local engine (deterministic, no AI)</b>: time-slot affinity places meals, daytime, and evening stops correctly — no "temple visit at midnight"; all stops are chained into an efficient route then split into days, each day naturally covering one contiguous neighborhood</li>
+          <li>Every itinerary item has a <b>numbered pin on the map</b>; clicking an entry or a pin cross-highlights the other; the map is color-coded by day</li>
+          <li>Pin / swap / remove / regenerate a full set — <b>instant re-scheduling</b></li>
+        </ul>
+        <p style="margin-top:16px">Clear division of labor: AI handles "long-tail local knowledge," the local engine handles "deterministic scheduling and rendering." <b>The map is an inline SVG with zero external dependencies.</b></p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Booking commissions</b>: hotels, tickets, and transport inside the itinerary link directly to booking — CPS revenue share (OTA model)</li>
+          <li><b>Subscription</b>: advanced planning, multi-person collaboration, offline itineraries</li>
+          <li><b>Destination marketing</b>: paid placement for attractions and tourism boards</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Mindtrip (mindtrip.ai)</b>: the eponymous AI travel planning platform combining itineraries with an interactive map; actively fundraising. This demo recreates its core experience.</li>
+          <li><b>Layla / Wonderplan / Roam Around</b>: AI itinerary generators that monetize via booking referrals.</li>
+          <li><b>Booking / Expedia (EXPE)</b>: OTA giants that prove converting "planning → booking" into commissions is a massive business.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: building a travel plan is time-consuming, and itineraries are always disconnected from maps</li>
+          <li><b>Who</b>: independent travelers, family trips, deep-dive explorers</li>
+          <li><b>Localization</b>: connect AI-generated POIs to real coordinates, hours, ratings, and booking ecosystems via Amap / Dianping</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: AI-generated POIs need verification against actual operating status and bookability; coordinates in this demo are relative approximations and the map is an abstract schematic</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "insure-need", no: "18", cat: "Insurance",
+    kicker: "InsurTech · Coverage Calculator",
+    title: "How Much Coverage Do You Need",
+    subtitle: "Answer a few lifestyle questions, get recommended coverage amounts and policy types — then translated into 'roughly how much per year, what % of your income, and what to buy first if budget is tight'",
+    url: "demos/insure-need/", tags: ["Needs-based calculation","Premium budget check","% of income vs 10/10 rule","What to buy first","Fully offline"],
+    phoneHint: "Enter age / income / family / liabilities, see coverage amounts + premium health check",
+    sections: [
+      { label: "What it is",   html: `<p>Answer a few questions about income, family situation, and debts. The "needs method" calculates how much coverage you should have and what types to buy. But we go <b>further</b> — most tools stop at coverage amounts (because they profit from selling products and won't discuss costs). Here we translate that into an <b>estimated annual premium, what % of your income that is (benchmarked against the "10/10 rule" — healthy if ≤10%), and which policy to buy first if budget is limited</b>. We also surface the counterintuitive truth: "insure the adults before the kids."</p>` },
+      { label: "How it works", html: `<h3>Lifestyle questions → Coverage gap → Policy priorities + Premium budget check</h3>
+        <div class="flow"><span class="step">Answer 6 questions</span><span class="arr">→</span><span class="step">Needs method gap calc</span><span class="arr">→</span><span class="step">Policy priority + ¥/yr</span><span class="arr">→</span><span class="step">% of income + what to buy first</span></div>
+        <ul>
+          <li>Needs method: life insurance gap = income replacement + debts + children's education − existing coverage; critical illness ≈ 3–5 years of income — <b>updates in real time with age, family, income, and liabilities</b></li>
+          <li><b>Premium budget check</b>: converts coverage into an estimated annual premium → % of annual income vs the "10/10 rule" threshold (premium ≤ 10% of income) → if over-weighted, suggests the sequence "medical/accident first for baseline → term life for highest leverage → critical illness last as it's most expensive"</li>
+          <li>If children are in the picture, calls out "insure the adults first" — you are the child's most important policy</li>
+        </ul>
+        <p style="margin-top:16px">Coverage gaps are calculated locally and deterministically (DIME method), <b>fully offline</b>. Premiums are rough estimates only — <b>strong disclaimer applies</b>. Connect an API key to add AI-personalized commentary.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Policy commissions</b>: post-calculation, route users to comparison / purchase — revenue share per policy (Policygenius / Ladder model)</li>
+          <li><b>Lead generation</b>: high-intent users referred to insurers or brokers</li>
+          <li><b>B2B</b>: embedded as an insurance calculator widget for banks and platforms</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Policygenius</b>: online insurance needs assessment + comparison + purchase, profitable on policy commissions.</li>
+          <li><b>Ladder / Ethos / Haven Life</b>: fully online life insurance — needs assessment and policy issuance in minutes, DTC model.</li>
+          <li><b>Lemonade (LMND)</b>: AI-driven insurer, publicly listed, proving InsurTech is scalable.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: most people have no idea how much coverage to buy or what type — and fear being oversold by agents</li>
+          <li><b>Who</b>: young-to-middle-aged adults with mortgages and dependent children</li>
+          <li><b>Localization</b>: map to domestic critical illness / life / medical insurance products and regulatory categories</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: insurance products require compliance and actuarial sign-off; this demo is an interactive illustration only, not insurance advice</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "matchmaker", no: "19", cat: "Dating",
+    kicker: "Dating · AI Matchmaker",
+    title: "Conversational Precision Matching",
+    subtitle: "No wall of profiles — just one person + a traceable 'why this person'",
+    url: "demos/matchmaker/", tags: ["Single candidate","Traceable reasoning","No compatibility score","Fully offline"],
+    phoneHint: "Answer a few questions, see a single recommendation with reasoning",
+    sections: [
+      { label: "What it is",   html: `<p>No stacks of profile cards — just one precision match, with a clear explanation of which of your answers informed it.</p>` },
+      { label: "How it works", html: `<h3>Answer questions → Precision match → Single candidate + Reasoning</h3>
+        <div class="flow"><span class="step">Answer a few questions</span><span class="arr">→</span><span class="step">Precision match</span><span class="arr">→</span><span class="step">Single candidate + Reasoning</span><span class="arr">→</span><span class="step">Share</span></div>
+        <ul>
+          <li><b>Returns only one</b> candidate — no wall of profiles</li>
+          <li>Reasoning <b>cites specific points from your answers</b> — fully traceable</li>
+          <li>Deliberately <b>no compatibility percentage score</b> — people aren't numbers</li>
+        </ul>
+        <p style="margin-top:16px">Local matching + reasoning generation. <b>Zero external dependencies, fully offline.</b></p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Subscription</b>: premium matches, see who likes you (Hinge / Coffee Meets Bagel model)</li>
+          <li><b>Human matchmaker upsell</b>: AI first-pass + human deep-match as a high-ticket service (Tawkify model)</li>
+          <li><b>In-person events</b>: social and dating events for precision-matched groups</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Hinge (Match Group)</b>: built "to be deleted" — small daily curated suggestions with shared-interest callouts; paid subscription model.</li>
+          <li><b>Coffee Meets Bagel</b>: limited daily recommendations, quality over quantity; subscription revenue.</li>
+          <li><b>Tawkify</b>: paid human matchmaking service — one introduction at a time, with a written match rationale — proving people will pay a premium for "precision + reasoning."</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: swipe fatigue, overwhelming low-quality matches, no idea "why this person"</li>
+          <li><b>Who</b>: serious relationship seekers tired of casual dating apps</li>
+          <li><b>Localization</b>: connect to domestic real-name dating verification and offline matchmaking scenarios</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: dating involves real relationships and safety; strict vetting required; this demo uses fictional candidates for illustration</li>
+        </ul>` }
+    ]
+  },
+  {
+    id: "pet-health", no: "20", cat: "Pets",
+    kicker: "Pet Health · Photo Self-Check",
+    title: "Pet Photo Health Check",
+    subtitle: "Photograph eyes or skin, get a health score + observations + whether to see a vet",
+    url: "demos/pet-health/", tags: ["Photo analysis","Health score","Observations","Fully offline"],
+    phoneHint: "Take or upload a pet photo, see health score and observation suggestions",
+    sections: [
+      { label: "What it is",   html: `<p>Snap a photo of your cat's or dog's eyes or skin, get a health score, a few observations, and a recommendation on whether to visit a vet.</p>` },
+      { label: "How it works", html: `<h3>Photo → Analysis → Health report</h3>
+        <div class="flow"><span class="step">Take/upload photo</span><span class="arr">→</span><span class="step">Analyze</span><span class="arr">→</span><span class="step">Health score + Observations + See a vet?</span><span class="arr">→</span><span class="step">Share</span></div>
+        <ul>
+          <li>End-to-end: photo → analysis → report</li>
+          <li>Returns health score + observations + vet recommendation</li>
+          <li>Includes a "not veterinary advice" disclaimer</li>
+        </ul>
+        <p style="margin-top:16px">Local image heuristics + rule-based report. <b>Zero external dependencies, fully offline.</b></p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Subscription</b>: regular self-checks, health records, anomaly alerts (TTcare model)</li>
+          <li><b>Referral fees</b>: flag anomalies and route to online or offline pet clinics</li>
+          <li><b>Commerce</b>: recommend food, grooming products, or supplements based on findings</li>
+          <li><b>Insurance</b>: integrate with pet insurance for underwriting and claims</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>TTcare (South Korea)</b>: AI pet health screening via smartphone photos of eyes and skin — commercially live, launched in multiple countries, award-winning.</li>
+          <li><b>Petriage</b>: pet symptom assessment + triage, subscription service partnered with clinics.</li>
+          <li><b>Dinbeat / Scout and others</b>: pet health monitoring hardware + data services.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: pets can't speak, vet bills are high, owners are anxious and lack early screening tools</li>
+          <li><b>Who</b>: young cat and dog owners with high emotional investment in their pets</li>
+          <li><b>Localization</b>: connect to domestic pet clinic networks and pet e-commerce ecosystems</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: pet health decisions require a licensed veterinarian; this demo is an interactive illustration only, not a diagnosis</li>
+        </ul>` }
+    ]
+  },
+{
+    id: "pet-vet", no: "21", cat: "Pets",
+    kicker: "Veterinary · Clinical Scribe",
+    title: "AI Veterinary Scribe",
+    subtitle: "Paste a quick consult note → SOAP record + differential diagnosis + client discharge instructions + fee estimate — give vets their time back",
+    url: "demos/pet-vet/", tags: ["Consult note → record","SOAP / differentials","Discharge instructions + fees","Offline fallback examples","Live model with BYOK"],
+    phoneHint: "Pick a sample case or paste a consult note → generate the full document set",
+    sections: [
+      { label: "What it is",   html: `<p>Vets hate charting — 2–3 hours a day lost to paperwork. This is an <b>AI Scribe</b> for <b>licensed veterinarians</b>: turn a rough spoken consult note into a full set of structured records in 30 seconds. <b>AI drafts, vet reviews</b> — it never replaces clinical judgment.</p>` },
+      { label: "How it works", html: `<h3>One consult note → four-piece document set</h3>
+        <div class="flow"><span class="step">Consult note</span><span class="arr">→</span><span class="step">SOAP record</span><span class="arr">→</span><span class="step">Ranked differentials</span><span class="arr">→</span><span class="step">Discharge instructions</span><span class="arr">→</span><span class="step">Fee estimate</span></div>
+        <ul>
+          <li><b>SOAP</b>: Chief complaint / objective findings / assessment / plan — objective and inferred clearly separated</li>
+          <li><b>Differentials</b>: Ranked by likelihood (high / moderate / low) with supporting evidence and recommended workup — advisory only, for vet review</li>
+          <li><b>Discharge instructions</b>: Medical language converted into plain-language owner handouts (home care / medications / follow-up / red flags)</li>
+          <li><b>Fee estimate</b>: Itemised range totals by recommended workup — every section one-click copyable into the practice system</li>
+        </ul>
+        <p style="margin-top:16px">Four sample cases render the complete document set <b>fully offline</b> (fallback + demo); any consult note with BYOK generates the same structure via the live model. Drug entries give category/principle only — no exact dosing — with a prominent disclaimer.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Per-vet / per-clinic subscription (SaaS)</b>: Saving 2–3 hours of charting per day translates directly into additional appointments — strong willingness to pay</li>
+          <li><b>Embedded in practice management systems (PIMS)</b>: One-click back-fill of records, discharge notes, and estimates; per-seat pricing</li>
+          <li><b>Add-ons</b>: Client communication scripts, follow-up reminders, automated insurance claim preparation</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Scribenote / Talkatoo / ScribbleVet</b>: Vet-specific AI clinical scribes on monthly subscriptions — already the breakout segment in veterinary practice tech.</li>
+          <li><b>Human medicine has validated the model</b>: Ambient AI scribes like Abridge and Nuance DAX are charging at scale on the physician side — veterinary is the same pain point one step over.</li>
+          <li><b>Pain is real</b>: Charting burden is the number-one driver of vet burnout; time spent on records directly cannibalises appointment capacity and revenue.</li>
+        </ul>
+        <ul>
+          <li><b>Who</b>: Independent clinics, small-to-mid chains, solo-practitioner vets</li>
+          <li><b>Localization</b>: Integrates with domestic veterinary HIS, Chinese-language record standards, and local disease prevalence libraries</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: Clinical responsibility rests with the licensed vet; this tool produces <b>drafts for review only</b>. This demo is an interactive showcase — not veterinary advice.</li>
+        </ul>` }
+    ]
+  },
+
+  {
+    id: "coddle", no: "22", cat: "Parenting",
+    kicker: "Parenting · Age-by-age Guidance",
+    title: "Month-by-month Baby Guide",
+    subtitle: "Log a note, get personalised guidance matched to your baby's age — same entry, different advice at different stages",
+    url: "demos/coddle/", tags: ["Age-adaptive","Personalised guidance","Quick logging","Fully offline"],
+    phoneHint: "Log a note + select age, see the matched guidance",
+    sections: [
+      { label: "What it is",   html: `<p>Jot down 'what's going on with baby today' and get targeted advice matched to their current age.</p>` },
+      { label: "How it works", html: `<h3>Log + age → match → personalised guidance</h3>
+        <div class="flow"><span class="step">Log a note + select age</span><span class="arr">→</span><span class="step">Match age rules</span><span class="arr">→</span><span class="step">Personalised guidance</span><span class="arr">→</span><span class="step">Share</span></div>
+        <ul>
+          <li>The same entry produces <b>different guidance at different ages</b> (e.g. 'night waking' at 3 months vs 9 months calls for different responses)</li>
+          <li>Recommendations aligned to developmental milestones by month</li>
+        </ul>
+        <p style="margin-top:16px">Matched against a local age-rule library — <b>zero external dependencies, fully offline</b>.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Subscription</b>: Growth log + personalised guidance + milestone reminders (Huckleberry / Wonder Weeks model)</li>
+          <li><b>Mother-and-baby commerce</b>: Age-matched product, food, and toy recommendations</li>
+          <li><b>Content / courses</b>: Stage-specific parenting courses and expert Q&A</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Huckleberry</b>: Baby sleep and routine tracking with AI personalised guidance — subscription model, widely loved.</li>
+          <li><b>The Wonder Weeks</b>: Paid app that explains developmental leaps by age; a global bestseller.</li>
+          <li><b>BabyCenter</b>: Massive parenting platform delivering weekly and monthly content; advertising and commerce monetisation.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: Parenting information is endless but not age-staged — parents are overwhelmed</li>
+          <li><b>Who</b>: Parents of babies aged 0–3</li>
+          <li><b>Localization</b>: Integrates with domestic parenting standards and mother-and-baby commerce</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: Parenting guidance requires professional oversight. This demo is an interactive showcase — not medical advice.</li>
+        </ul>` }
+    ]
+  },
+
+  {
+    id: "mood-journal", no: "23", cat: "Mental Health",
+    kicker: "Mental Health · Mood Tracking",
+    title: "Mood Journal",
+    subtitle: "Write how you feel — a few entries build your mood curve and trigger word cloud",
+    url: "demos/mood-journal/", tags: ["Mood curve","Trigger word cloud","Trend insights","Fully offline"],
+    phoneHint: "Write a few mood entries, see the curve and word cloud",
+    sections: [
+      { label: "What it is",   html: `<p>Log your mood as you go — a handful of entries is enough to draw your emotional curve and surface your most frequent triggers.</p>` },
+      { label: "How it works", html: `<h3>Log → aggregate → curve + word cloud</h3>
+        <div class="flow"><span class="step">Write multiple moods</span><span class="arr">→</span><span class="step">Analyse</span><span class="arr">→</span><span class="step">Mood curve + trigger word cloud</span><span class="arr">→</span><span class="step">Share</span></div>
+        <ul>
+          <li>Multiple entries charted chronologically into a <b>mood curve</b></li>
+          <li>High-frequency words extracted from your writing into a <b>trigger word cloud</b></li>
+          <li>The more you log, the clearer the patterns and triggers</li>
+        </ul>
+        <p style="margin-top:16px">Local sentiment scoring and word-frequency analysis — <b>zero external dependencies, fully offline</b>. Includes a 'not a mental-health service' disclaimer.</p>` },
+      { label: "Business model", html: `<ul>
+          <li><b>Subscription</b>: Long-term trends, reminders, export, deeper insights (Daylio / Reflectly model)</li>
+          <li><b>Digital therapeutics / B2B</b>: AI conversation coaching, EAP and insurance integrations (Wysa / Woebot model)</li>
+          <li><b>Content</b>: Meditation and emotional-wellbeing courses</li>
+        </ul>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Daylio</b>: Minimal mood and habit tracker that generates emotional trend charts — subscription model, tens of millions of users.</li>
+          <li><b>How We Feel / Reflectly</b>: Mood-journal apps with trend and insight features; subscription revenue.</li>
+          <li><b>Wysa / Woebot</b>: Mood tracking paired with AI conversation, expanded into B2B and insurance.</li>
+        </ul>
+        <ul>
+          <li><b>Pain</b>: Emotional swings are hard to articulate; people want self-awareness but lack the tools</li>
+          <li><b>Who</b>: Young adults focused on mental wellness and self-reflection</li>
+          <li><b>Localization</b>: Aligned with domestic mental-health content and privacy compliance</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: Mental-health content requires care. This demo is an interactive showcase — not a mental-health service, diagnosis, or treatment.</li>
+        </ul>` }
+    ]
+  },
+
+  {
+    id: "dinner", no: "24", cat: "Food",
+    kicker: "Food · AIGC / Unstructured Extraction",
+    title: "What's for Dinner",
+    subtitle: "Paste a food post → AI turns it on the spot into a step-by-step recipe you can cook tonight",
+    url: "demos/dinner/",
+    tags: ["Unstructured → structured", "Strict JSON contract", "Graceful boundary fallback", "Pure front-end SVG illustration", "One-tap share card"],
+    phoneHint: "Click an example chip or paste a post and run it (AI engine required)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>Take <b>any food post</b> you scrolled past — a restaurant write-up, brunch shot, home-cook recipe, late-night drool post — and turn it into
+          <b>a recipe you can actually cook</b>: paste or select a real post, AI extracts the dish intent from <b>that specific content</b>,
+          generates structured fields, and the front end renders a clearly formatted recipe with ingredients, quantities, and timing. The core value is
+          '<b>arbitrary unstructured input → reliable, boundary-stable structured output</b>' — the same capability applied to a different domain becomes résumé, receipt, or contract parsing.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>Casual post copy → strict structured recipe</h3>
+          <div class="flow">
+            <span class="step">Paste / select post</span><span class="arr">→</span>
+            <span class="step">LLM extracts dish intent</span><span class="arr">→</span>
+            <span class="step">Strict JSON contract</span><span class="arr">→</span>
+            <span class="step">Front-end SVG render</span><span class="arr">→</span>
+            <span class="step">One-tap share card</span>
+          </div>
+          <p style="margin-top:14px">Two hard engineering requirements (acceptance floor — must actually work, not fake output):</p>
+          <ul>
+            <li><b>Output genuinely tracks the input</b>: Swap two different posts and the recipes must be clearly distinct and traceable to their respective source — not a random pick from a fixed list.</li>
+            <li><b>Boundaries don't break</b>: Paste something that has nothing to do with food, and the app gracefully returns 'this doesn't look like food' with sample entry points — it never hard-codes a dish.</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Decoupled design: <b>LLM handles only 'output genuinely tracks the input'</b> (forced to return strict JSON; front end parses safely and catches failures gracefully).
+            <b>Front end handles only 'looks good'</b> — ingredient emojis, 8 step-type icons, and a composed plate hero are all pure SVG/CSS; no real photos, no pretend image generation.
+            Four one-click example chips eliminate cold-start friction.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>Commerce referrals (highest margin)</b>: Recipe → one-tap shopping list → link to grocery delivery or on-demand retail; commission on GMV</li>
+            <li><b>Subscription</b>: Saved recipes, nutrition conversion, bulk weekly meal plans, ad-free (the standard paywall for recipe apps)</li>
+            <li><b>Brand / ingredient placement</b>: Sponsored product slots in method steps, brand-custom recipe sets (native advertising, non-intrusive)</li>
+            <li><b>Shareability as growth</b>: Every share card carries the user's own recipe version plus a restrained watermark CTA — distribution built into the output</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>Samsung Food (formerly Whisk, Samsung 005930.KS)</b>: Imports any webpage or social post into a structured recipe and auto-generates a shopping list — nearly identical to the 'unstructured → structured' move here.</li>
+            <li><b>Cookpad (TSE 2193)</b>: One of the world's largest recipe communities; subscription monetisation; publicly listed.</li>
+            <li><b>HelloFresh (ETR:HFG)</b>: Recipe → ingredient delivery at scale; validates the commercial value of the 'follow-along' use case.</li>
+            <li><b>Instacart (NASDAQ:CART)</b>: Recipe → one-tap cart → same-day delivery; proves the commerce-referral loop works end to end.</li>
+          </ul>
+          <ul>
+            <li><b>Pain</b>: You see something that looks delicious, but turning a casual post into an actual meal is friction — ingredients, steps, and quantities are buried in conversational copy, and that screenshot never gets opened again</li>
+            <li><b>Who</b>: Food-content enthusiasts and kitchen newcomers who want to cook what they see</li>
+            <li><b>Localization</b>: Tuned to the tone of Xiaohongshu / Douyin posts; shareable in WeChat; Chinese ingredients and cooking-temperature vocabulary</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: Output accuracy depends on the LLM — needs fallback logic and spot-checking. Public endpoints require a server-side proxy (server-held key + rate limiting + daily spend cap) to prevent abuse and control costs.</li>
+          </ul>`
+      }
+    ]
+  },
+{
+    id: "unmask", no: "25", cat: "Games",
+    kicker: "Games · Privacy Showdown / Behavior Modeling",
+    title: "Don't Get Read",
+    subtitle: "Rock-paper-scissors, but your opponent is an AI modeling you in real time — it shows you 'how it sees you' before you move, locks in its bet, and winning means staying unreadable",
+    url: "demos/unmask/",
+    tags: ["anti-modeling showdown", "live profile revealed before you move", "probability unveiled after lock-in", "AI mind-reader profile", "viral battle report"],
+    phoneHint: "Best on mobile / WeChat — keep throwing and don't let it read you",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>The whole premise of 'being known' — <b>flipped into a game</b>: you play rock-paper-scissors against an AI that models you in real time,
+          placing a bet on your next move before countering it. <b>Getting called = you lose.</b>
+          A '<b>Predictability</b>' gauge at the top of the screen shows live how well it has you figured out; your only goal is to stay unpredictable and outlast its predictions.
+          Deeply resonant for anyone with privacy anxiety — you finally get to go head-to-head with the system that wants to understand you,
+          and it will show you: <b>I'm more predictable than I thought.</b></p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>Turn 'data collection' into the adversarial mechanic — tension is the gameplay</h3>
+          <div class="flow">
+            <span class="step">See 'how it sees you'</span><span class="arr">→</span>
+            <span class="step">AI 🔒 locks in bet</span><span class="arr">→</span>
+            <span class="step">You move</span><span class="arr">→</span>
+            <span class="step">Reveal what it bet you'd throw</span><span class="arr">→</span>
+            <span class="step">Debrief + mind-reader profile</span>
+          </div>
+          <p style="margin-top:14px">The core is a <b>real adaptive predictor (not an LLM — an online-learning algorithm)</b>:
+          move-frequency bias, first/second-order Markov sequences, 'rushing to reverse the last round', repeating the same throw — 5 predictors running in parallel,
+          <b>dynamically weighted by recent hit rate, auto-switching</b> to whichever is most accurate at the moment.</p>
+          <ul>
+            <li>Its throw beats yours = <b>read</b>; you beat it = fooled it; tie = draw.</li>
+            <li><b>Shows its hand before you move</b>: a live 'how it sees you' profile (favorite move / combo patterns / loss-induced changes) + which line it trusts most right now + 🔒 locked bet; only after you throw does it reveal <b>the probability distribution of what it bet you'd play</b> (you can see how well it knows you, but can't exploit that knowledge for free).</li>
+            <li><b>Predictability = read rate</b>, <b>33% is the true-random baseline</b>; higher means it has you more figured out. Fooling it when it's highly confident = a signature breakthrough moment.</li>
+            <li>End-of-game debrief + <b>mind-reader profile</b>: favorite throws, unconscious combos, and post-loss reactions written as a second-person psychological portrait (with an API key the key section is rewritten by a live model; without it, a local fallback kicks in).</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            The meta-irony: the harder you try to hide, the more you expose your patterns. No post-hoc compliance language needed — the confrontation is the mechanic. Fully front-end, no backend required.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>Virality as growth</b>: every game generates a 'Predictability %' battle card — sharing 'I was only read 31% of the time' is intrinsically shareable; shareability is the critical lever</li>
+            <li><b>WeChat Mini Game</b>: lightweight, instant-play, native to social contexts; low dev cost, high virality</li>
+            <li><b>Retention layer</b>: leaderboards (who's most unpredictable), friend battles, seasons / ranks, AI difficulty settings</li>
+            <li><b>Flywheel</b>: players trying to win expose a wealth of <b>genuine decision-making patterns</b> — itself a high-quality behavioral profile (same capabilities that power recommendation and risk engines)</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>Tencent WeChat Mini Games (00700.HK)</b>: viral hits like 'Jump' proved 'lightweight + social virality' can explode inside WeChat.</li>
+            <li><b>Akinator (Elokence)</b>: 'I can guess who you're thinking of' became a global viral product on pure mind-reading gameplay, monetizing via ads and in-app purchases.</li>
+            <li><b>AppLovin (NASDAQ:APP)</b>: casual games + ad monetization at scale, validating the commercial ceiling for lightweight gameplay.</li>
+            <li><b>Voodoo</b>: the hyper-casual game publishing king, built on mechanics that can be explained in one sentence, learned in ten seconds, and shared compulsively.</li>
+          </ul>
+          <ul>
+            <li><b>Pain</b>: everyone is being modeled and predicted by algorithms with no way to fight back — this game gives 'playing offense' an emotional outlet</li>
+            <li><b>Who</b>: privacy-conscious users and psychology-game fans; general WeChat users who share on impulse</li>
+            <li><b>Localization</b>: native WeChat Mini Program context, simple to build, strong virality (battle card sharing); Chinese UI, instant play</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: single-session experience is short — retention needs leaderboards / friend battles / seasons to compensate; mechanic is novel but needs rapid validation of D2 retention and share rate</li>
+          </ul>`
+      }
+    ]
+  },
+
+{
+    id: "niche", no: "26", cat: "Cross-border",
+    kicker: "Cross-border Selection · Blue-ocean Radar",
+    title: "Blue-ocean Product Radar",
+    subtitle: "Give a category direction → AI combines overseas demand trends and review gaps to surface untapped niches before they turn red",
+    url: "demos/niche/",
+    tags: ["trend + review gap", "opportunity score ranking", "demand / competition intensity", "entry angle + risks", "AI connection required"],
+    phoneHint: "Pick a target market + enter a broad category (click an example to scan instantly; best with AI connected)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>Product selection is where cross-border wins and losses are decided. Give a broad category (e.g. 'pet supplies', 'camping & outdoor'),
+          and AI combines <b>overseas demand trends</b> with <b>recurring complaints buried in reviews</b>
+          to surface <b>niche blue oceans</b> that existing sellers are overlooking: each opportunity gets an opportunity score, demand and competition intensity, what users are actually complaining about, how to enter, and what pitfalls to watch.
+          It turns 'gut-feel copycat selling' into 'differentiate around proven gaps.'</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>Broad category → combined signals → niche blue-ocean shortlist</h3>
+          <div class="flow">
+            <span class="step">Enter category + market</span><span class="arr">→</span>
+            <span class="step">Cross-reference demand trends</span><span class="arr">→</span>
+            <span class="step">Mine reviews for gaps</span><span class="arr">→</span>
+            <span class="step">Opportunity score ranking + entry angles</span>
+          </div>
+          <ul>
+            <li>Each niche gets an <b>opportunity score + demand strength + competition intensity (blue ocean / medium / red ocean)</b>, all internally consistent</li>
+            <li>'User gaps' read like real reviews (too loud, wrong size, battery life overstated…) — not vague generalizations</li>
+            <li>Each entry includes <b>signal sources + differentiation angle + risks</b>, with a closing call on which to target first</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Powered by a live LLM with strict JSON enforced and front-end normalization fallback; non-category inputs are politely rejected, nothing is hardcoded.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>SaaS subscription</b>: product-selection tool billed monthly / per seat — a must-have, high-frequency tool for cross-border sellers</li>
+            <li><b>Data reports</b>: paid deep-dive reports and trend rankings for specific niches</li>
+            <li><b>C2M reverse sourcing</b>: match validated blue-ocean demand to factories, earning commission on transactions</li>
+            <li><b>Data flywheel</b>: track which blue oceans actually take off → feed results back to sharpen opportunity scoring over time</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>Jungle Scout / Helium 10 / AMZScout</b>: Amazon product-selection and market-analysis tools on subscription, practically standard issue for sellers.</li>
+            <li><b>Seller Sprite / Captain BI / Sorftime</b>: domestic cross-border selection SaaS, validating willingness to pay among Chinese sellers.</li>
+            <li><b>Exploding Topics / Glimpse</b>: trend-discovery subscription tools, proving that 'spotting demand early' is valuable in its own right.</li>
+          </ul>
+          <ul>
+            <li><b>AI-era advantage</b>: before, you had to manually scrape sales charts and read reviews one by one to find gaps — slow and fragmented; AI now combines trend signals and review gaps <b>into a blue-ocean shortlist in one pass</b></li>
+            <li><b>Pain</b>: 90% of sellers die at product selection — either slugging it out in red-ocean price wars or making blind bets</li>
+            <li><b>Who</b>: Amazon / DTC / Temu semi-managed sellers, factories looking to build a cross-border brand</li>
+            <li><b>Localization</b>: connecting 1688 sourcing data and real review / sales data from each platform would substantially improve accuracy</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: scoring accuracy depends on real review and sales data feeds; this demo is a heuristic illustration and should not be used as the basis for sourcing decisions</li>
+          </ul>`
+      }
+    ]
+  },
+
+{
+    id: "landed", no: "27", cat: "Cross-border",
+    kicker: "Cross-border Pricing · Landed Cost Calculator",
+    title: "Landed Cost & Margin Comparison",
+    subtitle: "Enter your factory cost → AI estimates landed cost per country (tariff / VAT / platform commission / freight) + gross margin, so you can see at a glance which market to enter first",
+    url: "demos/landed/",
+    tags: ["multi-country landed cost", "cost waterfall bar", "gross margin comparison", "which market to enter first", "AI connection required"],
+    phoneHint: "Fill in cost + weight, select markets (click an example to calculate instantly; best with AI connected)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>The same product can yield wildly different real margins across countries — tariffs, VAT, platform commissions, and freight all vary.
+          Enter your <b>factory cost and weight</b>, select a few target markets, and AI estimates each country's <b>total landed cost, suggested retail price, and gross margin</b>,
+          laying out exactly where the money goes in a cost waterfall bar — then tells you straight which market offers the best return to enter first.
+          It turns 'list everywhere and hope' into 'run the numbers before you commit.'</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>Cost + markets → landed cost breakdown → margin comparison</h3>
+          <div class="flow">
+            <span class="step">Enter cost / weight</span><span class="arr">→</span>
+            <span class="step">Look up each country's tax rates and fees</span><span class="arr">→</span>
+            <span class="step">Add freight + commission</span><span class="arr">→</span>
+            <span class="step">Gross margin comparison + recommendation</span>
+          </div>
+          <ul>
+            <li>Each market breaks out <b>tariff% / VAT% / platform commission% / freight</b> to produce landed cost and suggested retail</li>
+            <li><b>Cost waterfall bar</b>: factory cost / freight / tariff / tax / commission / gross margin — each slice visible at a glance</li>
+            <li>Automatically flags the <b>highest-margin</b> market as '★ Best pick' and provides an overall market-selection recommendation</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Powered by a live LLM that generates common-sense rate estimates and keeps all figures internally consistent; results are labeled 'tax rates are estimates — for reference only.'</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>SaaS pricing tool</b>: landed cost / margin calculator on subscription — essential for cross-border sellers choosing which market to enter</li>
+            <li><b>Freight & customs referral</b>: calculate then instantly compare first-mile / last-mile options and customs clearance, earning commission per shipment</li>
+            <li><b>VAT / compliance referral</b>: EU VAT registration, country-specific compliance filing, referral fees</li>
+            <li><b>API output</b>: package the landed-cost engine as an API and embed it in ERP systems or DTC store backends</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>Zonos</b>: the definitive cross-border 'landed cost' and duty-estimation API / SaaS — the category benchmark.</li>
+            <li><b>Avalara (formerly NYSE:AVLR, taken private by Vista)</b>: tax-compliance automation giant, validating that 'automated tax calculation' is a large business.</li>
+            <li><b>Easyship / Flexport / FlavorCloud</b>: cross-border freight quoting and customs-clearance platforms, profitable on logistics fulfillment and commissions.</li>
+          </ul>
+          <ul>
+            <li><b>AI-era advantage</b>: before, you had to look up HS code tariff rates for the destination country and manually calculate landed cost line by line; now <b>multi-country margin comparison comes out in seconds</b>, turning 'market selection' from tribal knowledge into an instant decision</li>
+            <li><b>Pain</b>: many sellers price by gut feel and only discover a market isn't profitable once payments come in</li>
+            <li><b>Who</b>: multi-platform / multi-country sellers, brand go-global teams deciding which country to enter first</li>
+            <li><b>Localization</b>: connecting real-time FX rates, up-to-date tax and platform fee schedules, and live freight quotes would turn this into a production-grade tool</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: tax and fee rates are AI estimates — defer to official customs and platform rules for actual operations; precise calculations require integration with authoritative tax-rate databases</li>
+          </ul>`
+      }
+    ]
+  },
+
+{
+    id: "loka", no: "28", cat: "Cross-border", featured: true,
+    kicker: "Cross-border Listing · Localization Engine",
+    title: "Cross-border Localization Engine",
+    subtitle: "One Chinese product description → generates a 'sounds like a local wrote it' listing for each country + cultural adaptation + compliance notes",
+    url: "demos/loka/",
+    tags: ["native listing per market", "local-language title + bullets + keywords", "cultural angle adaptation", "compliance + localization pitfalls", "AI connection required"],
+    phoneHint: "Select target markets + paste your product description (click an example to run instantly; best with AI connected)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>Going global, the expensive part was never translation — it's <b>localization</b>. US buyers respond to lifestyle angles; German buyers want specs and compliance; Japanese buyers care about detail and reassurance.
+          Paste a Chinese product description, select a few target markets, and AI writes a <b>'sounds like a local wrote it' listing</b> for each country:
+          a local-language title, the benefit angles that actually land with buyers there, real search keywords — plus a heads-up on <b>which certifications you need to clear and which localization traps to avoid</b> (units, sizing, decimal conventions, color taboos).
+          One product, natively listed in every market.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>One Chinese description → native listings for multiple markets</h3>
+          <div class="flow">
+            <span class="step">Paste product + select markets</span><span class="arr">→</span>
+            <span class="step">Shift to each country's buyer perspective</span><span class="arr">→</span>
+            <span class="step">Rewrite title / bullets in local language</span><span class="arr">→</span>
+            <span class="step">Compliance + localization pitfalls</span>
+          </div>
+          <ul>
+            <li>One card per market: <b>headline angle (explained in Chinese) + local-language title (with Chinese back-translation) + 3 local-language bullets + local-language keywords</b></li>
+            <li>Same product, <b>clearly different titles and angles for US / Germany / Japan</b> — reflects real cultural and platform differences, not Chinese-style direct translation</li>
+            <li>Each card includes <b>key compliance requirements for that category</b> (FCC / CE / PSE / LFGB…) and the single most common <b>localization pitfall</b> to avoid</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Powered by a live LLM with strict JSON enforced, results returned in the same order as selected markets, with front-end normalization fallback; non-physical-product inputs are politely rejected.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>SaaS subscription</b>: billed per SKU × number of markets — factories and sellers outsource their entire overseas copywriting to AI</li>
+            <li><b>List and earn on transaction</b>: generate listing then push directly to each platform for one-click listing, earning a cut of GMV</li>
+            <li><b>Upsells</b>: A/B multi-version title testing, keyword ad placement, compliance certification referrals</li>
+            <li><b>Data flywheel</b>: track which angles convert best in which markets → feed results back to the generator, making it smarter about each locale over time</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>Weglot / Smartling / Lokalise</b>: localization (not just translation) SaaS serving a large base of globally expanding companies, profitable at scale on subscriptions.</li>
+            <li><b>Shopify Markets (NASDAQ/NYSE:SHOP)</b>: built-in multi-market localization and Translate & Adapt, turning 'one store, sell everywhere' into a platform capability.</li>
+            <li><b>Helium 10 / Intentwise</b>: Amazon listing and keyword optimization tools, proving that 'listing optimization' is a sustained paid line item for sellers.</li>
+          </ul>
+          <ul>
+            <li><b>AI-era advantage</b>: before, you needed a native copywriting or localization team per market — costs so high that only large brands could afford it; AI drives marginal cost to near zero, <b>letting small and mid-size factories go global with premium-quality listings</b></li>
+            <li><b>Pain</b>: machine-translated listings are an instant tell, convert poorly, and risk takedowns or bad reviews for compliance failures or cultural missteps</li>
+            <li><b>Who</b>: Amazon / DTC / TikTok Shop sellers, foreign-trade factories looking to build a brand</li>
+            <li><b>Localization</b>: connecting platform-specific title rules, local keyword search volume, and compliance databases would enable production-grade one-click listing</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: local-language copy should still be spot-checked by a native speaker; compliance information must defer to official regulations in the destination country; public-facing links should route through a backend proxy to control costs and prevent abuse</li>
+          </ul>`
+      }
+    ]
+  },
+{
+    id: "sonar", no: "29", cat: "Foreign Trade",
+    kicker: "Foreign Trade · Inquiry Command",
+    title: "Trade Inquiry Commander",
+    subtitle: "Paste a buyer inquiry → AI scores intent + negotiation room + drafts a reply in the buyer's language + pricing strategy",
+    url: "demos/sonar/",
+    tags: ["Buyer quality score", "Fraud / scam detection", "Hidden-need insight", "Native-language reply draft", "AI connection required"],
+    phoneHint: "Paste the original inquiry (click an example to run instantly; best with AI connected)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>Trade reps are buried in inquiries every day — real importers, middlemen, tire-kickers, competitor price-fishing, and scammers all mixed together.
+          Paste the buyer's inquiry and the AI first gives an <b>intent score</b> and <b>buyer type</b>, lists positive signals and red flags,
+          surfaces what the buyer <b>hasn't said but cares most about</b> (lead time? certifications? payment terms?) and <b>negotiation room</b>,
+          then drafts a professional reply <b>in the buyer's language</b> and explains the pricing strategy and hooks behind it.
+          Gives every small factory a 'star salesperson' level first-round response.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>One inquiry → quality read → reply + strategy</h3>
+          <div class="flow">
+            <span class="step">Paste inquiry</span><span class="arr">→</span>
+            <span class="step">Score + risk signals</span><span class="arr">→</span>
+            <span class="step">Infer hidden needs</span><span class="arr">→</span>
+            <span class="step">Native reply + pricing strategy</span>
+          </div>
+          <ul>
+            <li><b>Intent score ring</b> + 5 buyer labels (genuine importer / middleman / tire-kicker / competitor price-fishing / suspected scam), consistent with signals</li>
+            <li>Risk signals <b>cite specific evidence</b>: e.g. 'asked for factory address but gave no company info,' 'payment urgency via WhatsApp only'</li>
+            <li>For scams / price-fishing, the reply strategy is <b>request credentials before quoting</b> — never lead with a full price list or factory address</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Powered by a live LLM with strict JSON enforcement and frontend fallback normalization; reply_draft uses the buyer's language and addresses the specific inquiry — not a generic template.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>SaaS subscription</b>: per-rep seat pricing, auto-triage of inquiries + one-click reply drafting</li>
+            <li><b>Conversion commission</b>: prioritize high-intent inquiries, take a cut once deals close</li>
+            <li><b>B2B integration</b>: plugin for Alibaba International / trade CRM / email clients, embedded in existing workflows</li>
+            <li><b>Data flywheel</b>: which inquiry types actually close → feeds back into the scoring model and reply playbook, gets sharper over time</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>Alibaba International (NYSE:BABA / 09988.HK)</b>: already ships an AI trade assistant that drafts outreach and replies for exporters — validates real demand for 'AI replacing the sales rep.'</li>
+            <li><b>OKKI / Fumao / Xunpanyun</b>: foreign-trade CRM/SCRM platforms that turned inquiry management and follow-up into a subscription business.</li>
+            <li><b>Apollo.io / Lusha / Clay</b>: B2B lead intelligence and scoring — prove that 'grading leads' is a scalable paid feature.</li>
+          </ul>
+          <ul>
+            <li><b>AI-era edge</b>: reading buyer quality, spotting price-fishing or scams, and writing multilingual replies used to require a seasoned bilingual rep; now AI does it <b>7×24 in any language</b>, putting that judgment in the hands of every small factory</li>
+            <li><b>Pain</b>: real buyers are hard to tell from noise, slow replies lose deals, junior reps easily leak floor prices to competitors</li>
+            <li><b>Who</b>: small and mid-size export factories, SOHOs, trade teams sourcing leads via Alibaba International or trade shows</li>
+            <li><b>Localization</b>: email / Alibaba inbox integration, business credit lookup, FX rates and price-book can all be built to production grade</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: buyer authenticity ultimately requires credit verification; replies should still be reviewed by a rep before sending; public deployment should use a backend proxy to protect the API key and control costs</li>
+          </ul>`
+      }
+    ]
+  },
+
+  {
+    id: "ping", no: "30", cat: "Study Abroad",
+    kicker: "Study Abroad · Status Compliance Navigation",
+    title: "PING — Student Status Compliance Navigator",
+    subtitle: "Describe your situation in one sentence → personalized compliance roadmap (with authoritative sources + consequences of missing deadlines) + 2026 policy risk radar + parent 'peace-of-mind card'",
+    url: "demos/ping/",
+    tags: ["Natural-language input", "State-machine roadmap", "Verifiable authoritative sources", "Exportable parent card", "AI connection required"],
+    phoneHint: "Click a sample profile or describe in one sentence (best with AI connected; falls back to built-in rule engine without it — never blank)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>Student visa compliance — F-1 enrolled → OPT application → OPT active → STEM extension → H-1B bridge —
+          is scattered across a maze of intimidating official pages where one missed step can cost you your status. PING is not a product; it is a <b>'delivery proof' demo</b>:
+          the student describes their situation in <b>one sentence</b> and instantly receives a <b>personalized roadmap</b> (each item linked to an authoritative source + 'consequence of missing it'),
+          a 2026 policy risk radar, and a one-tap <b>'peace-of-mind card'</b> for parents (green / yellow / red + one sentence + next checkpoint).
+          What it proves is not 'AI can answer immigration questions' — it is that the tool <b>takes the burden of judgment off the student</b>:
+          it consolidates scattered authoritative information into an actionable, verifiable picture.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>One sentence → locate status → actionable view</h3>
+          <div class="flow">
+            <span class="step">One sentence / select profile</span><span class="arr">→</span>
+            <span class="step">LLM locates compliance stage</span><span class="arr">→</span>
+            <span class="step">Roadmap + sources + consequences</span><span class="arr">→</span>
+            <span class="step">Policy radar</span><span class="arr">→</span>
+            <span class="step">Parent peace-of-mind card</span>
+          </div>
+          <ul>
+            <li>A <b>state-machine timeline</b> highlights your current stage; the '2–3 required actions' below each item include action + time window + <b>consequence of missing it</b> (calibrated red line) + <b>clickable official source</b> (uscis.gov / ICE SEVP / DHS)</li>
+            <li>Each radar item explains 'what this policy means for you + what you can do to hedge' — not just raw news</li>
+            <li>The parent card <b>shows status, not details</b> (student stays in control), exportable as an image with one tap</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Powered by a live LLM (claude-sonnet-4-6, strict JSON enforcement with frontend fallback); backed by an <b>explicitly labeled 'reference-only' rule set</b>
+            (OPT 90/60-day unemployment windows, 90/150-day caps, STEM +24 months + E-Verify + I-983, H-1B cap-gap, etc.).
+            <b>If the API is unavailable or not connected, the app falls back to this deterministic rule engine — it never goes blank.</b>
+            All output is information for reference only, not legal advice, and never claims to fill or submit government forms on the user's behalf; official sources (uscis.gov, ICE/SEVP) take precedence.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>'Peace-of-mind' subscription paid by parents</b>: the student uses it, the parent pays — they are buying certainty that their child's status is on track (insurance mindset)</li>
+            <li><b>Critical-milestone alerts</b>: auto-reminders before deadlines (OPT window / STEM filing / cap-gap) turn a one-time lookup into recurring renewals</li>
+            <li><b>Licensed attorney / ISSS referral</b>: complex cases escalate to 'consult a lawyer' with a referral fee; AI handles information consolidation only, never crosses into legal advice</li>
+            <li><b>B2B</b>: white-label compliance assistant for study-abroad agencies, university ISSS offices, and employer HR teams</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>Boundless / VisaNation / Lawfully</b>: digital immigration workflow and case-tracking tools — validate that 'productizing the scary immigration process' has real paying demand.</li>
+            <li><b>Sprintax / Glacier</b>: student tax-filing SaaS — prove that 'student compliance as a subscription via school/institution channels' scales.</li>
+            <li><b>Chegg (NYSE:CHGG) / major study-abroad agencies</b>: paid study-abroad services are mature; parents' willingness to pay for certainty around their child is very strong.</li>
+          </ul>
+          <ul>
+            <li><b>AI-era edge</b>: students used to piece together USCIS / ICE / school information themselves or pay lawyers by the hour; AI now <b>consolidates it into a personalized, sourced, actionable view</b> and removes the burden of judgment</li>
+            <li><b>Pain</b>: the status chain is complex, one misstep costs status, information is scattered and intimidating, parents back home just want to know 'is my kid OK'</li>
+            <li><b>Who</b>: STEM graduate students / Chinese international students newly on OPT (users) + their parents (payers)</li>
+            <li><b>Localization</b>: Chinese-primary with English terms preserved; shareable via WeChat; connectable to university ISSS offices and licensed attorney networks</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: immigration compliance is highly sensitive — output must be 'information for reference, not legal advice'; this tool never claims to fill or submit government forms; official sources always take precedence; rules and policies change frequently and require ongoing maintenance; complex cases must be referred to a human attorney; the built-in rule set in this demo is illustrative only</li>
+          </ul>`
+      }
+    ]
+  },
+
+  {
+    id: "concierge", no: "31", cat: "Short-stay", featured: true, direct: true,
+    kicker: "Short-stay Management · AI Guest Concierge",
+    title: "AI Guest Concierge",
+    subtitle: "Turn every offhand guest question into revenue and reviews — check live availability and upsell extended stays, triage maintenance requests, escalate exceptions to a human, multilingual 7×24",
+    url: "demos/concierge/",
+    tags: ["Stay extension upsell · payment", "Maintenance triage · dispatch", "Exception escalation to human", "Multilingual · 7×24"],
+    sections: []
+  },
+
+  {
+    id: "probe", no: "32", cat: "Foreign Trade",
+    kicker: "Foreign Trade · Inquiry Structuring",
+    title: "Inquiry Gap Probe",
+    subtitle: "Paste an English buyer inquiry → extract a '9-category gap checklist' + one 'factory RFQ brief'; price / spec / certifications — the things only you can decide — are left blank for your call, never guessed",
+    url: "demos/probe/",
+    tags: ["9-category gap audit", "Evidence cited per item", "Blanks reserved for your judgment", "Save judgments as your standard · compound", "One-tap factory RFQ", "AI connection required"],
+    phoneHint: "Paste the buyer inquiry (click an example to run; best with AI connected; offline sample renders without AI so it's never blank)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>If you work in foreign trade with both factory and buyer relationships, you receive English inquiries every day full of scattered, missing information. Probe breaks one inquiry into two screens:
+          ① <b>Gap checklist</b> — 9 categories (product specs / quantity & lead time / certifications & compliance / packaging & marks / logistics terms / price terms / warranty & after-sales / documents / communication), each item audited and marked 'confirmed / vague / not mentioned / your call,' with <b>source evidence</b> from the original text;
+          ② <b>Factory brief skeleton — blank edition</b> — known items filled in, <b>price, category-specific specs, certification numbers — anything only your experience can determine — left precisely blank</b>.
+          Its job is to <b>showcase your judgment and serve as your evidence</b>, never to fabricate a number that looks right but is actually a guess.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>One inquiry → gap audit → blank brief + factory RFQ</h3>
+          <div class="flow">
+            <span class="step">Paste inquiry</span><span class="arr">→</span>
+            <span class="step">9-category audit</span><span class="arr">→</span>
+            <span class="step">Flag evidence + leave blanks</span><span class="arr">→</span>
+            <span class="step">Save as your standard</span><span class="arr">→</span>
+            <span class="step">One-tap factory RFQ</span>
+          </div>
+          <ul>
+            <li>9 categories, 35 fields hard-coded in the frontend = <b>structural source of truth</b>; the model only returns information <b>literally present</b> in the text — anything absent is treated as missing, <b>never filled in</b></li>
+            <li><b>Red lines enforced at the code layer</b>: price / FOB / CIF / DDP are always blank — no numbers ever; no factory is named or recommended; category-specific specs and certifications list candidates only, with 'truly mandatory items for this category' marked 'your call'</li>
+            <li><b>Judgment capture → compound value</b>: blanks can be filled in; hit 'save as my standard' → next similar inquiry auto-pre-fills, gaps shrink over time. Your irreplaceable judgment becomes a compounding, portable asset</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Powered by a live LLM with strict JSON enforcement and frontend ontology-based fallback normalization; when AI is not connected, an offline sample renders on first load — never blank.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>SaaS subscription</b>: per-rep / per-buyer seat pricing, auto-structured inquiries + one-tap factory RFQ generation</li>
+            <li><b>Judgment asset accumulation</b>: every standard you save stays with you — the more you use it, the fewer gaps remain and the faster you respond; switching cost is the moat</li>
+            <li><b>B2B integration</b>: plugin for Alibaba International / trade CRM / email clients, embedded in existing order workflows</li>
+            <li><b>Data flywheel</b>: which blanks get filled most, which inquiry types close → feeds back into the audit checklist and RFQ templates</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>Alibaba International RFQ (NYSE:BABA / 09988.HK)</b>: buyers post RFQs, the platform structures and routes them to factories for quotes — validates real demand for 'turning an inquiry into a quotable brief.'</li>
+            <li><b>SAP Ariba (NYSE:SAP) / Coupa / Jaggaer</b>: procurement sourcing SaaS that turned RFQ / benchmarking / supplier management into a scaled subscription business.</li>
+            <li><b>Scoutbee / Tealbook / Keelvar</b>: AI sourcing and supplier intelligence — prove that 'AI-assisted judgment in procurement workflows' is a scalable paid category.</li>
+          </ul>
+          <ul>
+            <li><b>AI-era edge</b>: turning a messy inquiry into 'what's missing, what to ask the factory' used to require a veteran rep; now AI automates the checklist, but <b>critical judgment (pricing, spec selection, factory choice) stays with the human</b> — AI does structure, humans do judgment</li>
+            <li><b>Pain</b>: inquiries arrive full of holes, new reps forget to ask before factory visits causing expensive back-and-forth, veteran knowledge never gets written down and lives only in someone's head</li>
+            <li><b>Who</b>: foreign-trade SOHOs with factory and buyer networks / small factory sales reps / procurement middlemen</li>
+            <li><b>Localization</b>: email / Alibaba inbox integration, category spec libraries and certification databases, FX rates and price-book can all be built to production grade</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: Probe only does structuring and gap flagging — <b>it never sets a price or names a supplier for either party</b>; final specs, certifications, and pricing must be signed off by an experienced person; public deployment should use a backend proxy to protect the API key and control costs</li>
+          </ul>`
+      }
+    ]
+  },
+{
+    id: "anyhome-listing-card", no: "33", cat: "Student Housing", direct: true,
+    kicker: "Student Housing Agency · Listing Materials",
+    title: "Listing Card Generator",
+    subtitle: "Paste a StreetEasy listing in plain text, get a branded AnyHome bilingual (EN/ZH) recommendation card in 5 minutes — commute time, neighborhood highlights, and key lease terms all laid out, guarantor requirement prominently flagged, one-click export to send students.",
+    url: "demos/anyhome-listing-card/",
+    tags: ["Paste text → bilingual listing card", "Commute drafted on the spot · edit live", "Guarantor prominently flagged", "Missing info labeled 'TBD' — never fabricated", "One-click PNG export"],
+    sections: []
+  },
+  {
+    id: "anyhome-intake", no: "34", cat: "Student Housing", direct: true,
+    kicker: "Student Housing Agency · Lead Intake",
+    title: "Structured Needs Intake",
+    subtitle: "A self-guided 15-question flow with branching logic: no U.S. credit triggers an automatic follow-up on guarantor options; based abroad flags timezone-aware follow-up. On completion, it produces a clean lead card ready to hand off to your team.",
+    url: "demos/anyhome-intake/",
+    tags: ["15-question guided flow", "Branching follow-ups · clarifies automatically", "No credit → guarantor follow-up", "Abroad → timezone follow-up flagged", "Lead card one-click copy", "24/7 self-serve · no API key needed"],
+    sections: []
+  },
+  {
+    id: "anyhome-checklist", no: "35", cat: "Student Housing", direct: true,
+    kicker: "Student Housing Agency · Lease Documents",
+    title: "Signing Checklist Generator",
+    subtitle: "Generates a personalized, bilingual (EN/ZH) lease document checklist based on the student's profile — U.S. credit history, income, guarantor — with a 'why you need this' explanation for every item, so you stop repeating yourself on every call.",
+    url: "demos/anyhome-checklist/",
+    tags: ["Branching by profile", "Bilingual side-by-side", "Every item explained", "US guarantor / service / prepayment covered", "Note: landlord requirements take precedence"],
+    sections: []
+  },
+  {
+    id: "cardna", no: "36", cat: "Auto", featured: true,
+    kicker: "Car Buying · Taste Profile Engine",
+    title: "Car Buying DNA",
+    subtitle: "Swipe cars to capture gut feel, then answer questions to lock in reality — two signals fuse into your car-buying taste profile. Helps you pick the right car, and lets automakers see the anonymous 'in-market buyer' you represent.",
+    url: "demos/cardna/", tags: ["Swipe × survey dual signal","Aspiration vs. reality","Explainable matching","How automakers see you","Private by default · opt-in sharing","Fully offline"],
+    phoneHint: "Swipe left/right on cars first (at least 6), then answer 5 questions to see your Car Buying DNA + the 'How Automakers See You' panel.",
+    sections: [
+      { label: "What it is", html: `<p>A product that fuses the <b>left/right swipe</b> of 'automotive Tinder' with the <b>questionnaire</b> of quiz-based car recommendations. Swiping captures your <b>implicit taste</b> (what draws your eye); the quiz captures <b>explicit constraints + purchase intent</b> (budget / seats / powertrain / timeline / first-time buyer). Both signals merge into a <b>'Car Buying DNA'</b> profile — helping you choose a car while surfacing the gap between what you <b>aspire to</b> and what your <b>reality</b> actually allows.</p>` },
+      { label: "How it works", html: `<h3>Implicit × Explicit — two signals, cross-calibrated</h3>
+        <div class="flow"><span class="step">Swipe 6+ cards (❤/✕)</span><span class="arr">→</span><span class="step">Answer 5 questions (constraints + intent)</span><span class="arr">→</span><span class="step">Synthesize taste DNA</span><span class="arr">→</span><span class="step">Aspiration vs. reality</span><span class="arr">→</span><span class="step">Matched picks + how automakers see you</span></div>
+        <ul>
+          <li><b>Swipe (System 1)</b>: Adaptive card dealing — early cards cast a wide net to probe preferences; later cards zero in on the axes you're still undecided on. The live 'Reading You' panel on the right updates your profile with every swipe.</li>
+          <li><b>Quiz (System 2)</b>: Budget and seats are <b>hard constraints</b>; timeline and first-time buyer status are <b>intent tiers</b> (just browsing / within 6 months / must buy within 3 months).</li>
+          <li><b>Aspiration vs. Reality</b>: Average price of right-swiped cars vs. your budget tier (gap in dollars); 'says family car, hand keeps swiping performance'; size preferences that flip — the <b>contradictions</b> in the cross-signal data are the most valuable insight.</li>
+          <li><b>Matched Picks</b>: Implicit taste score + hard constraints on budget/seats + powertrain preference. Each pick gets a fit score, a traceable rationale, and an <b>honest caveat</b>, plus one budget-friendly dark-horse pick and 3 questions to ask a salesperson on your behalf.</li>
+        </ul>
+        <p style="margin-top:16px">Under the hood: right-swipe attributes are weighted cumulatively; left-swipes apply a reverse penalty. Going over budget or falling short on seats incurs a heavy penalty, forcing 'reality' into the ranking. Rationales cite the actual count of a specific attribute in your right-swipe history. All state is encoded in the URL — share the link and the full session is reproduced. <b>Zero external dependencies, fully offline</b>; connect your own key to upgrade to real model-generated copy.</p>` },
+      { label: "Business model", html: `<h3>Two-sided: free on consumer side, monetized B2B on high-intent audiences</h3>
+        <ul>
+          <li><b>Consumer side (free)</b>: An entertaining taste quiz + car recommendations + a decision brief — low barrier, pulls people in well before they're ready to buy.</li>
+          <li><b>B2B Layer 1 · Aggregate Insights</b>: Anonymous trend reports (e.g., 'first-time buyers in Tier-1 cities shifting from rugged to minimalist') sold to automakers for product and marketing positioning — truly aggregated, no personal data, infinitely resellable.</li>
+          <li><b>B2B Layer 2 · Informed-consent warm leads</b>: Only when a user explicitly opts in does the platform introduce them to a matched dealer or brand; a high-intent lead that arrives with a full taste profile commands a price far above a cold lead.</li>
+          <li><b>Never sell raw personal data</b>: Private by default, opt-in per item, revocable anytime — compliance is not a cost center, it's the reason automakers will sign the contract, and the moat.</li>
+          <li><b>Data flywheel</b>: Every swipe and quiz answer sharpens the profile; the longer users engage, the more accurate it gets — same structural moat as Stitch Fix.</li>
+        </ul>
+        <p style="margin-top:16px">The <b>'How Automakers See You' panel</b> in the demo makes this tangible: which anonymous audience segment you belong to, what that means for an automaker, how the platform would use it, and which data points you can toggle on or off — explaining the two-sided model and informed consent in a single view.</p>` },
+      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+        <ul>
+          <li><b>Model benchmark: Stitch Fix (NASDAQ: SFIX)</b>: Quiz + data to learn taste → personalized curation → data flywheel. Proof that 'understood and selected for' personalized retail can scale.</li>
+          <li><b>Lower-funnel benchmark: Autohome / Dongchedi / Yiche</b>: Users actively comparing specs and ready to leave contact info — lead prices are already high, and these platforms dominate the space.</li>
+        </ul>
+        <ul>
+          <li><b>Differentiation wedge = upper-funnel pre-intent</b>: People who aren't buying yet — 6–18 months out — are still forming their taste. Too early and too soft for the traditional lead business, so nobody monetizes them well. This product captures them a year early with an entertaining taste quiz; the profile matures as they approach purchase, delivering <b>warm leads that have been cultivated from the start, taste profile included</b>.</li>
+          <li><b>Value engine = intent tiering</b>: Automakers aren't buying '100,000 taste profiles' — they're buying 'the 8,000 of those who plan to buy within 3 months and whose profile matches our new model.' First-time buyers with high intent are especially valuable (no brand loyalty yet — whoever reaches them first wins).</li>
+          <li><b>Compliance as moat</b>: Under PIPL, selling personal data requires separate consent, and anonymization must be genuine. Private by default + aggregate insights + opt-in matching is both safer and more contractable than grey-market data.</li>
+          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: Car purchases are infrequent — keeping profiles 'alive' long enough to convert is the hardest product problem. Real vehicle inventory and pricing data is a hard dependency. Lead monetization depends on BD with automakers and dealers. Dollar figures in the demo are illustrative; the matching engine is a heuristic placeholder, not a real model.</li>
+        </ul>` }
+    ]
+  },
+
+  /* ───────────────────────── 37 deposit-letter (EN mirror) ───────────────────────── */
+  {
+    id: "deposit-letter", no: "37", cat: "Student Housing", featured: true,
+    kicker: "International Student Housing · Deposit Recovery",
+    title: "Get Your Deposit Back",
+    subtitle: "Your landlord is betting you won't pursue it after leaving the country. Pick your state, enter move-out date and deductions → statutory deadline check (overdue = 2×/3× leverage) + line-item disputes + a demand letter citing the statute, ready to mail, with a small-claims escalation path",
+    url: "demos/deposit-letter/",
+    tags: ["8-state deposit-law rulebook","Statutory deadline timeline","Overdue = leverage flips","Line-item disputes · live letter rewrite","English demand letter","Small-claims escalation","Fully offline"],
+    phoneHint: "Tap a built-in case to see the deadline verdict and letter; change any stance and the letter rewrites instantly (all local, never uploaded)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>The structural weakness of student renting is that <b>recourse drops to zero the day you fly home</b> — whatever the landlord deducts, you eat. His biggest leverage is betting you won't pursue it.
+          But every state's deposit law puts a hard clock on landlords: <b>miss the statutory deadline to refund or itemize, and many states trigger double or even treble damages</b> — the leverage flips instantly.
+          This tool does three things: ① computes your <b>statutory deadline timeline</b> for your state (most tenants never knew this line existed); ② puts the landlord's deduction list on a <b>line-item dispute desk</b> (normal wear and tear isn't deductible; undocumented charges get a demand for receipts);
+          ③ generates a <b>demand letter citing the statute, ready to mail</b>, plus a small-claims escalation path — including what to do if you've already left the country.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>State rulebook → deadline check → line-item disputes → letter + escalation</h3>
+          <div class="flow">
+            <span class="step">Pick state + facts</span><span class="arr">→</span>
+            <span class="step">Deadline check</span><span class="arr">→</span>
+            <span class="step">Dispute line items</span><span class="arr">→</span>
+            <span class="step">Demand letter</span><span class="arr">→</span>
+            <span class="step">Small-claims path</span>
+          </div>
+          <ul>
+            <li><b>Statutes anchor out hallucination</b>: statutory days, citations, damage multipliers, and small-claims limits for 8 states (PA/NY/MA/CA/IL/TX/WA/NJ) are <b>hard-coded in a front-end rulebook</b> — the AI never generates law; any AI output line containing "§" is dropped by code</li>
+            <li><b>The timeline is the verdict</b>: move-out → statutory deadline → today, with the overdue span in red — four scenarios (ignored past deadline / late list / still in window / list on time) each get their own strategy</li>
+            <li><b>Live dispute desk</b>: pick a stance per deduction (accept / normal wear / show me receipts) and <b>the letter rewrites on the spot</b>, disputed totals recomputed live</li>
+            <li><b>UPL red line</b>: positioned as a self-help document tool (the LegalZoom model) — applies public statute templates to your facts, never judges your case, clearly labeled not legal advice</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Deadline math, letter template, and escalation path are <b>fully local and offline</b>; connect an API key and the AI does exactly one thing: polish your Chinese factual notes into a formal English paragraph for the letter.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>Per-letter / subscription</b>: charge per letter (vs. $200–400 for an attorney, huge pricing room); subscription unlocks move-out timeline reminders, evidence vault, follow-up letters (LegalZoom / DoNotPay self-help playbook)</li>
+            <li><b>The only lever aimed at the root cause</b> — "leaving = forfeiting": other tools help you avoid traps; this one claws back money already taken. Willingness to pay is the most direct kind (real dollars vs. risk prevention)</li>
+            <li><b>Seasonal loop</b>: May–August graduation move-outs concentrate demand; chains with pre-signing and move-in evidence tools into a full-lifecycle product</li>
+            <li><b>Each new state is near-zero marginal cost</b>: the same engine extends to Canada / UK / Australia student markets</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>LegalZoom (NASDAQ:LZ) / Rocket Lawyer</b>: self-help legal documents prove that structured self-help — no case-by-case judgment — scales as a subscription business.</li>
+            <li><b>DoNotPay</b>: consumer-rights automation; security-deposit recovery is one of its classic scenarios — proof consumers pay to "get my money back".</li>
+            <li><b>Small-claims document-prep services</b>: a long-standing paid ecosystem in most states, validating the demand-letter step as a market of its own.</li>
+          </ul>
+          <ul>
+            <li><b>Structural pain</b>: recourse evaporates after departure; tenants don't know statutory deadlines exist; drafting a formal English demand letter feels out of reach — landlords count on all three</li>
+            <li><b>Audience</b>: hundreds of thousands of Chinese students in the US; deposits run $1,500–3,000 and wrongful deductions routinely run hundreds to over a thousand dollars</li>
+            <li><b>AI-era specific</b>: this used to require a lawyer or a well-connected senior classmate; a rulebook + template turns it into 2-minute self-service — <b>the law is fixed (rulebook), the facts are yours (form), AI only polishes prose</b></li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: the UPL boundary must hold — document tool, never legal judgment; the demo rulebook is a simplified summary and production needs per-state legal review with an update pipeline; cross-border enforcement of judgments remains a real-world hurdle</li>
+          </ul>`
+      }
+    ]
+  },
+
+  /* ───────────────────────── 40 price-pulse (EN mirror) ───────────────────────── */
+  {
+    id: "price-pulse", no: "40", cat: "Restaurant Supply",
+    kicker: "Chinese Restaurant Supply Chain · Price Memory",
+    title: "Quiet Price Creep, On the Table",
+    subtitle: "The data byproduct of Demos 04/05: three months of nightly delivery-slip photos grow into a 12-week price curve for every item — spikes, creep, and spend decomposition surface on their own, zero data entry. ⛔ Explicitly NOT a 'kickback detector': the data shows anomalies; judgment stays with the owner",
+    url: "demos/price-pulse/",
+    tags: ["Zero entry · slips accumulate","12-week curves + baseline band","Spike / creep / spend split","Creep is immune to human memory","Negotiation ammo · neutral scripts","⛔ No kickback detection","Fully offline"],
+    phoneHint: "Switch between two stores (busy / clean); tap item chips to change curves, tap findings to jump to them",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>The most insidious price increase isn't a spike — it's <b>creep</b>: a little each week, every week looks "normal," and twelve weeks later you're paying 10% more. <b>It's immune to human memory — that's the design.</b>
+          This panel is the <b>data byproduct</b> of Demos 04/05: the delivery slips an owner photographs every night grow, over three months, into a price curve for every item — <b>zero data entry</b>.
+          Three anomaly types surface on their own: <b>spikes</b> (this week vs. prior-4-week average +8%), <b>creep</b> (no single week over threshold, +10% cumulative over 12 weeks), and <b>spend decomposition</b> (spending rose — split it into quantity vs. price).
+          The ethical line is printed on the product's face: <b>no "kickback detection."</b> Data can show anomalies; it cannot prove motive — and a false accusation destroys your kitchen. Anomalies go on the table; judgment stays with the owner.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>Slip accumulation → price memory → three anomaly types → negotiation ammo</h3>
+          <div class="flow">
+            <span class="step">Nightly slip photos</span><span class="arr">→</span>
+            <span class="step">Auto price library</span><span class="arr">→</span>
+            <span class="step">Threshold checks</span><span class="arr">→</span>
+            <span class="step">Curves + findings</span><span class="arr">→</span>
+            <span class="step">Neutral scripts</span>
+          </div>
+          <ul>
+            <li><b>Public thresholds</b> (printed in the footer): spike = +8% vs. prior-4-week average; creep = +10% over 12 weeks with mostly-rising weeks and no single week over 8%; spend split = decompose a +20% spend change into quantity and price, presented neutrally</li>
+            <li><b>The curve is the evidence</b>: a 12-week line against a gray baseline band (first-8-week average ±8%) — a creeping item visibly climbs out of the band, showing at a glance why nightly checks can't catch it</li>
+            <li><b>Positive counterweight</b>: items trending down get a green "worth remembering" — this is not a witch-hunt panel; a supplier with price discipline deserves more volume</li>
+            <li><b>Motive-word red line in code</b>: even the AI-polished summary drops any output line containing kickback/steal/skim vocabulary; every suggested script is neutral ("is the market like this everywhere? help me take a look")</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Detection and summaries are fully local and deterministic, <b>offline-first</b>; with an API key the AI only polishes the summary prose — no new numbers, same vocabulary red line. V1 deliberately skips cross-restaurant benchmarking (needs multi-store data; saved for later).</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>Subscription value layer</b>: free unlock for Demo 04 (daily audit) + 05 (monthly recon) subscribers — a zero-marginal-cost byproduct that doubles as the most visual renewal argument</li>
+            <li><b>Stickiness is the moat</b>: price memory appreciates with tenure — a store one year in would be throwing away a year of its own price assets by switching</li>
+            <li><b>Negotiation ammo = self-quantifying ROI</b>: "talk anomalous items back to baseline ≈ $X/year saved" — the tool computes its own value</li>
+            <li><b>Network effects later (V2)</b>: anonymized multi-store aggregation enables regional price benchmarks — a different magnitude of product that V1 deliberately doesn't touch</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>MarginEdge</b>: its "price alerts / price movers" is exactly this — price monitoring as an invoice-data byproduct, and a renewal driver.</li>
+            <li><b>xtraCHEF (Toast)</b>: invoice line items auto-generate price trends, per-store monthly fees.</li>
+            <li><b>Datassential / NielsenIQ</b>: food price intelligence is a sellable data business in its own right — validating the V2 aggregation direction.</li>
+          </ul>
+          <ul>
+            <li><b>Why nobody serves Chinese restaurants yet</b>: the prerequisite is turning mixed handwritten slips into structured data — mainstream tools stall at OCR, which is precisely what Demos 04/05 already produce</li>
+            <li><b>Ethical calibration as differentiation</b>: "catch-the-insider" positioning destroys owner-kitchen trust and gets sabotaged by the kitchen — "purchasing transparency, judgment stays human" is both the ethical floor and the adoption prerequisite</li>
+            <li><b>Relation to the other two</b>: 04 catches tonight, 05 reconciles the month, 06 watches the quarter — three time scales over one purchasing trust chain; the bundle sells itself</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: value depends on 04/05 data accumulation — the panel is empty during cold start (first-month experience needs design); thresholds need tuning on real corpus (demo data here); spec confusion pollutes curves (04 is spec-aware, human review still backstops)</li>
+          </ul>`
+      }
+    ]
+  },
+
+  /* ───────────────────────── 39 statement-recon (EN mirror) ───────────────────────── */
+  {
+    id: "statement-recon", no: "39", cat: "Restaurant Supply",
+    kicker: "Chinese Restaurant Supply Chain · Monthly Reconciliation",
+    title: "Reconcile Before You Pay",
+    subtitle: "Put the month's pile of delivery slips and the distributor's statement on one desk: matched lines get checked off and fade, what's left is the problem — duplicate charges, billed-with-no-slip, amount mismatches, promised credits that never landed. It ends with one number: what you should pay, not what the statement asks",
+    url: "demos/statement-recon/",
+    tags: ["Slip pile × statement, line by line","Duplicates / no-slip charges / mismatches","Chases WeChat-promised credits","Three big numbers: asked/disputed/pay","Recon message · signals intent to pay","Fully offline"],
+    phoneHint: "Tap a built-in case to see the reconciliation; the wording is always \"let's verify then settle\" — relationship-preserving (all local, never uploaded)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>Month-end is <b>the only moment when money and paperwork face each other</b> in the Chinese restaurant supply chain — but checking slip by slip takes a whole evening, so most owners glance at the total and pay.
+          That's exactly where the discrepancies live: <b>the same invoice billed twice, charges with no slip in your pile, a $301 slip billed as $321, a credit promised on WeChat that never landed</b>.
+          This tool puts the slip pile and the statement on a reconciliation desk: <b>matched lines get checked off and fade; whatever's left is what you ask about</b>.
+          It ends with three big numbers — what the statement asks, how much is disputed, <b>what you should pay this month</b> — plus a "verify-then-settle" message ready to send.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>Document pile → line-by-line matching → dispute summary → pay amount + message</h3>
+          <div class="flow">
+            <span class="step">Paste pile + statement</span><span class="arr">→</span>
+            <span class="step">Match by invoice #</span><span class="arr">→</span>
+            <span class="step">Chase promised credits</span><span class="arr">→</span>
+            <span class="step">Pay amount</span><span class="arr">→</span>
+            <span class="step">Recon message</span>
+          </div>
+          <ul>
+            <li><b>Four dispute types + one keep-on-file</b>: duplicate billing (same invoice # twice) / billed with no slip (ask for the signed slip) / amount mismatch (the signed slip governs) / <b>promised credit not honored</b> (WeChat promises vs. the statement's credit lines — closing the loop with Demo 04: what the evening audit finds, the monthly recon chases) / not-yet-billed (month-end slips should appear next cycle)</li>
+            <li><b>The visual essence of reconciliation</b>: slip pile (receipt cards) on the left, statement (ledger rows) on the right — matches fade with a check, problem rows highlight, and missing credits get a dashed "a credit line belongs here" placeholder</li>
+            <li><b>Wording red line</b>: double-entry and forgotten credits are month-end routine, not evidence of wrongdoing — the message is always "let's verify then settle" plus explicit intent to pay (settle the clean amount now, top up after confirmation). Clear books, long relationships</li>
+            <li><b>Scope red line</b>: strictly purchasing-side; never revenue, never taxes</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Parsing and matching are a deterministic local engine, <b>fully playable offline</b>; connect an API key to parse any format with a real model (whole lines verified against the originals) — the matching math always runs locally. The real product is photo → OCR → <b>low-confidence fields to a human-review queue</b>; mixed handwritten slips are genuinely hard and full automation is not the promise.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>Bundled subscription with Demo 04</b>: daily audit + monthly reconciliation are two ends of the same trust chain — daily-frequency retention plus a monthly moment where real dollars surface</li>
+            <li><b>The hardest-money step</b>: reconciliation gaps typically run hundreds to over a thousand dollars a month — "you should pay $4,800, not $5,575" is the pricing pitch in one sentence</li>
+            <li><b>Structural transplant</b>: yzh's short-stay Invoice-OCR + human-review + ledger layer moves over directly — the fiduciary-middle-layer motif of explainable reconciliation holds across industries</li>
+            <li><b>The dispute summary is a negotiation tool</b>: owners bring the recon record to the month-end settle-up — the deeper the ritual embeds, the higher the switching cost</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>MarginEdge / xtraCHEF (acquired by Toast)</b>: invoice digitization + reconciliation is their core paid module, per-store monthly fees.</li>
+            <li><b>Bill.com (NYSE:BILL) / Ramp</b>: SMB accounts-payable automation — "reconcile before paying" is a proven big business.</li>
+            <li><b>AppZen / Stampli</b>: AI invoice auditing, mature B2B willingness to pay.</li>
+          </ul>
+          <ul>
+            <li><b>The monthly ledger of a three-way split</b>: chef orders, prep cook receives, owner pays — the monthly statement is where a month of that separation accumulates, and the only moment discrepancies can surface</li>
+            <li><b>Doubly-ignored niche</b>: mainstream AP tools can't read mixed handwritten Chinese slips and don't understand "the credit promised on WeChat" — which is daily reality in this supply chain</li>
+            <li><b>Loop with Demo 04</b>: evening audit finds the unordered $22 onions → the rep promises a credit on WeChat → month-end recon chases whether it landed — one discrepancy, fully tracked from discovery to closure</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: handwritten-slip OCR is hard (human-review queue has a cost model to get right); credit promises scatter across voice notes and hallway talk, coverage is bounded; this demo starts from recognized text with demo amounts</li>
+          </ul>`
+      }
+    ]
+  },
+
+  /* ───────────────────────── 38 order-check (EN mirror) ───────────────────────── */
+  {
+    id: "order-check", no: "38", cat: "Restaurant Supply", featured: true,
+    kicker: "Chinese Restaurant Supply Chain · Evening Audit",
+    title: "Three Minutes a Night, Check the Slip",
+    subtitle: "Chinese-restaurant purchasing runs on WeChat voice notes and handwritten delivery slips: the chef orders, the prep cook receives, the owner pays — with zero reconciliation in between. Paste last night's order chat and today's slip: items nobody ordered, 3 ordered but 2 delivered, prices that quietly crept up — all flagged, with tomorrow's reconciliation message to your rep generated in one click",
+    url: "demos/order-check/",
+    tags: ["WeChat orders × delivery slip","Zero behavior change · after-hours audit","Unordered / short-shipped / price spikes","4-week price memory","Spec-ambiguity nudges (shrimp size)","One-click recon message","Fully offline"],
+    phoneHint: "Tap a built-in case to see the audit; the generated wording is always \"was this loaded on the wrong truck?\" — never an accusation (all local, never uploaded)",
+    sections: [
+      {
+        label: "What it is",
+        html: `<p>Tens of thousands of US Chinese restaurants purchase over WeChat voice notes + handwritten delivery slips + paper monthly statements. Mainstream restaurant SaaS doesn't speak Chinese, doesn't understand WeChat ordering, can't read the slips.
+          The killer structure is <b>order-receive-pay split across three people</b>: the chef orders at night, the prep cook signs at 7am, the owner pays at month-end — with <b>no reconciliation step anywhere</b>. The discrepancies live in that gap.
+          The key design constraint is <b>zero behavior change</b>: never ask anyone to weigh and check at receiving (changing the 7am routine = product death).
+          Instead, after closing, put the WeChat order log and the delivery slip side by side for a <b>three-minute after-hours audit</b>: items nobody ordered, 3 cases ordered but 2 billed, oil up 10% quietly, shrimp ordered without a size — each flagged, with tomorrow morning's message to the sales rep generated in one click.</p>`
+      },
+      {
+        label: "How it works",
+        html: `<h3>Order corpus → slip line items → deterministic diff → recon message</h3>
+          <div class="flow">
+            <span class="step">Paste chat + slip</span><span class="arr">→</span>
+            <span class="step">Extract order items</span><span class="arr">→</span>
+            <span class="step">Line-by-line diff</span><span class="arr">→</span>
+            <span class="step">Price-memory check</span><span class="arr">→</span>
+            <span class="step">Morning message</span>
+          </div>
+          <ul>
+            <li><b>Five outcomes</b>: unordered items billed (red · costs money) / wrong spec shipped (red) / order-delivery mismatch (amber · affects tomorrow's menu) / price anomaly (violet · vs. 4-week price memory, with sparkline) / ordering-habit nudge (shrimp ordered without 16/20 vs 21/25 — a gap that leaks every time)</li>
+            <li><b>Collation desk</b>: WeChat bubbles (voice-note-transcript styling) on the left, a yellow-carbon-paper delivery slip on the right, numbered pins jumping both ways — every finding quotes the originals</li>
+            <li><b>Wording red line</b>: a discrepancy is not an accusation. The generated message always reads "wrong truck? typo on the slip?" — face-saving, account-clearing, and never a kickback insinuation. Judgment stays with the owner</li>
+            <li><b>Scope red line</b>: strictly purchasing-side. Never touches revenue, never touches taxes — that's both the compliance boundary and the reason owners dare to use it</li>
+          </ul>
+          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
+            Parsing is a local dictionary engine (high-frequency Chinese-restaurant SKUs + Chinese numerals + spec regex); the diff is deterministic math, <b>fully playable offline</b>. Connect an API key to parse any format with a real model (extractions verified against the originals) — <b>the number comparison always runs locally</b>. The real product is photo → OCR → low-confidence fields to human review.</p>`
+      },
+      {
+        label: "Business model",
+        html: `<ul>
+            <li><b>Subscription (repeat-use)</b>: per store per month — the first time this horizontal diff engine lands on a <b>daily-frequency need</b>: daily ordering + monthly reconciliation + a going-concern buyer, a far better frequency structure than low-frequency consumer plays</li>
+            <li><b>Willingness-to-pay checkpoint</b>: reconciliation gaps typically run hundreds to over a thousand dollars a month in real money — the tool pays for itself in one evening</li>
+            <li><b>Data byproduct</b>: audits accumulate per-supplier per-item price curves → "purchase price monitoring" (series Demo 06) grows out naturally, no extra data entry</li>
+            <li><b>Channel hypothesis</b>: distributor sales reps physically walk through dozens of restaurants daily — "my invoices survive an audit" is a sales weapon for honest distributors; a channel-led distribution path exists</li>
+          </ul>`
+      },
+      {
+        label: "Market",
+        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
+          <ul>
+            <li><b>MarginEdge / xtraCHEF (acquired by Toast)</b>: US restaurant invoice digitization and cost management SaaS, per-store monthly fees — proof that "turning paper slips into checkable data" is a mature paid category.</li>
+            <li><b>Toast (NYSE:TOST)</b>: the restaurant vertical-SaaS giant, validating per-store subscription + add-on modules at scale.</li>
+            <li><b>Meicai / Shuhai / KuaiLv (China)</b>: capital-heavy supply-chain grinders — this product deliberately stays out of transactions and owns only the reconciliation layer.</li>
+          </ul>
+          <ul>
+            <li><b>Doubly-ignored niche</b>: mainstream SaaS skips Chinese/WeChat/handwriting; Chinese domestic players can't come over — tens of thousands of US Chinese restaurants and hundreds of regional Chinese distributors run inside this crack</li>
+            <li><b>Same engine, third time</b>: extract commitments from unstructured chat → diff against a formal document → discrepancy list (after trade inquiries and student housing) — and the first time it carries a repeat-purchase business model</li>
+            <li><b>Local entry points</b>: regional distributor sales reps, the Greater Philadelphia Chinese restaurant association — walkable validation</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: mixed Chinese-English handwritten slip OCR is genuinely hard (mitigation: low-confidence fields go to human review, no full-automation promise); spec ambiguity (shrimp size standards) needs real corpus polishing; this demo starts from recognized text and the price memory is demo data</li>
+          </ul>`
+      }
+    ]
+  },
+];
+
+/* 据当前语言切换数据源（window.LANG 由 assets/i18n.js 在 <head> 里提前设好） */
+if (window.LANG === 'en' && window.SITE_EN && window.PROJECTS_EN) {
+  window.SITE = window.SITE_EN;
+  window.PROJECTS = window.PROJECTS_EN;
+}

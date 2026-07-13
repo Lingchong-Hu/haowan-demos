@@ -4,45 +4,51 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
 <meta name="theme-color" content="#f7f3ee" />
-<title>全部 Demo · 好玩的东西</title>
+<title data-i18n="title.demos">全部 Demo · 好玩的东西</title>
 <meta name="description" content="全部可亲手体验的 AI 产品交互原型，按行业筛选。" />
 <link rel="stylesheet" href="assets/style.css" />
+<script src="assets/i18n.js"></script>
 <script>document.documentElement.classList.add('nav-ready')</script>
 <script defer src="assets/site.js"></script>
 <script defer src="assets/likes.js"></script>
+<script defer src="assets/feedback.js"></script>
 </head>
 <body>
 
 <nav class="nav">
   <div class="wrap">
-    <a class="brand" href="index.html">好玩的东西</a>
+    <a class="brand" href="index.html" data-i18n="nav.brand">好玩的东西</a>
     <div class="nav-links">
-      <a href="index.html#projects">精选</a>
-      <a href="demos.html">全部 Demo</a>
-      <a href="index.html#thoughts">思考</a>
-      <a href="index.html#about">关于</a>
-      <a href="index.html#contact">联系</a>
+      <a href="index.html#projects" data-i18n="nav.featured">精选</a>
+      <a href="demos.html" data-i18n="nav.allDemos">全部 Demo</a>
+      <a href="index.html#thoughts" data-i18n="nav.thoughts">思考</a>
+      <a href="index.html#about" data-i18n="nav.about">关于</a>
+      <a href="index.html#contact" data-i18n="nav.contact">联系</a>
+      <span class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en">EN</button>
+        <button type="button" data-lang-btn="zh">中文</button>
+      </span>
     </div>
   </div>
 </nav>
 
 <header class="hero wrap" style="padding-bottom:18px">
-  <div class="kicker">全部 Demo · 可亲手体验</div>
-  <h1>全部 Demo</h1>
+  <div class="kicker" data-i18n="demos.kicker">全部 Demo · 可亲手体验</div>
+  <h1 data-i18n="demos.h1">全部 Demo</h1>
   <p class="lede" id="lede"></p>
 </header>
 
 <section class="wrap" style="padding-top:0">
   <div class="filter-bar" id="filter"></div>
   <div class="grid" id="grid"></div>
-  <p class="note" id="empty" style="display:none;text-align:center;margin-top:30px">这个分类下暂时没有 Demo。</p>
+  <p class="note" id="empty" style="display:none;text-align:center;margin-top:30px" data-i18n="demos.empty">这个分类下暂时没有 Demo。</p>
 </section>
 
 <footer>
   <div class="wrap">
-    <p><a href="index.html">← 回到首页</a></p>
+    <p><a href="index.html" data-i18n="demos.back">← 回到首页</a></p>
     <hr class="hair" style="margin:24px auto;max-width:200px">
-    <p class="disc">说明：项目均为可点击产品原型（Demo），用于演示与可行性探讨，非生产系统——
+    <p class="disc" data-i18n="disc.full">说明：项目均为可点击产品原型（Demo），用于演示与可行性探讨，非生产系统——
        无真实后端、支付、物流与 AI 模型，数据为演示用途。</p>
   </div>
 </footer>
@@ -52,7 +58,9 @@
   const P = (window.PROJECTS || []);
   const $ = id => document.getElementById(id);
 
-  $("lede").textContent = `${P.length} 个可点开就玩的 AI 产品交互原型，按行业筛选。每个都附程序逻辑、商业模式与市场分析，方便判断现实可行性。`;
+  $("lede").textContent = window.LANG === 'en'
+    ? `${P.length} clickable AI product prototypes, filterable by industry. Each ships with its logic, business model, and an honest market read — so you can judge real-world feasibility.`
+    : `${P.length} 个可点开就玩的 AI 产品交互原型，按行业筛选。每个都附程序逻辑、商业模式与市场分析，方便判断现实可行性。`;
 
   // 行业 chip（保持 cat 首次出现顺序，带计数）
   const cats = [];
@@ -61,7 +69,7 @@
   const chip = (label, val, n) =>
     `<button class="chip${val === 'all' ? ' active' : ''}" data-cat="${val}">${label}<span class="chip-n">${n}</span></button>`;
   $("filter").innerHTML =
-    chip("全部", "all", P.length) + cats.map(c => chip(c, c, count(c))).join("");
+    chip(window.t('demos.filterAll'), "all", P.length) + cats.map(c => chip(c, c, count(c))).join("");
 
   // 卡片（结构与首页一致，加 data-cat 供筛选）
   $("grid").innerHTML = P.map(p => {
@@ -70,7 +78,7 @@
       return `<div class="card soon" data-cat="${p.cat || ''}" data-slug="${p.id}">
         <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
         <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
-        <div class="tags">${tags}</div><div class="go">即将上线</div></div>`;
+        <div class="tags">${tags}</div><div class="go">${window.t('card.soon')}</div></div>`;
     }
     const href = p.direct ? p.url : `project.html?id=${p.id}`;
     const ext = p.direct ? ' target="_blank" rel="noopener"' : '';
@@ -78,7 +86,7 @@
       <div class="no">${p.no}</div><div class="ck">${p.kicker}</div>
       <h3>${p.title}</h3><div class="sub">${p.subtitle}</div>
       <div class="tags">${tags}</div>
-      <div class="go">${p.direct ? '亲手体验 ↗' : '查看 · 亲手体验 →'}</div></a>`;
+      <div class="go">${p.direct ? window.t('card.try') : window.t('card.view')}</div></a>`;
   }).join("");
 
   // 筛选
