@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>把押金追回来 · 押金异议函生成器</title>
+<style>
+/* ════════════════════════════════════════════════════════════════
+   押金异议函生成器 (deposit-letter) — 自包含，无构建，无外部依赖。
+   气质：法务信纸的克制 + 账本绿（追回的钱）× 印章红（超期的事实）。
+   红线在代码里强制：法条与时间线全部来自写死的州规则库，AI 绝不生成
+   法条（含 § 的 AI 输出行直接丢弃）；self-help 文书定位，非法律建议。
+   ════════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#1c2530; --ink-2:#4a5564; --ink-3:#8b94a3; --ink-4:#b2b9c4;
+  --paper:#f6f4ef; --surface:#fffefb; --surface-2:#faf8f3;
+  --line:#e6e1d8; --line-2:#efebe2;
+  --acc:#1f6a52; --acc-soft:#e6f1ec;        /* 账本绿 */
+  --seal:#b3402e; --seal-soft:#f9e9e5;      /* 印章红（超期） */
+  --amber:#b9842a; --amber-soft:#f7eed9;
+  --r:14px; --r-s:9px;
+  --sh-1:0 1px 2px rgba(28,37,48,.05), 0 3px 12px rgba(28,37,48,.05);
+  --sh-2:0 12px 40px rgba(28,37,48,.10);
+  --maxw:880px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei","PingFang SC","Hiragino Sans GB",system-ui,sans-serif;
+  --serif:Georgia,"Songti SC","STSong","Noto Serif SC","Times New Roman",serif;
+  --mono:"SFMono-Regular",ui-monospace,"Cascadia Code","Consolas","Menlo",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--sans); color:var(--ink); background:var(--paper);
+  -webkit-font-smoothing:antialiased; line-height:1.6; font-size:16px}
+::selection{background:var(--acc-soft)}
+
+.bar{position:sticky; top:0; z-index:40; backdrop-filter:saturate(1.3) blur(10px);
+  background:rgba(246,244,239,.86); border-bottom:1px solid var(--line)}
+.bar .in{max-width:var(--maxw); margin:0 auto; padding:11px 22px; display:flex; align-items:center; gap:12px}
+.mark{display:flex; align-items:center; gap:9px; font-weight:650; font-size:15px; letter-spacing:-.2px}
+.mark .glyph{width:22px; height:22px; flex:none; display:grid; place-items:center;
+  border:1.5px solid var(--acc); border-radius:6px; color:var(--acc); font-size:12px; font-weight:800}
+.bar .spacer{flex:1}
+.bar .firm{font-size:11.5px; color:var(--ink-3); letter-spacing:.02em; white-space:nowrap}
+
+.wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px 90px}
+
+.hero{padding:40px 0 4px}
+.hero .eyebrow{font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+  color:var(--acc); margin-bottom:12px}
+.hero h1{font-size:clamp(25px,4.4vw,35px); font-weight:740; letter-spacing:-.7px; line-height:1.16; margin:0}
+.hero h1 .em{color:var(--seal)}
+.hero .lede{color:var(--ink-2); font-size:16px; margin:14px 0 0; max-width:700px; line-height:1.62}
+.hero .lede b{font-weight:650}
+
+.aibar{display:flex; align-items:center; gap:9px; flex-wrap:wrap; margin:20px 0 0; font-size:13px}
+.aidot{width:8px; height:8px; border-radius:50%; background:var(--ink-4); flex:none}
+.aidot.on{background:var(--acc)}
+.aitxt{color:var(--ink-2)}
+.ailink{border:none; background:none; color:var(--acc); font-weight:650; cursor:pointer; font-size:13px;
+  text-decoration:underline; text-underline-offset:2px; padding:0; font-family:inherit}
+.aipanel{flex-basis:100%; border:1px dashed var(--line); background:var(--surface-2); border-radius:var(--r-s);
+  padding:14px 15px; margin-top:8px}
+.aipanel p{margin:0 0 11px; font-size:12.5px; color:var(--ink-3); line-height:1.65}
+.aipanel .row{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.keyin{flex:1; min-width:220px; border:1px solid var(--line); border-radius:8px; padding:9px 12px;
+  font-size:13px; font-family:var(--mono); background:var(--surface)}
+.keyin:focus{outline:none; border-color:var(--acc)}
+.btn-s{border:1px solid var(--line); background:var(--surface); color:var(--ink-2); border-radius:8px;
+  padding:8px 14px; font-size:13px; cursor:pointer; font-family:inherit; font-weight:600}
+.btn-s:hover{border-color:var(--acc); color:var(--acc)}
+.btn-p{border:none; background:var(--acc); color:#fff; border-radius:9px; padding:9px 16px; font-size:13.5px;
+  font-weight:650; cursor:pointer; font-family:inherit}
+.btn-p:hover{background:#175642}
+
+/* ── 表单 ── */
+.form{margin-top:22px; border:1px solid var(--line); border-radius:var(--r); background:var(--surface);
+  box-shadow:var(--sh-1); padding:18px 20px}
+.frow{display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px}
+.fitem-f{display:flex; flex-direction:column; gap:6px}
+.fitem-f label{font-size:12.5px; font-weight:650; color:var(--ink-2)}
+.fitem-f label .opt{font-weight:400; color:var(--ink-4)}
+.fin{border:1px solid var(--line); border-radius:9px; padding:9px 12px; font-size:14px;
+  font-family:inherit; background:var(--surface); color:var(--ink); width:100%}
+.fin:focus{outline:none; border-color:var(--acc); box-shadow:0 0 0 3px var(--acc-soft)}
+select.fin{cursor:pointer}
+.statute-chip{margin-top:12px; font-size:12.5px; color:var(--ink-2); background:var(--acc-soft);
+  border:1px solid #cde3d9; border-radius:9px; padding:9px 13px; line-height:1.6}
+.statute-chip b{color:var(--acc)}
+.statute-chip .cite{font-family:var(--mono); font-size:11.5px}
+
+.subhead{font-size:13px; font-weight:700; color:var(--ink-2); margin:18px 0 8px; display:flex; align-items:center; gap:10px}
+.pillrow{display:flex; gap:8px; flex-wrap:wrap}
+.pill{border:1px solid var(--line); background:var(--surface); color:var(--ink-2); border-radius:999px;
+  padding:6px 14px; font-size:13px; cursor:pointer; font-family:inherit; font-weight:600; transition:.13s}
+.pill.on{border-color:var(--acc); color:var(--acc); background:var(--acc-soft)}
+.dedrow{display:grid; grid-template-columns:130px 1fr 110px 34px; gap:8px; margin-top:8px; align-items:center}
+.dedrow .del{border:none; background:none; color:var(--ink-4); cursor:pointer; font-size:15px; padding:4px}
+.dedrow .del:hover{color:var(--seal)}
+.addded{margin-top:10px; border:1px dashed var(--line); background:none; color:var(--ink-3); border-radius:9px;
+  padding:8px 14px; font-size:13px; cursor:pointer; font-family:inherit}
+.addded:hover{border-color:var(--acc); color:var(--acc)}
+.ckgrid{display:grid; grid-template-columns:1fr 1fr; gap:6px 16px}
+.ckrow{display:flex; gap:9px; align-items:center; cursor:pointer; padding:4px 0; font-size:13.5px}
+.ckbox{width:17px; height:17px; border:1.5px solid var(--ink-4); border-radius:5px; flex:none;
+  display:grid; place-items:center; font-size:11px; color:#fff; transition:.13s}
+.ckrow.on .ckbox{background:var(--acc); border-color:var(--acc)}
+
+.egrow{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px; align-items:center}
+.egrow .hint{font-size:12.5px; color:var(--ink-3); margin-right:2px}
+.eg{border:1px solid var(--line); background:var(--surface); color:var(--ink-2); border-radius:999px;
+  padding:6px 13px; font-size:13px; cursor:pointer; font-family:inherit; transition:.13s}
+.eg:hover{border-color:var(--acc); color:var(--ink); transform:translateY(-1px)}
+.go{margin-top:16px; width:100%; appearance:none; border:none; border-radius:12px; cursor:pointer;
+  background:var(--ink); color:#fff; font-size:16px; font-weight:600; padding:15px; font-family:inherit;
+  transition:.15s}
+.go:hover{background:#0f1620}
+.go:active{transform:translateY(1px)}
+
+/* ── 结果 ── */
+.results{margin-top:28px; animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+@keyframes rise{from{opacity:0; transform:translateY(12px)}to{opacity:1; transform:none}}
+.sec-eyebrow{font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-3);
+  margin:30px 0 4px}
+.sec-h{font-size:21px; font-weight:730; letter-spacing:-.4px; margin:4px 0 2px}
+.sec-sub{font-size:13.5px; color:var(--ink-3); margin:4px 0 0; line-height:1.55; max-width:660px}
+
+.verdict{border-radius:var(--r); border:1px solid var(--line); background:var(--surface);
+  box-shadow:var(--sh-1); overflow:hidden; margin-top:16px}
+.verdict .band{height:5px}
+.verdict .vbody{padding:18px 20px 16px}
+.verdict .vt{font-size:20px; font-weight:730; letter-spacing:-.3px; line-height:1.35}
+.verdict .vs{font-size:13.5px; color:var(--ink-2); margin-top:6px; line-height:1.62; max-width:720px}
+.verdict .vs .cite{font-family:var(--mono); font-size:12px; background:var(--surface-2);
+  border:1px solid var(--line-2); border-radius:5px; padding:1px 6px; white-space:nowrap}
+.v-red .band{background:var(--seal)} .v-red .vt{color:var(--seal)}
+.v-amber .band{background:var(--amber)} .v-amber .vt{color:#8f6414}
+.v-green .band{background:var(--acc)} .v-green .vt{color:var(--acc)}
+
+/* 时间线 */
+.tl{padding:30px 20px 44px; border-top:1px solid var(--line-2)}
+.tl-track{position:relative; height:6px; background:var(--line-2); border-radius:999px}
+.tl-seg{position:absolute; top:0; height:6px; border-radius:999px}
+.tl-seg.red{background:var(--seal)}
+.tl-seg.green{background:var(--acc); opacity:.55}
+.tl-seg.window{background:#cde3d9}
+.tl-node{position:absolute; top:50%; transform:translate(-50%,-50%)}
+.tl-node .dot{display:block; width:13px; height:13px; border-radius:50%; background:var(--surface);
+  border:3px solid var(--ink-2)}
+.tl-node.n-move .dot{border-color:var(--ink)}
+.tl-node.n-dead .dot{border-color:var(--seal); border-radius:3px}
+.tl-node.n-today .dot{border-color:var(--acc); background:var(--acc); box-shadow:0 0 0 4px var(--acc-soft)}
+.tl-node.n-recv .dot{border-color:var(--amber)}
+.tl-lbl{position:absolute; left:50%; transform:translateX(-50%); white-space:nowrap; text-align:center; line-height:1.35}
+.tl-lbl .t{font-size:12.5px; font-weight:700}
+.tl-lbl .d{font-size:11px; color:var(--ink-3); font-family:var(--mono)}
+.tl-lbl.up{bottom:16px} .tl-lbl.down{top:16px}
+.tl-badge{position:absolute; transform:translateX(-50%); top:-34px; font-size:11.5px; font-weight:700;
+  background:var(--seal); color:#fff; border-radius:999px; padding:2px 10px; white-space:nowrap}
+.tl-badge.ok{background:var(--acc)}
+
+/* 异议台 */
+.card{margin-top:16px; border:1px solid var(--line); border-radius:var(--r); background:var(--surface);
+  box-shadow:var(--sh-1); overflow:hidden}
+.card .chd{padding:14px 18px 12px; border-bottom:1px solid var(--line-2); display:flex; align-items:baseline; gap:10px; flex-wrap:wrap}
+.card .chd .t{font-size:16px; font-weight:720}
+.card .chd .s{font-size:12.5px; color:var(--ink-3)}
+.card .cbody{padding:14px 18px 16px}
+.drow{display:flex; gap:12px; align-items:flex-start; padding:12px 0; border-top:1px solid var(--line-2); flex-wrap:wrap}
+.drow:first-child{border-top:none}
+.drow .amt{font-family:var(--mono); font-weight:700; font-size:15px; width:76px; flex:none; padding-top:3px}
+.drow .meta{flex:1; min-width:180px}
+.drow .dt{font-size:14.5px; font-weight:620}
+.drow .dnote{font-size:12.5px; color:var(--ink-3); margin-top:2px; line-height:1.5}
+.drow .stances{display:flex; gap:6px; flex-wrap:wrap; flex:none; padding-top:2px}
+.stance{border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:4px 11px;
+  font-size:12px; font-weight:650; cursor:pointer; font-family:inherit; color:var(--ink-3); transition:.12s}
+.stance.on-accept{border-color:var(--ink-3); color:var(--ink-2); background:var(--surface-2)}
+.stance.on-wear{border-color:var(--acc); color:var(--acc); background:var(--acc-soft)}
+.stance.on-noevi{border-color:var(--amber); color:#8f6414; background:var(--amber-soft)}
+.dsum{display:flex; gap:14px; padding:13px 18px; background:var(--surface-2); border-top:1px solid var(--line-2);
+  flex-wrap:wrap; align-items:baseline}
+.dsum .k{font-size:12px; color:var(--ink-3)}
+.dsum .v{font-family:var(--mono); font-weight:750; font-size:19px}
+.dsum .v.dispute{color:var(--seal)}
+.dsum .v.demand{color:var(--acc)}
+
+/* 筹码 */
+.lev{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:14px}
+.levcard{border:1px solid var(--line); border-radius:var(--r); background:var(--surface); padding:13px 16px; box-shadow:var(--sh-1)}
+.levcard .lk{font-size:11px; font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)}
+.levcard .lv{font-size:13.5px; margin-top:5px; line-height:1.6; color:var(--ink-2)}
+.levcard .lv b{color:var(--ink)}
+.levcard.hot{border-color:#e3c0b8; background:#fdf7f5}
+.levcard.hot .lk{color:var(--seal)}
+
+/* 信纸 */
+.letterwrap{margin-top:16px; border:1px solid var(--line); border-radius:var(--r); box-shadow:var(--sh-2);
+  background:#fff; overflow:hidden}
+.letterhead{padding:10px 26px; border-bottom:1px solid var(--line-2); background:var(--surface-2);
+  display:flex; align-items:center; gap:10px; font-size:12px; color:var(--ink-3)}
+.letterhead .dotr{width:9px;height:9px;border-radius:50%;background:var(--seal);opacity:.7}
+.letter{padding:30px 34px 34px; font-family:var(--serif); font-size:13.8px; line-height:1.75; color:#20293a;
+  white-space:pre-wrap; word-break:break-word}
+.letter .hl-cite{background:var(--acc-soft); border-radius:3px; padding:0 3px}
+.arow{display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; align-items:center}
+.ainote{width:100%; margin-top:10px}
+.ainote textarea{width:100%; min-height:64px; border:1px dashed var(--line); border-radius:9px; padding:10px 13px;
+  font-size:13px; font-family:inherit; background:var(--surface-2); resize:vertical}
+.ainote textarea:focus{outline:none; border-color:var(--acc)}
+.ainote .tip{font-size:12px; color:var(--ink-4); margin-top:4px}
+
+/* 升级路径 */
+.steps{margin-top:14px; display:grid; gap:0; position:relative}
+.step{display:flex; gap:14px; padding:13px 0}
+.step .no{width:30px; height:30px; border-radius:50%; flex:none; display:grid; place-items:center;
+  background:var(--acc-soft); color:var(--acc); font-weight:800; font-size:13px; position:relative; z-index:1}
+.step:not(:last-child) .no::after{content:''; position:absolute; top:30px; left:50%; width:2px; height:calc(100% - 4px);
+  background:var(--line); z-index:0}
+.step .st{font-size:14.5px; font-weight:680}
+.step .st .when{font-size:12px; color:var(--ink-3); font-weight:600; margin-left:8px}
+.step .sd{font-size:13px; color:var(--ink-2); margin-top:3px; line-height:1.6}
+
+/* ROI */
+.roi{display:grid; grid-template-columns:1fr 1fr 1fr; gap:1px; background:var(--line); border:1px solid var(--line);
+  border-radius:var(--r); overflow:hidden; margin-top:22px; box-shadow:var(--sh-1)}
+.roi .cell{background:var(--surface); padding:13px 16px}
+.roi .k{font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-3)}
+.roi .cell.now .k{color:var(--acc)}
+.roi .v{font-size:13.5px; margin-top:4px; line-height:1.55; color:var(--ink-2)}
+.roi .v b{color:var(--ink); font-weight:680}
+
+.disc{margin-top:24px; font-size:12.5px; color:var(--ink-3); border:1px dashed var(--line); border-radius:var(--r-s);
+  padding:12px 15px; line-height:1.65; background:var(--surface-2)}
+.foot{margin-top:34px; padding-top:18px; border-top:1px solid var(--line); font-size:12px; color:var(--ink-3); line-height:1.7}
+.foot b{color:var(--ink-2)}
+
+#toast{position:fixed; left:50%; bottom:30px; transform:translateX(-50%) translateY(20px); background:var(--ink);
+  color:#fff; font-size:13.5px; padding:10px 18px; border-radius:999px; opacity:0; pointer-events:none;
+  transition:.25s; z-index:99; box-shadow:var(--sh-2); max-width:86vw; text-align:center}
+#toast.on{opacity:1; transform:translateX(-50%) translateY(0)}
+
+@media(max-width:760px){
+  .frow{grid-template-columns:1fr}
+  .ckgrid{grid-template-columns:1fr}
+  .dedrow{grid-template-columns:110px 1fr; grid-auto-rows:auto}
+  .dedrow .del{justify-self:end}
+  .lev{grid-template-columns:1fr}
+  .roi{grid-template-columns:1fr}
+  .letter{padding:22px 18px 26px}
+  .tl-lbl .t{font-size:11px}
+  .drow .stances{width:100%}
+}
+</style>
+<script defer src="../../assets/feedback.js"></script>
+</head>
+<body>
+
+<div class="bar"><div class="in">
+  <div class="mark"><span class="glyph">$</span> 押金异议函生成器</div>
+  <div class="spacer"></div>
+  <div class="firm">留学生租房 · Demo 02 · Iterant AI</div>
+</div></div>
+
+<div class="wrap">
+
+  <section class="hero">
+    <div class="eyebrow">Deposit Demand Letter · 州法时间线 + 异议函</div>
+    <h1>人回国了，押金<span class="em">别就这么算了</span></h1>
+    <p class="lede">房东最大的底气，是赌你<b>离境后不会追</b>。但每个州的押金法都给房东上了一条硬时限——
+      超过法定天数不退还、不给逐项扣款清单，很多州直接触发<b>双倍甚至三倍赔偿</b>，攻守当场互换。
+      选州、填日期、贴扣款清单：先核出你的<b>法定截止日</b>，再逐项标出<b>不认的扣款</b>，
+      最后生成一封<b>引用州法条文、可直接寄出的英文异议函</b>，附小额法庭升级路径。</p>
+    <div class="aibar" id="aibar"></div>
+  </section>
+
+  <section class="form">
+    <div class="frow">
+      <div class="fitem-f">
+        <label>州 <span class="opt">（首批 8 个留学生大州）</span></label>
+        <select class="fin" id="f-state"></select>
+      </div>
+      <div class="fitem-f">
+        <label>押金金额（USD）</label>
+        <input class="fin" id="f-dep" type="number" min="0" step="50" placeholder="1850">
+      </div>
+      <div class="fitem-f">
+        <label>退房 / 交还钥匙日期</label>
+        <input class="fin" id="f-move" type="date">
+      </div>
+    </div>
+    <div class="statute-chip" id="statute-chip"></div>
+
+    <div class="subhead">房东给扣款清单了吗？</div>
+    <div class="pillrow">
+      <button class="pill on" id="p-none">还没收到任何清单 / 一直没回音</button>
+      <button class="pill" id="p-recv">收到了，但有几笔我不认</button>
+    </div>
+    <div id="recvzone" style="display:none">
+      <div class="frow" style="margin-top:12px">
+        <div class="fitem-f">
+          <label>收到清单的日期</label>
+          <input class="fin" id="f-recv" type="date">
+        </div>
+      </div>
+      <div class="subhead">扣款清单（照着房东给的填）</div>
+      <div id="dedwrap"></div>
+      <button class="addded" id="addded">＋ 加一笔扣款</button>
+    </div>
+
+    <div class="subhead">你手上有什么证据？<span style="font-weight:400;color:var(--ink-4)">（没有也能发——时限本身就是筹码）</span></div>
+    <div class="ckgrid" id="evgrid"></div>
+
+    <div class="frow" style="margin-top:16px">
+      <div class="fitem-f">
+        <label>你的名字 <span class="opt">（信函署名，可用拼音）</span></label>
+        <input class="fin" id="f-name" type="text" placeholder="Ming Li">
+      </div>
+      <div class="fitem-f" style="grid-column:span 2">
+        <label>房产地址 <span class="opt">（信函 RE 行）</span></label>
+        <input class="fin" id="f-addr" type="text" placeholder="4012 Pine Street, Unit 2, Philadelphia, PA 19104">
+      </div>
+    </div>
+
+    <div class="egrow">
+      <span class="hint">试试内置案例：</span>
+      <button class="eg" id="eg-a">📮 案例 A · 回国 45 天，房东装死（PA）</button>
+      <button class="eg" id="eg-b">🧾 案例 B · 收到扣款单，几笔不认（NY）</button>
+    </div>
+    <button class="go" id="go">⚖ 核时限 · 生成异议函</button>
+  </section>
+
+  <div id="stage"></div>
+
+  <div class="foot">
+    <b>这个演示的红线（写在代码里）：</b>法定天数、罚则、法条编号、小额法庭上限全部来自前端写死的州规则库，AI 绝不生成法条——
+    连接 AI 后它只负责把你的中文补充说明润成信里的英文事实段，任何带「§」的 AI 输出行都会被代码丢弃。
+    这是一个 <b>self-help 文书工具</b>：按你填的事实套用公开法条模板，不判断个案胜负，不构成法律意见。
+    数据全程留在浏览器本地，不上传。<br>
+    Iterant AI · 留学生租房系列 Demo 02 · Deposit Demand Letter
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+/* ════════════════ 小工具 ════════════════ */
+const $=(s,r)=>(r||document).querySelector(s);
+const $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
+function el(tag,props,...kids){
+  const e=document.createElement(tag);
+  if(props) for(const k in props){
+    const v=props[k];
+    if(v==null||v===false) continue;
+    if(k==='class') e.className=v;
+    else if(k==='html') e.innerHTML=v;
+    else if(k.startsWith('on')&&typeof v==='function') e.addEventListener(k.slice(2).toLowerCase(),v);
+    else e.setAttribute(k,v);
+  }
+  for(let k of kids.flat()){ if(k==null||k===false) continue; e.appendChild(k.nodeType?k:document.createTextNode(String(k))); }
+  return e;
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2600); }
+function copyText(s){
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(()=>toast('已复制')).catch(()=>fb(s));
+  else fb(s);
+  function fb(x){ const ta=document.createElement('textarea'); ta.value=x; ta.style.cssText='position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('已复制'); }catch(e){ toast('复制失败'); }
+    document.body.removeChild(ta); }
+}
+const MS=864e5;
+const fmtD=d=>{ const x=new Date(d); return (x.getMonth()+1)+'/'+x.getDate(); };
+const fmtLong=d=>{ const x=new Date(d); const M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  return M[x.getMonth()]+' '+x.getDate()+', '+x.getFullYear(); };
+const iso=d=>{ const x=new Date(d); return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+const today0=()=>{ const t=new Date(); t.setHours(0,0,0,0); return t.getTime(); };
+const money=n=>'$'+Number(n||0).toLocaleString('en-US');
+
+/* ════════════════ 州押金法规则库（演示用简化摘要 · 法条锚定） ════════════════ */
+const STATES={
+  PA:{ name:'宾夕法尼亚 Pennsylvania', cite:'68 P.S. § 250.512', days:30,
+    zh:'退房后 30 天内退还押金并附书面扣款清单；未按时提供清单的房东丧失扣款权利，租客可诉请双倍返还。',
+    penEn:'a landlord who fails to provide the written itemized list within thirty (30) days forfeits the right to withhold any portion of the deposit and may be liable for double the amount wrongfully withheld',
+    penZh:'丧失扣款权利 + 可主张双倍返还', mult:'2×',
+    court:'Magisterial District Court', limit:'$12,000' },
+  NY:{ name:'纽约 New York', cite:'N.Y. Gen. Oblig. Law § 7-108', days:14,
+    zh:'退房后 14 天内退还押金并附逐项扣款说明；故意违规的，法院可判赔至两倍押金。',
+    penEn:'willful violation of the deposit provisions may subject the landlord to damages of up to twice the amount of the deposit',
+    penZh:'故意违规可判至双倍押金', mult:'up to 2×',
+    court:'Small Claims Court', limit:'$10,000（NYC）' },
+  MA:{ name:'马萨诸塞 Massachusetts', cite:'M.G.L. c. 186, § 15B', days:30,
+    zh:'退房后 30 天内返还；违规扣留可判三倍押金、加 5% 利息与律师费——全美对房东最严的州之一。',
+    penEn:'failure to comply may entitle the tenant to damages of three times the amount wrongfully withheld, plus interest and attorney’s fees',
+    penZh:'可判三倍押金 + 利息 + 律师费', mult:'3×',
+    court:'Small Claims Court', limit:'$7,000' },
+  CA:{ name:'加利福尼亚 California', cite:'Cal. Civ. Code § 1950.5', days:21,
+    zh:'退房后 21 天内返还并附逐项清单（超过一定金额须附收据）；恶意扣留可另判至两倍押金的罚金。',
+    penEn:'bad-faith retention of the deposit may subject the landlord to statutory damages of up to twice the amount of the deposit, in addition to actual damages',
+    penZh:'恶意扣留可另判至两倍押金罚金', mult:'up to 2×',
+    court:'Small Claims Court', limit:'$12,500' },
+  IL:{ name:'伊利诺伊 Illinois', cite:'765 ILCS 710/1', days:30,
+    zh:'（适用 5 套以上物业）30 天内给出逐项扣款清单、45 天内退款；违规可判两倍押金 + 律师费。芝加哥市另有更严的 RLTO。',
+    penEn:'failure to provide the itemized statement within thirty (30) days may entitle the tenant to damages of twice the security deposit plus attorney’s fees',
+    penZh:'可判两倍押金 + 律师费', mult:'2×',
+    court:'Small Claims Court', limit:'$10,000' },
+  TX:{ name:'德克萨斯 Texas', cite:'Tex. Prop. Code § 92.103', days:30,
+    zh:'退房后 30 天内返还；恶意扣留：$100 + 三倍不当扣款 + 律师费。',
+    penEn:'a landlord who retains the deposit in bad faith is liable for $100, three times the portion wrongfully withheld, and attorney’s fees',
+    penZh:'恶意扣留：$100 + 三倍不当扣款 + 律师费', mult:'3×',
+    court:'Justice Court', limit:'$20,000' },
+  WA:{ name:'华盛顿 Washington', cite:'RCW 59.18.280', days:30,
+    zh:'退房后 30 天内退还或给出完整扣款说明；未按时的，法院可判至两倍押金。',
+    penEn:'failure to comply within thirty (30) days may subject the landlord to liability of up to twice the amount of the deposit',
+    penZh:'可判至两倍押金', mult:'up to 2×',
+    court:'Small Claims Court', limit:'$10,000' },
+  NJ:{ name:'新泽西 New Jersey', cite:'N.J.S.A. 46:8-21.1', days:30,
+    zh:'退房后 30 天内返还（含利息）并附逐项说明；违规可判双倍应返金额 + 诉讼费用。',
+    penEn:'failure to return the deposit as required entitles the tenant to recover double the amount due, together with costs',
+    penZh:'可判双倍应返金额 + 费用', mult:'2×',
+    court:'Special Civil Part', limit:'$5,000' }
+};
+
+const DED_CATS={
+  repaint:{zh:'重刷墙面', defStance:'wear'},
+  cleaning:{zh:'清洁费', defStance:'noevi'},
+  carpet:{zh:'地毯更换/清洁', defStance:'wear'},
+  repair:{zh:'维修费', defStance:'noevi'},
+  unpaid:{zh:'欠费（水电等）', defStance:'accept'},
+  other:{zh:'其他', defStance:'noevi'}
+};
+const STANCES={
+  accept:{zh:'认了', cls:'on-accept'},
+  wear:{zh:'异议 · 正常磨损', cls:'on-wear'},
+  noevi:{zh:'异议 · 拿凭据来', cls:'on-noevi'}
+};
+const STANCE_EN={
+  wear:'This charge reflects normal wear and tear from ordinary residential use, which may not be deducted from a security deposit.',
+  noevi:'No invoice, receipt, or other documentation has been provided to substantiate this charge. I request itemized proof before any such deduction is taken.'
+};
+const EVIDENCE=[
+  {k:'movein', zh:'入住时的照片 / 视频', en:'date-stamped move-in photos and video'},
+  {k:'moveout', zh:'退房时的照片 / 视频', en:'move-out photos and video'},
+  {k:'lease', zh:'签署的租约', en:'the signed lease agreement'},
+  {k:'pay', zh:'押金支付凭证（转账记录）', en:'proof of deposit payment (bank transfer record)'},
+  {k:'chat', zh:'与房东/中介的沟通记录', en:'written communications with the landlord'},
+  {k:'stmt', zh:'房东给的扣款单', en:'the itemized statement you provided'}
+];
+
+/* ════════════════ 表单状态 ════════════════ */
+let deds=[];        // {id, cat, desc, amt, stance}
+let dedSeq=0;
+let received=false;
+let aiPara='';      // AI 润色的英文补充段
+let model=null;     // 当前生成结果的模型
+
+function addDedRow(d){
+  d=d||{id:++dedSeq, cat:'other', desc:'', amt:''};
+  if(!d.id) d.id=++dedSeq;
+  deds.push(d);
+  const sel=el('select',{class:'fin', onChange:e=>{ d.cat=e.target.value; }});
+  Object.keys(DED_CATS).forEach(k=>{ const o=el('option',{value:k}, DED_CATS[k].zh); if(k===d.cat) o.selected=true; sel.appendChild(o); });
+  const row=el('div',{class:'dedrow'},
+    sel,
+    el('input',{class:'fin', type:'text', placeholder:'房东写的理由（可中英）', value:d.desc||'', onInput:e=>{ d.desc=e.target.value; }}),
+    el('input',{class:'fin', type:'number', min:'0', placeholder:'$ 金额', value:d.amt||'', onInput:e=>{ d.amt=e.target.value; }}),
+    el('button',{class:'del', title:'删除', onClick:()=>{ deds=deds.filter(x=>x.id!==d.id); row.remove(); }},'✕'));
+  $('#dedwrap').appendChild(row);
+}
+function setReceived(v){
+  received=v;
+  $('#p-none').classList.toggle('on', !v);
+  $('#p-recv').classList.toggle('on', v);
+  $('#recvzone').style.display=v?'block':'none';
+  if(v && !deds.length) addDedRow();
+}
+function evChecked(){ return $$('#evgrid .ckrow.on').map(r=>r.dataset.k); }
+
+/* ════════════════ 案例 ════════════════ */
+function loadCaseA(){
+  $('#f-state').value='PA'; renderStatuteChip();
+  $('#f-dep').value=1850;
+  $('#f-move').value=iso(today0()-45*MS);
+  setReceived(false);
+  $$('#evgrid .ckrow').forEach(r=>{ r.classList.toggle('on', ['pay','lease','chat','movein'].includes(r.dataset.k));
+    r.querySelector('.ckbox').textContent=r.classList.contains('on')?'✓':''; });
+  $('#f-name').value='Ming Li';
+  $('#f-addr').value='4012 Pine Street, Unit 2, Philadelphia, PA 19104';
+  go();
+}
+function loadCaseB(){
+  $('#f-state').value='NY'; renderStatuteChip();
+  $('#f-dep').value=2000;
+  $('#f-move').value=iso(today0()-20*MS);
+  setReceived(true);
+  $('#f-recv').value=iso(today0()-8*MS);
+  deds=[]; $('#dedwrap').innerHTML='';
+  [{cat:'repaint', desc:'Full repaint of unit — $800', amt:800, stance:'wear'},
+   {cat:'carpet', desc:'Carpet replacement — $400', amt:400, stance:'noevi'},
+   {cat:'cleaning', desc:'Professional cleaning — $250', amt:250, stance:'accept'},
+   {cat:'unpaid', desc:'Final water bill — $95', amt:95, stance:'accept'}
+  ].forEach(x=>addDedRow(Object.assign({id:++dedSeq}, x)));
+  $$('#evgrid .ckrow').forEach(r=>{ r.classList.toggle('on', ['movein','moveout','lease','pay','stmt'].includes(r.dataset.k));
+    r.querySelector('.ckbox').textContent=r.classList.contains('on')?'✓':''; });
+  $('#f-name').value='Yuchen Wang';
+  $('#f-addr').value='512 W 110th Street, Apt 3B, New York, NY 10025';
+  go();
+}
+
+/* ════════════════ 核心：时限核查 ════════════════ */
+function analyze(){
+  const stKey=$('#f-state').value, st=STATES[stKey];
+  const dep=Number($('#f-dep').value)||0;
+  const moveStr=$('#f-move').value;
+  if(!dep||!moveStr){ toast('押金金额和退房日期是必填的——或直接点内置案例'); return null; }
+  const move=new Date(moveStr+'T00:00:00').getTime();
+  const now=today0();
+  const deadline=move+st.days*MS;
+  const recvStr=received?$('#f-recv').value:'';
+  const recv=recvStr?new Date(recvStr+'T00:00:00').getTime():null;
+
+  const items=received?deds.filter(d=>Number(d.amt)>0).map(d=>({
+    cat:d.cat, desc:(d.desc||DED_CATS[d.cat].zh).trim(), amt:Number(d.amt),
+    stance:d.stance||DED_CATS[d.cat].defStance
+  })):[];
+  const accepted=items.filter(i=>i.stance==='accept').reduce((s,i)=>s+i.amt,0);
+  const disputed=items.filter(i=>i.stance!=='accept').reduce((s,i)=>s+i.amt,0);
+
+  let scenario;
+  if(move>now) scenario='future';
+  else if(!received) scenario= now>deadline ? 'overdue' : 'waiting';
+  else scenario= (recv&&recv>deadline) ? 'late-list' : 'dispute';
+
+  return { stKey, st, dep, move, now, deadline, recv, received, items, accepted, disputed,
+    demand: Math.max(0, dep-accepted),
+    overdueDays: Math.max(0, Math.round((now-deadline)/MS)),
+    leftDays: Math.max(0, Math.round((deadline-now)/MS)),
+    scenario, name:($('#f-name').value.trim()||'Tenant'), addr:($('#f-addr').value.trim()||'[Property Address]'),
+    ev:evChecked() };
+}
+
+/* ════════════════ 信函生成（模板 · 法条锚定） ════════════════ */
+function buildLetter(m){
+  const st=m.st;
+  const L=[];
+  L.push(fmtLong(m.now));
+  L.push('');
+  L.push('VIA EMAIL AND CERTIFIED MAIL');
+  L.push('');
+  L.push('To: Landlord / Property Manager');
+  L.push('Re: Demand for Return of Security Deposit — '+m.addr);
+  L.push('');
+  L.push('Dear Landlord:');
+  L.push('');
+  L.push('I was the tenant at '+m.addr+'. My tenancy ended and I returned possession of the premises on '
+    +fmtLong(m.move)+'. I paid a security deposit of '+money(m.dep)+'.');
+  L.push('');
+  if(m.scenario==='overdue'){
+    L.push('Under '+st.cite+', a landlord must return the security deposit, together with a written itemized list of any deductions, within '
+      +st.days+' days after the end of the tenancy. That deadline was '+fmtLong(m.deadline)+'. As of today, '
+      +m.overdueDays+' day(s) have passed beyond the statutory deadline, and I have received neither my deposit nor any itemized statement.');
+    L.push('');
+    L.push('Please note that under '+st.cite+', '+st.penEn+'.');
+  } else if(m.scenario==='late-list'){
+    L.push('Under '+st.cite+', a landlord must return the security deposit, together with a written itemized list of any deductions, within '
+      +st.days+' days after the end of the tenancy. That deadline was '+fmtLong(m.deadline)
+      +'. Your itemized statement was not provided until '+fmtLong(m.recv)+' — after the statutory deadline.');
+    L.push('');
+    L.push('Please note that under '+st.cite+', '+st.penEn+'.');
+  } else if(m.scenario==='waiting'){
+    L.push('Under '+st.cite+', a landlord must return the security deposit, together with a written itemized list of any deductions, within '
+      +st.days+' days after the end of the tenancy. That deadline is '+fmtLong(m.deadline)
+      +'. I am writing in advance to confirm the amount and my forwarding details, and I expect the deposit to be returned by that date.');
+  }
+  const disputes=m.items.filter(i=>i.stance!=='accept');
+  const accepts=m.items.filter(i=>i.stance==='accept');
+  if(m.received && disputes.length){
+    L.push('');
+    L.push('I dispute the following deduction(s) listed on your statement:');
+    disputes.forEach((d,i)=>{
+      L.push('  '+(i+1)+'. '+money(d.amt)+' — “'+d.desc+'”: '+STANCE_EN[d.stance]);
+    });
+  }
+  if(m.received && accepts.length){
+    L.push('');
+    L.push('I do not dispute the deduction(s) totaling '+money(m.accepted)+' ('+accepts.map(a=>'“'+a.desc+'”').join(', ')+').');
+  }
+  if(aiPara){
+    L.push('');
+    L.push(aiPara);
+  }
+  L.push('');
+  L.push('DEMAND: I demand payment of '+money(m.demand)+' within fourteen (14) days of the date of this letter, by check to my forwarding address or by bank/wire transfer (details available on request).');
+  L.push('');
+  L.push('If I do not receive payment by '+fmtLong(m.now+14*MS)+', I will pursue all remedies available to me, including filing a claim in the '
+    +st.court+' (claims up to '+st.limit.replace(/（.*）/,'')+') and seeking all statutory damages provided under '+st.cite+'.');
+  if(m.ev.length){
+    L.push('');
+    L.push('The following evidence is preserved and available: '+m.ev.map(k=>{ const e=EVIDENCE.find(x=>x.k===k); return e?e.en:''; }).filter(Boolean).join('; ')+'.');
+  }
+  L.push('');
+  L.push('Sincerely,');
+  L.push(m.name);
+  return L.join('\n');
+}
+
+/* ════════════════ 渲染 ════════════════ */
+function render(m){
+  const stage=$('#stage'); stage.innerHTML='';
+  const st=m.st;
+  const box=el('div',{class:'results'});
+
+  /* ── ① 裁决 + 时间线 ── */
+  let vcls,vt,vs;
+  if(m.scenario==='overdue'){
+    vcls='v-red'; vt='房东已超过法定期限 '+m.overdueDays+' 天——攻守互换了';
+    vs='按 <span class="cite">'+esc(st.cite)+'</span>，'+esc(st.zh)+' 现在不是你求他退钱，是他违反州法在先：'+esc(st.penZh)+'。这封信要让他知道你知道这一点。';
+  } else if(m.scenario==='late-list'){
+    vcls='v-red'; vt='扣款清单晚于法定期限才给——这本身就是你的筹码';
+    vs='按 <span class="cite">'+esc(st.cite)+'</span>，清单应在退房后 '+st.days+' 天内提供，实际 '+fmtD(m.recv)+' 才收到。逐项异议之外，超期事实让你在谈判里多一张牌：'+esc(st.penZh)+'。';
+  } else if(m.scenario==='waiting'){
+    vcls='v-amber'; vt='还没到法定截止日——离截止还有 '+m.leftDays+' 天';
+    vs='按 <span class="cite">'+esc(st.cite)+'</span>，房东须在 '+fmtD(m.deadline)+' 前退还押金并给逐项清单。现在就把这封信发出去，等于把法定截止日钉在他面前——过期即触发罚则。';
+  } else if(m.scenario==='future'){
+    vcls='v-amber'; vt='还没退房——先把证据存好';
+    vs='退房日之后，'+esc(st.name.split(' ')[0])+'的法定截止日将是 <b>'+fmtD(m.deadline)+'</b>（退房后 '+st.days+' 天，<span class="cite">'+esc(st.cite)+'</span>）。退房当天拍照录像、发一条书面确认，然后回这页生成信函。';
+  } else {
+    vcls='v-amber'; vt='清单按时收到——焦点是这 '+money(m.disputed)+' 争议扣款';
+    vs='时限上房东没违规，但扣款站不站得住是另一回事：正常磨损在各州普遍不可从押金扣除，无凭据的扣款可以要求出示发票。下面逐项标立场，信函实时重写。';
+  }
+  const verdict=el('div',{class:'verdict '+vcls},
+    el('div',{class:'band'}),
+    el('div',{class:'vbody'},
+      el('div',{class:'vt'},vt),
+      el('div',{class:'vs',html:vs})),
+    buildTimeline(m));
+  box.appendChild(el('div',null,
+    el('div',{class:'sec-eyebrow'},'① Deadline · 法定时限核查'),
+    el('div',{class:'sec-h'},'你的法定截止日'),
+    el('div',{class:'sec-sub'},'大多数人不知道这条线的存在——房东赌的就是这个。')));
+  box.appendChild(verdict);
+
+  /* ── ② 异议台 ── */
+  if(m.received && m.items.length){
+    box.appendChild(el('div',null,
+      el('div',{class:'sec-eyebrow',style:'margin-top:34px'},'② Disputes · 逐项异议台'),
+      el('div',{class:'sec-h'},'哪几笔你不认？'),
+      el('div',{class:'sec-sub'},'点立场，右边的信当场重写。「正常磨损」是各州押金法里最常被无视的一条——重刷墙面、地毯正常损耗，普遍不可从押金扣。')));
+    const card=el('div',{class:'card'});
+    const body=el('div',{class:'cbody'});
+    m.items.forEach((it,idx)=>{
+      const stanceBtns=el('div',{class:'stances'});
+      Object.keys(STANCES).forEach(sk=>{
+        const b=el('button',{class:'stance'+(it.stance===sk?' '+STANCES[sk].cls:''),
+          onClick:()=>{ it.stance=sk;
+            const src=deds.filter(d=>Number(d.amt)>0)[idx]; if(src) src.stance=sk;
+            recalc(m);
+            $$('.stance',stanceBtns.parentElement).forEach(x=>x.className='stance');
+            b.className='stance '+STANCES[sk].cls;
+          }}, STANCES[sk].zh);
+        stanceBtns.appendChild(b);
+      });
+      body.appendChild(el('div',{class:'drow'},
+        el('div',{class:'amt'},money(it.amt)),
+        el('div',{class:'meta'},
+          el('div',{class:'dt'}, it.desc),
+          el('div',{class:'dnote'}, DED_CATS[it.cat].zh + (it.stance==='wear'?' · 正常磨损通常不可扣':it.stance==='noevi'?' · 可要求出示发票/凭据':''))),
+        stanceBtns));
+    });
+    card.appendChild(body);
+    card.appendChild(el('div',{class:'dsum', id:'dsum'}));
+    box.appendChild(card);
+  }
+
+  /* ── ③ 筹码 ── */
+  box.appendChild(el('div',null,
+    el('div',{class:'sec-eyebrow',style:'margin-top:34px'},'③ Leverage · 你手里的牌'),
+    el('div',{class:'sec-h'},'这封信为什么有分量'),
+    el('div',{class:'sec-sub'},'demand letter 的力量不在措辞狠，在于让对方看到：你知道法条、留了证据、并且真的会走下一步。')));
+  const lev=el('div',{class:'lev'});
+  if(m.scenario==='overdue'||m.scenario==='late-list'){
+    lev.appendChild(el('div',{class:'levcard hot'},
+      el('div',{class:'lk'},'超期事实（最硬的一张）'),
+      el('div',{class:'lv',html:'<b>'+esc(st.cite)+'</b> 要求 '+st.days+' 天内处理，'+(m.scenario==='overdue'?('已超期 <b>'+m.overdueDays+' 天</b>'):'清单迟到')+'——'+esc(st.penZh)+'（'+esc(st.mult)+'）'})));
+  } else {
+    lev.appendChild(el('div',{class:'levcard'},
+      el('div',{class:'lk'},'法定时限'),
+      el('div',{class:'lv',html:'<b>'+esc(st.cite)+'</b>：'+st.days+' 天内退还并附逐项清单，罚则 '+esc(st.mult)+'——把截止日写进信里，过线即触发'})));
+  }
+  if(m.disputed>0) lev.appendChild(el('div',{class:'levcard'},
+    el('div',{class:'lk'},'争议扣款'),
+    el('div',{class:'lv',html:'<b>'+money(m.disputed)+'</b> 被逐项点名：正常磨损不可扣 / 无凭据要求出示发票——比「我觉得扣多了」有力得多'})));
+  lev.appendChild(el('div',{class:'levcard'},
+    el('div',{class:'lk'},'证据在手'),
+    el('div',{class:'lv',html:m.ev.length?('你勾了 <b>'+m.ev.length+' 项</b>证据并写进信里——对方知道你举证不难'):'暂无证据也能发——时限与法条本身就是筹码；翻翻微信记录和转账截图，有就补上'})));
+  lev.appendChild(el('div',{class:'levcard'},
+    el('div',{class:'lk'},'寄送方式'),
+    el('div',{class:'lv',html:'<b>Email + Certified Mail 双轨</b>——挂号信回执就是「他收到了」的铁证，也是最便宜的施压'})));
+  box.appendChild(lev);
+
+  /* ── ④ 信函 ── */
+  box.appendChild(el('div',null,
+    el('div',{class:'sec-eyebrow',style:'margin-top:34px'},'④ Letter · 异议函'),
+    el('div',{class:'sec-h'},'可以直接寄出的英文 demand letter'),
+    el('div',{class:'sec-sub'},'法条引用来自规则库模板、金额与日期来自你填的事实。上面每改一个立场，这里实时重写。')));
+  const lw=el('div',{class:'letterwrap'},
+    el('div',{class:'letterhead'}, el('span',{class:'dotr'}), 'DEMAND LETTER · generated from your facts + '+st.cite),
+    el('div',{class:'letter', id:'letter'}));
+  box.appendChild(lw);
+  const aiZone=el('div',{class:'ainote'},
+    el('textarea',{id:'ainote-ta', placeholder:'（可选）有别的情况想写进信里？用中文写在这——比如「退房时中介口头说没问题会全退」「房东一直已读不回」。连接 AI 后一键润成信中的正式英文段落。'}),
+    el('div',{class:'tip'}, LLM.connected()?'AI 只翻译你的事实叙述——法条引用永远来自本地规则库，含 § 的 AI 输出行会被丢弃。':'未连接 AI——顶部「连接 AI」后可用。模板信函本身已完整可寄。'));
+  box.appendChild(el('div',{class:'arow'},
+    el('button',{class:'btn-p', onClick:()=>copyText($('#letter').textContent)},'复制信函'),
+    el('button',{class:'btn-s', onClick:()=>{
+      const blob=new Blob([$('#letter').textContent],{type:'text/plain;charset=utf-8'});
+      const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+      a.download='deposit-demand-letter.txt'; a.click(); URL.revokeObjectURL(a.href);
+    }},'下载 .txt'),
+    el('button',{class:'btn-s', onClick:aiPolish},'✦ 把中文补充润进信里（需 AI）')));
+  box.appendChild(aiZone);
+
+  /* ── ⑤ 升级路径 ── */
+  box.appendChild(el('div',null,
+    el('div',{class:'sec-eyebrow',style:'margin-top:34px'},'⑤ Escalation · 下一步'),
+    el('div',{class:'sec-h'},'如果他继续装死'),
+    el('div',{class:'sec-sub'},'很多案子到第一步就解决了——因为对方也会算：'+esc(st.mult)+' 罚则 + 败诉风险，不如把 '+money(m.demand)+' 退了。')));
+  box.appendChild(el('div',{class:'steps'},
+    el('div',{class:'step'},
+      el('div',{class:'no'},'1'),
+      el('div',null,
+        el('div',{class:'st'},'寄出这封信', el('span',{class:'when'},'今天')),
+        el('div',{class:'sd'},'Email 一份 + Certified Mail（挂号信，约 $5–9）一份，保留回执。给了 14 天回复期——大多数纠纷停在这一步。'))),
+    el('div',{class:'step'},
+      el('div',{class:'no'},'2'),
+      el('div',null,
+        el('div',{class:'st'},'向 '+st.court+' 立案', el('span',{class:'when'},'+14 天无回应')),
+        el('div',{class:'sd'},'小额法庭上限 '+st.limit+'，立案费通常 $30–100，流程为普通人设计、不需要律师。诉求写：押金 + 州法罚则（'+st.penZh+'）。'))),
+    el('div',{class:'step'},
+      el('div',{class:'no'},'3'),
+      el('div',null,
+        el('div',{class:'st'},'人已回国怎么办', el('span',{class:'when'},'离境不等于放弃')),
+        el('div',{class:'sd'},'公证授权在美同学/朋友代交材料；不少法院疫情后保留了远程视频出庭；部分州允许书面证据审理。胜诉判决可含全部罚则金额。')))));
+
+  /* ── ROI ── */
+  box.appendChild(el('div',{class:'roi'},
+    el('div',{class:'cell now'}, el('div',{class:'k'},'这封信'),
+      el('div',{class:'v',html:'州规则库 + 你的事实 · <b>2 分钟</b><br>时限核查、逐项异议、升级路径一次备齐'})),
+    el('div',{class:'cell'}, el('div',{class:'k'},'换成人工'),
+      el('div',{class:'v',html:'律师起草 demand letter <b>$200–400</b>；<br>自己啃州法 + 查格式 <b>3–5 小时</b>'})),
+    el('div',{class:'cell'}, el('div',{class:'k'},'换成不追'),
+      el('div',{class:'v',html:'离境即归零：'+money(m.dep)+' 押金<br><b>扣多少，认多少</b>'}))));
+
+  box.appendChild(el('div',{class:'disc'},
+    '⚠︎ Self-help 文书工具：按你填写的事实套用公开法条模板生成信函，不判断个案胜负，不构成法律意见（not legal advice）。'+
+    '州规则库为演示用简化摘要，条文细节（适用范围、利息、豁免情形）以州官方文本为准；金额大或情况复杂请咨询执业律师。'+
+    '所有数据留在浏览器本地，不上传。'));
+
+  stage.appendChild(box);
+  recalc(m);
+  stage.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+/* 时间线 */
+function buildTimeline(m){
+  const pts=[m.move, m.deadline, m.now];
+  if(m.recv) pts.push(m.recv);
+  const min=Math.min.apply(null,pts)-4*MS, max=Math.max.apply(null,pts)+4*MS;
+  const pos=t=>((t-min)/(max-min)*100).toFixed(2)+'%';
+  const track=el('div',{class:'tl-track'});
+  /* 法定窗口段 */
+  track.appendChild(el('div',{class:'tl-seg window', style:'left:'+pos(m.move)+';width:'+((m.deadline-m.move)/(max-min)*100).toFixed(2)+'%'}));
+  /* 超期红段 / 剩余绿段 */
+  if(m.now>m.deadline) track.appendChild(el('div',{class:'tl-seg red', style:'left:'+pos(m.deadline)+';width:'+((m.now-m.deadline)/(max-min)*100).toFixed(2)+'%'}));
+  else if(m.now>=m.move) track.appendChild(el('div',{class:'tl-seg green', style:'left:'+pos(m.now)+';width:'+((m.deadline-m.now)/(max-min)*100).toFixed(2)+'%'}));
+  function node(t, cls, label, up){
+    return el('div',{class:'tl-node '+cls, style:'left:'+pos(t)},
+      el('i',{class:'dot'}),
+      el('div',{class:'tl-lbl '+(up?'up':'down')},
+        el('div',{class:'t'},label), el('div',{class:'d'},fmtD(t))));
+  }
+  track.appendChild(node(m.move,'n-move','退房',true));
+  track.appendChild(node(m.deadline,'n-dead','法定截止 · '+m.st.days+'天',false));
+  if(m.recv) track.appendChild(node(m.recv,'n-recv','收到清单',true));
+  track.appendChild(node(m.now,'n-today','今天', !(m.recv && Math.abs(m.recv-m.now)<6*MS)));
+  if(m.now>m.deadline){
+    const mid=(m.deadline+m.now)/2;
+    track.appendChild(el('div',{class:'tl-badge', style:'left:'+pos(mid)}, '超期 '+m.overdueDays+' 天'));
+  } else if(m.now>=m.move){
+    const mid=(m.now+m.deadline)/2;
+    track.appendChild(el('div',{class:'tl-badge ok', style:'left:'+pos(mid)}, '还剩 '+m.leftDays+' 天'));
+  }
+  return el('div',{class:'tl'}, track);
+}
+
+/* 立场变化后：重算金额 + 重写信（不整页重渲） */
+function recalc(m){
+  m.accepted=m.items.filter(i=>i.stance==='accept').reduce((s,i)=>s+i.amt,0);
+  m.disputed=m.items.filter(i=>i.stance!=='accept').reduce((s,i)=>s+i.amt,0);
+  m.demand=Math.max(0, m.dep-m.accepted);
+  const ds=$('#dsum');
+  if(ds){ ds.innerHTML='';
+    ds.appendChild(el('span',{class:'k'},'争议金额'));
+    ds.appendChild(el('span',{class:'v dispute'},money(m.disputed)));
+    ds.appendChild(el('span',{class:'k'},'认了'));
+    ds.appendChild(el('span',{class:'v'},money(m.accepted)));
+    ds.appendChild(el('span',{class:'k'},'信中主张返还'));
+    ds.appendChild(el('span',{class:'v demand'},money(m.demand)));
+  }
+  const lt=$('#letter');
+  if(lt){
+    const txt=buildLetter(m);
+    lt.innerHTML=esc(txt).replace(new RegExp(esc(m.st.cite).replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'),
+      '<span class="hl-cite">'+esc(m.st.cite)+'</span>');
+  }
+}
+
+/* ════════════════ LLM（BYOK · 只润色事实叙述） ════════════════ */
+const LLM=(function(){
+  const KEY_LS='haowan_anthropic_key';
+  const MODEL='claude-sonnet-4-6';
+  const get=()=>{ try{ return localStorage.getItem(KEY_LS)||''; }catch(e){ return ''; } };
+  const set=v=>{ try{ v?localStorage.setItem(KEY_LS,v):localStorage.removeItem(KEY_LS); }catch(e){} };
+  const connected=()=>!!get();
+  const SYS=[
+'You polish factual notes for a tenant’s security-deposit demand letter.',
+'Input: the tenant’s notes in Chinese. Output: 1-2 short formal English paragraphs, first person, plain factual tone.',
+'HARD RULES: Do NOT cite any statute, section number, or law. Do NOT give legal opinions or predictions. Do NOT invent facts or amounts not in the notes. Output the paragraphs only, no preamble.'
+  ].join('\n');
+  async function run(notes){
+    const key=get();
+    if(!key){ const e=new Error('NEED_SETUP'); e.code='NEED_SETUP'; throw e; }
+    let r;
+    try{
+      r=await fetch('https://api.anthropic.com/v1/messages',{
+        method:'POST',
+        headers:{ 'x-api-key':key, 'anthropic-version':'2023-06-01',
+          'anthropic-dangerous-direct-browser-access':'true', 'content-type':'application/json' },
+        body:JSON.stringify({ model:MODEL, max_tokens:600, system:SYS,
+          messages:[{role:'user', content:notes}] })
+      });
+    }catch(e){ const err=new Error('NET'); err.code='NET'; throw err; }
+    if(r.status===401){ const e=new Error('BAD_KEY'); e.code='BAD_KEY'; throw e; }
+    if(!r.ok){ const e=new Error('HTTP'); e.code='HTTP'; e.status=r.status; throw e; }
+    const data=await r.json();
+    return (data.content&&data.content[0]&&data.content[0].text)||'';
+  }
+  function errMsg(err){
+    const c=err&&err.code;
+    if(c==='NEED_SETUP') return '先在顶部「连接 AI」里填入 API Key';
+    if(c==='BAD_KEY') return 'API Key 无效（401）';
+    if(c==='NET') return '连不上模型——大陆需科学上网；file:// 打开会被拦，请用本地 HTTP 预览';
+    if(c==='HTTP') return '接口返回 '+(err.status||'错误');
+    return 'AI 调用失败，请重试';
+  }
+  return {get,set,connected,run,errMsg};
+})();
+
+async function aiPolish(){
+  const ta=$('#ainote-ta');
+  const notes=ta?ta.value.trim():'';
+  if(!notes){ toast('先在下面的框里用中文写点补充情况'); return; }
+  if(!LLM.connected()){ toast('未连接 AI——点顶部「连接 AI」填 Key；模板信函本身已可寄出'); return; }
+  toast('AI 润色中…');
+  try{
+    const raw=await LLM.run(notes);
+    /* 红线：丢弃任何含 § / 法条引用痕迹的行 */
+    const clean=raw.split('\n').filter(l=>!/§|\bU\.?S\.?C\.?\b|\bILCS\b|\bP\.S\.\b|\bRCW\b|Civ\. Code|Gen\. Oblig/i.test(l)).join('\n').trim();
+    if(!clean){ toast('AI 输出未通过红线过滤，请重试'); return; }
+    aiPara=clean;
+    if(model) recalc(model);
+    toast('已写进信里（Additional context 段）');
+  }catch(e){ toast(LLM.errMsg(e)); }
+}
+
+/* ════════════════ AI 连接条 ════════════════ */
+function renderAibar(){
+  const bar=$('#aibar'); bar.innerHTML='';
+  const on=LLM.connected();
+  bar.appendChild(el('span',{class:'aidot'+(on?' on':'')}));
+  bar.appendChild(el('span',{class:'aitxt'}, on
+    ? '已连接 AI——可把你的中文补充说明润成信中的英文段（法条永远来自本地规则库）'
+    : '未连接 AI——时限核查与信函模板全部本地生成，纯离线可用'));
+  bar.appendChild(el('button',{class:'ailink', onClick:()=>{ const p=$('#aipanel'); p.style.display=p.style.display==='none'?'block':'none'; }}, on?'管理连接':'连接 AI（可选）'));
+  const panel=el('div',{class:'aipanel', id:'aipanel', style:'display:none'},
+    el('p',null,'纯静态演示、无后端。填入你自己的 Anthropic API Key（只存本机浏览器 localStorage）。AI 在这个工具里只做一件事：把你的中文补充说明翻成信里的正式英文段落——法条、天数、罚则永远来自写死的规则库。'),
+    el('div',{class:'row'},
+      el('input',{class:'keyin', id:'keyin', type:'password', placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:LLM.get()}),
+      el('button',{class:'btn-s', onClick:()=>{ LLM.set($('#keyin').value.trim()); renderAibar(); toast(LLM.connected()?'已连接':'已清除'); }},'保存'),
+      el('button',{class:'btn-s', onClick:()=>{ LLM.set(''); renderAibar(); toast('已清除'); }},'清除')));
+  bar.appendChild(panel);
+}
+
+/* ════════════════ 主流程 ════════════════ */
+function go(){
+  const m=analyze();
+  if(!m) return;
+  aiPara='';
+  model=m;
+  render(m);
+}
+
+/* ── init ── */
+(function init(){
+  const sel=$('#f-state');
+  Object.keys(STATES).forEach(k=>sel.appendChild(el('option',{value:k}, STATES[k].name)));
+  sel.value='PA';
+  sel.addEventListener('change', renderStatuteChip);
+  renderStatuteChip();
+
+  EVIDENCE.forEach(e=>{
+    const row=el('div',{class:'ckrow','data-k':e.k, onClick:function(){
+      this.classList.toggle('on');
+      this.querySelector('.ckbox').textContent=this.classList.contains('on')?'✓':'';
+    }}, el('span',{class:'ckbox'}), el('span',null,e.zh));
+    $('#evgrid').appendChild(row);
+  });
+
+  $('#p-none').addEventListener('click',()=>setReceived(false));
+  $('#p-recv').addEventListener('click',()=>setReceived(true));
+  $('#addded').addEventListener('click',()=>addDedRow());
+  $('#eg-a').addEventListener('click',loadCaseA);
+  $('#eg-b').addEventListener('click',loadCaseB);
+  $('#go').addEventListener('click',go);
+  renderAibar();
+})();
+function renderStatuteChip(){
+  const st=STATES[$('#f-state').value];
+  $('#statute-chip').innerHTML='<b>'+esc(st.name)+'</b> · <span class="cite">'+esc(st.cite)+'</span> —— '+esc(st.zh)
+    +' <span style="color:var(--ink-4)">（演示用简化摘要，以州官方文本为准）</span>';
+}
+</script>
+</body>
+</html>
