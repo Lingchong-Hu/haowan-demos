@@ -478,45 +478,6 @@ window.PROJECTS = [
     ]
   },
 
-  /* ───────────────────────── 12 clause-risk ───────────────────────── */
-  {
-    id: "clause-risk", no: "12", cat: "法律",
-    kicker: "法律科技 · 签前军师",
-    title: "合同签前军师",
-    subtitle: "贴条款 + 选你是哪一方 → 该不该签、哪几条是底线、还缺哪些保护，最后给你一封能直接发的改约邮件",
-    url: "demos/clause-risk/", tags: ["选边读倾斜","倾斜度裁决","底线/争取分级","缺失条款检测","一键改约邮件"],
-    phoneHint: "选立场、贴条款，看倾斜裁决与改约邮件",
-    sections: [
-      { label: "是什么",   html: `<p>它不只标红风险，更替你拿主意：先选你是租客 / 乙方 / 求职者…哪一方，再读这份纸<b>偏向谁、该不该签</b>，把风险切成<b>「底线必改」和「能争取」</b>，揪出<b>本该有却没写的保护条款</b>，最后一键生成一封<b>可直接发出去的改约邮件</b>。</p>` },
-      { label: "程序逻辑", html: `<h3>选边 → 标红 → 倾斜裁决 → 底线/缺失 → 改约邮件</h3>
-        <div class="flow"><span class="step">选你是哪一方</span><span class="arr">→</span><span class="step">标红真实片段</span><span class="arr">→</span><span class="step">倾斜度裁决</span><span class="arr">→</span><span class="step">底线/争取 + 缺失条款</span><span class="arr">→</span><span class="step">一键改约邮件</span></div>
-        <ul>
-          <li>标红的永远是你那段文字里的<b>真实句子</b>（正则 matchAll；连 AI 也强制在原文里能搜到才标），<b>绝不凭空标红</b></li>
-          <li>同一条款<b>随立场翻转解读</b>：对弱势签字方是「坑」，对出条款的强势方就是「盾」——切换身份，裁决与邮件实时重算</li>
-          <li>倾斜度 + 一句话裁决（先别签 / 谈了再签 / 可签）；风险分成底线必改与能争取</li>
-          <li>「缺失条款」补判正则看不到的：本该有的<b>责任上限、对等解除权、对方违约责任、数据删除</b>等</li>
-        </ul>
-        <p style="margin-top:16px">判断层<b>全本地可算、纯离线</b>；连 API Key 后用真实模型抽取风险、并润色改约邮件。带「非法律建议」声明。</p>` },
-      { label: "商业模式", html: `<ul>
-          <li><b>企业订阅</b>：法务 / 销售合同自动初审，按席位 / 用量收费（LawGeex / Spellbook 模式）</li>
-          <li><b>CLM 中台</b>：合同起草—审查—签署—归档全流程（Ironclad 模式）</li>
-          <li><b>C / SMB 端</b>：个人 / 小企业的「签前体检」轻量订阅</li>
-        </ul>` },
-      { label: "市场分析", html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-        <ul>
-          <li><b>LawGeex</b>：AI 自动审合同、对照公司标准标风险，企业付费，是合同审查 AI 的代表。</li>
-          <li><b>Spellbook / Robin AI</b>：起草与审查合同的 AI 助手，订阅制，融资活跃。</li>
-          <li><b>Luminance / Ironclad</b>：法律 AI 与合同全生命周期管理（CLM），服务大量企业法务，估值达独角兽级。</li>
-        </ul>
-        <ul>
-          <li><b>痛点</b>：普通人 / 小企业看不懂合同、请律师贵，签前缺把关</li>
-          <li><b>人群</b>：中小企业、自由职业者、个人签约场景</li>
-          <li><b>本地化</b>：接中国合同法语境与常见格式条款库</li>
-          <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：法律判断需专业人士，本 demo 仅作交互展示、非法律建议</li>
-        </ul>` }
-    ]
-  },
-
   /* ───────────────────────── 13 ubie ───────────────────────── */
   {
     id: "ubie", no: "13", cat: "医疗",
@@ -863,63 +824,62 @@ window.PROJECTS = [
   /* ───────────────────────────── Project 24 ───────────────────────────── */
   {
     id: "dinner", no: "24", cat: "餐饮",
-    kicker: "餐饮 · AIGC / 非结构化抽取",
+    kicker: "餐饮 · 智能冰箱 / 库存闭环",
     title: "今天吃什么",
-    subtitle: "粘贴一段美食帖 → AI 现场把它变成一份今晚能照做的图文菜谱",
+    subtitle: "一台看得见里面的冰箱：知道你有什么、哪样快坏了——今晚先吃快坏的，一周排好只买缺的，做完一道自动扣库存",
     url: "demos/dinner/",
-    tags: ["非结构化→结构化", "严格 JSON 契约", "边界不崩兜底", "纯前端 SVG 图解", "一键分享卡"],
-    phoneHint: "点示例 chip 或贴一段帖子直接跑（需连接 AI 引擎）",
+    tags: ["冰箱库存一条主线", "先吃快坏的", "7 天计划 · 自动减已有", "买到自动回填", "救回 ¥/kg 计数", "离线可玩"],
+    phoneHint: "打开冰箱直接玩：今晚 / 一周 / 清单全部离线可跑，连 AI 后还能用现有食材现想一道",
     sections: [
       {
         label: "是什么",
-        html: `<p>把刷到的<b>一段美食帖</b>（探店、brunch、家常菜、深夜放毒……）当场变成
-          <b>一份能照着做的菜谱</b>：粘贴或点选一段真实帖子文案，AI 从<b>这段具体内容</b>里抽出菜品意图，
-          生成结构化字段，前端渲染成图文并茂、份量火候清楚的菜谱。核心卖点是
-          「<b>任意非结构化输入 → 可靠、边界不崩的结构化成品</b>」——这套能力换个领域就是简历、票据、合同的解析。</p>`
+        html: `<p>「今晚吃什么」的真正难点不是没菜谱，是<b>不知道自己有什么</b>：冰箱里囤的菜想不起来、快坏的总是等烂了才发现。
+          这个 app 把<b>冰箱库存</b>做成唯一主线（设定为智能冰箱传感器：摄像头识别 / 称重估量 / 气味判新鲜）：
+          <b>今晚</b>推荐优先用掉快坏的；<b>一周</b>按目标忌口排 7 天、自动减去冰箱已有、只买缺的；
+          做完一道<b>自动扣库存</b>，买到了<b>自动回填</b>——每救回一样快坏的食材，「本月救回 ¥/kg」就涨一格。
+          全程零录入，也不需要从任何别的 App 复制内容。</p>`
       },
       {
         label: "程序逻辑",
-        html: `<h3>一段口语化文案 → 严格结构化菜谱</h3>
+        html: `<h3>冰箱状态 → 推荐 / 计划 → 做完扣库存 → 买到回填</h3>
           <div class="flow">
-            <span class="step">粘贴 / 点选帖子</span><span class="arr">→</span>
-            <span class="step">LLM 抽取菜品意图</span><span class="arr">→</span>
-            <span class="step">严格 JSON 契约</span><span class="arr">→</span>
-            <span class="step">前端 SVG 图文渲染</span><span class="arr">→</span>
-            <span class="step">一键分享卡</span>
+            <span class="step">冰箱库存（传感器）</span><span class="arr">→</span>
+            <span class="step">今晚：先吃快坏的</span><span class="arr">→</span>
+            <span class="step">一周：只买缺的</span><span class="arr">→</span>
+            <span class="step">做完 → 扣库存</span><span class="arr">→</span>
+            <span class="step">买到 → 回填</span>
           </div>
-          <p style="margin-top:14px">两条工程死线（验收下限，必须真在工作、不是 fake output）：</p>
           <ul>
-            <li><b>内容真跟着帖子变</b>：换两段不同的帖子，产出的菜谱必须明显不同、且确实源自各自内容——不是从固定列表抽一道糊弄。</li>
-            <li><b>边界不崩</b>：贴一段根本不是食物的内容，优雅兜底「这条看起来不是吃的」并给示例入口，绝不硬编一道菜。</li>
+            <li><b>库存是唯一事实源</b>：今晚推荐、7 天计划、购物清单三个入口读写同一份冰箱状态，任何一处的动作全局生效</li>
+            <li><b>「先吃我」机制</b>：按保质期倒排的紧急条，今晚推荐和周计划的前两天优先消耗快坏食材——省下的钱（救回 ¥/kg）实时可见、可晒卡</li>
+            <li><b>购物清单闭环</b>：菜谱缺料一键进清单、周计划自动生成清单（减去已有），买到一勾自动回填冰箱</li>
           </ul>
           <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            解耦设计：<b>LLM 只负责「内容真实跟着帖子变」</b>（强制只返回严格 JSON、前端安全解析并对失败兜底），
-            <b>前端只负责「长得不丑」</b>——食材 emoji、8 类步骤图标、构图化盘子主视觉全用纯 SVG/CSS，不用真实照片、不假装图像生成。
-            还有 4 个一键示例 chip 解决零冷启动。</p>`
+            推荐与计划为本地确定性引擎，<b>离线可玩</b>；连 API Key 后「AI 用我冰箱里的现想一道」升级为真模型生成（严格 JSON 契约 + 解析兜底）。演示用虚拟冰箱，数据只存本机浏览器。</p>`
       },
       {
         label: "商业模式",
         html: `<ul>
-            <li><b>导购抽成（最肥）</b>：菜谱 → 一键生成购物清单 → 跳生鲜电商 / 即时零售下单，按 GMV 抽佣</li>
-            <li><b>订阅</b>：收藏夹、营养换算、批量周计划、去广告（菜谱 App 通行的付费墙）</li>
-            <li><b>品牌 / 调味料植入</b>：步骤里的产品位、品牌定制菜谱（原生广告，不打断体验）</li>
-            <li><b>可转发性即增长</b>：每张分享卡都带「用户那一份」+ 克制水印 CTA，输出自带获客</li>
+            <li><b>导购抽成（最肥）</b>：购物清单 → 跳生鲜电商 / 即时零售下单，按 GMV 抽佣——清单由计划自动生成，转化动线极短</li>
+            <li><b>硬件协同</b>：智能冰箱厂商（三星 Family Hub、海尔智家等）缺的正是「库存 → 今晚吃什么」这层内容与决策，可做预装合作或授权</li>
+            <li><b>订阅</b>：营养目标、家庭多人档、批量周计划、去广告</li>
+            <li><b>可转发性即增长</b>：「本月救回 ¥/kg」晒卡 + 菜谱分享卡自带获客</li>
           </ul>`
       },
       {
         label: "市场分析",
         html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
           <ul>
-            <li><b>Samsung Food（前 Whisk，三星 005930.KS）</b>：把任意网页/社媒里的菜谱一键导入成结构化菜谱并自动生成购物清单——和「非结构化 → 结构化」几乎是同一招。</li>
+            <li><b>Samsung Food + Family Hub（三星 005930.KS）</b>：摄像头识别冰箱内容 → 按现有食材推荐菜谱，正是本 demo 的硬件版前提。</li>
             <li><b>Cookpad（东证 2193）</b>：全球最大菜谱社区之一，订阅制盈利、已上市。</li>
             <li><b>HelloFresh（ETR:HFG）</b>：菜谱 → 食材配送，规模化盈利，验证「照着做」需求的商业价值。</li>
             <li><b>Instacart（NASDAQ:CART）</b>：菜谱 → 一键加购 → 即时配送，跑通了导购抽成闭环。</li>
           </ul>
           <ul>
-            <li><b>痛点</b>：刷到馋的帖子，真要做却没头绪——食材、步骤、份量散落在一段口语化文案里，截图存着再没打开</li>
-            <li><b>人群</b>：爱刷美食内容、想自己下厨的年轻人与厨房新手</li>
-            <li><b>本地化</b>：贴合小红书 / 抖音文案口吻，微信内可打开转发，中式食材与火候词汇</li>
-            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：内容真实性依赖 LLM，需做兜底与抽检；公开链接须走后端代理（服务端持 key + 限流 + 每日花费上限）防滥用与控成本</li>
+            <li><b>痛点</b>：家庭食材浪费惊人——买了忘、囤了烂；「先吃快坏的」是每个下厨的人都有、却没有工具帮忙的心智负担</li>
+            <li><b>人群</b>：自己下厨的家庭与年轻人；对「省钱 + 少浪费」双重敏感的持家者</li>
+            <li><b>本地化</b>：中式食材与火候词汇，微信内可打开、晒卡转发</li>
+            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：真实产品依赖库存感知（冰箱硬件或拍照识别）——要求用户手动录入库存的版本必死；本 demo 用虚拟冰箱展示交互与闭环</li>
           </ul>`
       }
     ]
@@ -1181,69 +1141,6 @@ window.PROJECTS = [
     ]
   },
 
-  /* ───────────────────────── 29 sonar（询盘成交）───────────────────────── */
-  {
-    id: "sonar", no: "29", cat: "外贸",
-    kicker: "外贸成交 · 询盘操盘",
-    title: "外贸询盘操盘手",
-    subtitle: "贴一封外国买家询盘 → AI 判真伪意图 + 砍价空间 + 用买家语言起草回复 + 报价策略",
-    url: "demos/sonar/",
-    tags: ["买家成色评分","真伪/诈骗识别","隐藏需求洞察","母语回复草稿","需连接 AI"],
-    phoneHint: "把询盘原文贴进去（点示例直接跑，连接 AI 体验最佳）",
-    sections: [
-      {
-        label: "是什么",
-        html: `<p>外贸业务员每天被询盘淹没，真买家、贸易商、随便问问、同行套价、诈骗混在一起。
-          把买家发来的询盘贴进去，AI 先给<b>意向分</b>和<b>买家类型</b>，列出正向信号与风险信号，
-          点破他<b>没明说但最在意的点</b>（交期？认证？账期？）和<b>砍价空间</b>，
-          再用<b>买家的语言</b>起草一封专业回复，并解释这封信的报价策略和钩子。
-          让中小外贸厂也有「金牌业务员」级别的首轮响应。</p>`
-      },
-      {
-        label: "程序逻辑",
-        html: `<h3>一封询盘 → 成色判断 → 回复 + 策略</h3>
-          <div class="flow">
-            <span class="step">贴询盘</span><span class="arr">→</span>
-            <span class="step">评分 + 风险信号</span><span class="arr">→</span>
-            <span class="step">推断隐藏需求</span><span class="arr">→</span>
-            <span class="step">母语回复 + 报价策略</span>
-          </div>
-          <ul>
-            <li><b>意向分环</b> + 5 类买家标签（真实进口商/贸易商/随便问问/同行套价/疑似诈骗），与信号自洽</li>
-            <li>风险信号<b>点名具体证据</b>：如「要工厂地址但无公司信息」「催打款只给 WhatsApp」</li>
-            <li>对诈骗/套价，回复策略是<b>先要资质细节再报价</b>，绝不直接甩完整价目表和工厂地址</li>
-          </ul>
-          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            引擎为 live LLM，强制严格 JSON、前端规整兜底；reply_draft 用买家语言、针对这封询盘具体内容，非通用模板。</p>`
-      },
-      {
-        label: "商业模式",
-        html: `<ul>
-            <li><b>SaaS 订阅</b>：按业务员席位收费，询盘自动分级 + 一键起草回复</li>
-            <li><b>按成交分佣</b>：高意向询盘优先跟进，跑通转化后抽成</li>
-            <li><b>B 端集成</b>：做成阿里国际站 / 外贸 CRM / 邮箱的插件，嵌进现有工作流</li>
-            <li><b>数据飞轮</b>：哪类询盘真成交 → 反哺评分模型与话术，越用越准</li>
-          </ul>`
-      },
-      {
-        label: "市场分析",
-        html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-          <ul>
-            <li><b>阿里巴巴国际站（NYSE:BABA / 09988.HK）</b>：已上线 AI 生意助手帮外贸商写开发信、答询盘，验证「AI 替业务员」的真实需求。</li>
-            <li><b>OKKI（小满科技）/ 孚盟 / 询盘云</b>：外贸 CRM/SCRM，把询盘管理与跟进做成订阅制生意。</li>
-            <li><b>Apollo.io / Lusha / Clay</b>：B2B 线索情报与打分，证明「给线索评级」是规模化付费项。</li>
-          </ul>
-          <ul>
-            <li><b>AI 时代特有</b>：以前判断买家成色、识破套价/诈骗、写多语种回复，全靠资深双语业务员的经验；现在 AI<b>7×24 多语种操盘</b>，把金牌业务员的判断力复制给每个小厂</li>
-            <li><b>痛点</b>：询盘真假难辨、回复慢错失商机、新手业务员容易被同行套走底价</li>
-            <li><b>人群</b>：中小外贸工厂、SOHO、阿里国际站/展会获客的外贸团队</li>
-            <li><b>本地化</b>：接邮箱/国际站询盘流、企业资信查询、汇率与报价库可做成生产级</li>
-            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：买家真伪最终需结合资信核验；回复仍应由业务员把关后发出；公开使用应走后端代理保护 Key 与控成本</li>
-          </ul>`
-      }
-    ]
-  },
-
   /* ───────────────────────── 30 ping（留学生身份合规 · 人出海）───────────────────────── */
   {
     id: "ping", no: "30", cat: "留学",
@@ -1322,80 +1219,6 @@ window.PROJECTS = [
     sections: []
   },
 
-  /* ───────────────────────── 32 probe（外贸下厂 · 询盘结构化探针）───────────────────────── */
-  {
-    id: "probe", no: "32", cat: "外贸",
-    kicker: "外贸下厂 · 询盘结构化",
-    title: "询盘结构化探针",
-    subtitle: "贴一封英文买家询盘 → 按 9 大类拆出「采购缺口清单」+ 一张「下厂询价单」；价格/规格/认证这些只有你能定的，留白等你，绝不替你猜",
-    url: "demos/probe/",
-    tags: ["9 大类缺口核对","逐项标原文证据","留白只等你的判断","判断存成你的标准 · 复利","一键下厂 RFQ","需连接 AI"],
-    phoneHint: "贴买家询盘原文（点示例直接跑；连接 AI 体验最佳，未连接看离线样张不空白）",
-    sections: [
-      {
-        label: "是什么",
-        html: `<p>做外贸、手里有工厂也有客户的人，每天收到买家英文询盘，信息散、缺得到处都是。探针把一封询盘拆成两屏：
-          ①<b>采购缺口清单</b>——按 9 大类（品类规格 / 数量交期 / 认证合规 / 包装唛头 / 物流条款 / 价格条款 / 质保售后 / 单证 / 沟通）逐项核对，
-          标出「已明确 / 含糊 / 没提 / 需你定」，每条都附<b>原文证据</b>；
-          ②<b>工厂简报骨架 · 留白版</b>——把已知的填进去，<b>价格、品类专属规格、认证编号这些只有你的经验能定的地方，精准留白</b>。
-          它的本分是<b>炫你的判断、当你的凭证</b>，绝不替你编一个看起来对、其实是猜的数字。</p>`
-      },
-      {
-        label: "程序逻辑",
-        html: `<h3>一封询盘 → 缺口核对 → 留白简报 + 下厂询价单</h3>
-          <div class="flow">
-            <span class="step">贴询盘</span><span class="arr">→</span>
-            <span class="step">9 大类逐项核对</span><span class="arr">→</span>
-            <span class="step">标证据 + 留白</span><span class="arr">→</span>
-            <span class="step">存成你的标准</span><span class="arr">→</span>
-            <span class="step">一键下厂 RFQ</span>
-          </div>
-          <ul>
-            <li>9 大类 35 字段写死在前端 = <b>结构事实源</b>；模型只回<b>字面出现</b>的信息，没出现一律算「缺」，<b>绝不补全</b></li>
-            <li><b>红线在代码层强制</b>：价格 / FOB / CIF / DDP 永远是留白、绝不出数字；不点名不推荐任何工厂；品类专属规格 / 认证只列候选，把「这一类真正的强制项」标成「需你定」</li>
-            <li><b>判断捕获 → 复利</b>：留白可填，填完「存为我的标准」→ 下次同类询盘自动预填、缺口当场减少。你不可替代的判断，变成会复利、且归你的资产</li>
-          </ul>
-          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            引擎为 live LLM，强制严格 JSON、前端按本体规整兜底；未连接 AI 时首屏即渲染离线样张，不白屏。</p>`
-      },
-      {
-        label: "商业模式",
-        html: `<ul>
-            <li><b>SaaS 订阅</b>：按业务员 / 采购席位收费，询盘自动拆解 + 一键生成下厂询价单</li>
-            <li><b>判断资产沉淀</b>：你存的每条标准都留在你这边，越用缺口越少、响应越快——迁移成本即护城河</li>
-            <li><b>B 端集成</b>：做成阿里国际站 / 外贸 CRM / 邮箱插件，嵌进现有下单流程</li>
-            <li><b>数据飞轮</b>：哪些留白最常被补、哪类询盘最终成交 → 反哺核对清单与询价模板</li>
-          </ul>`
-      },
-      {
-        label: "市场分析",
-        html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-          <ul>
-            <li><b>阿里巴巴国际站 RFQ（NYSE:BABA / 09988.HK）</b>：买家发 RFQ、平台结构化分发给工厂报价，验证「把询盘结构化成可报价单」的真实需求。</li>
-            <li><b>SAP Ariba（NYSE:SAP）/ Coupa / Jaggaer</b>：采购寻源 SaaS，把 RFQ / 比价 / 供应商管理做成规模化订阅生意。</li>
-            <li><b>Scoutbee / Tealbook / Keelvar</b>：AI 寻源与供应商情报，证明「用 AI 给采购流程做判断辅助」是规模化付费项。</li>
-          </ul>
-          <ul>
-            <li><b>AI 时代特有</b>：以前把一封乱询盘拆成「缺什么、该问工厂什么」全靠老业务员的经验；现在 AI 把核对清单自动化，但<b>关键判断（定价、选规格、点工厂）仍只交给人</b>——AI 做结构，人做判断</li>
-            <li><b>痛点</b>：询盘信息缺得到处都是、新人下厂前漏问导致来回返工、老师傅的判断留不下来全在脑子里</li>
-            <li><b>人群</b>：有工厂和客户资源的外贸 SOHO / 中小工厂业务 / 采购中间商</li>
-            <li><b>本地化</b>：接邮箱 / 国际站询盘流、品类规格库与认证库、汇率与报价库可做成生产级</li>
-            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：探针只做结构化与缺口提示，<b>绝不替任何一方定价或指定供应商</b>；最终规格、认证、报价必须由有经验的人拍板；公开使用应走后端代理保护 Key 与控成本</li>
-          </ul>`
-      }
-    ]
-  },
-
-  /* ───────────────────────── 33–35 AnyHome 三件套（留学生租房中介 · 内部工具，直达实时 demo）───────────────────────── */
-  {
-    id: "anyhome-listing-card", no: "33", cat: "留学租房", direct: true,
-    kicker: "留学生租房中介 · 房源物料",
-    title: "房源物料生成器",
-    subtitle: "把 StreetEasy 复制来的房源文字，5 分钟变成一张 AnyHome 品牌的中英双语推荐卡——通勤、周边、关键条款都呈现好，guarantor 显著标出，一键导图发学生",
-    url: "demos/anyhome-listing-card/",
-    tags: ["粘文字 → 双语房源卡", "通勤标草稿 · 可现场改", "guarantor 显著标出", "缺失标「待补」绝不编造", "一键导出 PNG"],
-    sections: []
-  },
   {
     id: "anyhome-intake", no: "34", cat: "留学租房", direct: true,
     kicker: "留学生租房中介 · 需求前台",
@@ -1520,138 +1343,12 @@ window.PROJECTS = [
     ]
   },
 
-  /* ───────────────────────── 38 order-check（华人餐饮供应链 · 订单-送货单核对）───────────────────────── */
-  {
-    id: "order-check", no: "38", cat: "餐饮供应链", featured: true,
-    kicker: "华人餐饮供应链 · 晚间事后审计",
-    title: "晚上三分钟，对一下单",
-    subtitle: "中餐馆的采购跑在微信语音和手写送货单上：厨师订、帮厨收、老板付，中间零核对。把昨晚的订货记录和今天的送货单贴进来——没订的货、订三到二、悄悄涨的价，逐项标出来，明早给销售的对账消息一键生成",
-    url: "demos/order-check/",
-    tags: ["微信订货×送货单 逐项核对","零行为改变 · 事后审计","没订到货 / 订送不符 / 价格异常","近四周价格记忆","规格歧义提醒（虾的 size）","一键对账消息","纯离线可玩"],
-    phoneHint: "点内置案例直接看核对结果；差异话术永远是「是不是搬错/写错」，不做指控（全程本地，不上传）",
-    sections: [
-      {
-        label: "是什么",
-        html: `<p>全美数万家中餐馆的采购跑在微信语音 + 手写送货单 + 纸质月结上，主流餐饮 SaaS 不做中文、不懂微信订货、不认手写单。
-          最要命的结构是<b>订-收-付三点分离</b>：厨师晚上微信订货、帮厨早上七点收货、老板月底付钱——三个人之间<b>没有任何核对环节</b>，差异就藏在这条缝里。
-          这个工具的关键设计是<b>零行为改变</b>：绝不要求收货时称重对单（改变早上七点帮厨的动作 = 产品死亡），
-          而是打烊后把微信订货记录和送货单放到一起，<b>三分钟事后审计</b>：没订的货上了单、订三箱到两箱、油悄悄涨了 10%、订虾没说 size——逐项标出，明早给销售的对账消息一键生成。</p>`
-      },
-      {
-        label: "程序逻辑",
-        html: `<h3>订货语料 → 送货单行项 → 确定性比对 → 对账消息</h3>
-          <div class="flow">
-            <span class="step">贴微信 + 送货单</span><span class="arr">→</span>
-            <span class="step">抽订货项</span><span class="arr">→</span>
-            <span class="step">逐项比对</span><span class="arr">→</span>
-            <span class="step">价格记忆核查</span><span class="arr">→</span>
-            <span class="step">明早对账消息</span>
-          </div>
-          <ul>
-            <li><b>五类结果</b>：没订到货（红·要钱的）/ 规格发错（红）/ 订送不符（琥珀·影响明天出菜）/ 价格异常（紫·对比近四周价格记忆，带走势小图）/ 订货习惯提醒（订虾没说 16/20 还是 21/25——这个口子每次都可能漏）</li>
-            <li><b>对照台</b>：左边微信气泡（语音转文字样式还原）、右边黄色复写纸质感的送货单，同号图钉双向跳转——每条差异都有原文可查</li>
-            <li><b>话术红线</b>：差异 ≠ 指控。生成的对账消息永远是「是不是搬错车 / 单子写错了」，给对方台阶、把账对清——绝不做回扣暗示，判断留给老板</li>
-            <li><b>敏感区红线</b>：严格停留在采购侧，不碰营收、不碰税务——既是合规边界也是老板敢用的前提</li>
-          </ul>
-          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            解析层为本地词典引擎（中餐采购高频品类 + 中文数量词 + 规格正则），比对为确定性计算，<b>纯离线可玩</b>；连 API Key 后用真实模型解析任意格式（抽取结果强制回原文核验），<b>数量金额的比对永远在本地算</b>。真实产品为拍照 → OCR → 低置信度进人工复核。</p>`
-      },
-      {
-        label: "商业模式",
-        html: `<ul>
-            <li><b>订阅（复购型）</b>：按店/月收费——这是横向核对引擎第一次踩中<b>日频刚需</b>：订货日频 + 对账月频 + 持续经营买方，频次结构远优于低频消费场景</li>
-            <li><b>付费意愿验证点</b>：对账差异通常每月数百至上千美元真金白银——工具费一晚上就赚回来，ROI 一句话讲得清</li>
-            <li><b>数据副产品</b>：核对累积出同供应商同品价格曲线 → 自然长出「采购价格监测」（系列 Demo 06），无需额外录入</li>
-            <li><b>渠道假设</b>：配送商销售每天物理穿行数十家餐馆——「账目经得起核对」对诚实配送商是销售武器，存在渠道主动分发可能</li>
-          </ul>`
-      },
-      {
-        label: "市场分析",
-        html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-          <ul>
-            <li><b>MarginEdge / xtraCHEF（Toast 收购）</b>：美国餐饮发票数字化与成本管理 SaaS，按店月费，证明「把纸质单据变成可核对数据」是成熟付费品类。</li>
-            <li><b>Toast（NYSE:TOST）</b>：餐饮垂直 SaaS 巨头，验证按店订阅 + 增值模块的规模化路径。</li>
-            <li><b>国内美菜 / 蜀海 / 快驴</b>：重资本供应链绞肉机——本品明确不做交易、只做核对层，避开其战场。</li>
-          </ul>
-          <ul>
-            <li><b>双重忽视缝隙</b>：主流 SaaS 不做中文不懂微信订货不认手写单；国内玩家出不来——全美数万家中餐馆 + 数百家区域华人配送商就运转在这条缝里</li>
-            <li><b>同构复用</b>：非结构化对话抽取承诺 → 与正式文档比对 → 差异清单——同一引擎第三次成立（询盘、租房之后），首次承载复购型商业模式</li>
-            <li><b>本地化入口</b>：区域配送商销售代表、大费城中餐协会——demo 可步行验证</li>
-            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：中英混排 + 手写送货单 OCR 是硬骨头（缓解：低置信度进人工复核，不追求全自动）；规格歧义（如虾的 size 标准）需真实语料打磨；本 demo 从已识别文本开始、价格记忆为演示数据</li>
-          </ul>`
-      }
-    ]
-  },
-
-  /* ───────────────────────── 39 statement-recon（华人餐饮供应链 · 月结对账核销）───────────────────────── */
-  {
-    id: "statement-recon", no: "39", cat: "餐饮供应链",
-    kicker: "华人餐饮供应链 · 月结核销",
-    title: "月底这笔账，核完再付",
-    subtitle: "把这个月的送货单堆和配送商 statement 放上核销台：对上的逐笔打勾变淡，剩下的就是问题——重复计费、没见过单子的收费、金额不符、说好没兑现的 credit。核完给你一个数：该付多少，而不是账单要多少",
-    url: "demos/statement-recon/",
-    tags: ["送货单堆 × statement 逐笔核销","重复计费 / 无单收费 / 金额不符","微信承诺的 credit 追兑现","三个大数字：要多少/争议/该付","对账消息 · 表达付款意愿","纯离线可玩"],
-    phoneHint: "点内置案例直接看核销结果；差异话术永远是「核清就结」，维护供应关系（全程本地，不上传）",
-    sections: [
-      {
-        label: "是什么",
-        html: `<p>月结是华人餐饮供应链里<b>唯一一次钱和单据对面的机会</b>——但一张张翻单子核对是一晚上的活，所以多数老板扫一眼总数就付了。
-          差异恰恰藏在这一步：<b>同一单号收两次、statement 上有收费但送货单堆里没这张单、单子 $301 账上 $321、微信里说好的 credit 到月底没兑现</b>。
-          这个工具把送货单堆和 statement 放上核销台：<b>对上的逐笔打勾变淡，剩下没勾掉的就是该问的</b>；
-          最后给三个大数字——Statement 要多少、核出多少争议、<b>这个月该付多少</b>——和一条「核清就结」的对账消息。</p>`
-      },
-      {
-        label: "程序逻辑",
-        html: `<h3>单据堆 → 逐笔核销 → 争议汇总 → 该付金额 + 对账消息</h3>
-          <div class="flow">
-            <span class="step">贴单堆 + statement</span><span class="arr">→</span>
-            <span class="step">按单号逐笔核销</span><span class="arr">→</span>
-            <span class="step">credit 追兑现</span><span class="arr">→</span>
-            <span class="step">该付金额</span><span class="arr">→</span>
-            <span class="step">对账消息</span>
-          </div>
-          <ul>
-            <li><b>四类争议 + 一类留底</b>：重复计费（同单号两笔）/ 无单收费（要求出示签收单）/ 金额不符（以签收单为准）/ <b>说好的 credit 没兑现</b>（微信承诺 vs statement 的 credit 行——与 Demo 04 闭环：晚间审计发现的差异，月结时追兑现）/ 未入账留底（月底的单下月该出现）</li>
-            <li><b>核销的视觉本质</b>：左边送货单堆（小票卡片），右边 statement（账本行）——对上的打勾变淡，问题行高亮，缺失的 credit 画出「这里本该有一行」的虚线占位</li>
-            <li><b>话术红线</b>：录重、忘挂 credit 是月结常态，不是罪证——消息永远是「核一下再结」+ 明确付款意愿（先按核清的数结，差的确认后补），把账对明白、把关系处长远</li>
-            <li><b>敏感区红线</b>：严格采购侧，不碰营收、不碰税务</li>
-          </ul>
-          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            解析与核销为本地确定性引擎，<b>纯离线可玩</b>；连 API Key 后用真实模型解析任意格式（整行回原文核验），核销匹配永远在本地算。真实产品为拍照 → OCR → <b>低置信度字段进人工复核队列</b>——中英混排手写单是硬骨头，不追求全自动。</p>`
-      },
-      {
-        label: "商业模式",
-        html: `<ul>
-            <li><b>与 Demo 04 打包订阅</b>：日审计（订单核对）+ 月核销（statement 对账）是同一条信任链的两端——日频留存 + 月频出真金白银的价值时刻</li>
-            <li><b>付费意愿最硬的一环</b>：对账差异通常每月数百至上千美元——「这个月该付 $4,800 而不是 $5,575」这句话本身就是定价依据</li>
-            <li><b>结构平移</b>：yzh 短租托管的 Invoice OCR + 人工复核 + ledger 层直接平移——受托中间层的「可解释对账」母题跨行业成立</li>
-            <li><b>争议汇总页即谈判工具</b>：老板拿着核销记录跟配送商谈账，工具成为月底结账仪式的一部分——嵌入越深，替换成本越高</li>
-          </ul>`
-      },
-      {
-        label: "市场分析",
-        html: `<p class="mk-bench"><b>对标 · 谁已靠这套盈利</b></p>
-          <ul>
-            <li><b>MarginEdge / xtraCHEF（Toast 收购）</b>：发票数字化 + 对账是其核心付费模块，按店月费，品类已被验证。</li>
-            <li><b>Bill.com（NYSE:BILL）/ Ramp</b>：中小企业应付账款自动化，证明「对账 + 付款前核验」是大生意。</li>
-            <li><b>AppZen / Stampli</b>：AI 发票审核，B 端付费成熟。</li>
-          </ul>
-          <ul>
-            <li><b>订-收-付三点分离的月度总账</b>：厨师订、帮厨收、老板付——月结 statement 是三点分离积累一个月后的总对账时刻，也是差异唯一可能被发现的时刻</li>
-            <li><b>双重忽视缝隙</b>：主流 AP 工具不认中英混排手写送货单、不懂「微信里说好的 credit」这种口头账——这正是华人供应链的日常</li>
-            <li><b>与 Demo 04 的闭环</b>：晚间审计发现「白洋葱 $22 没订」→ 销售微信答应冲掉 → 月底核销追这笔 credit 兑没兑现——一条差异从发现到闭环全程留痕</li>
-            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：手写单 OCR 是硬骨头（低置信度进人工复核，成本模型要算清）；credit 承诺散落在语音和口头里，覆盖率有限；本 demo 从已识别文本开始、金额为演示数据</li>
-          </ul>`
-      }
-    ]
-  },
-
   /* ───────────────────────── 40 price-pulse（华人餐饮供应链 · 采购价格透明面板）───────────────────────── */
   {
     id: "price-pulse", no: "40", cat: "餐饮供应链",
     kicker: "华人餐饮供应链 · 价格记忆",
     title: "悄悄涨的价，摆到台面上",
-    subtitle: "Demo 04/05 的数据副产品：每晚拍的送货单攒三个月，自动长成每个品的 12 周价格曲线——跳涨、爬价、量价分解，异常自己浮出来，一个字不用录。⛔ 明确不做「回扣检测」：数据只呈现异常，判断永远留给老板",
+    subtitle: "纯数据副产品：每晚随手拍的送货单攒三个月，自动长成每个品的 12 周价格曲线——跳涨、爬价、量价分解，异常自己浮出来，一个字不用录。⛔ 明确不做「回扣检测」：数据只呈现异常，判断永远留给老板",
     url: "demos/price-pulse/",
     tags: ["零录入 · 送货单自动累积","12 周价格曲线 + 基准带","跳涨 / 爬价 / 量价分解","爬价对人的记忆免疫","谈价弹药 · 中性话术","⛔ 不做回扣检测","纯离线"],
     phoneHint: "切换两家店看两种状态（有事 / 干净）；点品类 chip 换曲线，点异常条目跳到对应曲线",
@@ -1659,7 +1356,7 @@ window.PROJECTS = [
       {
         label: "是什么",
         html: `<p>最阴险的涨价不是跳涨，是<b>爬价</b>：每周涨一点，单看哪周都"正常"，十二周下来贵了一成——<b>它对人的记忆免疫，这正是它的设计</b>。
-          这块面板是 Demo 04/05 的<b>数据副产品</b>：老板每晚拍的送货单，攒三个月自动长成每个品的价格曲线，<b>零录入</b>。
+          这块面板是纯粹的<b>数据副产品</b>：老板每晚随手拍的送货单，攒三个月自动长成每个品的价格曲线，<b>零录入</b>。
           三类异常自己浮出来：<b>跳涨</b>（本周对前四周均 +8%）、<b>爬价</b>（单周不超阈值、12 周累计 +10%）、<b>量价分解</b>（支出涨了，拆开看是量还是价）。
           伦理红线写在产品脸上：<b>不做「回扣检测」</b>——数据只能呈现异常，不能证明动机；错误的指控毁掉的是后厨。异常摆到台面上，判断永远留给老板。</p>`
       },
@@ -1685,7 +1382,7 @@ window.PROJECTS = [
       {
         label: "商业模式",
         html: `<ul>
-            <li><b>订阅增值层</b>：Demo 04（日审计）+ 05（月核销）的用户免费解锁——数据副产品零边际成本，却是续费理由最直观的一屏</li>
+            <li><b>订阅增值层</b>：作为采购核对订阅的增值面板——数据副产品零边际成本，却是续费理由最直观的一屏</li>
             <li><b>粘性即护城河</b>：价格记忆随使用时间增值——用满一年的店，换工具等于扔掉自己一年的价格资产</li>
             <li><b>谈价弹药 = 可量化 ROI</b>：「把异常品谈回基准价 ≈ 年省 $X」——工具自己算出自己的价值</li>
             <li><b>后期网络效应（V2）</b>：多店匿名聚合后可做区域价格基准——「同城中餐馆花生油都在 $46–48」，那是另一个量级的产品，V1 克制不碰</li>
@@ -1700,10 +1397,10 @@ window.PROJECTS = [
             <li><b>Datassential / NielsenIQ</b>：食材价格情报本身就是可售卖的数据生意——多店聚合后的 V2 方向已被验证。</li>
           </ul>
           <ul>
-            <li><b>为什么现在没人给中餐馆做</b>：前提是把中英混排手写送货单变成结构化数据——主流工具卡在 OCR 这一步，而这正是 Demo 04/05 的存量产出</li>
+            <li><b>为什么现在没人给中餐馆做</b>：前提是把中英混排手写送货单变成结构化数据——主流工具卡在 OCR 这一步，而这正是每晚拍单沉淀下来的存量产出</li>
             <li><b>伦理校准即差异化</b>：市面上「防内鬼」话术的工具会毁掉老板与后厨的信任、也会被后厨抵制——「采购透明化、判断留给人」的定位既是底线也是可被采纳的前提</li>
-            <li><b>与前两个 demo 的关系</b>：04 抓当晚、05 核当月、06 看三个月——三个时间尺度覆盖同一条采购信任链，订阅打包顺理成章</li>
-            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：价值依赖 04/05 的数据积累，冷启动期面板是空的（需设计首月体验）；阈值需真实语料调参（本 demo 为演示数据）；规格混淆会污染价格曲线（已在 04 做规格感知，仍需人工复核兜底）</li>
+            <li><b>三个时间尺度</b>：当晚核对、当月核销、三个月看趋势——覆盖同一条采购信任链，订阅打包顺理成章</li>
+            <li style="color:var(--ink-soft)"><b>风险（如实说）</b>：价值依赖日常单据的数据积累，冷启动期面板是空的（需设计首月体验）；阈值需真实语料调参（本 demo 为演示数据）；规格混淆会污染价格曲线（解析层需做规格感知，仍需人工复核兜底）</li>
           </ul>`
       }
     ]
@@ -2146,43 +1843,6 @@ window.PROJECTS_EN = [
     ]
   },
   {
-    id: "clause-risk", no: "12", cat: "Legal",
-    kicker: "Legal Tech · Pre-sign Advisor",
-    title: "Contract Pre-sign Advisor",
-    subtitle: "Paste a clause + pick your side → sign or not, which lines are non-negotiable, what protection is missing, then get a ready-to-send redline email",
-    url: "demos/clause-risk/", tags: ["Side-aware reading","Tilt verdict","Must-fix / Nice-to-have tiering","Missing clause detection","One-click redline email"],
-    phoneHint: "Pick your side, paste a clause — see the tilt verdict and redline email",
-    sections: [
-      { label: "What it is",   html: `<p>It does more than flag red flags — it makes the call for you: first pick whether you are the tenant / vendor / job applicant… whichever side, then it reads the document to judge <b>who it favors and whether you should sign</b>, splits risks into <b>'must-fix' and 'worth pushing for'</b>, surfaces <b>protections that should be there but aren't</b>, and generates a <b>ready-to-send redline email</b> with one click.</p>` },
-      { label: "How it works", html: `<h3>Pick side → Highlight → Tilt verdict → Must-fix / Missing → Redline email</h3>
-        <div class="flow"><span class="step">Pick your side</span><span class="arr">→</span><span class="step">Highlight real text</span><span class="arr">→</span><span class="step">Tilt verdict</span><span class="arr">→</span><span class="step">Must-fix / Nice-to-have + Missing clauses</span><span class="arr">→</span><span class="step">One-click redline email</span></div>
-        <ul>
-          <li>Highlights are always <b>real sentences from your pasted text</b> (regex matchAll; even AI is forced to verify the string exists in the source before marking it) — <b>never fabricated highlights</b></li>
-          <li>The same clause <b>flips interpretation with your side</b>: a trap for the weaker signing party becomes a shield for the party that drafted it — switch roles and the verdict and email recalculate instantly</li>
-          <li>Tilt score + one-line verdict (hold off / negotiate first / safe to sign); risks split into must-fix and nice-to-have</li>
-          <li>'Missing clauses' catches what regex can't see: <b>liability caps, reciprocal termination rights, counterparty breach remedies, data deletion</b> — protections that should be standard but aren't there</li>
-        </ul>
-        <p style="margin-top:16px">Logic layer is <b>fully local, fully offline</b>; connect an API key to use a real model for risk extraction and email polishing. Includes a 'not legal advice' disclaimer.</p>` },
-      { label: "Business model", html: `<ul>
-          <li><b>Enterprise subscription</b>: automated first-pass review of legal / sales contracts, priced per seat or usage (LawGeex / Spellbook model)</li>
-          <li><b>CLM platform</b>: full contract lifecycle — draft, review, sign, archive (Ironclad model)</li>
-          <li><b>B2C / SMB</b>: lightweight 'pre-sign checkup' subscription for individuals and small businesses</li>
-        </ul>` },
-      { label: "Market", html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
-        <ul>
-          <li><b>LawGeex</b>: AI auto-reviews contracts against company standards and flags risk — enterprise paid, a flagship in AI contract review.</li>
-          <li><b>Spellbook / Robin AI</b>: AI assistants for drafting and reviewing contracts, subscription model, actively fundraising.</li>
-          <li><b>Luminance / Ironclad</b>: legal AI and full-lifecycle CLM serving large corporate legal teams, valued at unicorn level.</li>
-        </ul>
-        <ul>
-          <li><b>Pain</b>: individuals and small businesses can't parse contracts; hiring a lawyer is expensive; no gatekeeper before signing</li>
-          <li><b>Who</b>: SMBs, freelancers, individuals signing contracts</li>
-          <li><b>Localization</b>: integrate Chinese contract law context and standard boilerplate clause library</li>
-          <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: legal judgment requires a professional; this demo is an interactive showcase only — not legal advice</li>
-        </ul>` }
-    ]
-  },
-  {
     id: "ubie", no: "13", cat: "Health",
     kicker: "Digital Health · Symptom Check",
     title: "Symptom Self-triage",
@@ -2512,63 +2172,62 @@ window.PROJECTS_EN = [
 
   {
     id: "dinner", no: "24", cat: "Food",
-    kicker: "Food · AIGC / Unstructured Extraction",
+    kicker: "Food · Smart Fridge / Inventory Loop",
     title: "What's for Dinner",
-    subtitle: "Paste a food post → AI turns it on the spot into a step-by-step recipe you can cook tonight",
+    subtitle: "A fridge that can see inside itself: it knows what you have and what's about to go bad — cook the urgent stuff tonight, plan the week around what you own, and inventory updates itself as you cook and shop",
     url: "demos/dinner/",
-    tags: ["Unstructured → structured", "Strict JSON contract", "Graceful boundary fallback", "Pure front-end SVG illustration", "One-tap share card"],
-    phoneHint: "Click an example chip or paste a post and run it (AI engine required)",
+    tags: ["Fridge inventory as single source", "Eat the urgent stuff first", "7-day plan · subtracts what you own", "Purchases auto-restock", "¥/kg-rescued counter", "Playable offline"],
+    phoneHint: "Open the fridge and play: Tonight / Week / List all run offline; connect AI to improvise a dish from what you have",
     sections: [
       {
         label: "What it is",
-        html: `<p>Take <b>any food post</b> you scrolled past — a restaurant write-up, brunch shot, home-cook recipe, late-night drool post — and turn it into
-          <b>a recipe you can actually cook</b>: paste or select a real post, AI extracts the dish intent from <b>that specific content</b>,
-          generates structured fields, and the front end renders a clearly formatted recipe with ingredients, quantities, and timing. The core value is
-          '<b>arbitrary unstructured input → reliable, boundary-stable structured output</b>' — the same capability applied to a different domain becomes résumé, receipt, or contract parsing.</p>`
+        html: `<p>The real problem with 'what's for dinner' isn't a lack of recipes — it's <b>not knowing what you have</b>: groceries get buried, and perishables are discovered only after they've gone bad.
+          This app makes <b>fridge inventory</b> the single storyline (premised on smart-fridge sensors: camera recognition / weight estimation / smell-based freshness):
+          <b>Tonight</b> recommends dishes that use up what's expiring first; <b>Week</b> plans 7 days around your goals, subtracts what you already own, and buys only what's missing;
+          finishing a dish <b>deducts inventory automatically</b>, and purchases <b>restock it automatically</b> — every rescued ingredient bumps the monthly '¥/kg saved' counter.
+          Zero data entry, and nothing to copy in from any other app.</p>`
       },
       {
         label: "How it works",
-        html: `<h3>Casual post copy → strict structured recipe</h3>
+        html: `<h3>Fridge state → recommend / plan → cook deducts → purchases restock</h3>
           <div class="flow">
-            <span class="step">Paste / select post</span><span class="arr">→</span>
-            <span class="step">LLM extracts dish intent</span><span class="arr">→</span>
-            <span class="step">Strict JSON contract</span><span class="arr">→</span>
-            <span class="step">Front-end SVG render</span><span class="arr">→</span>
-            <span class="step">One-tap share card</span>
+            <span class="step">Fridge inventory (sensors)</span><span class="arr">→</span>
+            <span class="step">Tonight: urgent first</span><span class="arr">→</span>
+            <span class="step">Week: buy only what's missing</span><span class="arr">→</span>
+            <span class="step">Cooked → deduct</span><span class="arr">→</span>
+            <span class="step">Bought → restock</span>
           </div>
-          <p style="margin-top:14px">Two hard engineering requirements (acceptance floor — must actually work, not fake output):</p>
           <ul>
-            <li><b>Output genuinely tracks the input</b>: Swap two different posts and the recipes must be clearly distinct and traceable to their respective source — not a random pick from a fixed list.</li>
-            <li><b>Boundaries don't break</b>: Paste something that has nothing to do with food, and the app gracefully returns 'this doesn't look like food' with sample entry points — it never hard-codes a dish.</li>
+            <li><b>Inventory is the single source of truth</b>: Tonight, the weekly plan, and the shopping list all read and write the same fridge state — an action anywhere takes effect everywhere</li>
+            <li><b>The 'eat me first' rail</b>: an urgency strip sorted by expiry; Tonight and the first two days of the weekly plan consume expiring items first — the money saved (¥/kg rescued) is visible in real time and shareable as a card</li>
+            <li><b>Closed shopping loop</b>: missing ingredients go to the list in one tap, the weekly plan generates its own list (minus what you own), and checking off a purchase restocks the fridge</li>
           </ul>
           <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            Decoupled design: <b>LLM handles only 'output genuinely tracks the input'</b> (forced to return strict JSON; front end parses safely and catches failures gracefully).
-            <b>Front end handles only 'looks good'</b> — ingredient emojis, 8 step-type icons, and a composed plate hero are all pure SVG/CSS; no real photos, no pretend image generation.
-            Four one-click example chips eliminate cold-start friction.</p>`
+            Recommendations and planning run on a local deterministic engine, <b>playable offline</b>; with an API key, 'improvise a dish from my fridge' upgrades to real model generation (strict JSON contract + parse fallbacks). The demo fridge is virtual; data stays in your browser.</p>`
       },
       {
         label: "Business model",
         html: `<ul>
-            <li><b>Commerce referrals (highest margin)</b>: Recipe → one-tap shopping list → link to grocery delivery or on-demand retail; commission on GMV</li>
-            <li><b>Subscription</b>: Saved recipes, nutrition conversion, bulk weekly meal plans, ad-free (the standard paywall for recipe apps)</li>
-            <li><b>Brand / ingredient placement</b>: Sponsored product slots in method steps, brand-custom recipe sets (native advertising, non-intrusive)</li>
-            <li><b>Shareability as growth</b>: Every share card carries the user's own recipe version plus a restrained watermark CTA — distribution built into the output</li>
+            <li><b>Commerce referrals (highest margin)</b>: shopping list → grocery delivery / on-demand retail; commission on GMV — the list is auto-generated by the plan, so the conversion path is minimal</li>
+            <li><b>Hardware partnerships</b>: smart-fridge makers (Samsung Family Hub, Haier, etc.) lack exactly this 'inventory → what's for dinner' decision layer — preinstall or licensing deals</li>
+            <li><b>Subscription</b>: nutrition goals, multi-person household profiles, bulk weekly plans, ad-free</li>
+            <li><b>Shareability as growth</b>: the '¥/kg rescued this month' card and recipe share cards carry their own distribution</li>
           </ul>`
       },
       {
         label: "Market",
         html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
           <ul>
-            <li><b>Samsung Food (formerly Whisk, Samsung 005930.KS)</b>: Imports any webpage or social post into a structured recipe and auto-generates a shopping list — nearly identical to the 'unstructured → structured' move here.</li>
-            <li><b>Cookpad (TSE 2193)</b>: One of the world's largest recipe communities; subscription monetisation; publicly listed.</li>
-            <li><b>HelloFresh (ETR:HFG)</b>: Recipe → ingredient delivery at scale; validates the commercial value of the 'follow-along' use case.</li>
-            <li><b>Instacart (NASDAQ:CART)</b>: Recipe → one-tap cart → same-day delivery; proves the commerce-referral loop works end to end.</li>
+            <li><b>Samsung Food + Family Hub (Samsung 005930.KS)</b>: camera-recognized fridge contents → recipe recommendations from what you own — precisely the hardware version of this demo's premise.</li>
+            <li><b>Cookpad (TSE 2193)</b>: one of the world's largest recipe communities; subscription monetisation; publicly listed.</li>
+            <li><b>HelloFresh (ETR:HFG)</b>: recipe → ingredient delivery at scale; validates the commercial value of the 'follow-along' use case.</li>
+            <li><b>Instacart (NASDAQ:CART)</b>: recipe → one-tap cart → same-day delivery; proves the commerce-referral loop end to end.</li>
           </ul>
           <ul>
-            <li><b>Pain</b>: You see something that looks delicious, but turning a casual post into an actual meal is friction — ingredients, steps, and quantities are buried in conversational copy, and that screenshot never gets opened again</li>
-            <li><b>Who</b>: Food-content enthusiasts and kitchen newcomers who want to cook what they see</li>
-            <li><b>Localization</b>: Tuned to the tone of Xiaohongshu / Douyin posts; shareable in WeChat; Chinese ingredients and cooking-temperature vocabulary</li>
-            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: Output accuracy depends on the LLM — needs fallback logic and spot-checking. Public endpoints require a server-side proxy (server-held key + rate limiting + daily spend cap) to prevent abuse and control costs.</li>
+            <li><b>Pain</b>: household food waste is staggering — bought and forgotten, stocked and spoiled; 'eat the expiring stuff first' is a mental load every home cook carries with no tool to help</li>
+            <li><b>Who</b>: households and young people who cook; anyone doubly sensitive to 'save money + waste less'</li>
+            <li><b>Localization</b>: Chinese ingredients and cooking vocabulary; cards open and share natively in WeChat</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: the real product depends on inventory sensing (fridge hardware or photo recognition) — a version that asks users to log inventory by hand is dead on arrival; this demo uses a virtual fridge to show the interaction and the loop</li>
           </ul>`
       }
     ]
@@ -2822,68 +2481,6 @@ window.PROJECTS_EN = [
       }
     ]
   },
-{
-    id: "sonar", no: "29", cat: "Foreign Trade",
-    kicker: "Foreign Trade · Inquiry Command",
-    title: "Trade Inquiry Commander",
-    subtitle: "Paste a buyer inquiry → AI scores intent + negotiation room + drafts a reply in the buyer's language + pricing strategy",
-    url: "demos/sonar/",
-    tags: ["Buyer quality score", "Fraud / scam detection", "Hidden-need insight", "Native-language reply draft", "AI connection required"],
-    phoneHint: "Paste the original inquiry (click an example to run instantly; best with AI connected)",
-    sections: [
-      {
-        label: "What it is",
-        html: `<p>Trade reps are buried in inquiries every day — real importers, middlemen, tire-kickers, competitor price-fishing, and scammers all mixed together.
-          Paste the buyer's inquiry and the AI first gives an <b>intent score</b> and <b>buyer type</b>, lists positive signals and red flags,
-          surfaces what the buyer <b>hasn't said but cares most about</b> (lead time? certifications? payment terms?) and <b>negotiation room</b>,
-          then drafts a professional reply <b>in the buyer's language</b> and explains the pricing strategy and hooks behind it.
-          Gives every small factory a 'star salesperson' level first-round response.</p>`
-      },
-      {
-        label: "How it works",
-        html: `<h3>One inquiry → quality read → reply + strategy</h3>
-          <div class="flow">
-            <span class="step">Paste inquiry</span><span class="arr">→</span>
-            <span class="step">Score + risk signals</span><span class="arr">→</span>
-            <span class="step">Infer hidden needs</span><span class="arr">→</span>
-            <span class="step">Native reply + pricing strategy</span>
-          </div>
-          <ul>
-            <li><b>Intent score ring</b> + 5 buyer labels (genuine importer / middleman / tire-kicker / competitor price-fishing / suspected scam), consistent with signals</li>
-            <li>Risk signals <b>cite specific evidence</b>: e.g. 'asked for factory address but gave no company info,' 'payment urgency via WhatsApp only'</li>
-            <li>For scams / price-fishing, the reply strategy is <b>request credentials before quoting</b> — never lead with a full price list or factory address</li>
-          </ul>
-          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            Powered by a live LLM with strict JSON enforcement and frontend fallback normalization; reply_draft uses the buyer's language and addresses the specific inquiry — not a generic template.</p>`
-      },
-      {
-        label: "Business model",
-        html: `<ul>
-            <li><b>SaaS subscription</b>: per-rep seat pricing, auto-triage of inquiries + one-click reply drafting</li>
-            <li><b>Conversion commission</b>: prioritize high-intent inquiries, take a cut once deals close</li>
-            <li><b>B2B integration</b>: plugin for Alibaba International / trade CRM / email clients, embedded in existing workflows</li>
-            <li><b>Data flywheel</b>: which inquiry types actually close → feeds back into the scoring model and reply playbook, gets sharper over time</li>
-          </ul>`
-      },
-      {
-        label: "Market",
-        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
-          <ul>
-            <li><b>Alibaba International (NYSE:BABA / 09988.HK)</b>: already ships an AI trade assistant that drafts outreach and replies for exporters — validates real demand for 'AI replacing the sales rep.'</li>
-            <li><b>OKKI / Fumao / Xunpanyun</b>: foreign-trade CRM/SCRM platforms that turned inquiry management and follow-up into a subscription business.</li>
-            <li><b>Apollo.io / Lusha / Clay</b>: B2B lead intelligence and scoring — prove that 'grading leads' is a scalable paid feature.</li>
-          </ul>
-          <ul>
-            <li><b>AI-era edge</b>: reading buyer quality, spotting price-fishing or scams, and writing multilingual replies used to require a seasoned bilingual rep; now AI does it <b>7×24 in any language</b>, putting that judgment in the hands of every small factory</li>
-            <li><b>Pain</b>: real buyers are hard to tell from noise, slow replies lose deals, junior reps easily leak floor prices to competitors</li>
-            <li><b>Who</b>: small and mid-size export factories, SOHOs, trade teams sourcing leads via Alibaba International or trade shows</li>
-            <li><b>Localization</b>: email / Alibaba inbox integration, business credit lookup, FX rates and price-book can all be built to production grade</li>
-            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: buyer authenticity ultimately requires credit verification; replies should still be reviewed by a rep before sending; public deployment should use a backend proxy to protect the API key and control costs</li>
-          </ul>`
-      }
-    ]
-  },
-
   {
     id: "ping", no: "30", cat: "Study Abroad",
     kicker: "Study Abroad · Status Compliance Navigation",
@@ -2961,76 +2558,6 @@ window.PROJECTS_EN = [
     sections: []
   },
 
-  {
-    id: "probe", no: "32", cat: "Foreign Trade",
-    kicker: "Foreign Trade · Inquiry Structuring",
-    title: "Inquiry Gap Probe",
-    subtitle: "Paste an English buyer inquiry → extract a '9-category gap checklist' + one 'factory RFQ brief'; price / spec / certifications — the things only you can decide — are left blank for your call, never guessed",
-    url: "demos/probe/",
-    tags: ["9-category gap audit", "Evidence cited per item", "Blanks reserved for your judgment", "Save judgments as your standard · compound", "One-tap factory RFQ", "AI connection required"],
-    phoneHint: "Paste the buyer inquiry (click an example to run; best with AI connected; offline sample renders without AI so it's never blank)",
-    sections: [
-      {
-        label: "What it is",
-        html: `<p>If you work in foreign trade with both factory and buyer relationships, you receive English inquiries every day full of scattered, missing information. Probe breaks one inquiry into two screens:
-          ① <b>Gap checklist</b> — 9 categories (product specs / quantity & lead time / certifications & compliance / packaging & marks / logistics terms / price terms / warranty & after-sales / documents / communication), each item audited and marked 'confirmed / vague / not mentioned / your call,' with <b>source evidence</b> from the original text;
-          ② <b>Factory brief skeleton — blank edition</b> — known items filled in, <b>price, category-specific specs, certification numbers — anything only your experience can determine — left precisely blank</b>.
-          Its job is to <b>showcase your judgment and serve as your evidence</b>, never to fabricate a number that looks right but is actually a guess.</p>`
-      },
-      {
-        label: "How it works",
-        html: `<h3>One inquiry → gap audit → blank brief + factory RFQ</h3>
-          <div class="flow">
-            <span class="step">Paste inquiry</span><span class="arr">→</span>
-            <span class="step">9-category audit</span><span class="arr">→</span>
-            <span class="step">Flag evidence + leave blanks</span><span class="arr">→</span>
-            <span class="step">Save as your standard</span><span class="arr">→</span>
-            <span class="step">One-tap factory RFQ</span>
-          </div>
-          <ul>
-            <li>9 categories, 35 fields hard-coded in the frontend = <b>structural source of truth</b>; the model only returns information <b>literally present</b> in the text — anything absent is treated as missing, <b>never filled in</b></li>
-            <li><b>Red lines enforced at the code layer</b>: price / FOB / CIF / DDP are always blank — no numbers ever; no factory is named or recommended; category-specific specs and certifications list candidates only, with 'truly mandatory items for this category' marked 'your call'</li>
-            <li><b>Judgment capture → compound value</b>: blanks can be filled in; hit 'save as my standard' → next similar inquiry auto-pre-fills, gaps shrink over time. Your irreplaceable judgment becomes a compounding, portable asset</li>
-          </ul>
-          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            Powered by a live LLM with strict JSON enforcement and frontend ontology-based fallback normalization; when AI is not connected, an offline sample renders on first load — never blank.</p>`
-      },
-      {
-        label: "Business model",
-        html: `<ul>
-            <li><b>SaaS subscription</b>: per-rep / per-buyer seat pricing, auto-structured inquiries + one-tap factory RFQ generation</li>
-            <li><b>Judgment asset accumulation</b>: every standard you save stays with you — the more you use it, the fewer gaps remain and the faster you respond; switching cost is the moat</li>
-            <li><b>B2B integration</b>: plugin for Alibaba International / trade CRM / email clients, embedded in existing order workflows</li>
-            <li><b>Data flywheel</b>: which blanks get filled most, which inquiry types close → feeds back into the audit checklist and RFQ templates</li>
-          </ul>`
-      },
-      {
-        label: "Market",
-        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
-          <ul>
-            <li><b>Alibaba International RFQ (NYSE:BABA / 09988.HK)</b>: buyers post RFQs, the platform structures and routes them to factories for quotes — validates real demand for 'turning an inquiry into a quotable brief.'</li>
-            <li><b>SAP Ariba (NYSE:SAP) / Coupa / Jaggaer</b>: procurement sourcing SaaS that turned RFQ / benchmarking / supplier management into a scaled subscription business.</li>
-            <li><b>Scoutbee / Tealbook / Keelvar</b>: AI sourcing and supplier intelligence — prove that 'AI-assisted judgment in procurement workflows' is a scalable paid category.</li>
-          </ul>
-          <ul>
-            <li><b>AI-era edge</b>: turning a messy inquiry into 'what's missing, what to ask the factory' used to require a veteran rep; now AI automates the checklist, but <b>critical judgment (pricing, spec selection, factory choice) stays with the human</b> — AI does structure, humans do judgment</li>
-            <li><b>Pain</b>: inquiries arrive full of holes, new reps forget to ask before factory visits causing expensive back-and-forth, veteran knowledge never gets written down and lives only in someone's head</li>
-            <li><b>Who</b>: foreign-trade SOHOs with factory and buyer networks / small factory sales reps / procurement middlemen</li>
-            <li><b>Localization</b>: email / Alibaba inbox integration, category spec libraries and certification databases, FX rates and price-book can all be built to production grade</li>
-            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: Probe only does structuring and gap flagging — <b>it never sets a price or names a supplier for either party</b>; final specs, certifications, and pricing must be signed off by an experienced person; public deployment should use a backend proxy to protect the API key and control costs</li>
-          </ul>`
-      }
-    ]
-  },
-{
-    id: "anyhome-listing-card", no: "33", cat: "Student Housing", direct: true,
-    kicker: "Student Housing Agency · Listing Materials",
-    title: "Listing Card Generator",
-    subtitle: "Paste a StreetEasy listing in plain text, get a branded AnyHome bilingual (EN/ZH) recommendation card in 5 minutes — commute time, neighborhood highlights, and key lease terms all laid out, guarantor requirement prominently flagged, one-click export to send students.",
-    url: "demos/anyhome-listing-card/",
-    tags: ["Paste text → bilingual listing card", "Commute drafted on the spot · edit live", "Guarantor prominently flagged", "Missing info labeled 'TBD' — never fabricated", "One-click PNG export"],
-    sections: []
-  },
   {
     id: "anyhome-intake", no: "34", cat: "Student Housing", direct: true,
     kicker: "Student Housing Agency · Lead Intake",
@@ -3158,7 +2685,7 @@ window.PROJECTS_EN = [
     id: "price-pulse", no: "40", cat: "Restaurant Supply",
     kicker: "Chinese Restaurant Supply Chain · Price Memory",
     title: "Quiet Price Creep, On the Table",
-    subtitle: "The data byproduct of Demos 04/05: three months of nightly delivery-slip photos grow into a 12-week price curve for every item — spikes, creep, and spend decomposition surface on their own, zero data entry. ⛔ Explicitly NOT a 'kickback detector': the data shows anomalies; judgment stays with the owner",
+    subtitle: "A pure data byproduct: three months of nightly delivery-slip photos grow into a 12-week price curve for every item — spikes, creep, and spend decomposition surface on their own, zero data entry. ⛔ Explicitly NOT a 'kickback detector': the data shows anomalies; judgment stays with the owner",
     url: "demos/price-pulse/",
     tags: ["Zero entry · slips accumulate","12-week curves + baseline band","Spike / creep / spend split","Creep is immune to human memory","Negotiation ammo · neutral scripts","⛔ No kickback detection","Fully offline"],
     phoneHint: "Switch between two stores (busy / clean); tap item chips to change curves, tap findings to jump to them",
@@ -3166,7 +2693,7 @@ window.PROJECTS_EN = [
       {
         label: "What it is",
         html: `<p>The most insidious price increase isn't a spike — it's <b>creep</b>: a little each week, every week looks "normal," and twelve weeks later you're paying 10% more. <b>It's immune to human memory — that's the design.</b>
-          This panel is the <b>data byproduct</b> of Demos 04/05: the delivery slips an owner photographs every night grow, over three months, into a price curve for every item — <b>zero data entry</b>.
+          This panel is a pure <b>data byproduct</b>: the delivery slips an owner photographs every night grow, over three months, into a price curve for every item — <b>zero data entry</b>.
           Three anomaly types surface on their own: <b>spikes</b> (this week vs. prior-4-week average +8%), <b>creep</b> (no single week over threshold, +10% cumulative over 12 weeks), and <b>spend decomposition</b> (spending rose — split it into quantity vs. price).
           The ethical line is printed on the product's face: <b>no "kickback detection."</b> Data can show anomalies; it cannot prove motive — and a false accusation destroys your kitchen. Anomalies go on the table; judgment stays with the owner.</p>`
       },
@@ -3192,7 +2719,7 @@ window.PROJECTS_EN = [
       {
         label: "Business model",
         html: `<ul>
-            <li><b>Subscription value layer</b>: free unlock for Demo 04 (daily audit) + 05 (monthly recon) subscribers — a zero-marginal-cost byproduct that doubles as the most visual renewal argument</li>
+            <li><b>Subscription value layer</b>: a value-add panel for purchasing-recon subscribers — a zero-marginal-cost byproduct that doubles as the most visual renewal argument</li>
             <li><b>Stickiness is the moat</b>: price memory appreciates with tenure — a store one year in would be throwing away a year of its own price assets by switching</li>
             <li><b>Negotiation ammo = self-quantifying ROI</b>: "talk anomalous items back to baseline ≈ $X/year saved" — the tool computes its own value</li>
             <li><b>Network effects later (V2)</b>: anonymized multi-store aggregation enables regional price benchmarks — a different magnitude of product that V1 deliberately doesn't touch</li>
@@ -3207,140 +2734,15 @@ window.PROJECTS_EN = [
             <li><b>Datassential / NielsenIQ</b>: food price intelligence is a sellable data business in its own right — validating the V2 aggregation direction.</li>
           </ul>
           <ul>
-            <li><b>Why nobody serves Chinese restaurants yet</b>: the prerequisite is turning mixed handwritten slips into structured data — mainstream tools stall at OCR, which is precisely what Demos 04/05 already produce</li>
+            <li><b>Why nobody serves Chinese restaurants yet</b>: the prerequisite is turning mixed handwritten slips into structured data — mainstream tools stall at OCR, which is precisely what the nightly slip photos accumulate</li>
             <li><b>Ethical calibration as differentiation</b>: "catch-the-insider" positioning destroys owner-kitchen trust and gets sabotaged by the kitchen — "purchasing transparency, judgment stays human" is both the ethical floor and the adoption prerequisite</li>
-            <li><b>Relation to the other two</b>: 04 catches tonight, 05 reconciles the month, 06 watches the quarter — three time scales over one purchasing trust chain; the bundle sells itself</li>
-            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: value depends on 04/05 data accumulation — the panel is empty during cold start (first-month experience needs design); thresholds need tuning on real corpus (demo data here); spec confusion pollutes curves (04 is spec-aware, human review still backstops)</li>
+            <li><b>Three time scales</b>: catch tonight, reconcile the month, watch the quarter — one purchasing trust chain; the bundle sells itself</li>
+            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: value depends on day-to-day slip accumulation — the panel is empty during cold start (first-month experience needs design); thresholds need tuning on real corpus (demo data here); spec confusion pollutes curves (the parsing layer must be spec-aware, human review still backstops)</li>
           </ul>`
       }
     ]
   },
 
-  /* ───────────────────────── 39 statement-recon (EN mirror) ───────────────────────── */
-  {
-    id: "statement-recon", no: "39", cat: "Restaurant Supply",
-    kicker: "Chinese Restaurant Supply Chain · Monthly Reconciliation",
-    title: "Reconcile Before You Pay",
-    subtitle: "Put the month's pile of delivery slips and the distributor's statement on one desk: matched lines get checked off and fade, what's left is the problem — duplicate charges, billed-with-no-slip, amount mismatches, promised credits that never landed. It ends with one number: what you should pay, not what the statement asks",
-    url: "demos/statement-recon/",
-    tags: ["Slip pile × statement, line by line","Duplicates / no-slip charges / mismatches","Chases WeChat-promised credits","Three big numbers: asked/disputed/pay","Recon message · signals intent to pay","Fully offline"],
-    phoneHint: "Tap a built-in case to see the reconciliation; the wording is always \"let's verify then settle\" — relationship-preserving (all local, never uploaded)",
-    sections: [
-      {
-        label: "What it is",
-        html: `<p>Month-end is <b>the only moment when money and paperwork face each other</b> in the Chinese restaurant supply chain — but checking slip by slip takes a whole evening, so most owners glance at the total and pay.
-          That's exactly where the discrepancies live: <b>the same invoice billed twice, charges with no slip in your pile, a $301 slip billed as $321, a credit promised on WeChat that never landed</b>.
-          This tool puts the slip pile and the statement on a reconciliation desk: <b>matched lines get checked off and fade; whatever's left is what you ask about</b>.
-          It ends with three big numbers — what the statement asks, how much is disputed, <b>what you should pay this month</b> — plus a "verify-then-settle" message ready to send.</p>`
-      },
-      {
-        label: "How it works",
-        html: `<h3>Document pile → line-by-line matching → dispute summary → pay amount + message</h3>
-          <div class="flow">
-            <span class="step">Paste pile + statement</span><span class="arr">→</span>
-            <span class="step">Match by invoice #</span><span class="arr">→</span>
-            <span class="step">Chase promised credits</span><span class="arr">→</span>
-            <span class="step">Pay amount</span><span class="arr">→</span>
-            <span class="step">Recon message</span>
-          </div>
-          <ul>
-            <li><b>Four dispute types + one keep-on-file</b>: duplicate billing (same invoice # twice) / billed with no slip (ask for the signed slip) / amount mismatch (the signed slip governs) / <b>promised credit not honored</b> (WeChat promises vs. the statement's credit lines — closing the loop with Demo 04: what the evening audit finds, the monthly recon chases) / not-yet-billed (month-end slips should appear next cycle)</li>
-            <li><b>The visual essence of reconciliation</b>: slip pile (receipt cards) on the left, statement (ledger rows) on the right — matches fade with a check, problem rows highlight, and missing credits get a dashed "a credit line belongs here" placeholder</li>
-            <li><b>Wording red line</b>: double-entry and forgotten credits are month-end routine, not evidence of wrongdoing — the message is always "let's verify then settle" plus explicit intent to pay (settle the clean amount now, top up after confirmation). Clear books, long relationships</li>
-            <li><b>Scope red line</b>: strictly purchasing-side; never revenue, never taxes</li>
-          </ul>
-          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            Parsing and matching are a deterministic local engine, <b>fully playable offline</b>; connect an API key to parse any format with a real model (whole lines verified against the originals) — the matching math always runs locally. The real product is photo → OCR → <b>low-confidence fields to a human-review queue</b>; mixed handwritten slips are genuinely hard and full automation is not the promise.</p>`
-      },
-      {
-        label: "Business model",
-        html: `<ul>
-            <li><b>Bundled subscription with Demo 04</b>: daily audit + monthly reconciliation are two ends of the same trust chain — daily-frequency retention plus a monthly moment where real dollars surface</li>
-            <li><b>The hardest-money step</b>: reconciliation gaps typically run hundreds to over a thousand dollars a month — "you should pay $4,800, not $5,575" is the pricing pitch in one sentence</li>
-            <li><b>Structural transplant</b>: yzh's short-stay Invoice-OCR + human-review + ledger layer moves over directly — the fiduciary-middle-layer motif of explainable reconciliation holds across industries</li>
-            <li><b>The dispute summary is a negotiation tool</b>: owners bring the recon record to the month-end settle-up — the deeper the ritual embeds, the higher the switching cost</li>
-          </ul>`
-      },
-      {
-        label: "Market",
-        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
-          <ul>
-            <li><b>MarginEdge / xtraCHEF (acquired by Toast)</b>: invoice digitization + reconciliation is their core paid module, per-store monthly fees.</li>
-            <li><b>Bill.com (NYSE:BILL) / Ramp</b>: SMB accounts-payable automation — "reconcile before paying" is a proven big business.</li>
-            <li><b>AppZen / Stampli</b>: AI invoice auditing, mature B2B willingness to pay.</li>
-          </ul>
-          <ul>
-            <li><b>The monthly ledger of a three-way split</b>: chef orders, prep cook receives, owner pays — the monthly statement is where a month of that separation accumulates, and the only moment discrepancies can surface</li>
-            <li><b>Doubly-ignored niche</b>: mainstream AP tools can't read mixed handwritten Chinese slips and don't understand "the credit promised on WeChat" — which is daily reality in this supply chain</li>
-            <li><b>Loop with Demo 04</b>: evening audit finds the unordered $22 onions → the rep promises a credit on WeChat → month-end recon chases whether it landed — one discrepancy, fully tracked from discovery to closure</li>
-            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: handwritten-slip OCR is hard (human-review queue has a cost model to get right); credit promises scatter across voice notes and hallway talk, coverage is bounded; this demo starts from recognized text with demo amounts</li>
-          </ul>`
-      }
-    ]
-  },
-
-  /* ───────────────────────── 38 order-check (EN mirror) ───────────────────────── */
-  {
-    id: "order-check", no: "38", cat: "Restaurant Supply", featured: true,
-    kicker: "Chinese Restaurant Supply Chain · Evening Audit",
-    title: "Three Minutes a Night, Check the Slip",
-    subtitle: "Chinese-restaurant purchasing runs on WeChat voice notes and handwritten delivery slips: the chef orders, the prep cook receives, the owner pays — with zero reconciliation in between. Paste last night's order chat and today's slip: items nobody ordered, 3 ordered but 2 delivered, prices that quietly crept up — all flagged, with tomorrow's reconciliation message to your rep generated in one click",
-    url: "demos/order-check/",
-    tags: ["WeChat orders × delivery slip","Zero behavior change · after-hours audit","Unordered / short-shipped / price spikes","4-week price memory","Spec-ambiguity nudges (shrimp size)","One-click recon message","Fully offline"],
-    phoneHint: "Tap a built-in case to see the audit; the generated wording is always \"was this loaded on the wrong truck?\" — never an accusation (all local, never uploaded)",
-    sections: [
-      {
-        label: "What it is",
-        html: `<p>Tens of thousands of US Chinese restaurants purchase over WeChat voice notes + handwritten delivery slips + paper monthly statements. Mainstream restaurant SaaS doesn't speak Chinese, doesn't understand WeChat ordering, can't read the slips.
-          The killer structure is <b>order-receive-pay split across three people</b>: the chef orders at night, the prep cook signs at 7am, the owner pays at month-end — with <b>no reconciliation step anywhere</b>. The discrepancies live in that gap.
-          The key design constraint is <b>zero behavior change</b>: never ask anyone to weigh and check at receiving (changing the 7am routine = product death).
-          Instead, after closing, put the WeChat order log and the delivery slip side by side for a <b>three-minute after-hours audit</b>: items nobody ordered, 3 cases ordered but 2 billed, oil up 10% quietly, shrimp ordered without a size — each flagged, with tomorrow morning's message to the sales rep generated in one click.</p>`
-      },
-      {
-        label: "How it works",
-        html: `<h3>Order corpus → slip line items → deterministic diff → recon message</h3>
-          <div class="flow">
-            <span class="step">Paste chat + slip</span><span class="arr">→</span>
-            <span class="step">Extract order items</span><span class="arr">→</span>
-            <span class="step">Line-by-line diff</span><span class="arr">→</span>
-            <span class="step">Price-memory check</span><span class="arr">→</span>
-            <span class="step">Morning message</span>
-          </div>
-          <ul>
-            <li><b>Five outcomes</b>: unordered items billed (red · costs money) / wrong spec shipped (red) / order-delivery mismatch (amber · affects tomorrow's menu) / price anomaly (violet · vs. 4-week price memory, with sparkline) / ordering-habit nudge (shrimp ordered without 16/20 vs 21/25 — a gap that leaks every time)</li>
-            <li><b>Collation desk</b>: WeChat bubbles (voice-note-transcript styling) on the left, a yellow-carbon-paper delivery slip on the right, numbered pins jumping both ways — every finding quotes the originals</li>
-            <li><b>Wording red line</b>: a discrepancy is not an accusation. The generated message always reads "wrong truck? typo on the slip?" — face-saving, account-clearing, and never a kickback insinuation. Judgment stays with the owner</li>
-            <li><b>Scope red line</b>: strictly purchasing-side. Never touches revenue, never touches taxes — that's both the compliance boundary and the reason owners dare to use it</li>
-          </ul>
-          <p style="margin-top:12px;font-size:14px;color:var(--ink-soft)">
-            Parsing is a local dictionary engine (high-frequency Chinese-restaurant SKUs + Chinese numerals + spec regex); the diff is deterministic math, <b>fully playable offline</b>. Connect an API key to parse any format with a real model (extractions verified against the originals) — <b>the number comparison always runs locally</b>. The real product is photo → OCR → low-confidence fields to human review.</p>`
-      },
-      {
-        label: "Business model",
-        html: `<ul>
-            <li><b>Subscription (repeat-use)</b>: per store per month — the first time this horizontal diff engine lands on a <b>daily-frequency need</b>: daily ordering + monthly reconciliation + a going-concern buyer, a far better frequency structure than low-frequency consumer plays</li>
-            <li><b>Willingness-to-pay checkpoint</b>: reconciliation gaps typically run hundreds to over a thousand dollars a month in real money — the tool pays for itself in one evening</li>
-            <li><b>Data byproduct</b>: audits accumulate per-supplier per-item price curves → "purchase price monitoring" (series Demo 06) grows out naturally, no extra data entry</li>
-            <li><b>Channel hypothesis</b>: distributor sales reps physically walk through dozens of restaurants daily — "my invoices survive an audit" is a sales weapon for honest distributors; a channel-led distribution path exists</li>
-          </ul>`
-      },
-      {
-        label: "Market",
-        html: `<p class="mk-bench"><b>Benchmarks · who already profits from this</b></p>
-          <ul>
-            <li><b>MarginEdge / xtraCHEF (acquired by Toast)</b>: US restaurant invoice digitization and cost management SaaS, per-store monthly fees — proof that "turning paper slips into checkable data" is a mature paid category.</li>
-            <li><b>Toast (NYSE:TOST)</b>: the restaurant vertical-SaaS giant, validating per-store subscription + add-on modules at scale.</li>
-            <li><b>Meicai / Shuhai / KuaiLv (China)</b>: capital-heavy supply-chain grinders — this product deliberately stays out of transactions and owns only the reconciliation layer.</li>
-          </ul>
-          <ul>
-            <li><b>Doubly-ignored niche</b>: mainstream SaaS skips Chinese/WeChat/handwriting; Chinese domestic players can't come over — tens of thousands of US Chinese restaurants and hundreds of regional Chinese distributors run inside this crack</li>
-            <li><b>Same engine, third time</b>: extract commitments from unstructured chat → diff against a formal document → discrepancy list (after trade inquiries and student housing) — and the first time it carries a repeat-purchase business model</li>
-            <li><b>Local entry points</b>: regional distributor sales reps, the Greater Philadelphia Chinese restaurant association — walkable validation</li>
-            <li style="color:var(--ink-soft)"><b>Risks (honest)</b>: mixed Chinese-English handwritten slip OCR is genuinely hard (mitigation: low-confidence fields go to human review, no full-automation promise); spec ambiguity (shrimp size standards) needs real corpus polishing; this demo starts from recognized text and the price memory is demo data</li>
-          </ul>`
-      }
-    ]
-  },
 ];
 
 /* 据当前语言切换数据源（window.LANG 由 assets/i18n.js 在 <head> 里提前设好） */

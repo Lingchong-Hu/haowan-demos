@@ -1,11 +1,11 @@
-/* 今天吃什么 — 融合 app（原 ollie + mealplan + dinner 三合一）。
+/* 今天吃什么 — 融合 app（原 ollie + mealplan 融合；2026-07 移除「✨灵感·贴帖子」档——
+   要求用户从别的 App 复制内容的动线不可行）。
    一条主线：冰箱库存（智能冰箱传感器：摄像头识别 / 称重估量 / 气味判新鲜）。
-   三个入口都读写这条主线：
+   两个入口都读写这条主线：
      🍳 今晚  = 用冰箱现有的菜，优先用掉快坏的（原 ollie 引擎）
      📅 一周  = 目标/忌口 → 7 天计划 + 购物清单（自动减去冰箱已有；前两天先用快坏的）（原 mealplan 引擎）
-     ✨ 灵感  = 一段美食帖 → 图文菜谱 + 冰箱缺料（原 dinner 引擎，离线示例可跑，连 key 解析任意帖子）
    闭环：做完一道 → 扣库存；买到了 → 回填冰箱；救回快坏的 → 本月「救回 ¥/kg」计数。
-   本地即时算，连 GG.llm 才把「解析任意帖子 / AI 现想做法」升级成真模型；离线不破。 */
+   本地即时算，连 GG.llm 才把「AI 现想做法」升级成真模型；离线不破。 */
 (function(){
 const SLUG = 'dinner';
 const F = window.FOOD;
@@ -16,7 +16,7 @@ const el = GG.el;
 
 let main, modeMount;
 let state = null;
-let fridgeOpen = false, tonightSeed = 0, inspireText = '', inspireMount = null;
+let fridgeOpen = false, tonightSeed = 0;
 let weekPrefs = { goal:'均衡', avoids:[], taste:'均衡', seed:7 };
 
 /* ════════ 作用域样式（精修门面 + 冰箱 + 三 mode + 菜谱页） ════════ */
@@ -140,15 +140,6 @@ function injectStyle(){
   .kt-haveline{font-size:12.5px; color:var(--good); margin-top:14px; line-height:1.5;
     border-top:1px dashed var(--line); padding-top:11px}
 
-  /* 灵感 */
-  .kt-eglabel{font-size:13px; color:var(--ink-3); margin:16px 0 9px}
-  .kt-egs{display:flex; flex-wrap:wrap; gap:9px}
-  .kt-eg{border:1px solid var(--line); background:var(--surface); border-radius:999px; padding:9px 15px; cursor:pointer;
-    font-size:14px; transition:.13s; display:inline-flex; align-items:center; gap:7px; font-family:inherit}
-  .kt-eg:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px)}
-  .kt-eg .em{font-size:16px}
-  .kt-inresult{margin-top:8px}
-
   /* 菜谱页 */
   .kt-recipe{border:1px solid var(--line); border-radius:16px; background:var(--surface); padding:20px;
     box-shadow:var(--sh-1); margin-top:16px; animation:kt-rise .4s cubic-bezier(.2,.7,.2,1) both}
@@ -222,10 +213,6 @@ function injectStyle(){
   .kt-shopdel:hover{color:var(--bad)}
 
   /* 兜底 */
-  .kt-oops{text-align:center; padding:18px 0}
-  .kt-oops .big{font-size:38px}
-  .kt-oops h3{font-size:18px; margin:9px 0 6px}
-  .kt-oops p{color:var(--ink-2); font-size:14px; margin:0 auto; max-width:420px; line-height:1.6}
 
   @media (max-width:520px){
     .kt-wtitle{font-size:24px}
@@ -575,6 +562,7 @@ function start(){
   main = GG.mountShell(SLUG);
   injectStyle();
   state = load();
+  if(state && state.mode==='inspire'){ state.mode='tonight'; }   // 旧存档里的灵感档已移除
   if(!state){ welcome(); } else { app(); }
 }
 function welcome(){
@@ -582,11 +570,11 @@ function welcome(){
   main.appendChild(el('div',{class:'kt-welcome'},
     el('div',{class:'kt-wbrand'}, el('span',null,'🧊'), el('span',null,'今天吃什么')),
     el('div',{class:'kt-wtitle'}, '打开冰箱前，它已经替你想好今晚吃什么'),
-    el('p',{class:'kt-wsub'}, '一台看得见里面的冰箱：知道你有什么、哪样快坏了。今晚做什么、排一周、刷到的帖子照着做——都从这一个地方开始。'),
+    el('p',{class:'kt-wsub'}, '一台看得见里面的冰箱：知道你有什么、哪样快坏了。今晚做什么、排一周、缺什么买什么——都从这一个地方开始。'),
     el('div',{class:'kt-wrow'},
       wfeat('🍳','今晚','用现有的，先吃快坏的'),
       wfeat('📅','一周','排好计划，只买缺的'),
-      wfeat('✨','灵感','一段帖子变成一道菜')),
+      wfeat('🛒','清单','买到自动回填冰箱')),
     el('button',{class:'btn primary lg', onClick:enter}, '打开我的冰箱 →'),
     el('div',{class:'kt-wprivacy'}, el('span',null,'🔒'), el('span',null,'演示用的虚拟冰箱，数据只存在你这台浏览器，里面的东西随便改。'))
   ));
@@ -604,7 +592,7 @@ function app(){
 }
 function modeNav(){
   const nav=el('div',{class:'kt-nav'});
-  [['tonight','🍳 今晚'],['week','📅 一周'],['inspire','✨ 灵感']].forEach(pair=>{
+  [['tonight','🍳 今晚'],['week','📅 一周']].forEach(pair=>{
     nav.appendChild(el('button',{class:'kt-navpill'+(state.mode===pair[0]?' on':''),
       onClick:()=>{ state.mode=pair[0]; save(); app(); }}, pair[1]));
   });
@@ -616,7 +604,6 @@ function modeNav(){
 function renderMode(){
   GG.clear(modeMount);
   if(state.mode==='week') renderWeek(modeMount);
-  else if(state.mode==='inspire') renderInspire(modeMount);
   else if(state.mode==='shop') renderShopping(modeMount);
   else renderTonight(modeMount);
 }
@@ -699,7 +686,7 @@ function renderTonight(mount){
         el('button',{class:'btn', onClick:()=>{ tonightSeed++; renderMode(); }}, '换一个'))
     ));
   } else {
-    mount.appendChild(el('div',{class:'card pad muted'}, '冰箱快空了——去「灵感」贴个帖子，或在「一周」排个购物清单补点货。'));
+    mount.appendChild(el('div',{class:'card pad muted'}, '冰箱快空了——在「一周」排个购物清单补点货。'));
   }
   mount.appendChild(GG.llm.bar(()=>renderMode()));
   if(GG.llm.connected()){
@@ -801,71 +788,12 @@ function weekShopCard(sl){
   return card;
 }
 
-/* ════════ mode：灵感 ════════ */
-const SYS_INSPIRE=[
-  '你是「今天吃什么」引擎：把一段美食类社交媒体帖子，转成一份今晚就能照着做的结构化菜谱。',
-  '只输出严格 JSON（单个对象），不要 markdown、不要前言。',
-  '字段：{ "is_food":boolean, "dish_name":string, "one_line":string(≤30字), "servings":number, "time_minutes":number,',
-  '  "difficulty":"easy"|"medium"|"hard", "ingredients":[{"name":string,"amount":string,"emoji":string}](4-10项),',
-  '  "steps":[{"title":string,"detail":string,"minutes":number|null,"icon":string}](3-7步), "source_snippet":string(≤40字) }',
-  '硬规则：1) 内容真实源自帖子，绝不套用无关模板；2) 不同帖子产出不同菜谱；',
-  '3) 若输入不是讲吃的，把 is_food 设 false、其余留空；4) icon 只从 knife pan pot oven mix timer plate flame 里选最贴切的；5) 全部简体中文。'
-].join('\n');
+/* ════════ AI 提示词（「今晚」的现想一道用） ════════ */
 const SYS_FROM_FRIDGE=[
   '你是家常菜助手：根据用户冰箱现有食材，给出一道现在就能做、优先用掉快坏食材的家常菜。',
   '只输出严格 JSON（单个对象），字段同上：is_food/dish_name/one_line/servings/time_minutes/difficulty/ingredients[{name,amount,emoji}]/steps[{title,detail,minutes,icon}]/source_snippet（此处留空字符串）。',
   'icon 只从 knife pan pot oven mix timer plate flame 里选；ingredients 尽量用用户现有食材；全部简体中文。'
 ].join('\n');
-
-function renderInspire(mount){
-  mount.appendChild(el('div',{class:'kt-h1'}, '✨ 刷到啥，照着做'));
-  mount.appendChild(el('p',{class:'kt-lede'}, '把一段美食帖粘进来（探店 / brunch / 家常 / 深夜放毒都行），变成今晚能照做的图文菜谱，还会告诉你冰箱缺哪几样。'));
-  mount.appendChild(GG.llm.bar(()=>renderMode()));
-  mount.appendChild(el('div',{class:'kt-eglabel'}, '懒得想？点一个例子直接跑（离线也能出）↓'));
-  const ta=el('textarea',{class:'field', placeholder:'把一段美食帖粘到这里…（也可以贴一段根本不是吃的，看它怎么礼貌拒绝）'});
-  const egs=el('div',{class:'kt-egs'});
-  F.EXAMPLES.forEach(e=> egs.appendChild(el('button',{class:'kt-eg', onClick:()=>{ ta.value=e.text; inspireText=e.text; runInspire(e); }},
-    el('span',{class:'em'}, e.em), e.label)));
-  mount.appendChild(egs);
-  ta.value=inspireText;
-  ta.addEventListener('input', e=>{ inspireText=e.target.value; });
-  mount.appendChild(el('div',{style:{marginTop:'12px'}}, ta));
-  mount.appendChild(el('button',{class:'btn primary lg block', style:{marginTop:'12px'}, onClick:()=>runInspire(null, ta.value)}, '🍳 生成菜谱'));
-  inspireMount=el('div',{class:'kt-inresult'}); mount.appendChild(inspireMount);
-}
-async function runInspire(example, typed){
-  const rmount=inspireMount; if(!rmount) return; GG.clear(rmount);
-  const stage=el('div'); rmount.appendChild(stage);
-  if(example){
-    await GG.thinking(stage, ['读懂这段帖子…','抽取菜品意图…','拆解食材与火候…','摆盘出图…'], 1200);
-    GG.clear(stage); openRecipeInline(stage, normalizeRecipe(example.recipe,'inspire'));
-    return;
-  }
-  const post=(typed||'').trim();
-  if(!post){ GG.clear(rmount); GG.toast('先粘一段帖子，或点上面的例子'); return; }
-  if(!GG.llm.connected()){ GG.clear(rmount); GG.toast('连接 AI 才能解析任意帖子；或点上面的例子（离线可跑）'); return; }
-  const t=GG.thinking(stage, ['读懂这段帖子…','抽取菜品意图…','拆解食材与火候…','摆盘出图…'], 1800);
-  let rec;
-  try{ const r=await Promise.all([GG.llm.json(SYS_INSPIRE, post, {max_tokens:1200}), t]); rec=normalizeRecipe(r[0],'inspire'); }
-  catch(err){ GG.clear(stage); stage.appendChild(inspireError(err)); return; }
-  GG.clear(stage);
-  if(!rec.is_food){ stage.appendChild(notFood()); return; }
-  openRecipeInline(stage, rec);
-}
-function notFood(){
-  return el('div',{class:'card pad'}, el('div',{class:'kt-oops'},
-    el('div',{class:'big'},'🤔'), el('h3',null,'这条看起来不是吃的'),
-    el('p',null,'我没从这段里读到能下锅的东西，就不硬编一道菜糊弄你了。换一段美食帖，或点上面的例子。')));
-}
-function inspireError(err){
-  const c=err&&err.code; let title='出了点状况', msg='再试一次，或换一段内容。';
-  if(c==='BAD_KEY'){ title='Key 看起来不对'; msg='这个 Anthropic API Key 没通过校验，检查后重新连接。'; }
-  else if(c==='NET'){ title='连不上模型'; msg='可能是网络或浏览器直连被拦，换个网络再试。'; }
-  else if(c==='PARSE_FAIL'){ title='这次没解析成功'; msg='模型偶尔返回不规整，点「生成菜谱」重试通常就好。'; }
-  else if(err&&err.message){ msg=err.message; }
-  return el('div',{class:'card pad'}, el('div',{class:'kt-oops'},
-    el('div',{class:'big'}, c==='PARSE_FAIL'?'🔁':'🔌'), el('h3',null,title), el('p',null,msg)));
-}
 
 /* ════════ 共享菜谱页 + 闭环 ════════ */
 function openRecipe(rec){ overlay(renderRecipe(rec, {modal:true})); }
@@ -910,10 +838,6 @@ function renderRecipe(rec, opts){
   const acts=el('div',{class:'kt-ractions'});
   acts.appendChild(el('button',{class:'btn primary', onClick:()=>{ const r=cookDish(rec); celebrateCook(r); closeOverlays(); app(); }}, '✅ 做完了 · 扣库存'));
   acts.appendChild(el('button',{class:'btn', onClick:()=>shareRecipe(rec)}, '📷 分享卡'));
-  if(rec.source==='inspire'){
-    acts.appendChild(el('button',{class:'btn', onClick:()=>{ const m2=missingForRecipe(rec); if(m2.length) addToShopping(m2.map(x=>({name:x.name})));
-      state.mode='week'; save(); closeOverlays(); app(); GG.toast('缺的进了清单，去一周把它排进某天 📅'); }}, '📅 排进一周'));
-  }
   card.appendChild(acts);
   return card;
 }
@@ -986,8 +910,8 @@ function shareSaved(){
 window.FOOD_DEV = {
   reset: ()=>{ try{ localStorage.removeItem(STORE); }catch(e){} state=null; start(); },
   enter: ()=>{ state=freshState(); save(); app(); },
-  sampleRecipe: ()=> normalizeRecipe(F.EXAMPLES[0].recipe,'inspire'),
-  openSample: ()=> openRecipe(normalizeRecipe(F.EXAMPLES[0].recipe,'inspire')),
+  sampleRecipe: ()=> normalizeRecipe(F.EXAMPLES[0].recipe,'tonight'),
+  openSample: ()=> openRecipe(normalizeRecipe(F.EXAMPLES[0].recipe,'tonight')),
   state: ()=> state
 };
 

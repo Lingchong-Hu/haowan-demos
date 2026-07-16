@@ -5,7 +5,7 @@
      FRIDGE_SEED 冰箱初始库存：{key,n,unit,days(入库至今天数)}；新鲜度 = shelf - days
      RECIPES    今晚引擎菜谱（原 ollie）：{name,emoji,minutes,blurb,need:[key],steps:[文字]}
      MEALS      一周引擎菜池（原 mealplan）：{name,meal,goalFit,tags,ingredients:[{name,cat}]}
-     EXAMPLES   灵感示例帖（原 dinner）：{em,label,text, recipe:{离线菜谱契约}}——离线即可出真菜谱
+     EXAMPLES   示例菜谱数据（原灵感档遗留，现仅 FOOD_DEV 自检用）：{em,label,text, recipe:{离线菜谱契约}}——离线即可出真菜谱
    设计：消费向，能离线即时算；连 key 才把「灵感解析任意帖子 / 个性化周计划」升级成真 AI。 */
 window.FOOD = (function(){
 
