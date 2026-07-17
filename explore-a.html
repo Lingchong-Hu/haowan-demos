@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f7f3ee" />
+<title>旅程 · 好玩的东西</title>
+<meta name="description" content="互动版入口 A：大厅出发，有限选择一步步引导——四个板块、四个项目方向、行业、再到像故事一样讲给你听的每个 demo。" />
+<!-- ═══════════════════════════════════════════════════════════════════
+     互动版入口 · A 版「旅程」v2 —— 大厅-支线 选择机（state machine，非长滚动页）
+     · 大厅 = 4 张浮动选项卡（认识团队/逛项目/读思考/找到我），走完一支自动回大厅
+     · 逛项目三层漏斗：4 个方向 → 细化行业 → 具体 demo（绝不一次倒出 36 个）
+     · demo 不再是信息卡，而是「story 场景」：流式文字逐句浮现，像讲故事一样引导阅读
+     · 顶栏面包屑随时回溯任意层级；hash 路由支持浏览器返回键/刷新/直链
+     · 打点：大厅各支线 exp-a-*、方向 exp-a-dir*、故事 exp-a-s-<id>；留言 slug 同前缀
+     · 内容全部读 data.js；四方向映射在 DIRS（新行业没映射会自动落进「生活」）
+     ═══════════════════════════════════════════════════════════════════ -->
+<style>
+@font-face{font-family:'Fraunces';src:url('assets/fonts/fraunces-latin.woff2') format('woff2');
+  font-weight:100 900;font-display:swap}
+:root{--bg:#f7f3ee;--card:#fffdfa;--ink:#2b2320;--ink-soft:#6b6058;--line:#ded3c6;
+  --accent:#b4542e;--accent-soft:#c98a5a;
+  --serif:'Fraunces',Georgia,'Noto Serif SC',serif;
+  --sans:-apple-system,BlinkMacSystemFont,'Noto Sans SC','Microsoft YaHei',system-ui,sans-serif}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);overflow-x:clip;min-height:100svh}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01s!important}}
+
+/* ---------- 背景流体 ---------- */
+.bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.blob{position:absolute;border-radius:50%;filter:blur(70px);opacity:.5;will-change:transform}
+.b1{width:52vmax;height:52vmax;left:-18vmax;top:-14vmax;background:#f0e0cd;animation:drift1 26s ease-in-out infinite alternate}
+.b2{width:44vmax;height:44vmax;right:-16vmax;top:26%;background:#ecd9d0;animation:drift2 32s ease-in-out infinite alternate}
+.b3{width:40vmax;height:40vmax;left:8%;bottom:-18vmax;background:#e7e3d2;animation:drift1 38s ease-in-out infinite alternate-reverse}
+@keyframes drift1{to{transform:translate(6vmax,4vmax) scale(1.08)}}
+@keyframes drift2{to{transform:translate(-5vmax,-6vmax) scale(.94)}}
+
+/* ---------- 顶栏：面包屑 + 探索度 ---------- */
+.topbar{position:fixed;top:0;left:0;right:0;z-index:30;display:flex;align-items:center;gap:10px;
+  padding:12px 18px calc(12px);padding-top:calc(12px + env(safe-area-inset-top));
+  background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:blur(10px);
+  border-bottom:1px solid color-mix(in srgb,var(--line) 55%,transparent)}
+.crumbs{display:flex;align-items:center;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1;white-space:nowrap}
+.crumbs::-webkit-scrollbar{display:none}
+.crumb{font:600 13px var(--sans);color:var(--ink-soft);background:none;border:0;cursor:pointer;
+  padding:6px 9px;border-radius:9px;transition:all .18s;flex:none}
+.crumb:hover{color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,transparent)}
+.crumb.cur{color:var(--ink);cursor:default;background:none}
+.crumbs .sep{color:var(--line);font-size:12px;flex:none}
+.score{font:600 12.5px var(--sans);color:var(--ink-soft);flex:none}
+.score b{color:var(--accent)}
+
+/* ---------- 场景容器 & 切换 ---------- */
+#stage{position:relative;z-index:1;max-width:940px;margin:0 auto;
+  padding:calc(76px + env(safe-area-inset-top)) 22px 90px;min-height:100svh;
+  display:flex;flex-direction:column;justify-content:center}
+.sc{animation:scIn .42s cubic-bezier(.2,.8,.25,1) both}
+@keyframes scIn{from{opacity:0;transform:translateY(26px)}to{opacity:1}}
+.kick{font:600 13px var(--sans);letter-spacing:.14em;color:var(--accent);text-transform:uppercase;margin-bottom:12px}
+h1{font:600 clamp(36px,6.6vw,62px)/1.2 var(--serif)}
+h2{font:600 clamp(27px,4.8vw,40px)/1.28 var(--serif)}
+.lead{color:var(--ink-soft);max-width:620px;margin-top:12px}
+
+/* ---------- 选项卡（大厅/方向/行业 通用） ---------- */
+.cards{display:grid;gap:16px;margin-top:40px}
+.cards.n4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.cards.slim{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.ocard{position:relative;text-align:left;background:var(--card);border:1px solid var(--line);
+  border-radius:20px;padding:24px 22px 20px;cursor:pointer;font-family:var(--sans);color:var(--ink);
+  box-shadow:0 10px 34px rgba(63,44,28,.09);text-decoration:none;display:block;
+  transition:transform .25s ease,box-shadow .25s ease,border-color .25s;
+  animation:rise .6s cubic-bezier(.2,.8,.25,1) both,float 5.6s ease-in-out infinite}
+.cards>*:nth-child(1){animation-delay:.08s,.9s}.cards>*:nth-child(2){animation-delay:.16s,1.7s}
+.cards>*:nth-child(3){animation-delay:.24s,2.5s}.cards>*:nth-child(4){animation-delay:.32s,3.3s}
+.cards>*:nth-child(n+5){animation-delay:.4s,2s}
+@keyframes rise{from{opacity:0;transform:translateY(38px) scale(.95)}to{opacity:1}}
+@keyframes float{0%,100%{translate:0 0}50%{translate:0 -8px}}
+.ocard:hover{transform:translateY(-6px) rotate(-.5deg);box-shadow:0 20px 48px rgba(63,44,28,.16);border-color:var(--accent-soft)}
+.ocard .em{font-size:28px;line-height:1}
+.ocard h3{font:600 18px/1.35 var(--serif);margin:11px 0 5px}
+.ocard p{font-size:13px;color:var(--ink-soft);line-height:1.6}
+.ocard .go{margin-top:13px;font:600 13px var(--sans);color:var(--accent)}
+.ocard .done{position:absolute;top:13px;right:15px;font:600 11px var(--sans);color:#fff;
+  background:var(--accent-soft);border-radius:999px;padding:3px 9px}
+.ocard .cnt{position:absolute;top:13px;right:15px;font:600 11.5px var(--sans);color:var(--accent-soft)}
+.hint{margin-top:40px;color:var(--ink-soft);font-size:13px;text-align:center}
+/* 大厅第五个小选项：不跟旅程，去经典整站自由翻 */
+.freebar{margin-top:22px;text-align:center}
+.freebar a{display:inline-flex;align-items:center;gap:8px;font:600 13.5px var(--sans);
+  color:var(--ink-soft);border:1px dashed var(--line);border-radius:999px;padding:10px 20px;
+  text-decoration:none;transition:color .18s,border-color .18s,background .18s}
+.freebar a:hover{color:var(--accent);border-color:var(--accent);background:var(--card)}
+
+/* ---------- 故事流（demo / 团队共用） ---------- */
+.story{max-width:640px}
+.story .bt{opacity:0;transform:translateY(16px);transition:opacity .55s ease,transform .55s ease;
+  margin-top:18px;font-size:16.5px;line-height:1.9;color:var(--ink)}
+.story .bt.in{opacity:1;transform:none}
+.story .bt.dim{color:var(--ink-soft);font-size:15px}
+.story .bt.big{font:600 clamp(26px,4.6vw,38px)/1.3 var(--serif);margin-top:22px}
+.story .bt.tagline{font:600 12.5px var(--sans);letter-spacing:.12em;color:var(--accent);text-transform:uppercase;margin-top:0}
+.story .bt.kw{font:500 13px var(--sans);color:var(--accent-soft);margin-top:22px}
+.skipnote{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);
+  font:500 12px var(--sans);color:var(--ink-soft);opacity:.75;z-index:5;pointer-events:none;white-space:nowrap}
+.fin{opacity:0;transform:translateY(16px);transition:opacity .5s,transform .5s;margin-top:34px}
+.fin.in{opacity:1;transform:none}
+
+/* ---------- 按钮 ---------- */
+.btnrow{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;font:600 14px var(--sans);
+  border-radius:12px;padding:12px 20px;text-decoration:none;cursor:pointer;border:0;transition:filter .18s,transform .12s}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{filter:brightness(1.08)}
+.btn-g{background:var(--card);color:var(--ink);border:1px solid var(--line)}.btn-g:hover{border-color:var(--accent-soft)}
+.navrow{display:flex;gap:16px;flex-wrap:wrap;margin-top:26px}
+.navlink{font:600 13.5px var(--sans);color:var(--ink-soft);background:none;border:0;cursor:pointer;padding:4px 0}
+.navlink:hover{color:var(--accent)}
+
+/* ---------- 完成卡 / 倒计时回大厅 ---------- */
+.donecard{margin-top:38px;background:color-mix(in srgb,var(--accent) 7%,var(--card));
+  border:1px solid var(--accent-soft);border-radius:18px;padding:20px 22px;display:flex;
+  align-items:center;gap:16px;flex-wrap:wrap}
+.donecard .tick{font-size:22px}
+.donecard .msg{flex:1;min-width:180px;font:600 14.5px var(--sans)}
+.donecard .msg small{display:block;font:400 12.5px var(--sans);color:var(--ink-soft);margin-top:2px}
+
+/* ---------- 留一句 ---------- */
+.ask{margin-top:34px;background:color-mix(in srgb,var(--accent) 6%,var(--card));
+  border:1px dashed var(--accent-soft);border-radius:18px;padding:22px;max-width:640px}
+.ask h5{font:600 16px var(--serif);margin-bottom:3px}
+.ask small{color:var(--ink-soft);font-size:12.5px;display:block;margin-bottom:12px}
+.ask textarea,.ask input{width:100%;font:400 14px var(--sans);color:var(--ink);background:var(--card);
+  border:1px solid var(--line);border-radius:12px;padding:11px 13px;outline:none;margin-bottom:9px}
+.ask textarea{min-height:60px;resize:vertical}
+.ask textarea:focus,.ask input:focus{border-color:var(--accent-soft)}
+.ask .row{display:flex;gap:9px;flex-wrap:wrap}
+.ask .row input{flex:1;min-width:190px;margin-bottom:0}
+.ask .ok{font:600 15px var(--sans);color:var(--accent);padding:8px 0}
+.ask .err{font-size:12.5px;color:var(--accent);margin-top:6px}
+
+/* ---------- 行业/项目 列表卡 ---------- */
+.lcard{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--line);
+  border-radius:16px;padding:17px 19px;cursor:pointer;text-align:left;width:100%;font-family:var(--sans);
+  color:var(--ink);transition:transform .2s,border-color .2s,box-shadow .2s;
+  animation:rise .5s cubic-bezier(.2,.8,.25,1) both}
+.lcard:hover{transform:translateX(5px);border-color:var(--accent-soft);box-shadow:0 10px 28px rgba(63,44,28,.1)}
+.lcard .t{flex:1}
+.lcard h4{font:600 16px/1.35 var(--serif)}
+.lcard p{font-size:12.5px;color:var(--ink-soft);margin-top:2px;line-height:1.55;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.lcard .arr{color:var(--accent);font-weight:700;flex:none}
+.lcard .n{font:600 12px var(--sans);color:var(--accent-soft);flex:none}
+.stack{display:flex;flex-direction:column;gap:11px;margin-top:32px;max-width:640px}
+.stack>*:nth-child(1){animation-delay:.05s}.stack>*:nth-child(2){animation-delay:.11s}
+.stack>*:nth-child(3){animation-delay:.17s}.stack>*:nth-child(4){animation-delay:.23s}
+.stack>*:nth-child(5){animation-delay:.29s}.stack>*:nth-child(6){animation-delay:.35s}
+.stack>*:nth-child(7){animation-delay:.41s}.stack>*:nth-child(n+8){animation-delay:.47s}
+
+/* ---------- 联系 ---------- */
+.contactrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
+.copybtn{font:500 14px var(--sans);background:var(--card);border:1px solid var(--line);border-radius:12px;
+  padding:12px 18px;cursor:pointer;color:var(--ink);transition:border-color .2s;text-decoration:none}
+.copybtn:hover{border-color:var(--accent-soft)}
+footer{position:relative;z-index:1;text-align:center;padding:0 22px 26px;color:var(--ink-soft);font-size:12px}
+footer a{color:var(--accent);text-decoration:none}
+</style>
+</head>
+<body>
+<div class="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div class="topbar">
+  <div class="crumbs" id="crumbs"></div>
+  <div class="score">已探索 <b id="scoreN">0</b>/4</div>
+</div>
+<main id="stage"></main>
+<footer>经典版：<a href="index.html">首页</a> · <a href="demos.html">全部 Demo</a> · <a href="thoughts.html">全部思考</a></footer>
+
+<script src="data.js"></script>
+<script>
+const S = window.SITE, P = window.PROJECTS;
+const $ = (s, r) => (r || document).querySelector(s);
+const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const LOCAL = /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
+const API = LOCAL ? '' : 'https://api.interantai.com';
+const post = (path, data) => fetch(API + path, { method: 'POST',
+  headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data), keepalive: true });
+const c = S.contact;
+
+/* ═══════════ 四个方向（新行业没映射会自动落进「生活」） ═══════════ */
+const DIRS = [
+  { emoji: '🌏', name: '出海，把生意做到全世界', short: '出海',
+    line: '选品、定价、上架——跨境价值链的每一环。',
+    cats: ['跨境电商', '外贸'] },
+  { emoji: '🏢', name: '企业里最磨人的活，交给系统', short: '企业',
+    line: '采购价格、财务、保险、接待……难活自动化。',
+    cats: ['餐饮供应链', '法律', '金融', '保险', '效率', '短租民宿'] },
+  { emoji: '🛍️', name: '生活：吃穿住行玩学', short: '生活',
+    line: '穿搭、找车、今晚吃什么、去哪玩、怎么学。',
+    cats: ['时尚', '汽车', '餐饮', '旅行', '约会', '游戏', '教育', '招聘'] },
+  { emoji: '🏡', name: '照护家里的每一个人', short: '照护',
+    line: '母婴、宠物、爸妈的养老，还有留学在外的孩子。',
+    cats: ['医疗', '宠物', '母婴', '心理', '养老', '留学', '留学租房', '房产'] }
+];
+const mapped = new Set(DIRS.flatMap(d => d.cats));
+[...new Set(P.map(p => p.cat))].forEach(x => { if (!mapped.has(x)) DIRS[2].cats.push(x); });
+const byCat = cat => P.filter(p => p.cat === cat);
+const dirCount = d => d.cats.reduce((n, x) => n + byCat(x).length, 0);
+
+/* ═══════════ 打点 / 留言 ═══════════ */
+function hit(slug) {
+  try {
+    const k = 'exp-a-hit:' + slug;
+    if (sessionStorage.getItem(k)) return;
+    sessionStorage.setItem(k, '1');
+    post('/hit', { slug, ev: 'view' }).catch(() => {});
+  } catch (e) {}
+}
+function askHtml(slug, q, ph) {
+  return `<div class="ask" data-slug="${slug}">
+    <h5>${q}</h5><small>写一句就行。留了联系方式的，48 小时内回你。</small>
+    <textarea placeholder="${ph}" maxlength="1000"></textarea>
+    <div class="row"><input placeholder="微信 / 邮箱（选填）" maxlength="120" />
+    <button class="btn btn-p">发送</button></div>
+    <div class="err" style="display:none"></div></div>`;
+}
+function wireAsks(root) {
+  $$('.ask', root).forEach(box => {
+    const ta = $('textarea', box), ct = $('input', box), btn = $('.btn-p', box), err = $('.err', box);
+    btn.onclick = () => {
+      const text = ta.value.trim();
+      if (text.length < 2) { err.textContent = '多写几个字，我才知道怎么帮你 :)'; err.style.display = ''; ta.focus(); return; }
+      btn.disabled = true; err.style.display = 'none';
+      post('/feedback', { slug: box.dataset.slug, text, contact: ct.value.trim() })
+        .then(r => r.json()).then(r => {
+          if (!r || !r.ok) throw 0;
+          ct.value.trim()
+            ? box.innerHTML = `<div class="ok">收到，谢谢！🙏 会尽快回你。</div>`
+            : askContact(box, box.dataset.slug, text);
+        }).catch(() => {
+          btn.disabled = false;
+          err.textContent = '发送失败了——可以直接加微信 ' + c.wechatId; err.style.display = '';
+        });
+    };
+  });
+}
+/* 提交成功但没留联系方式 → 追问一步：需求侧同学想接着聊 */
+function askContact(box, slug, origText) {
+  box.innerHTML = `
+    <div class="ok">收到！🙏</div>
+    <h5 style="margin:10px 0 2px">愿意留个联系方式吗？</h5>
+    <small>我们需求侧的同学想和你聊聊你的场景——不推销，就是真的想懂你这行。</small>
+    <div class="row" style="margin-top:8px"><input placeholder="微信 / 邮箱" maxlength="120" />
+    <button class="btn btn-p">留下，等你们来聊 →</button></div>
+    <button class="navlink" style="margin-top:6px">这次先不了</button>`;
+  const inp = $('input', box), yes = $('.btn-p', box), no = $('.navlink', box);
+  yes.onclick = () => {
+    const v = inp.value.trim();
+    if (!v) return inp.focus();
+    yes.disabled = true;
+    post('/feedback', { slug, text: '[补充联系方式] ' + origText.slice(0, 40), contact: v })
+      .catch(() => {})
+      .then(() => { box.innerHTML = `<div class="ok">收到，等我们来联系你 🤝</div>`; });
+  };
+  no.onclick = () => { box.innerHTML = `<div class="ok">好嘞，随时欢迎再来 🙌</div>`; };
+}
+/* 划线标注：notes.js 异步加载，场景就绪后带自己的 slug 挂载 */
+window.GGNOTES_MANUAL = true;
+function armNotes(root, slug) {
+  const f = () => { if (root.isConnected && window.GGNOTES) window.GGNOTES.arm(root, slug); };
+  window.GGNOTES ? f() : document.addEventListener('gg-notes-ready', f, { once: true });
+}
+
+/* ═══════════ 路由（hash 支持返回键/刷新/直链） ═══════════ */
+const stage = $('#stage');
+let storyTimer = null, cdTimer = null, finishFn = null;
+/* 快进：全局只挂一次，永远只作用于"当前"故事（finishFn 随场景更换） */
+stage.addEventListener('pointerdown', e => {
+  if (e.target.closest('.fin') || e.target.closest('.ask') || e.target.closest('mark.gg-nt')) return;
+  if (storyTimer && finishFn) finishFn();
+});
+const visited = new Set(JSON.parse(sessionStorage.getItem('exp-a-visited') || '[]'));
+function markVisited(key) {
+  visited.add(key);
+  sessionStorage.setItem('exp-a-visited', JSON.stringify([...visited]));
+  $('#scoreN').textContent = ['about', 'demos', 'thoughts', 'contact'].filter(k => visited.has(k)).length;
+}
+let rendered = null;                       /* 已渲染的路径串，用来吞掉自己触发的 hashchange */
+function go(parts) {                       /* parts: ['story','probe'] 等 */
+  location.hash = '/' + parts.map(encodeURIComponent).join('/');
+  render(parts);
+}
+addEventListener('hashchange', () => {
+  const parts = parseHash();
+  if (parts.join('/') !== rendered) render(parts);
+});
+function parseHash() {
+  const h = location.hash.replace(/^#\/?/, '');
+  return h ? h.split('/').map(decodeURIComponent) : [];
+}
+
+/* 面包屑 */
+function crumbs(list) {                    /* [[label, partsOrNull], …] 最后一个是当前 */
+  $('#crumbs').innerHTML = list.map(([lb, to], i) =>
+    (i ? '<span class="sep">›</span>' : '') +
+    `<button class="crumb${to ? '' : ' cur'}" ${to ? `data-to="${to.join('/')}"` : ''}>${lb}</button>`
+  ).join('');
+  $$('#crumbs .crumb[data-to]').forEach(b =>
+    b.onclick = () => go(b.dataset.to ? b.dataset.to.split('/') : []));
+  $$('#crumbs .crumb[data-to=""]').forEach(b => b.onclick = () => go([]));
+}
+
+/* ═══════════ 故事引擎：逐句浮现，点击任意处快进 ═══════════ */
+function playStory(beats, doneHtml, opts) {
+  opts = opts || {};
+  const wrap = document.createElement('div');
+  wrap.className = 'story';
+  wrap.innerHTML = beats.map(b =>
+    `<div class="bt ${b.cls || ''}">${b.html}</div>`).join('') +
+    `<div class="fin">${doneHtml}</div>`;
+  const skip = document.createElement('div');
+  skip.className = 'skipnote'; skip.textContent = '✦ 点击任意处可以快进';
+  document.body.appendChild(skip);
+  const bts = $$('.bt', wrap), fin = $('.fin', wrap);
+  let i = 0;
+  const finish = () => {
+    clearInterval(storyTimer); storyTimer = null; finishFn = null;
+    bts.forEach(b => b.classList.add('in'));
+    fin.classList.add('in'); skip.remove();
+    if (opts.onDone) opts.onDone();
+  };
+  const next = () => {
+    if (i >= bts.length) return finish();
+    bts[i++].classList.add('in');
+  };
+  next();
+  storyTimer = setInterval(next, opts.pace || 950);
+  finishFn = finish;
+  return wrap;
+}
+function sentences(html, max) {
+  const d = document.createElement('div'); d.innerHTML = html || '';
+  const t = (d.textContent || '').replace(/\s+/g, ' ').trim();
+  return t ? t.split(/(?<=[。！？；])/).map(s => s.trim()).filter(s => s.length > 3).slice(0, max || 6) : [];
+}
+
+/* 倒计时自动回大厅（交互即取消） */
+function countdown(card, secs) {
+  let n = secs;
+  const num = $('.cd-n', card);
+  cdTimer = setInterval(() => {
+    n--; if (num) num.textContent = n;
+    if (n <= 0) { clearInterval(cdTimer); cdTimer = null; go([]); }
+  }, 1000);
+  const cancel = e => {
+    if (e && e.target.closest('.btn')) return;      /* 点按钮不算"想留下" */
+    if (cdTimer) {
+      clearInterval(cdTimer); cdTimer = null;
+      const m = $('.msg', card);
+      if (m) m.innerHTML = '不急，慢慢看 ☕<small>想走的时候点右边</small>';
+    }
+    stage.removeEventListener('pointerdown', cancel, true);
+  };
+  setTimeout(() => stage.addEventListener('pointerdown', cancel, true), 60);
+}
+
+/* ═══════════ 各场景 ═══════════ */
+function clearTimers() {
+  if (storyTimer) { clearInterval(storyTimer); storyTimer = null; }
+  if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
+  finishFn = null;
+  $$('.skipnote').forEach(el => el.remove());
+}
+function setScene(html) {
+  clearTimers();
+  stage.innerHTML = `<div class="sc">${html}</div>`;
+  scrollTo({ top: 0 });
+  return $('.sc', stage);
+}
+
+/* —— 大厅 —— */
+function scHub() {
+  crumbs([['⌂ 大厅', null]]);
+  const badge = k => visited.has(k) ? '<span class="done">已探索 ✓</span>' : '';
+  const sc = setScene(`
+    <div style="text-align:center">
+      <div class="kick">好玩的东西 · 互动版</div>
+      <h1>接下来的几分钟，<br>你想怎么逛？</h1>
+      <p class="lead" style="margin:14px auto 0">${P.length} 个能亲手点的行业 Demo、${S.thoughts.length} 篇思考、一支精英敏捷团队——每走完一站，都会带你回到这里。</p>
+    </div>
+    <div class="cards n4">
+      <button class="ocard" data-go="about">${badge('about')}
+        <div class="em">👋</div><h3>先认识团队</h3>
+        <p>谁在做这些东西，为什么用现金收入而不是叙事验证价值。</p><div class="go">走这条 →</div></button>
+      <button class="ocard" data-go="dirs">${badge('demos')}
+        <div class="em">🧪</div><h3>逛项目</h3>
+        <p>${P.length} 个 Demo 收进了 4 个方向，一步步挑到你那行。</p><div class="go">走这条 →</div></button>
+      <button class="ocard" data-go="thoughts">${badge('thoughts')}
+        <div class="em">💡</div><h3>读几篇思考</h3>
+        <p>意图、数据、安全、人性——AI 到底怎么落地。</p><div class="go">走这条 →</div></button>
+      <button class="ocard" data-go="contact">${badge('contact')}
+        <div class="em">✉️</div><h3>找到我</h3>
+        <p>合作、需求、想法，或者只是打个招呼。</p><div class="go">走这条 →</div></button>
+    </div>
+    <div class="freebar"><a href="index.html">🧭 不想被带着走？<b>自由探索</b>经典整站 →</a></div>
+    <div class="hint">✦ 有限的选择，走不丢——顶栏随时能回到任何一层</div>`);
+  $$('.ocard', sc).forEach(b => b.onclick = () => go([b.dataset.go]));
+  const free = $('.freebar a', sc);
+  if (free) free.onclick = () => hit('exp-a-free');   /* keepalive，跳转前也能送达 */
+}
+
+/* —— 认识团队（故事流 + 自动回大厅） —— */
+function scAbout() {
+  hit('exp-a-about');
+  crumbs([['⌂ 大厅', []], ['认识团队', null]]);
+  const sc = setScene(`<div class="kick">第一站 · 我们是谁</div><div id="mount"></div>`);
+  const beats = [
+    { cls: 'tagline', html: S.author.role },
+    { cls: 'big', html: S.author.name },
+    ...sentences(S.author.blurb, 5).map(s => ({ html: s })),
+    { cls: 'kw', html: S.author.facts.join(' · ') }
+  ];
+  const done = `
+    <div class="btnrow">
+      <button class="btn btn-p" data-team>认识完整团队 →</button>
+      <a class="btn btn-g" href="${S.author.site}" target="_blank" rel="noopener">${S.author.siteLabel}</a>
+    </div>
+    <div class="donecard"><span class="tick">✓</span>
+      <div class="msg">这一站看完了<small><span class="cd-n">6</span> 秒后带你回大厅继续选——动一下鼠标就取消</small></div>
+      <button class="btn btn-p" data-home>回大厅 →</button>
+    </div>`;
+  $('#mount', sc).appendChild(playStory(beats, done, {
+    onDone: () => {
+      markVisited('about');
+      const card = $('.donecard', sc);
+      if (card) countdown(card, 6);
+      $$('[data-team]', sc).forEach(b => b.onclick = () => go(['team']));
+      $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+    }
+  }));
+  armNotes(sc, 'exp-a-about');
+}
+
+/* —— 完整团队：组队理念 → 成员逐位听（全程流式，不跳经典页） —— */
+const TEAM = [
+  { name: '胡君朴', role: '创始人 · 架构师',
+    story: [
+      '北师大-浸会（UIC）人工智能本科，以专业第一名毕业；加州大学伯克利数据科学硕士。',
+      '本科就为学校做了一款类 Rate My Professor 的评教产品「咋样」。',
+      '在学生中一夜爆火——火到差点被教授告上法庭。'],
+    tags: ['UIC · AI 专业第一', 'UC Berkeley · 数据科学硕士'] },
+  { name: '杨文郁 · Wenyu Yang', role: '创始人 · 架构师',
+    story: [
+      '华盛顿大学（UW）生物化学 + 电子工程双学位。',
+      '宾夕法尼亚大学（UPenn）电子工程硕士在读。',
+      '横跨硬科学与工程，把复杂系统稳稳地落地。'],
+    tags: ['UW · Biochem + EE 双学位', 'UPenn · EE 硕士'] },
+  { name: '陶毅恒', role: '创始人 · 架构师',
+    story: [
+      '东北大学计算机本科；伊利诺伊大学（UIUC）计算机硕士、AI 博士。',
+      '有公开发表的 AI 研究。',
+      '把前沿的模型能力，落进真正能交付的产品里。'],
+    tags: ['东北大学 · 计算机', 'UIUC · 计算机硕士 / AI 博士'],
+    link: { label: 'Google Scholar ↗', href: 'https://scholar.google.com/citations?user=at8XlIMAAAAJ&hl=en' } }
+];
+function scTeam() {
+  hit('exp-a-team');
+  crumbs([['⌂ 大厅', []], ['认识团队', ['about']], ['完整团队', null]]);
+  const sc = setScene(`<div class="kick">第一站 · 完整团队</div><div id="mount"></div>`);
+  const beats = [
+    { cls: 'tagline', html: '团队 · Iterant AI' },
+    { cls: 'big', html: '精英敏捷团队' },
+    { html: '我们不是一支普通的开发团队——我们在实验新时代的 AI 组织架构。' },
+    { html: '一半人握着需求、市场与客户；一半人把它快速、完整、可问责地落地。' },
+    { html: '🤝 合伙人这一半：带来需求、市场与客户，听得懂客户真正要什么，并替整个结果负责。' },
+    { html: '🛠️ 架构师这一半：一个真正顶尖的架构师，今天能独自扛起过去一整个团队才扛得动的完整产品。' },
+    { html: '两半各自登峰，再用「问责」焊成一个对结果负责的整体。' },
+    { html: '我们用实打实的现金收入验证价值——而不是用宏大的叙事去换投资。' },
+    { cls: 'kw', html: '现金收入验证价值 · 落地性 稳定性 自动化 · 结构化连接 AI 与行业' }
+  ];
+  const done = `
+    <div class="btnrow">
+      <button class="btn btn-p" data-m="0">认识成员：${TEAM[0].name.split(' ·')[0]} →</button>
+    </div>
+    <div class="navrow">
+      <button class="navlink" data-back>← 回「认识团队」</button>
+      <button class="navlink" data-home>⌂ 大厅</button>
+    </div>`;
+  $('#mount', sc).appendChild(playStory(beats, done, {
+    onDone: () => {
+      $$('[data-m]', sc).forEach(b => b.onclick = () => go(['member', b.dataset.m]));
+      $$('[data-back]', sc).forEach(b => b.onclick = () => go(['about']));
+      $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+    }
+  }));
+  armNotes(sc, 'exp-a-team');
+}
+function scMember(i) {
+  const m = TEAM[i]; if (!m) return go(['team']);
+  hit('exp-a-member' + i);
+  const short = m.name.split(' ·')[0];
+  crumbs([['⌂ 大厅', []], ['认识团队', ['about']], ['完整团队', ['team']], [short, null]]);
+  const sc = setScene(`<div class="kick">完整团队 · 第 ${i + 1} / ${TEAM.length} 位</div><div id="mount"></div>`);
+  const beats = [
+    { cls: 'tagline', html: m.role },
+    { cls: 'big', html: m.name },
+    ...m.story.map(s => ({ html: s })),
+    { cls: 'kw', html: m.tags.join(' · ') }
+  ];
+  const next = TEAM[i + 1];
+  const done = next ? `
+    <div class="btnrow">
+      ${m.link ? `<a class="btn btn-g" href="${m.link.href}" target="_blank" rel="noopener">${m.link.label}</a>` : ''}
+      <button class="btn btn-p" data-m="${i + 1}">下一位：${next.name.split(' ·')[0]} →</button>
+    </div>
+    <div class="navrow">
+      <button class="navlink" data-team>← 完整团队</button>
+      <button class="navlink" data-home>⌂ 大厅</button>
+    </div>` : `
+    <div class="btnrow">
+      ${m.link ? `<a class="btn btn-g" href="${m.link.href}" target="_blank" rel="noopener">${m.link.label}</a>` : ''}
+    </div>
+    ${askHtml('exp-a-team', '想加入，或者有需求想让这支团队落地？', '一句话介绍你自己 / 你的需求…')}
+    <div class="donecard"><span class="tick">✓</span>
+      <div class="msg">团队都认识完了<small><span class="cd-n">6</span> 秒后带你回大厅继续选——动一下鼠标就取消</small></div>
+      <button class="btn btn-p" data-home>回大厅 →</button>
+    </div>`;
+  $('#mount', sc).appendChild(playStory(beats, done, {
+    onDone: () => {
+      wireAsks(sc);
+      if (!next) { const card = $('.donecard', sc); if (card) countdown(card, 6); }
+      $$('[data-m]', sc).forEach(b => b.onclick = () => go(['member', b.dataset.m]));
+      $$('[data-team]', sc).forEach(b => b.onclick = () => go(['team']));
+      $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+    }
+  }));
+  armNotes(sc, 'exp-a-member' + i);
+}
+
+/* —— 逛项目：方向 → 行业 → demo → 故事 —— */
+function scDirs() {
+  hit('exp-a-dirs');
+  markVisited('demos');
+  crumbs([['⌂ 大厅', []], ['逛项目', null]]);
+  const sc = setScene(`
+    <div class="kick">第二站 · 逛项目</div>
+    <h2>先挑一个方向</h2>
+    <p class="lead">${P.length} 个 Demo 收进了 4 个方向——不用一次看完，从和你最近的开始。</p>
+    <div class="cards n4">
+      ${DIRS.map((d, i) => `
+        <button class="ocard" data-i="${i}"><span class="cnt">${dirCount(d)} 个</span>
+          <div class="em">${d.emoji}</div><h3>${d.name}</h3><p>${d.line}</p>
+          <div class="go">进去看看 →</div></button>`).join('')}
+    </div>
+    <div class="navrow"><button class="navlink" data-home>← 回大厅</button></div>`);
+  $$('.ocard', sc).forEach(b => b.onclick = () => go(['dir', b.dataset.i]));
+  $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+}
+function scDir(i) {
+  const d = DIRS[i]; if (!d) return go(['dirs']);
+  hit('exp-a-dir' + i);
+  crumbs([['⌂ 大厅', []], ['逛项目', ['dirs']], [d.short, null]]);
+  const sc = setScene(`
+    <div class="kick">${d.emoji} ${d.name}</div>
+    <h2>再挑一个细分行业</h2>
+    <p class="lead">${d.line}</p>
+    <div class="stack">
+      ${d.cats.filter(x => byCat(x).length).map(x => {
+        const list = byCat(x);
+        return `<button class="lcard" data-cat="${x}">
+          <div class="t"><h4>${x}</h4><p>${list.map(p => p.title).slice(0, 3).join(' · ')}${list.length > 3 ? ' …' : ''}</p></div>
+          <span class="n">${list.length} 个</span><span class="arr">→</span></button>`;
+      }).join('')}
+    </div>
+    <div class="navrow"><button class="navlink" data-back>← 换个方向</button><button class="navlink" data-home>⌂ 大厅</button></div>`);
+  $$('.lcard', sc).forEach(b => b.onclick = () => {
+    const list = byCat(b.dataset.cat);
+    /* 只有一个 demo 的行业直接进故事，少点一层 */
+    list.length === 1 ? go(['story', list[0].id]) : go(['cat', i, b.dataset.cat]);
+  });
+  $$('[data-back]', sc).forEach(b => b.onclick = () => go(['dirs']));
+  $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+}
+function scCat(i, cat) {
+  const d = DIRS[i], list = byCat(cat);
+  if (!d || !list.length) return go(['dirs']);
+  crumbs([['⌂ 大厅', []], ['逛项目', ['dirs']], [d.short, ['dir', String(i)]], [cat, null]]);
+  const sc = setScene(`
+    <div class="kick">${d.emoji} ${d.short} · ${cat}</div>
+    <h2>${cat}行业，我们做了 ${list.length} 个</h2>
+    <p class="lead">挑一个，我讲给你听。</p>
+    <div class="stack">
+      ${list.map(p => `<button class="lcard" data-id="${p.id}">
+        <div class="t"><h4>${p.title}</h4><p>${p.subtitle}</p></div>
+        ${p.url ? '' : '<span class="n">即将上线</span>'}<span class="arr">→</span></button>`).join('')}
+    </div>
+    <div class="navrow"><button class="navlink" data-back>← 换个行业</button><button class="navlink" data-home>⌂ 大厅</button></div>`);
+  $$('.lcard', sc).forEach(b => b.onclick = () => go(['story', b.dataset.id]));
+  $$('[data-back]', sc).forEach(b => b.onclick = () => go(['dir', String(i)]));
+  $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+}
+
+/* —— demo 故事场景：流式文字，像讲故事 —— */
+function scStory(id) {
+  const p = P.find(x => x.id === id); if (!p) return go(['dirs']);
+  hit('exp-a-s-' + id);
+  const di = DIRS.findIndex(d => d.cats.includes(p.cat));
+  const d = DIRS[di] || DIRS[2];
+  crumbs([['⌂ 大厅', []], ['逛项目', ['dirs']], [d.short, ['dir', String(di)]],
+          [p.cat, ['cat', String(di), p.cat]], [p.title.slice(0, 8) + (p.title.length > 8 ? '…' : ''), null]]);
+  const sc = setScene(`<div id="mount"></div>`);
+
+  const secs = p.sections || [];
+  const what = secs.find(s => s.label === '是什么');
+  const biz = secs.find(s => s.label === '商业模式');
+  const beats = [
+    { cls: 'tagline', html: `${p.cat} · ${p.kicker}` },
+    { cls: 'big', html: p.title },
+    { cls: 'dim', html: p.subtitle },
+    ...sentences(what && what.html, 4).map(s => ({ html: s })),
+    ...sentences(biz && biz.html, 1).map(s => ({ html: '💰 ' + s })),
+    { cls: 'kw', html: (p.tags || []).join(' · ') }
+  ];
+  const siblings = byCat(p.cat).filter(x => x.id !== id);
+  const nextOne = siblings[0];
+  const href = p.url ? (p.direct ? p.url : `project.html?id=${p.id}`) : null;
+  const done = `
+    <div class="btnrow">
+      ${href ? `<a class="btn btn-p" href="${href}" target="_blank" rel="noopener">亲手玩它 ↗</a>` : '<span class="btn btn-g" style="opacity:.6;cursor:default">即将上线</span>'}
+      ${nextOne ? `<button class="btn btn-g" data-next="${nextOne.id}">听下一个：${nextOne.title.slice(0, 10)} →</button>` : ''}
+    </div>
+    ${askHtml('exp-a-s-' + id, '这个如果用在你的业务上会怎样？', '你的场景 / 需求 / 吐槽…')}
+    <div class="navrow">
+      <button class="navlink" data-back>← 回「${p.cat}」</button>
+      <button class="navlink" data-dirs>↩ 换个方向</button>
+      <button class="navlink" data-home>⌂ 大厅</button>
+    </div>`;
+  $('#mount', sc).appendChild(playStory(beats, done, {
+    pace: 1050,
+    onDone: () => {
+      wireAsks(sc);
+      $$('[data-next]', sc).forEach(b => b.onclick = () => go(['story', b.dataset.next]));
+      $$('[data-back]', sc).forEach(b => b.onclick = () =>
+        byCat(p.cat).length === 1 ? go(['dir', String(di)]) : go(['cat', String(di), p.cat]));
+      $$('[data-dirs]', sc).forEach(b => b.onclick = () => go(['dirs']));
+      $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+    }
+  }));
+  armNotes(sc, 'exp-a-s-' + id);
+}
+
+/* —— 思考：列表 → 每篇都是流式故事场景 —— */
+function scThoughts() {
+  hit('exp-a-thoughts');
+  markVisited('thoughts');
+  crumbs([['⌂ 大厅', []], ['读思考', null]]);
+  const sc = setScene(`
+    <div class="kick">第三站 · 怎么想</div>
+    <h2>做这些东西时，我们信什么</h2>
+    <p class="lead">挑一篇，我流式讲给你听——想玩互动版或深读原文，听完再去也不迟。</p>
+    <div class="stack">
+      ${S.thoughts.map((t, i) => `<button class="lcard" data-i="${i}">
+        <div class="t"><h4>${t.title}</h4><p>${t.desc}</p></div><span class="arr">→</span></button>`).join('')}
+    </div>
+    <div class="navrow"><button class="navlink" data-home>⌂ 回大厅</button></div>`);
+  armNotes(sc, 'exp-a-thoughts');
+  $$('.lcard', sc).forEach(b => b.onclick = () => go(['thought', b.dataset.i]));
+  $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+}
+/* 单篇思考：抓原文 h2/p，逐句流式讲；正文太长只讲前一段，完整版一键直达 */
+async function scThought(i) {
+  const t = S.thoughts[i]; if (!t) return go(['thoughts']);
+  hit('exp-a-th' + i);
+  markVisited('thoughts');
+  const short = t.title.length > 9 ? t.title.slice(0, 8) + '…' : t.title;
+  crumbs([['⌂ 大厅', []], ['读思考', ['thoughts']], [short, null]]);
+  const sc = setScene(`<div class="kick">读思考 · 第 ${+i + 1} / ${S.thoughts.length} 篇</div><div id="mount"></div>`);
+  const my = rendered;                        /* fetch 期间可能已切走场景 */
+  let beats = [
+    { cls: 'tagline', html: t.kicker },
+    { cls: 'big', html: t.title },
+    ...sentences(t.desc, 3).map(s => ({ html: s }))
+  ];
+  try {
+    const res = await fetch(t.href);
+    const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    const extra = [];
+    for (const el of $$('h2, p', doc.querySelector('main') || doc.body)) {
+      if (extra.length >= 12) break;
+      if (el.tagName === 'H2') extra.push({ cls: 'dim', html: '§ ' + el.textContent.trim() });
+      else sentences(el.innerHTML, 2).forEach(s => { if (extra.length < 12) extra.push({ html: s }); });
+    }
+    if (extra.length) beats = beats.concat(extra, [{ cls: 'dim', html: '……后面还有，完整版里见。' }]);
+  } catch (e) {}
+  if (rendered !== my) return;                /* 已经离开，别把故事挂到别的场景上 */
+  const next = S.thoughts[+i + 1];
+  const done = `
+    <div class="btnrow">
+      ${t.play ? `<a class="btn btn-p" href="${t.play}" target="_blank" rel="noopener">玩互动版 ↗</a>` : ''}
+      <a class="btn ${t.play ? 'btn-g' : 'btn-p'}" href="${t.href}" target="_blank" rel="noopener">读完整原文 ↗</a>
+      ${next ? `<button class="btn btn-g" data-next="${+i + 1}">听下一篇：${next.title.slice(0, 9)} →</button>` : ''}
+    </div>
+    ${askHtml('exp-a-th' + i, '这篇说的，和你的体感一致吗？', '同意 / 反对 / 它在你行业里的样子…')}
+    <div class="navrow">
+      <button class="navlink" data-back>← 回「读思考」</button>
+      <button class="navlink" data-home>⌂ 大厅</button>
+    </div>`;
+  $('#mount', sc).appendChild(playStory(beats, done, {
+    pace: 1050,
+    onDone: () => {
+      wireAsks(sc);
+      $$('[data-next]', sc).forEach(b => b.onclick = () => go(['thought', b.dataset.next]));
+      $$('[data-back]', sc).forEach(b => b.onclick = () => go(['thoughts']));
+      $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+    }
+  }));
+  armNotes(sc, 'exp-a-th' + i);
+}
+
+/* —— 找到我 —— */
+function scContact() {
+  hit('exp-a-contact');
+  markVisited('contact');
+  crumbs([['⌂ 大厅', []], ['找到我', null]]);
+  const n = ['about', 'demos', 'thoughts', 'contact'].filter(k => visited.has(k)).length;
+  const sc = setScene(`
+    <div class="kick">终点站 · 找到我</div>
+    <h2>要不要留下点什么？</h2>
+    <p class="lead">${n >= 4 ? '四站全走完了——你是认真的访客 🏅 ' : ''}${c.intro}</p>
+    <div class="contactrow">
+      <button class="copybtn" data-copy="${c.wechatId}">微信 ${c.wechatId} · 点击复制</button>
+      <a class="copybtn" href="mailto:${c.email}">✉️ ${c.email}</a>
+    </div>
+    ${askHtml('exp-a-end', '任何想法都值得留下', '合作 / 需求 / 吐槽 / 打个招呼…')}
+    <div class="navrow"><button class="navlink" data-home>⌂ 回大厅</button></div>`);
+  wireAsks(sc);
+  $$('.copybtn[data-copy]', sc).forEach(b => b.onclick = () => {
+    navigator.clipboard && navigator.clipboard.writeText(b.dataset.copy).then(() => {
+      const t = b.textContent; b.textContent = '已复制 ✓'; setTimeout(() => b.textContent = t, 1400);
+    });
+  });
+  $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
+}
+
+/* ═══════════ 路由表 ═══════════ */
+function render(parts) {
+  rendered = parts.join('/');
+  const [k, a, b] = parts;
+  if (k === 'about') return scAbout();
+  if (k === 'team') return scTeam();
+  if (k === 'member') return scMember(+a);
+  if (k === 'dirs') return scDirs();
+  if (k === 'dir') return scDir(+a);
+  if (k === 'cat') return scCat(+a, b);
+  if (k === 'story') return scStory(a);
+  if (k === 'thoughts') return scThoughts();
+  if (k === 'thought') return scThought(+a);
+  if (k === 'contact') return scContact();
+  return scHub();
+}
+markVisited('');            /* 初始化探索度显示 */
+render(parseHash());
+</script>
+<script defer src="assets/feedback.js"></script>
+</body>
+</html>

@@ -104,14 +104,18 @@
 
   /* ---------------- 样式 ---------------- */
   var STYLE =
-    '.gg-fb-btn{position:fixed;bottom:18px;right:18px;z-index:9998;display:inline-flex;' +
-    'align-items:center;gap:6px;font:500 13.5px var(--sans,-apple-system,system-ui,sans-serif);' +
-    'color:var(--ink-soft,#6b6058);background:var(--card,#fffdfa);border:1px solid var(--line,#ded3c6);' +
-    'border-radius:999px;padding:9px 14px;cursor:pointer;line-height:1;' +
-    'box-shadow:0 2px 12px rgba(0,0,0,.08);-webkit-tap-highlight-color:transparent;' +
-    'transition:color .18s,border-color .18s,transform .12s;opacity:0;animation:gg-fb-in .3s ease .4s forwards}' +
+    /* 按钮做成主色实心大按钮 + 出场后轻脉冲 3 次引导注意（用户反馈原版太不起眼） */
+    '.gg-fb-btn{position:fixed;bottom:22px;right:20px;z-index:9998;display:inline-flex;' +
+    'align-items:center;gap:7px;font:600 14.5px var(--sans,-apple-system,system-ui,sans-serif);' +
+    'color:#fff;background:var(--accent,#b4542e);border:0;' +
+    'border-radius:999px;padding:13px 20px;cursor:pointer;line-height:1;' +
+    'box-shadow:0 4px 18px rgba(0,0,0,.18);-webkit-tap-highlight-color:transparent;' +
+    'transition:filter .18s,transform .12s,box-shadow .18s;opacity:0;' +
+    'animation:gg-fb-in .3s ease .4s forwards,gg-fb-pulse 2.2s ease 1.2s 3}' +
     '@keyframes gg-fb-in{to{opacity:1}}' +
-    '.gg-fb-btn:hover{border-color:var(--accent-soft,#c98a5a);color:var(--accent,#b4542e)}' +
+    '@keyframes gg-fb-pulse{0%,100%{box-shadow:0 4px 18px rgba(0,0,0,.18)}' +
+    '45%{box-shadow:0 4px 18px rgba(0,0,0,.18),0 0 0 9px color-mix(in srgb,var(--accent,#b4542e) 22%,transparent)}}' +
+    '.gg-fb-btn:hover{filter:brightness(1.08);box-shadow:0 6px 22px rgba(0,0,0,.24)}' +
     '.gg-fb-btn:active{transform:scale(.95)}' +
     '.gg-fb-panel{position:fixed;bottom:18px;right:18px;z-index:9999;width:min(340px,calc(100vw - 36px));' +
     'background:var(--card,#fffdfa);border:1px solid var(--line,#ded3c6);border-radius:16px;' +
@@ -135,7 +139,8 @@
     '.gg-fb-ok .big{font-size:15px;font-weight:600;margin-bottom:6px}' +
     '.gg-fb-ok .sub{font-size:12.5px;color:var(--ink-soft,#6b6058);line-height:1.5}' +
     '.gg-fb-err{margin:0 0 8px;font-size:12.5px;line-height:1.5;color:var(--accent,#b4542e)}' +
-    '@media(max-width:520px){.gg-fb-btn{bottom:14px;right:14px}.gg-fb-panel{bottom:14px;right:14px}}';
+    '@media(max-width:520px){.gg-fb-btn{bottom:16px;right:14px;padding:12px 17px;font-size:13.5px}' +
+    '.gg-fb-panel{bottom:14px;right:14px}}';
 
   function injectStyle() {
     if (document.getElementById('gg-fb-style')) return;
@@ -184,6 +189,44 @@
     var send = el('button', 'gg-fb-send', t.send);
     var note = el('p', 'gg-fb-note', t.note);
 
+    /* 成功后的收尾：留了联系方式→直接道谢；没留→追问一步（需求侧同学想聊聊） */
+    function showOk() {
+      panel.innerHTML = '';
+      panel.appendChild(x);
+      var ok = el('div', 'gg-fb-ok',
+        '<div class="big">' + t.ok + '</div><div class="sub">' + t.okSub + '</div>');
+      panel.appendChild(ok);
+      setTimeout(closePanel, 2600);
+    }
+    function showContactAsk(origText) {
+      var en = window.LANG === 'en';
+      panel.innerHTML = '';
+      panel.appendChild(x);
+      var h2 = el('h4', '', en ? 'Got it! One more thing —' : '收到！🙏 再多问一句——');
+      var sub = el('p', 'gg-fb-note', en
+        ? 'Care to leave a contact? Someone on our demand side would love to talk through your scenario. No sales pitch — just a real conversation.'
+        : '愿意留个联系方式吗？我们需求侧的同学想和你聊聊你的场景——不推销，就是真的想懂你这行。');
+      sub.style.margin = '0 0 10px';
+      var ct2 = el('input');
+      ct2.placeholder = en ? 'WeChat / email' : '微信 / 邮箱';
+      ct2.maxLength = 120;
+      var yes = el('button', 'gg-fb-send', en ? 'Leave it — talk to me' : '留下，等你们来聊 →');
+      var no = el('button', 'gg-fb-note', en ? 'Maybe later' : '这次先不了');
+      no.style.cssText = 'display:block;margin:8px auto 0;background:none;border:0;cursor:pointer;text-decoration:underline';
+      yes.onclick = function () {
+        var v = ct2.value.trim();
+        if (!v) { ct2.focus(); return; }
+        yes.disabled = true;
+        post('/feedback', { slug: SLUG, text: '[补充联系方式] ' + origText.slice(0, 40), contact: v })
+          .catch(function () {})
+          .then(function () { showOk(); });
+      };
+      no.onclick = showOk;
+      panel.appendChild(h2); panel.appendChild(sub); panel.appendChild(ct2);
+      panel.appendChild(yes); panel.appendChild(no);
+      ct2.focus();
+    }
+
     send.onclick = function () {
       var text = ta.value.trim();
       if (text.length < 2) {
@@ -194,12 +237,7 @@
         .then(function (r) { return r.json(); })
         .then(function (r) {
           if (!r || !r.ok) throw new Error((r && r.error) || 'fail');
-          panel.innerHTML = '';
-          panel.appendChild(x);
-          var ok = el('div', 'gg-fb-ok',
-            '<div class="big">' + t.ok + '</div><div class="sub">' + t.okSub + '</div>');
-          panel.appendChild(ok);
-          setTimeout(closePanel, 2600);
+          ct.value.trim() ? showOk() : showContactAsk(text);
         })
         .catch(function () {
           send.disabled = false;
@@ -233,4 +271,20 @@
   }
 
   window.GGFB = { open: openPanel, slug: SLUG };
+
+  /* 自动加载划线标注组件（同目录 notes.js）——和 shared/app.js 加载本文件同一个套路 */
+  (function () {
+    if (document.querySelector('script[data-gg-nt]')) return;
+    var cur = (document.currentScript && document.currentScript.src) || '';
+    if (!cur) {
+      var ss = document.querySelectorAll('script[src*="feedback.js"]');
+      if (ss.length) cur = ss[ss.length - 1].src;
+    }
+    if (!cur) return;
+    var s = document.createElement('script');
+    s.defer = true;
+    s.src = cur.replace(/feedback\.js.*$/, 'notes.js');
+    s.setAttribute('data-gg-nt', '1');
+    document.head.appendChild(s);
+  })();
 })();
