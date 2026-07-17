@@ -54,6 +54,10 @@ body{background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);overflow-x
 #stage{position:relative;z-index:1;max-width:940px;margin:0 auto;
   padding:calc(76px + env(safe-area-inset-top)) 22px 90px;min-height:100svh;
   display:flex;flex-direction:column;justify-content:center}
+/* 大屏自适应：分辨率越高整体放大，别让内容缩在一角（min-height 补偿 zoom 保持垂直居中） */
+@media (min-width:1500px){body{zoom:1.15;min-height:calc(100svh/1.15)}#stage{min-height:calc(100svh/1.15)}}
+@media (min-width:1800px){body{zoom:1.3;min-height:calc(100svh/1.3)}#stage{min-height:calc(100svh/1.3)}}
+@media (min-width:2300px){body{zoom:1.55;min-height:calc(100svh/1.55)}#stage{min-height:calc(100svh/1.55)}}
 .sc{animation:scIn .42s cubic-bezier(.2,.8,.25,1) both}
 @keyframes scIn{from{opacity:0;transform:translateY(26px)}to{opacity:1}}
 .kick{font:600 13px var(--sans);letter-spacing:.14em;color:var(--accent);text-transform:uppercase;margin-bottom:12px}
