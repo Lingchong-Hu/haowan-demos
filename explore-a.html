@@ -621,10 +621,11 @@ function scStory(id) {
   ];
   const siblings = byCat(p.cat).filter(x => x.id !== id);
   const nextOne = siblings[0];
-  const href = p.url ? (p.direct ? p.url : `project.html?id=${p.id}`) : null;
+  /* 直达 demo 本体（不经介绍页）；同页跳转——demo 里有 🧭 旅程罗盘可随时滚回 */
+  const href = p.url || null;
   const done = `
     <div class="btnrow">
-      ${href ? `<a class="btn btn-p" href="${href}" target="_blank" rel="noopener">亲手玩它 ↗</a>` : '<span class="btn btn-g" style="opacity:.6;cursor:default">即将上线</span>'}
+      ${href ? `<a class="btn btn-p" href="${href}">亲手玩它 →</a>` : '<span class="btn btn-g" style="opacity:.6;cursor:default">即将上线</span>'}
       ${nextOne ? `<button class="btn btn-g" data-next="${nextOne.id}">听下一个：${nextOne.title.slice(0, 10)} →</button>` : ''}
     </div>
     ${askHtml('exp-a-s-' + id, '这个如果用在你的业务上会怎样？', '你的场景 / 需求 / 吐槽…')}

@@ -272,19 +272,22 @@
 
   window.GGFB = { open: openPanel, slug: SLUG };
 
-  /* 自动加载划线标注组件（同目录 notes.js）——和 shared/app.js 加载本文件同一个套路 */
+  /* 自动加载划线标注组件（notes.js）+ 旅程罗盘（journey.js，仅 demo 页自挂）
+     ——和 shared/app.js 加载本文件同一个套路 */
   (function () {
-    if (document.querySelector('script[data-gg-nt]')) return;
     var cur = (document.currentScript && document.currentScript.src) || '';
     if (!cur) {
       var ss = document.querySelectorAll('script[src*="feedback.js"]');
       if (ss.length) cur = ss[ss.length - 1].src;
     }
     if (!cur) return;
-    var s = document.createElement('script');
-    s.defer = true;
-    s.src = cur.replace(/feedback\.js.*$/, 'notes.js');
-    s.setAttribute('data-gg-nt', '1');
-    document.head.appendChild(s);
+    [['notes.js', 'data-gg-nt'], ['journey.js', 'data-gg-j']].forEach(function (it) {
+      if (document.querySelector('script[' + it[1] + ']')) return;
+      var s = document.createElement('script');
+      s.defer = true;
+      s.src = cur.replace(/feedback\.js.*$/, it[0]);
+      s.setAttribute(it[1], '1');
+      document.head.appendChild(s);
+    });
   })();
 })();
