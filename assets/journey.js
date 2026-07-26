@@ -1,23 +1,30 @@
-/* journey.js — demo 页里的「🧭 继续旅程」：让人从任何一个 demo 随时滚回引导式旅程。
-   只在 URL 含 /demos/<slug>/ 的页面出现（思考页、旅程本身、后台都不挂）。
-   由 feedback.js 自动加载（data-gg-j 防重）；零依赖、纯注入，不动任何 demo 的代码。
-   三级目录与旅程一致：这个 demo 的讲述 → 项目目录（四方向） → 大厅。
-   另职责：demo 页大屏自适应——高分辨率下整体 zoom 放大，别缩在屏幕一角
-   （满屏 100vh 布局的 demo 除外，zoom 会让它们出滚动条）。 */
+/* journey.js — 左下角「🧭 旅程罗盘」:让人从站内任何内容页随时回到引导式旅程。
+   v2:不再只挂 demo 页,按上下文挂载——
+     · /demos/<slug>/…      demo 页(原有):讲述 → 项目目录 → 大厅
+     · /thoughts/<x>.html   思考原文/互动版:这篇的讲述 → 读思考 → 大厅
+     · demos/thoughts/team/project.html 经典站点页:大厅 → 逛项目 → 读思考
+   index.html 不挂(已有导航入口 + 首访双模式选择浮层),旅程页本身与后台也不挂。
+   由 feedback.js 自动加载(data-gg-j 防重);零依赖、纯注入,不动页面自身代码。
+   另职责:demo 页大屏自适应 zoom(满屏 100vh 布局的 demo 除外)。 */
 (function () {
   'use strict';
   if (window.__GGJ) return; window.__GGJ = 1;
 
-  var m = location.pathname.match(/^(.*)\/demos\/([^/]+)\//);
-  if (!m) return;
-  var base = m[1] || '';
-  var slug = m[2];
+  var path = location.pathname, m, mode = null, base = '', slug = '';
+  if ((m = path.match(/^(.*)\/demos\/([^/]+)\//))) {
+    mode = 'demo'; base = m[1] || ''; slug = m[2];
+  } else if ((m = path.match(/^(.*)\/thoughts\/([^/]+)\.html$/))) {
+    mode = 'thought'; base = m[1] || ''; slug = m[2].replace(/-play$/, '');
+  } else if ((m = path.match(/^(.*)\/(demos|thoughts|team|project)\.html$/))) {
+    mode = 'site'; base = m[1] || '';
+  }
+  if (!mode) return;
   var J = base + '/explore-a.html';
 
-  /* —— 大屏自适应 zoom（满屏布局的 demo 跳过） —— */
+  /* —— 大屏自适应 zoom(仅 demo 页;满屏布局的跳过) —— */
   var NOZOOM = { atelier: 1, concierge: 1, 'mood-journal': 1, 'style-dna': 1 };
   function fit() {
-    if (NOZOOM[slug]) return;
+    if (mode !== 'demo' || NOZOOM[slug]) return;
     var w = window.innerWidth;
     var z = w >= 2300 ? '1.4' : w >= 1800 ? '1.25' : w >= 1500 ? '1.12' : '';
     if (document.body) document.body.style.zoom = z;
@@ -28,7 +35,7 @@
     '.gg-j-btn{position:fixed;bottom:22px;left:20px;z-index:9997;display:inline-flex;align-items:center;gap:8px;' +
     'padding:14px 21px;border:0;border-radius:999px;cursor:pointer;' +
     'background:#b4542e;color:#fff;font:700 15px/1 -apple-system,"Noto Sans SC","Microsoft YaHei",system-ui,sans-serif;' +
-    /* 按钮本体不做入场动画（可见性是硬功能，不赌动画环境）；脉冲光圈纯装饰 */
+    /* 按钮本体不做入场动画(可见性是硬功能,不赌动画环境);脉冲光圈纯装饰 */
     'box-shadow:0 8px 24px rgba(140,60,20,.35);transition:transform .15s,box-shadow .15s}' +
     '.gg-j-btn::after{content:"";position:absolute;inset:0;border-radius:999px;pointer-events:none;' +
     'animation:gg-j-ring 1.8s .6s ease-out 3}' +
@@ -53,11 +60,39 @@
   style.textContent = css;
   document.head.appendChild(style);
 
+  var en = window.LANG === 'en';
+  var LABEL = mode === 'site'
+    ? (en ? '🧭 <span>Guided tour</span>' : '🧭 <span>旅程式浏览</span>')
+    : (en ? '🧭 <span>Back to tour</span>' : '🧭 <span>继续旅程</span>');
+  function row(href, em, main, sub) {
+    return '<a href="' + href + '"><span class="em">' + em + '</span><span>' + main +
+      (sub ? '<span class="s">' + sub + '</span>' : '') + '</span></a>';
+  }
+  function panelHtml() {
+    var hd = en ? '🧭 Continue your tour' : '🧭 继续你的旅程';
+    if (mode === 'demo') return '<div class="hd">' + hd + '</div>' +
+      row(J + '#story/' + encodeURIComponent(slug), '←',
+        en ? 'Back to this demo’s story' : '回到这个 demo 的讲述',
+        en ? 'Scroll back to its industry & track' : '从这里能滚回它的行业和方向') +
+      row(J + '#dirs', '📂', en ? 'Project directory' : '项目目录', en ? '4 tracks · pick the next one' : '四个方向 · 挑下一个听') +
+      row(J, '⌂', en ? 'Tour hub' : '旅程大厅');
+    if (mode === 'thought') return '<div class="hd">' + hd + '</div>' +
+      row(J + '#thought/' + encodeURIComponent(slug), '←',
+        en ? 'Back to this essay’s story' : '回到这篇的讲述',
+        en ? 'The guided version of this essay' : '这篇思考的旅程讲述场景') +
+      row(J + '#thoughts', '💡', en ? 'All essays (tour)' : '读思考', en ? 'Pick the next one to hear' : '挑下一篇听') +
+      row(J, '⌂', en ? 'Tour hub' : '旅程大厅');
+    return '<div class="hd">' + (en ? '🧭 Prefer being guided?' : '🧭 想被带着逛?') + '</div>' +
+      row(J, '⌂', en ? 'Tour hub' : '旅程大厅', en ? 'Team, demos & essays, step by step' : '团队、项目、思考,一步步讲给你听') +
+      row(J + '#dirs', '🧪', en ? 'Browse demos (tour)' : '逛项目', en ? '4 tracks, funnel to yours' : '四个方向,一步挑到你那行') +
+      row(J + '#thoughts', '💡', en ? 'Essays (tour)' : '读思考');
+  }
+
   var btn = document.createElement('button');
   btn.className = 'gg-j-btn';
   btn.type = 'button';
-  btn.innerHTML = '🧭 <span>继续旅程</span>';
-  btn.title = '回到引导式旅程';
+  btn.innerHTML = LABEL;
+  btn.title = en ? 'Back to the guided tour' : '回到引导式旅程';
 
   var panel = null;
   function closePanel() { if (panel) { panel.remove(); panel = null; } }
@@ -65,11 +100,7 @@
     if (panel) return closePanel();
     panel = document.createElement('div');
     panel.className = 'gg-j-panel';
-    panel.innerHTML =
-      '<div class="hd">🧭 继续你的旅程</div>' +
-      '<a href="' + J + '#story/' + encodeURIComponent(slug) + '"><span class="em">←</span><span>回到这个 demo 的讲述<span class="s">从这里能滚回它的行业和方向</span></span></a>' +
-      '<a href="' + J + '#dirs"><span class="em">📂</span><span>项目目录<span class="s">四个方向 · 挑下一个听</span></span></a>' +
-      '<a href="' + J + '"><span class="em">⌂</span><span>旅程大厅</span></a>';
+    panel.innerHTML = panelHtml();
     document.body.appendChild(panel);
   }
 

@@ -160,6 +160,17 @@ h2{font:600 clamp(27px,4.8vw,40px)/1.28 var(--serif)}
 .stack>*:nth-child(5){animation-delay:.29s}.stack>*:nth-child(6){animation-delay:.35s}
 .stack>*:nth-child(7){animation-delay:.41s}.stack>*:nth-child(n+8){animation-delay:.47s}
 
+/* ---------- 旅程内读全文（思考原文迁入旅程） ---------- */
+.fulltext{margin-top:26px;max-width:640px;background:var(--card);border:1px solid var(--line);
+  border-radius:18px;padding:26px 26px 16px;animation:scIn .4s both}
+.fulltext h2{font:600 21px/1.4 var(--serif);margin:24px 0 10px}
+.fulltext p{margin:12px 0;font-size:15.5px;line-height:1.85}
+.fulltext .lede{font-size:16.5px}
+.fulltext blockquote{margin:14px 0;padding:8px 16px;border-left:3px solid var(--accent-soft);color:var(--ink-soft)}
+.fulltext ul,.fulltext ol{padding-left:22px}
+.fulltext li{margin:6px 0}
+.fulltext img{max-width:100%;border-radius:10px}
+
 /* ---------- 联系 ---------- */
 .contactrow{display:flex;gap:12px;flex-wrap:wrap;margin-top:26px}
 .copybtn{font:500 14px var(--sans);background:var(--card);border:1px solid var(--line);border-radius:12px;
@@ -670,39 +681,51 @@ function scThoughts() {
   $$('.lcard', sc).forEach(b => b.onclick = () => go(['thought', b.dataset.i]));
   $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
 }
-/* 单篇思考：抓原文 h2/p，逐句流式讲；正文太长只讲前一段，完整版一键直达 */
+/* 单篇思考：抓原文逐句流式讲；「展开读全文」把完整原文迁入旅程内阅读，不出旅程；
+   互动版同标签进入（那边左下角有🧭罗盘随时回来）；支持 #thought/<slug> 直链（罗盘回程用） */
 async function scThought(i) {
+  if (isNaN(+i)) {                            /* #thought/<slug> → 按原文文件名找下标 */
+    const s = String(i);
+    i = S.thoughts.findIndex(x => (x.href || '').endsWith('/' + s + '.html'));
+  }
+  i = +i;
   const t = S.thoughts[i]; if (!t) return go(['thoughts']);
   hit('exp-a-th' + i);
   markVisited('thoughts');
   const short = t.title.length > 9 ? t.title.slice(0, 8) + '…' : t.title;
   crumbs([['⌂ 大厅', []], ['读思考', ['thoughts']], [short, null]]);
-  const sc = setScene(`<div class="kick">读思考 · 第 ${+i + 1} / ${S.thoughts.length} 篇</div><div id="mount"></div>`);
+  const sc = setScene(`<div class="kick">读思考 · 第 ${i + 1} / ${S.thoughts.length} 篇</div><div id="mount"></div>`);
   const my = rendered;                        /* fetch 期间可能已切走场景 */
   let beats = [
     { cls: 'tagline', html: t.kicker },
     { cls: 'big', html: t.title },
     ...sentences(t.desc, 3).map(s => ({ html: s }))
   ];
+  let fullHtml = '';                          /* 完整原文正文，展开时迁入旅程内阅读 */
   try {
     const res = await fetch(t.href);
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
+    const bodyEl = doc.querySelector('.article .body') || doc.querySelector('main') || doc.body;
+    fullHtml = bodyEl ? bodyEl.innerHTML : '';
     const extra = [];
-    for (const el of $$('h2, p', doc.querySelector('main') || doc.body)) {
+    for (const el of $$('h2, p', bodyEl)) {
       if (extra.length >= 12) break;
       if (el.tagName === 'H2') extra.push({ cls: 'dim', html: '§ ' + el.textContent.trim() });
       else sentences(el.innerHTML, 2).forEach(s => { if (extra.length < 12) extra.push({ html: s }); });
     }
-    if (extra.length) beats = beats.concat(extra, [{ cls: 'dim', html: '……后面还有，完整版里见。' }]);
+    if (extra.length) beats = beats.concat(extra,
+      [{ cls: 'dim', html: fullHtml ? '……先讲到这，全文就在下面，不用出旅程。' : '……后面还有，完整版里见。' }]);
   } catch (e) {}
   if (rendered !== my) return;                /* 已经离开，别把故事挂到别的场景上 */
   const next = S.thoughts[+i + 1];
   const done = `
     <div class="btnrow">
-      ${t.play ? `<a class="btn btn-p" href="${t.play}" target="_blank" rel="noopener">玩互动版 ↗</a>` : ''}
-      <a class="btn ${t.play ? 'btn-g' : 'btn-p'}" href="${t.href}" target="_blank" rel="noopener">读完整原文 ↗</a>
+      ${fullHtml ? `<button class="btn btn-p" data-full>📖 展开读全文</button>`
+                 : `<a class="btn btn-p" href="${t.href}">读完整原文 →</a>`}
+      ${t.play ? `<a class="btn btn-g" href="${t.play}">✦ 玩互动版 →</a>` : ''}
       ${next ? `<button class="btn btn-g" data-next="${+i + 1}">听下一篇：${next.title.slice(0, 9)} →</button>` : ''}
     </div>
+    <div class="fulltext" style="display:none"></div>
     ${askHtml('exp-a-th' + i, '这篇说的，和你的体感一致吗？', '同意 / 反对 / 它在你行业里的样子…')}
     <div class="navrow">
       <button class="navlink" data-back>← 回「读思考」</button>
@@ -712,6 +735,12 @@ async function scThought(i) {
     pace: 1050,
     onDone: () => {
       wireAsks(sc);
+      $$('[data-full]', sc).forEach(b => b.onclick = () => {
+        const ft = $('.fulltext', sc);
+        ft.innerHTML = fullHtml;
+        ft.style.display = '';
+        b.style.display = 'none';
+      });
       $$('[data-next]', sc).forEach(b => b.onclick = () => go(['thought', b.dataset.next]));
       $$('[data-back]', sc).forEach(b => b.onclick = () => go(['thoughts']));
       $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
@@ -757,7 +786,7 @@ function render(parts) {
   if (k === 'cat') return scCat(+a, b);
   if (k === 'story') return scStory(a);
   if (k === 'thoughts') return scThoughts();
-  if (k === 'thought') return scThought(+a);
+  if (k === 'thought') return scThought(a);
   if (k === 'contact') return scContact();
   return scHub();
 }
