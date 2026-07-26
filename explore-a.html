@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#f7f3ee" />
 <title>旅程 · 好玩的东西</title>
 <meta name="description" content="互动版入口 A：大厅出发，有限选择一步步引导——四个板块、四个项目方向、行业、再到像故事一样讲给你听的每个 demo。" />
+<script src="assets/i18n.js"></script>
 <!-- ═══════════════════════════════════════════════════════════════════
      互动版入口 · A 版「旅程」v2 —— 大厅-支线 选择机（state machine，非长滚动页）
      · 大厅 = 4 张浮动选项卡（认识团队/逛项目/读思考/找到我），走完一支自动回大厅
@@ -49,6 +50,10 @@ body{background:var(--bg);color:var(--ink);font:16px/1.75 var(--sans);overflow-x
 .crumbs .sep{color:var(--line);font-size:12px;flex:none}
 .score{font:600 12.5px var(--sans);color:var(--ink-soft);flex:none}
 .score b{color:var(--accent)}
+.lang-toggle{display:inline-flex;gap:2px;flex:none;margin-left:4px}
+.lang-toggle button{font:600 11.5px var(--sans);color:var(--ink-soft);background:none;
+  border:1px solid transparent;border-radius:8px;padding:4px 8px;cursor:pointer}
+.lang-toggle button.active{color:var(--accent);border-color:var(--line);background:var(--card)}
 
 /* ---------- 场景容器 & 切换 ---------- */
 #stage{position:relative;z-index:1;max-width:940px;margin:0 auto;
@@ -184,10 +189,11 @@ footer a{color:var(--accent);text-decoration:none}
 <div class="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <div class="topbar">
   <div class="crumbs" id="crumbs"></div>
-  <div class="score">已探索 <b id="scoreN">0</b>/4</div>
+  <div class="score"><span id="scoreLbl">已探索</span> <b id="scoreN">0</b>/4</div>
+  <span class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang-btn="en">EN</button><button type="button" data-lang-btn="zh">中文</button></span>
 </div>
 <main id="stage"></main>
-<footer>经典版：<a href="index.html">首页</a> · <a href="demos.html">全部 Demo</a> · <a href="thoughts.html">全部思考</a></footer>
+<footer><span id="fLbl">经典版：</span><a id="fHome" href="index.html">首页</a> · <a id="fDemos" href="demos.html">全部 Demo</a> · <a id="fThoughts" href="thoughts.html">全部思考</a></footer>
 
 <script src="data.js"></script>
 <script>
@@ -199,21 +205,39 @@ const API = LOCAL ? '' : 'https://api.interantai.com';
 const post = (path, data) => fetch(API + path, { method: 'POST',
   headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(data), keepalive: true });
 const c = S.contact;
+/* —— i18n：window.LANG 由 assets/i18n.js 提前设好；data.js 已按语言换好 S/P —— */
+const EN = window.LANG === 'en';
+const T = (zh, en) => (EN && en != null) ? en : zh;
+/* 面包屑公共标签 */
+const L = {
+  hub: T('⌂ 大厅', '⌂ Hub'), about: T('认识团队', 'About the team'),
+  team: T('完整团队', 'Full team'), dirs: T('逛项目', 'Projects'),
+  thoughts: T('读思考', 'Essays'), contact: T('找到我', 'Find me')
+};
+if (EN) {
+  document.title = 'Tour · Playground';
+  $('#scoreLbl').textContent = 'Explored';
+  /* 页脚只换文字不重建链接（链接保持在 <footer> 的明确退出白名单里） */
+  $('#fLbl').textContent = 'Classic site: ';
+  $('#fHome').textContent = 'Home';
+  $('#fDemos').textContent = 'All Demos';
+  $('#fThoughts').textContent = 'All Essays';
+}
 
-/* ═══════════ 四个方向（新行业没映射会自动落进「生活」） ═══════════ */
+/* ═══════════ 四个方向（新行业没映射会自动落进「生活」；cats 按当前语言的数据集匹配） ═══════════ */
 const DIRS = [
-  { emoji: '🌏', name: '出海，把生意做到全世界', short: '出海',
-    line: '选品、定价、上架——跨境价值链的每一环。',
-    cats: ['跨境电商', '外贸'] },
-  { emoji: '🏢', name: '企业里最磨人的活，交给系统', short: '企业',
-    line: '采购价格、财务、保险、接待……难活自动化。',
-    cats: ['餐饮供应链', '法律', '金融', '保险', '效率', '短租民宿'] },
-  { emoji: '🛍️', name: '生活：吃穿住行玩学', short: '生活',
-    line: '穿搭、找车、今晚吃什么、去哪玩、怎么学。',
-    cats: ['时尚', '汽车', '餐饮', '旅行', '约会', '游戏', '教育', '招聘'] },
-  { emoji: '🏡', name: '照护家里的每一个人', short: '照护',
-    line: '母婴、宠物、爸妈的养老，还有留学在外的孩子。',
-    cats: ['医疗', '宠物', '母婴', '心理', '养老', '留学', '留学租房', '房产'] }
+  { emoji: '🌏', name: T('出海，把生意做到全世界', 'Go global, sell to the world'), short: T('出海', 'Global'),
+    line: T('选品、定价、上架——跨境价值链的每一环。', 'Sourcing, pricing, listing — every link in the cross-border chain.'),
+    cats: EN ? ['Cross-border'] : ['跨境电商', '外贸'] },
+  { emoji: '🏢', name: T('企业里最磨人的活，交给系统', 'The grind inside companies, systemized'), short: T('企业', 'Business'),
+    line: T('采购价格、财务、保险、接待……难活自动化。', 'Procurement pricing, finance, insurance, front desk… automate the hard parts.'),
+    cats: EN ? ['Restaurant Supply', 'Finance', 'Insurance', 'Productivity', 'Short-stay'] : ['餐饮供应链', '法律', '金融', '保险', '效率', '短租民宿'] },
+  { emoji: '🛍️', name: T('生活：吃穿住行玩学', 'Everyday life: eat, wear, go, play, learn'), short: T('生活', 'Life'),
+    line: T('穿搭、找车、今晚吃什么、去哪玩、怎么学。', 'Outfits, cars, tonight’s dinner, where to go, how to learn.'),
+    cats: EN ? ['Fashion', 'Auto', 'Food', 'Travel', 'Dating', 'Games', 'Education', 'Hiring'] : ['时尚', '汽车', '餐饮', '旅行', '约会', '游戏', '教育', '招聘'] },
+  { emoji: '🏡', name: T('照护家里的每一个人', 'Care for everyone at home'), short: T('照护', 'Care'),
+    line: T('母婴、宠物、爸妈的养老，还有留学在外的孩子。', 'Parenting, pets, aging parents — and the kid studying abroad.'),
+    cats: EN ? ['Health', 'Pets', 'Parenting', 'Mental Health', 'Eldercare', 'Study Abroad', 'Student Housing', 'Real Estate'] : ['医疗', '宠物', '母婴', '心理', '养老', '留学', '留学租房', '房产'] }
 ];
 const mapped = new Set(DIRS.flatMap(d => d.cats));
 [...new Set(P.map(p => p.cat))].forEach(x => { if (!mapped.has(x)) DIRS[2].cats.push(x); });
@@ -231,10 +255,10 @@ function hit(slug) {
 }
 function askHtml(slug, q, ph) {
   return `<div class="ask" data-slug="${slug}">
-    <h5>${q}</h5><small>写一句就行。留了联系方式的，48 小时内回你。</small>
+    <h5>${q}</h5><small>${T('写一句就行。留了联系方式的，48 小时内回你。', 'One line is enough. Leave contact info and I reply within 48h.')}</small>
     <textarea placeholder="${ph}" maxlength="1000"></textarea>
-    <div class="row"><input placeholder="微信 / 邮箱（选填）" maxlength="120" />
-    <button class="btn btn-p">发送</button></div>
+    <div class="row"><input placeholder="${T('微信 / 邮箱（选填）', 'WeChat / email (optional)')}" maxlength="120" />
+    <button class="btn btn-p">${T('发送', 'Send')}</button></div>
     <div class="err" style="display:none"></div></div>`;
 }
 function wireAsks(root) {
@@ -242,17 +266,17 @@ function wireAsks(root) {
     const ta = $('textarea', box), ct = $('input', box), btn = $('.btn-p', box), err = $('.err', box);
     btn.onclick = () => {
       const text = ta.value.trim();
-      if (text.length < 2) { err.textContent = '多写几个字，我才知道怎么帮你 :)'; err.style.display = ''; ta.focus(); return; }
+      if (text.length < 2) { err.textContent = T('多写几个字，我才知道怎么帮你 :)', 'Say a bit more so I can actually help :)'); err.style.display = ''; ta.focus(); return; }
       btn.disabled = true; err.style.display = 'none';
       post('/feedback', { slug: box.dataset.slug, text, contact: ct.value.trim() })
         .then(r => r.json()).then(r => {
           if (!r || !r.ok) throw 0;
           ct.value.trim()
-            ? box.innerHTML = `<div class="ok">收到，谢谢！🙏 会尽快回你。</div>`
+            ? box.innerHTML = `<div class="ok">${T('收到，谢谢！🙏 会尽快回你。', 'Got it, thank you! 🙏 I will get back to you soon.')}</div>`
             : askContact(box, box.dataset.slug, text);
         }).catch(() => {
           btn.disabled = false;
-          err.textContent = '发送失败了——可以直接加微信 ' + c.wechatId; err.style.display = '';
+          err.textContent = T('发送失败了——可以直接加微信 ', 'Failed to send — reach me on WeChat ') + c.wechatId; err.style.display = '';
         });
     };
   });
@@ -260,12 +284,12 @@ function wireAsks(root) {
 /* 提交成功但没留联系方式 → 追问一步：需求侧同学想接着聊 */
 function askContact(box, slug, origText) {
   box.innerHTML = `
-    <div class="ok">收到！🙏</div>
-    <h5 style="margin:10px 0 2px">愿意留个联系方式吗？</h5>
-    <small>我们需求侧的同学想和你聊聊你的场景——不推销，就是真的想懂你这行。</small>
-    <div class="row" style="margin-top:8px"><input placeholder="微信 / 邮箱" maxlength="120" />
-    <button class="btn btn-p">留下，等你们来聊 →</button></div>
-    <button class="navlink" style="margin-top:6px">这次先不了</button>`;
+    <div class="ok">${T('收到！🙏', 'Got it! 🙏')}</div>
+    <h5 style="margin:10px 0 2px">${T('愿意留个联系方式吗？', 'Care to leave a contact?')}</h5>
+    <small>${T('我们需求侧的同学想和你聊聊你的场景——不推销，就是真的想懂你这行。', 'Someone on our demand side would love to talk through your scenario — no sales pitch, we just want to understand your field.')}</small>
+    <div class="row" style="margin-top:8px"><input placeholder="${T('微信 / 邮箱', 'WeChat / email')}" maxlength="120" />
+    <button class="btn btn-p">${T('留下，等你们来聊 →', 'Leave it — talk to me →')}</button></div>
+    <button class="navlink" style="margin-top:6px">${T('这次先不了', 'Maybe later')}</button>`;
   const inp = $('input', box), yes = $('.btn-p', box), no = $('.navlink', box);
   yes.onclick = () => {
     const v = inp.value.trim();
@@ -273,9 +297,9 @@ function askContact(box, slug, origText) {
     yes.disabled = true;
     post('/feedback', { slug, text: '[补充联系方式] ' + origText.slice(0, 40), contact: v })
       .catch(() => {})
-      .then(() => { box.innerHTML = `<div class="ok">收到，等我们来联系你 🤝</div>`; });
+      .then(() => { box.innerHTML = `<div class="ok">${T('收到，等我们来联系你 🤝', 'Got it — we will reach out 🤝')}</div>`; });
   };
-  no.onclick = () => { box.innerHTML = `<div class="ok">好嘞，随时欢迎再来 🙌</div>`; };
+  no.onclick = () => { box.innerHTML = `<div class="ok">${T('好嘞，随时欢迎再来 🙌', 'No problem — come back anytime 🙌')}</div>`; };
 }
 /* 划线标注：notes.js 异步加载，场景就绪后带自己的 slug 挂载 */
 window.GGNOTES_MANUAL = true;
@@ -332,7 +356,7 @@ function playStory(beats, doneHtml, opts) {
     `<div class="bt ${b.cls || ''}">${b.html}</div>`).join('') +
     `<div class="fin">${doneHtml}</div>`;
   const skip = document.createElement('div');
-  skip.className = 'skipnote'; skip.textContent = '✦ 点击任意处可以快进';
+  skip.className = 'skipnote'; skip.textContent = T('✦ 点击任意处可以快进', '✦ Click anywhere to fast-forward');
   document.body.appendChild(skip);
   const bts = $$('.bt', wrap), fin = $('.fin', wrap);
   let i = 0;
@@ -354,7 +378,8 @@ function playStory(beats, doneHtml, opts) {
 function sentences(html, max) {
   const d = document.createElement('div'); d.innerHTML = html || '';
   const t = (d.textContent || '').replace(/\s+/g, ' ').trim();
-  return t ? t.split(/(?<=[。！？；])/).map(s => s.trim()).filter(s => s.length > 3).slice(0, max || 6) : [];
+  /* 中文按句末标点切；英文按 .!? 后接空格切（e.g./i.e. 缩写不算句尾） */
+  return t ? t.split(/(?<=[。！？；])|(?<=[.!?])(?<!e\.g\.)(?<!i\.e\.)\s+/).map(s => s.trim()).filter(s => s.length > 3).slice(0, max || 6) : [];
 }
 
 /* 倒计时自动回大厅（交互即取消） */
@@ -370,7 +395,7 @@ function countdown(card, secs) {
     if (cdTimer) {
       clearInterval(cdTimer); cdTimer = null;
       const m = $('.msg', card);
-      if (m) m.innerHTML = '不急，慢慢看 ☕<small>想走的时候点右边</small>';
+      if (m) m.innerHTML = T('不急，慢慢看 ☕<small>想走的时候点右边</small>', 'No rush ☕<small>Use the button whenever you are ready</small>');
     }
     stage.removeEventListener('pointerdown', cancel, true);
   };
@@ -393,30 +418,31 @@ function setScene(html) {
 
 /* —— 大厅 —— */
 function scHub() {
-  crumbs([['⌂ 大厅', null]]);
-  const badge = k => visited.has(k) ? '<span class="done">已探索 ✓</span>' : '';
+  crumbs([[L.hub, null]]);
+  const badge = k => visited.has(k) ? `<span class="done">${T('已探索 ✓', 'Explored ✓')}</span>` : '';
+  const goTxt = T('走这条 →', 'This way →');
   const sc = setScene(`
     <div style="text-align:center">
-      <div class="kick">好玩的东西 · 互动版</div>
-      <h1>接下来的几分钟，<br>你想怎么逛？</h1>
-      <p class="lead" style="margin:14px auto 0">${P.length} 个能亲手点的行业 Demo、${S.thoughts.length} 篇思考、一支精英敏捷团队——每走完一站，都会带你回到这里。</p>
+      <div class="kick">${T('好玩的东西 · 互动版', 'Playground · Interactive')}</div>
+      <h1>${T('接下来的几分钟，<br>你想怎么逛？', 'For the next few minutes,<br>how would you like to explore?')}</h1>
+      <p class="lead" style="margin:14px auto 0">${T(`${P.length} 个能亲手点的行业 Demo、${S.thoughts.length} 篇思考、一支精英敏捷团队——每走完一站，都会带你回到这里。`, `${P.length} hands-on industry demos, ${S.thoughts.length} essays, and one elite agile team — after every stop you come right back here.`)}</p>
     </div>
     <div class="cards n4">
       <button class="ocard" data-go="about">${badge('about')}
-        <div class="em">👋</div><h3>先认识团队</h3>
-        <p>谁在做这些东西，为什么用现金收入而不是叙事验证价值。</p><div class="go">走这条 →</div></button>
+        <div class="em">👋</div><h3>${T('先认识团队', 'Meet the team first')}</h3>
+        <p>${T('谁在做这些东西，为什么用现金收入而不是叙事验证价值。', 'Who builds all this, and why we validate with cash revenue instead of narratives.')}</p><div class="go">${goTxt}</div></button>
       <button class="ocard" data-go="dirs">${badge('demos')}
-        <div class="em">🧪</div><h3>逛项目</h3>
-        <p>${P.length} 个 Demo 收进了 4 个方向，一步步挑到你那行。</p><div class="go">走这条 →</div></button>
+        <div class="em">🧪</div><h3>${T('逛项目', 'Browse the demos')}</h3>
+        <p>${T(`${P.length} 个 Demo 收进了 4 个方向，一步步挑到你那行。`, `${P.length} demos in 4 tracks — funnel your way down to your industry.`)}</p><div class="go">${goTxt}</div></button>
       <button class="ocard" data-go="thoughts">${badge('thoughts')}
-        <div class="em">💡</div><h3>读几篇思考</h3>
-        <p>意图、数据、安全、人性——AI 到底怎么落地。</p><div class="go">走这条 →</div></button>
+        <div class="em">💡</div><h3>${T('读几篇思考', 'Read a few essays')}</h3>
+        <p>${T('意图、数据、安全、人性——AI 到底怎么落地。', 'Intent, data, safety, human nature — how AI actually lands.')}</p><div class="go">${goTxt}</div></button>
       <button class="ocard" data-go="contact">${badge('contact')}
-        <div class="em">✉️</div><h3>找到我</h3>
-        <p>合作、需求、想法，或者只是打个招呼。</p><div class="go">走这条 →</div></button>
+        <div class="em">✉️</div><h3>${T('找到我', 'Find me')}</h3>
+        <p>${T('合作、需求、想法，或者只是打个招呼。', 'Collaborations, needs, ideas — or just say hi.')}</p><div class="go">${goTxt}</div></button>
     </div>
-    <div class="freebar"><a href="index.html">🧭 不想被带着走？<b>自由探索</b>经典整站 →</a></div>
-    <div class="hint">✦ 有限的选择，走不丢——顶栏随时能回到任何一层</div>`);
+    <div class="freebar"><a href="index.html">${T('🧭 不想被带着走？<b>自由探索</b>经典整站 →', '🧭 Prefer not to be guided? <b>Free-roam</b> the classic site →')}</a></div>
+    <div class="hint">${T('✦ 有限的选择，走不丢——顶栏随时能回到任何一层', '✦ A few choices at a time, impossible to get lost — the top bar takes you back to any level')}</div>`);
   $$('.ocard', sc).forEach(b => b.onclick = () => go([b.dataset.go]));
   const free = $('.freebar a', sc);
   if (free) free.onclick = () => hit('exp-a-free');   /* keepalive，跳转前也能送达 */
@@ -425,8 +451,8 @@ function scHub() {
 /* —— 认识团队（故事流 + 自动回大厅） —— */
 function scAbout() {
   hit('exp-a-about');
-  crumbs([['⌂ 大厅', []], ['认识团队', null]]);
-  const sc = setScene(`<div class="kick">第一站 · 我们是谁</div><div id="mount"></div>`);
+  crumbs([[L.hub, []], [L.about, null]]);
+  const sc = setScene(`<div class="kick">${T('第一站 · 我们是谁', 'Stop 1 · Who we are')}</div><div id="mount"></div>`);
   const beats = [
     { cls: 'tagline', html: S.author.role },
     { cls: 'big', html: S.author.name },
@@ -435,12 +461,12 @@ function scAbout() {
   ];
   const done = `
     <div class="btnrow">
-      <button class="btn btn-p" data-team>认识完整团队 →</button>
+      <button class="btn btn-p" data-team>${T('认识完整团队 →', 'Meet the full team →')}</button>
       <a class="btn btn-g" href="${S.author.site}" target="_blank" rel="noopener">${S.author.siteLabel}</a>
     </div>
     <div class="donecard"><span class="tick">✓</span>
-      <div class="msg">这一站看完了<small><span class="cd-n">6</span> 秒后带你回大厅继续选——动一下鼠标就取消</small></div>
-      <button class="btn btn-p" data-home>回大厅 →</button>
+      <div class="msg">${T('这一站看完了', 'This stop is done')}<small>${T('<span class="cd-n">6</span> 秒后带你回大厅继续选——动一下鼠标就取消', 'Back to the hub in <span class="cd-n">6</span>s — move the mouse to cancel')}</small></div>
+      <button class="btn btn-p" data-home>${T('回大厅 →', 'Back to hub →')}</button>
     </div>`;
   $('#mount', sc).appendChild(playStory(beats, done, {
     onDone: () => {
@@ -456,31 +482,50 @@ function scAbout() {
 
 /* —— 完整团队：组队理念 → 成员逐位听（全程流式，不跳经典页） —— */
 const TEAM = [
-  { name: '胡君朴', role: '创始人 · 架构师',
-    story: [
+  { name: T('胡君朴', 'Junpu Hu'), role: T('创始人 · 架构师', 'Founder · Architect'),
+    story: EN ? [
+      'BNU-HKBU (UIC) AI undergrad, graduated first in his major; MS in Data Science at UC Berkeley.',
+      'As an undergrad he built “Zayang”, a Rate-My-Professor-style course review product for his university.',
+      'It went viral among students overnight — so viral it nearly got him sued by professors.'] : [
       '北师大-浸会（UIC）人工智能本科，以专业第一名毕业；加州大学伯克利数据科学硕士。',
       '本科就为学校做了一款类 Rate My Professor 的评教产品「咋样」。',
       '在学生中一夜爆火——火到差点被教授告上法庭。'],
-    tags: ['UIC · AI 专业第一', 'UC Berkeley · 数据科学硕士'] },
-  { name: '杨文郁 · Wenyu Yang', role: '创始人 · 架构师',
-    story: [
+    tags: EN ? ['UIC · #1 in AI major', 'UC Berkeley · MS Data Science'] : ['UIC · AI 专业第一', 'UC Berkeley · 数据科学硕士'] },
+  { name: T('杨文郁 · Wenyu Yang', 'Wenyu Yang'), role: T('创始人 · 架构师', 'Founder · Architect'),
+    story: EN ? [
+      'Dual degree in Biochemistry + Electrical Engineering at the University of Washington.',
+      'MS in Electrical Engineering at UPenn, in progress.',
+      'Bridges hard science and engineering, landing complex systems reliably.'] : [
       '华盛顿大学（UW）生物化学 + 电子工程双学位。',
       '宾夕法尼亚大学（UPenn）电子工程硕士在读。',
       '横跨硬科学与工程，把复杂系统稳稳地落地。'],
-    tags: ['UW · Biochem + EE 双学位', 'UPenn · EE 硕士'] },
-  { name: '陶毅恒', role: '创始人 · 架构师',
-    story: [
+    tags: EN ? ['UW · Biochem + EE dual degree', 'UPenn · MS EE'] : ['UW · Biochem + EE 双学位', 'UPenn · EE 硕士'] },
+  { name: T('陶毅恒', 'Yiheng Tao'), role: T('创始人 · 架构师', 'Founder · Architect'),
+    story: EN ? [
+      'CS undergrad at Northeastern University (China); MS in CS and PhD in AI at UIUC.',
+      'Has published AI research.',
+      'Turns frontier model capability into products that actually ship.'] : [
       '东北大学计算机本科；伊利诺伊大学（UIUC）计算机硕士、AI 博士。',
       '有公开发表的 AI 研究。',
       '把前沿的模型能力，落进真正能交付的产品里。'],
-    tags: ['东北大学 · 计算机', 'UIUC · 计算机硕士 / AI 博士'],
+    tags: EN ? ['NEU (China) · Computer Science', 'UIUC · MS CS / PhD AI'] : ['东北大学 · 计算机', 'UIUC · 计算机硕士 / AI 博士'],
     link: { label: 'Google Scholar ↗', href: 'https://scholar.google.com/citations?user=at8XlIMAAAAJ&hl=en' } }
 ];
 function scTeam() {
   hit('exp-a-team');
-  crumbs([['⌂ 大厅', []], ['认识团队', ['about']], ['完整团队', null]]);
-  const sc = setScene(`<div class="kick">第一站 · 完整团队</div><div id="mount"></div>`);
-  const beats = [
+  crumbs([[L.hub, []], [L.about, ['about']], [L.team, null]]);
+  const sc = setScene(`<div class="kick">${T('第一站 · 完整团队', 'Stop 1 · The full team')}</div><div id="mount"></div>`);
+  const beats = EN ? [
+    { cls: 'tagline', html: 'Team · Iterant AI' },
+    { cls: 'big', html: 'An elite agile team' },
+    { html: 'We are not a typical dev team — we are experimenting with the AI-era organization.' },
+    { html: 'Half of us hold demand, market and customers; the other half lands it fast, complete, and accountable.' },
+    { html: '🤝 The partner half: brings demand, market and customers, truly hears what clients need, and owns the whole outcome.' },
+    { html: '🛠️ The architect half: one truly top-tier architect today can single-handedly carry a complete product that once took an entire team.' },
+    { html: 'Each half climbs its own peak — then accountability welds them into one unit that answers for results.' },
+    { html: 'We validate value with real cash revenue — not grand narratives traded for funding.' },
+    { cls: 'kw', html: 'Cash revenue as validation · Shippability, stability, automation · Structurally connecting AI with industries' }
+  ] : [
     { cls: 'tagline', html: '团队 · Iterant AI' },
     { cls: 'big', html: '精英敏捷团队' },
     { html: '我们不是一支普通的开发团队——我们在实验新时代的 AI 组织架构。' },
@@ -493,11 +538,11 @@ function scTeam() {
   ];
   const done = `
     <div class="btnrow">
-      <button class="btn btn-p" data-m="0">认识成员：${TEAM[0].name.split(' ·')[0]} →</button>
+      <button class="btn btn-p" data-m="0">${T(`认识成员：${TEAM[0].name.split(' ·')[0]} →`, `Meet ${TEAM[0].name.split(' ·')[0]} →`)}</button>
     </div>
     <div class="navrow">
-      <button class="navlink" data-back>← 回「认识团队」</button>
-      <button class="navlink" data-home>⌂ 大厅</button>
+      <button class="navlink" data-back>${T('← 回「认识团队」', '← Back to “About the team”')}</button>
+      <button class="navlink" data-home>${L.hub}</button>
     </div>`;
   $('#mount', sc).appendChild(playStory(beats, done, {
     onDone: () => {
@@ -512,8 +557,8 @@ function scMember(i) {
   const m = TEAM[i]; if (!m) return go(['team']);
   hit('exp-a-member' + i);
   const short = m.name.split(' ·')[0];
-  crumbs([['⌂ 大厅', []], ['认识团队', ['about']], ['完整团队', ['team']], [short, null]]);
-  const sc = setScene(`<div class="kick">完整团队 · 第 ${i + 1} / ${TEAM.length} 位</div><div id="mount"></div>`);
+  crumbs([[L.hub, []], [L.about, ['about']], [L.team, ['team']], [short, null]]);
+  const sc = setScene(`<div class="kick">${T(`完整团队 · 第 ${i + 1} / ${TEAM.length} 位`, `Full team · ${i + 1} / ${TEAM.length}`)}</div><div id="mount"></div>`);
   const beats = [
     { cls: 'tagline', html: m.role },
     { cls: 'big', html: m.name },
@@ -524,19 +569,19 @@ function scMember(i) {
   const done = next ? `
     <div class="btnrow">
       ${m.link ? `<a class="btn btn-g" href="${m.link.href}" target="_blank" rel="noopener">${m.link.label}</a>` : ''}
-      <button class="btn btn-p" data-m="${i + 1}">下一位：${next.name.split(' ·')[0]} →</button>
+      <button class="btn btn-p" data-m="${i + 1}">${T(`下一位：${next.name.split(' ·')[0]} →`, `Next: ${next.name.split(' ·')[0]} →`)}</button>
     </div>
     <div class="navrow">
-      <button class="navlink" data-team>← 完整团队</button>
-      <button class="navlink" data-home>⌂ 大厅</button>
+      <button class="navlink" data-team>${T('← 完整团队', '← Full team')}</button>
+      <button class="navlink" data-home>${L.hub}</button>
     </div>` : `
     <div class="btnrow">
       ${m.link ? `<a class="btn btn-g" href="${m.link.href}" target="_blank" rel="noopener">${m.link.label}</a>` : ''}
     </div>
-    ${askHtml('exp-a-team', '想加入，或者有需求想让这支团队落地？', '一句话介绍你自己 / 你的需求…')}
+    ${askHtml('exp-a-team', T('想加入，或者有需求想让这支团队落地？', 'Want to join, or have a need this team should build?'), T('一句话介绍你自己 / 你的需求…', 'One line about yourself / your need…'))}
     <div class="donecard"><span class="tick">✓</span>
-      <div class="msg">团队都认识完了<small><span class="cd-n">6</span> 秒后带你回大厅继续选——动一下鼠标就取消</small></div>
-      <button class="btn btn-p" data-home>回大厅 →</button>
+      <div class="msg">${T('团队都认识完了', 'You have met the whole team')}<small>${T('<span class="cd-n">6</span> 秒后带你回大厅继续选——动一下鼠标就取消', 'Back to the hub in <span class="cd-n">6</span>s — move the mouse to cancel')}</small></div>
+      <button class="btn btn-p" data-home>${T('回大厅 →', 'Back to hub →')}</button>
     </div>`;
   $('#mount', sc).appendChild(playStory(beats, done, {
     onDone: () => {
@@ -554,38 +599,38 @@ function scMember(i) {
 function scDirs() {
   hit('exp-a-dirs');
   markVisited('demos');
-  crumbs([['⌂ 大厅', []], ['逛项目', null]]);
+  crumbs([[L.hub, []], [L.dirs, null]]);
   const sc = setScene(`
-    <div class="kick">第二站 · 逛项目</div>
-    <h2>先挑一个方向</h2>
-    <p class="lead">${P.length} 个 Demo 收进了 4 个方向——不用一次看完，从和你最近的开始。</p>
+    <div class="kick">${T('第二站 · 逛项目', 'Stop 2 · Projects')}</div>
+    <h2>${T('先挑一个方向', 'Pick a track first')}</h2>
+    <p class="lead">${T(`${P.length} 个 Demo 收进了 4 个方向——不用一次看完，从和你最近的开始。`, `${P.length} demos in four tracks — no need to see them all; start with the one closest to you.`)}</p>
     <div class="cards n4">
       ${DIRS.map((d, i) => `
-        <button class="ocard" data-i="${i}"><span class="cnt">${dirCount(d)} 个</span>
+        <button class="ocard" data-i="${i}"><span class="cnt">${T(`${dirCount(d)} 个`, `${dirCount(d)}`)}</span>
           <div class="em">${d.emoji}</div><h3>${d.name}</h3><p>${d.line}</p>
-          <div class="go">进去看看 →</div></button>`).join('')}
+          <div class="go">${T('进去看看 →', 'Step in →')}</div></button>`).join('')}
     </div>
-    <div class="navrow"><button class="navlink" data-home>← 回大厅</button></div>`);
+    <div class="navrow"><button class="navlink" data-home>${T('← 回大厅', '← Back to hub')}</button></div>`);
   $$('.ocard', sc).forEach(b => b.onclick = () => go(['dir', b.dataset.i]));
   $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
 }
 function scDir(i) {
   const d = DIRS[i]; if (!d) return go(['dirs']);
   hit('exp-a-dir' + i);
-  crumbs([['⌂ 大厅', []], ['逛项目', ['dirs']], [d.short, null]]);
+  crumbs([[L.hub, []], [L.dirs, ['dirs']], [d.short, null]]);
   const sc = setScene(`
     <div class="kick">${d.emoji} ${d.name}</div>
-    <h2>再挑一个细分行业</h2>
+    <h2>${T('再挑一个细分行业', 'Now pick an industry')}</h2>
     <p class="lead">${d.line}</p>
     <div class="stack">
       ${d.cats.filter(x => byCat(x).length).map(x => {
         const list = byCat(x);
         return `<button class="lcard" data-cat="${x}">
           <div class="t"><h4>${x}</h4><p>${list.map(p => p.title).slice(0, 3).join(' · ')}${list.length > 3 ? ' …' : ''}</p></div>
-          <span class="n">${list.length} 个</span><span class="arr">→</span></button>`;
+          <span class="n">${T(`${list.length} 个`, `${list.length}`)}</span><span class="arr">→</span></button>`;
       }).join('')}
     </div>
-    <div class="navrow"><button class="navlink" data-back>← 换个方向</button><button class="navlink" data-home>⌂ 大厅</button></div>`);
+    <div class="navrow"><button class="navlink" data-back>${T('← 换个方向', '← Switch track')}</button><button class="navlink" data-home>${L.hub}</button></div>`);
   $$('.lcard', sc).forEach(b => b.onclick = () => {
     const list = byCat(b.dataset.cat);
     /* 只有一个 demo 的行业直接进故事，少点一层 */
@@ -597,17 +642,17 @@ function scDir(i) {
 function scCat(i, cat) {
   const d = DIRS[i], list = byCat(cat);
   if (!d || !list.length) return go(['dirs']);
-  crumbs([['⌂ 大厅', []], ['逛项目', ['dirs']], [d.short, ['dir', String(i)]], [cat, null]]);
+  crumbs([[L.hub, []], [L.dirs, ['dirs']], [d.short, ['dir', String(i)]], [cat, null]]);
   const sc = setScene(`
     <div class="kick">${d.emoji} ${d.short} · ${cat}</div>
-    <h2>${cat}行业，我们做了 ${list.length} 个</h2>
-    <p class="lead">挑一个，我讲给你听。</p>
+    <h2>${T(`${cat}行业，我们做了 ${list.length} 个`, `${cat}: we built ${list.length}`)}</h2>
+    <p class="lead">${T('挑一个，我讲给你听。', 'Pick one and I will tell you its story.')}</p>
     <div class="stack">
       ${list.map(p => `<button class="lcard" data-id="${p.id}">
         <div class="t"><h4>${p.title}</h4><p>${p.subtitle}</p></div>
-        ${p.url ? '' : '<span class="n">即将上线</span>'}<span class="arr">→</span></button>`).join('')}
+        ${p.url ? '' : `<span class="n">${T('即将上线', 'Coming soon')}</span>`}<span class="arr">→</span></button>`).join('')}
     </div>
-    <div class="navrow"><button class="navlink" data-back>← 换个行业</button><button class="navlink" data-home>⌂ 大厅</button></div>`);
+    <div class="navrow"><button class="navlink" data-back>${T('← 换个行业', '← Switch industry')}</button><button class="navlink" data-home>${L.hub}</button></div>`);
   $$('.lcard', sc).forEach(b => b.onclick = () => go(['story', b.dataset.id]));
   $$('[data-back]', sc).forEach(b => b.onclick = () => go(['dir', String(i)]));
   $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
@@ -619,13 +664,13 @@ function scStory(id) {
   hit('exp-a-s-' + id);
   const di = DIRS.findIndex(d => d.cats.includes(p.cat));
   const d = DIRS[di] || DIRS[2];
-  crumbs([['⌂ 大厅', []], ['逛项目', ['dirs']], [d.short, ['dir', String(di)]],
+  crumbs([[L.hub, []], [L.dirs, ['dirs']], [d.short, ['dir', String(di)]],
           [p.cat, ['cat', String(di), p.cat]], [p.title.slice(0, 8) + (p.title.length > 8 ? '…' : ''), null]]);
   const sc = setScene(`<div id="mount"></div>`);
 
   const secs = p.sections || [];
-  const what = secs.find(s => s.label === '是什么');
-  const biz = secs.find(s => s.label === '商业模式');
+  const what = secs.find(s => s.label === '是什么' || s.label === 'What it is');
+  const biz = secs.find(s => s.label === '商业模式' || s.label === 'Business model');
   const beats = [
     { cls: 'tagline', html: `${p.cat} · ${p.kicker}` },
     { cls: 'big', html: p.title },
@@ -640,14 +685,14 @@ function scStory(id) {
   const href = p.url || null;
   const done = `
     <div class="btnrow">
-      ${href ? `<a class="btn btn-p" href="${href}">亲手玩它 →</a>` : '<span class="btn btn-g" style="opacity:.6;cursor:default">即将上线</span>'}
-      ${nextOne ? `<button class="btn btn-g" data-next="${nextOne.id}">听下一个：${nextOne.title.slice(0, 10)} →</button>` : ''}
+      ${href ? `<a class="btn btn-p" href="${href}">${T('亲手玩它 →', 'Try it yourself →')}</a>` : `<span class="btn btn-g" style="opacity:.6;cursor:default">${T('即将上线', 'Coming soon')}</span>`}
+      ${nextOne ? `<button class="btn btn-g" data-next="${nextOne.id}">${T(`听下一个：${nextOne.title.slice(0, 10)} →`, `Next: ${nextOne.title.slice(0, 18)} →`)}</button>` : ''}
     </div>
-    ${askHtml('exp-a-s-' + id, '这个如果用在你的业务上会怎样？', '你的场景 / 需求 / 吐槽…')}
+    ${askHtml('exp-a-s-' + id, T('这个如果用在你的业务上会怎样？', 'What if this ran on your business?'), T('你的场景 / 需求 / 吐槽…', 'Your scenario / need / gripe…'))}
     <div class="navrow">
-      <button class="navlink" data-back>← 回「${p.cat}」</button>
-      <button class="navlink" data-dirs>↩ 换个方向</button>
-      <button class="navlink" data-home>⌂ 大厅</button>
+      <button class="navlink" data-back>${T(`← 回「${p.cat}」`, `← Back to ${p.cat}`)}</button>
+      <button class="navlink" data-dirs>${T('↩ 换个方向', '↩ Switch track')}</button>
+      <button class="navlink" data-home>${L.hub}</button>
     </div>`;
   $('#mount', sc).appendChild(playStory(beats, done, {
     pace: 1050,
@@ -667,16 +712,16 @@ function scStory(id) {
 function scThoughts() {
   hit('exp-a-thoughts');
   markVisited('thoughts');
-  crumbs([['⌂ 大厅', []], ['读思考', null]]);
+  crumbs([[L.hub, []], [L.thoughts, null]]);
   const sc = setScene(`
-    <div class="kick">第三站 · 怎么想</div>
-    <h2>做这些东西时，我们信什么</h2>
-    <p class="lead">挑一篇，我流式讲给你听——想玩互动版或深读原文，听完再去也不迟。</p>
+    <div class="kick">${T('第三站 · 怎么想', 'Stop 3 · How we think')}</div>
+    <h2>${T('做这些东西时，我们信什么', 'What we believe while building all this')}</h2>
+    <p class="lead">${T('挑一篇，我流式讲给你听——想玩互动版或深读原文，听完再去也不迟。', 'Pick one and I will stream it to you — the interactive version and the full essay can wait until after.')}</p>
     <div class="stack">
       ${S.thoughts.map((t, i) => `<button class="lcard" data-i="${i}">
         <div class="t"><h4>${t.title}</h4><p>${t.desc}</p></div><span class="arr">→</span></button>`).join('')}
     </div>
-    <div class="navrow"><button class="navlink" data-home>⌂ 回大厅</button></div>`);
+    <div class="navrow"><button class="navlink" data-home>${T('⌂ 回大厅', '⌂ Back to hub')}</button></div>`);
   armNotes(sc, 'exp-a-thoughts');
   $$('.lcard', sc).forEach(b => b.onclick = () => go(['thought', b.dataset.i]));
   $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
@@ -693,8 +738,8 @@ async function scThought(i) {
   hit('exp-a-th' + i);
   markVisited('thoughts');
   const short = t.title.length > 9 ? t.title.slice(0, 8) + '…' : t.title;
-  crumbs([['⌂ 大厅', []], ['读思考', ['thoughts']], [short, null]]);
-  const sc = setScene(`<div class="kick">读思考 · 第 ${i + 1} / ${S.thoughts.length} 篇</div><div id="mount"></div>`);
+  crumbs([[L.hub, []], [L.thoughts, ['thoughts']], [short, null]]);
+  const sc = setScene(`<div class="kick">${T(`读思考 · 第 ${i + 1} / ${S.thoughts.length} 篇`, `Essays · ${i + 1} / ${S.thoughts.length}`)}</div><div id="mount"></div>`);
   const my = rendered;                        /* fetch 期间可能已切走场景 */
   let beats = [
     { cls: 'tagline', html: t.kicker },
@@ -707,29 +752,34 @@ async function scThought(i) {
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
     const bodyEl = doc.querySelector('.article .body') || doc.querySelector('main') || doc.body;
     fullHtml = bodyEl ? bodyEl.innerHTML : '';
-    const extra = [];
-    for (const el of $$('h2, p', bodyEl)) {
-      if (extra.length >= 12) break;
-      if (el.tagName === 'H2') extra.push({ cls: 'dim', html: '§ ' + el.textContent.trim() });
-      else sentences(el.innerHTML, 2).forEach(s => { if (extra.length < 12) extra.push({ html: s }); });
+    if (EN) {                                 /* 原文是中文——英文模式不流式混入中文句子 */
+      if (fullHtml) beats = beats.concat([{ cls: 'dim',
+        html: 'The full essay (written in Chinese) is right below — no need to leave the tour.' }]);
+    } else {
+      const extra = [];
+      for (const el of $$('h2, p', bodyEl)) {
+        if (extra.length >= 12) break;
+        if (el.tagName === 'H2') extra.push({ cls: 'dim', html: '§ ' + el.textContent.trim() });
+        else sentences(el.innerHTML, 2).forEach(s => { if (extra.length < 12) extra.push({ html: s }); });
+      }
+      if (extra.length) beats = beats.concat(extra,
+        [{ cls: 'dim', html: fullHtml ? '……先讲到这，全文就在下面，不用出旅程。' : '……后面还有，完整版里见。' }]);
     }
-    if (extra.length) beats = beats.concat(extra,
-      [{ cls: 'dim', html: fullHtml ? '……先讲到这，全文就在下面，不用出旅程。' : '……后面还有，完整版里见。' }]);
   } catch (e) {}
   if (rendered !== my) return;                /* 已经离开，别把故事挂到别的场景上 */
   const next = S.thoughts[+i + 1];
   const done = `
     <div class="btnrow">
-      ${fullHtml ? `<button class="btn btn-p" data-full>📖 展开读全文</button>`
-                 : `<a class="btn btn-p" href="${t.href}">读完整原文 →</a>`}
-      ${t.play ? `<a class="btn btn-g" href="${t.play}">✦ 玩互动版 →</a>` : ''}
-      ${next ? `<button class="btn btn-g" data-next="${+i + 1}">听下一篇：${next.title.slice(0, 9)} →</button>` : ''}
+      ${fullHtml ? `<button class="btn btn-p" data-full>${T('📖 展开读全文', '📖 Expand the full essay')}</button>`
+                 : `<a class="btn btn-p" href="${t.href}">${T('读完整原文 →', 'Read the full essay →')}</a>`}
+      ${t.play ? `<a class="btn btn-g" href="${t.play}">${T('✦ 玩互动版 →', '✦ Play the interactive version →')}</a>` : ''}
+      ${next ? `<button class="btn btn-g" data-next="${+i + 1}">${T(`听下一篇：${next.title.slice(0, 9)} →`, `Next essay: ${next.title.slice(0, 20)} →`)}</button>` : ''}
     </div>
     <div class="fulltext" style="display:none"></div>
-    ${askHtml('exp-a-th' + i, '这篇说的，和你的体感一致吗？', '同意 / 反对 / 它在你行业里的样子…')}
+    ${askHtml('exp-a-th' + i, T('这篇说的，和你的体感一致吗？', 'Does this match what you see in your field?'), T('同意 / 反对 / 它在你行业里的样子…', 'Agree / disagree / how it looks in your industry…'))}
     <div class="navrow">
-      <button class="navlink" data-back>← 回「读思考」</button>
-      <button class="navlink" data-home>⌂ 大厅</button>
+      <button class="navlink" data-back>${T('← 回「读思考」', '← Back to essays')}</button>
+      <button class="navlink" data-home>${L.hub}</button>
     </div>`;
   $('#mount', sc).appendChild(playStory(beats, done, {
     pace: 1050,
@@ -737,7 +787,7 @@ async function scThought(i) {
       wireAsks(sc);
       $$('[data-full]', sc).forEach(b => b.onclick = () => {
         const ft = $('.fulltext', sc);
-        ft.innerHTML = fullHtml;
+        ft.innerHTML = (EN ? '<p style="color:var(--ink-soft);font-size:13px">Note: the original essay is written in Chinese.</p>' : '') + fullHtml;
         ft.style.display = '';
         b.style.display = 'none';
       });
@@ -753,22 +803,22 @@ async function scThought(i) {
 function scContact() {
   hit('exp-a-contact');
   markVisited('contact');
-  crumbs([['⌂ 大厅', []], ['找到我', null]]);
+  crumbs([[L.hub, []], [L.contact, null]]);
   const n = ['about', 'demos', 'thoughts', 'contact'].filter(k => visited.has(k)).length;
   const sc = setScene(`
-    <div class="kick">终点站 · 找到我</div>
-    <h2>要不要留下点什么？</h2>
-    <p class="lead">${n >= 4 ? '四站全走完了——你是认真的访客 🏅 ' : ''}${c.intro}</p>
+    <div class="kick">${T('终点站 · 找到我', 'Last stop · Find me')}</div>
+    <h2>${T('要不要留下点什么？', 'Care to leave something behind?')}</h2>
+    <p class="lead">${n >= 4 ? T('四站全走完了——你是认真的访客 🏅 ', 'You walked all four stops — a serious visitor 🏅 ') : ''}${c.intro}</p>
     <div class="contactrow">
-      <button class="copybtn" data-copy="${c.wechatId}">微信 ${c.wechatId} · 点击复制</button>
+      <button class="copybtn" data-copy="${c.wechatId}">${T(`微信 ${c.wechatId} · 点击复制`, `WeChat ${c.wechatId} · click to copy`)}</button>
       <a class="copybtn" href="mailto:${c.email}">✉️ ${c.email}</a>
     </div>
-    ${askHtml('exp-a-end', '任何想法都值得留下', '合作 / 需求 / 吐槽 / 打个招呼…')}
-    <div class="navrow"><button class="navlink" data-home>⌂ 回大厅</button></div>`);
+    ${askHtml('exp-a-end', T('任何想法都值得留下', 'Any thought is worth leaving'), T('合作 / 需求 / 吐槽 / 打个招呼…', 'Collab / need / gripe / just say hi…'))}
+    <div class="navrow"><button class="navlink" data-home>${T('⌂ 回大厅', '⌂ Back to hub')}</button></div>`);
   wireAsks(sc);
   $$('.copybtn[data-copy]', sc).forEach(b => b.onclick = () => {
     navigator.clipboard && navigator.clipboard.writeText(b.dataset.copy).then(() => {
-      const t = b.textContent; b.textContent = '已复制 ✓'; setTimeout(() => b.textContent = t, 1400);
+      const t = b.textContent; b.textContent = T('已复制 ✓', 'Copied ✓'); setTimeout(() => b.textContent = t, 1400);
     });
   });
   $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
