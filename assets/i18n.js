@@ -22,6 +22,7 @@
   var T = {
     /* ── 顶栏 ── */
     'nav.brand':       { zh: '好玩的东西',   en: 'Playground' },
+    'nav.journey':     { zh: '🧭 旅程式浏览', en: '🧭 Guided tour' },
     'nav.featured':    { zh: '精选',         en: 'Featured' },
     'nav.allDemos':    { zh: '全部 Demo',    en: 'All Demos' },
     'nav.allThoughts': { zh: '全部思考',     en: 'All Essays' },
