@@ -11,5 +11,590 @@
 </head>
   <body>
     <div id="root"></div>
+    <!-- EN display overlay (runtime DOM text replacement; bundle untouched). lang pref: localStorage["site.lang"] -->
+    <script>
+/* Guardian demo EN display overlay — runtime DOM text replacement.
+   Does NOT touch the compiled bundle. zh mode: overlay fully inert. */
+(function () {
+  "use strict";
+  var LS_KEY = "site.lang";
+  var SW_ID = "__lang_sw__";
+  var lang = null;
+  try { lang = localStorage.getItem(LS_KEY); } catch (e) {}
+  if (lang !== "zh" && lang !== "en") {
+    lang = /^zh/i.test(navigator.language || "") ? "zh" : "en";
+  }
+
+  /* ---------- language switcher (shown in both modes) ---------- */
+  function buildSwitcher() {
+    if (document.getElementById(SW_ID)) return;
+    var box = document.createElement("div");
+    box.id = SW_ID;
+    box.setAttribute("style",
+      "position:fixed;left:10px;bottom:84px;z-index:2147483647;display:flex;gap:2px;" +
+      "padding:3px;border-radius:999px;background:rgba(255,255,255,.92);" +
+      "border:1px solid rgba(0,0,0,.14);box-shadow:0 2px 10px rgba(0,0,0,.18);" +
+      "font:12px/1 -apple-system,'Segoe UI',Arial,sans-serif;user-select:none;");
+    [["zh", "中文"], ["en", "EN"]].forEach(function (it) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = it[1];
+      var on = lang === it[0];
+      b.setAttribute("style",
+        "border:0;cursor:pointer;border-radius:999px;padding:5px 10px;font:inherit;" +
+        (on ? "background:#1F6B5C;color:#fff;font-weight:600;" : "background:transparent;color:#333;"));
+      b.onclick = function () {
+        if (lang === it[0]) return;
+        try { localStorage.setItem(LS_KEY, it[0]); } catch (e) {}
+        location.reload();
+      };
+      box.appendChild(b);
+    });
+    document.body.appendChild(box);
+  }
+  if (document.body) buildSwitcher();
+  else document.addEventListener("DOMContentLoaded", buildSwitcher);
+
+  if (lang !== "en") return; /* zh mode: nothing below runs */
+
+  /* ---------- exact dictionary: full runtime text-node contents ---------- */
+  var D = {
+    /* page title */
+    "远程守护 · 上海试点操作沙盘": "Remote Guardian · Shanghai Pilot Sandbox",
+    /* top bar / roles */
+    "远程守护 · 操作沙盘": "Remote Guardian · Sandbox",
+    "象印 × Snug × 上海试点": "Zojirushi × Snug × Shanghai Pilot",
+    "暂停时钟": "Pause clock", "自动运行": "Auto-run", "+1 小时": "+1 hour", "重置": "Reset",
+    "重置整个沙盘到初始状态？": "Reset the whole sandbox to its initial state?",
+    "老人端": "Elder view", "子女端": "Family view", "网格员端": "Grid-worker view", "设备信号台": "Device Console",
+    "世界时间": "World clock", "守护中": "Guarding", "最近信号": "Last signal",
+    "信号模式": "Signal mode", "被动无感": "Passive, unobtrusive", "等待报平安": "Awaiting check-in",
+    "在线设备": "Online devices", "主力 + 增强": "Primary + enhanced",
+    /* greetings / time */
+    "夜深了": "It's late", "早上好": "Good morning", "中午好": "Good midday",
+    "下午好": "Good afternoon", "晚上好": "Good evening", "刚刚": "just now",
+    "周一": "Mon", "周二": "Tue", "周三": "Wed", "周四": "Thu", "周五": "Fri", "周六": "Sat", "周日": "Sun",
+    "今天": "Today",
+    /* people / places */
+    "秀兰": "Xiulan", "小敏": "Xiaomin", "建国": "Jianguo", "王阿姨": "Auntie Wang",
+    "张姐": "Ms. Zhang", "张医生": "Dr. Zhang", "阿姨": "Wang", "医生": "Dr.",
+    "女儿": "Daughter", "儿子": "Son", "邻居": "Neighbor",
+    "邻居 · 同楼 3 楼": "Neighbor · Floor 3, same building",
+    "同楼，步行 1 分钟": "Same building, 1-min walk",
+    "社区网格员 · 曹杨新村街道": "Community grid worker · Caoyang Xincun Subdistrict",
+    "工作日 08:00–20:00 在岗": "On duty weekdays 08:00–20:00",
+    "急救中心": "Emergency center (120)",
+    "上海": "Shanghai", "普陀区 · 曹杨新村": "Putuo District · Caoyang Xincun",
+    "曹杨新村街道": "Caoyang Xincun Subdistrict",
+    "曹杨新村街道 · 三网格": "Caoyang Xincun Subdistrict · Grid 3",
+    "曹杨新村街道 · 二网格": "Caoyang Xincun Subdistrict · Grid 2",
+    "曹杨新村街道 · 四网格": "Caoyang Xincun Subdistrict · Grid 4",
+    "二网格": "Grid 2", "三网格": "Grid 3", "四网格": "Grid 4", "网格": "Grid",
+    "曹杨社区卫生服务中心": "Caoyang Community Health Center",
+    "家附近（曹杨新村）": "Near home (Caoyang Xincun)",
+    /* health profile */
+    "高血压": "Hypertension", "2 型糖尿病": "Type 2 diabetes", "青霉素": "Penicillin", "O 型": "Type O",
+    "降压药（氨氯地平）": "BP med (amlodipine)", "二甲双胍": "Metformin",
+    "血压": "Blood pressure", "血糖": "Blood sugar",
+    /* devices */
+    "智能水表": "Smart water meter", "客厅红外": "Living-room motion sensor",
+    "入户门磁": "Front-door sensor", "厨房烟感": "Kitchen smoke detector",
+    "电热水壶": "Electric kettle", "智能手表": "Smartwatch", "手环": "Fitness band",
+    "08:25 用过水": "Water used at 08:25", "08:18 有走动": "Movement at 08:18",
+    "昨晚 04:00 后未开门": "Door not opened since 04:00 last night",
+    "08:10 烧了水": "Boiled water at 08:10", "心率 72 · 正常": "Heart rate 72 · Normal",
+    "正常": "Normal", "未连接": "Not connected", "在线": "Online", "离线": "Offline",
+    "上线": "Bring online", "设备": "Device",
+    /* activity feed */
+    "早上烧了壶水": "Boiled water this morning",
+    "08:10 电热水壶有使用": "Kettle used at 08:10",
+    "在客厅走动": "Moved in the living room",
+    "08:18 客厅红外感应到走动": "Living-room sensor detected movement at 08:18",
+    "用了水": "Used water",
+    "08:25 智能水表有读数": "Water-meter reading at 08:25",
+    /* levels */
+    "安好": "All good", "留意": "Watch", "待确认": "Awaiting check-in",
+    "子女介入": "Family step-in", "邻里响应": "Neighbor response",
+    "社区网格员": "Community grid worker", "急救协助": "Emergency assistance",
+    /* timeline / toasts (static) */
+    "请秀兰报平安后仍未回应，需要你来看看": "No response after the check-in request — please step in",
+    "小敏想知道您今天好不好": "Xiaomin wants to know how you're doing today",
+    "已请秀兰报个平安，等待她回应": "Asked Xiulan to check in; awaiting her response",
+    "又有活动了，一切正常": "Activity again — everything is normal",
+    "秀兰已报平安，任务自动解除": "Xiulan checked in safe — task auto-cleared",
+    "已经告诉小敏，您很好 ❤": "We've told Xiaomin you're doing fine ❤",
+    "秀兰报了平安，一切都好": "Xiulan checked in — all is well",
+    "已经帮您联系小敏，马上有人来": "We've contacted Xiaomin — someone is coming",
+    "秀兰按下了求助，请尽快联系她": "Xiulan pressed Help — contact her right away",
+    "好的，您没事就好": "Okay — glad you're all right",
+    "秀兰取消了求助，她没事": "Xiulan cancelled the help request — she's fine",
+    "，并对接「一键通」通道": ", linked to the \"One-Touch\" channel",
+    "已请求急救协助（120）": "Emergency assistance (120) requested",
+    "已出发，正在前往": "Set off — on the way",
+    "已到达，正在核实": "Arrived — verifying",
+    "上门确认平安，守护解除": "Visit confirmed safe — guardianship cleared",
+    "上门发现需进一步协助，已反馈子女": "Visit found further assistance needed — family notified",
+    "外出模式已开启": "Away mode on", "回到家了": "Back home",
+    "秀兰开启了外出模式（外出期间不打扰）": "Xiulan turned on Away mode (no disturbances while out)",
+    "秀兰结束了外出模式": "Xiulan ended Away mode",
+    "守护已暂停": "Guardianship paused", "守护已恢复": "Guardianship resumed",
+    "秀兰暂停了守护": "Xiulan paused guardianship",
+    /* elder settings */
+    "设置": "Settings", "看得清、听得到": "Easy to see, easy to hear",
+    "字看着费劲就调大一点，需要时让它念给您听。": "Make the text bigger if it's hard to read, and have it read aloud when needed.",
+    "关怀模式": "Care mode", "字更大，重要提示会语音播报": "Larger text; important alerts read aloud",
+    "字号": "Text size", "标准": "Standard", "大": "Large", "特大": "Extra large",
+    "自动语音播报": "Auto voice announcements",
+    "打开页面时自动读出今天的情况": "Read today's status aloud when the page opens",
+    "用药提醒": "Medication reminders", "按时提醒吃药": "Remind on schedule",
+    "到点了在手机上轻轻提醒您": "A gentle phone reminder when it's time",
+    "家人能看到什么": "What family can see",
+    "您自己决定。关掉的内容，家人就看不到。": "You decide. Whatever you turn off, family cannot see.",
+    "只是几点起、几点歇，不是监视": "Just when you rise and rest — not surveillance",
+    " 这些永远看不到": " Never visible to anyone",
+    "您的位置、家里的声音和画面、聊天内容 —— 任何人都看不到，这是定死的。": "Your location, audio or video from your home, and your chats — no one can ever see these. That is fixed.",
+    "清静一下": "Some quiet time", "外出模式": "Away mode",
+    "外出中，不会打扰您": "You're out — we won't disturb you",
+    "出门时打开，外出期间不打扰": "Turn on when going out; no disturbances while away",
+    "暂停守护": "Pause guardianship", "已暂停": "Paused",
+    "需要安静时可暂停": "Pause whenever you need quiet",
+    " 让": " Ask ", "帮我设置": " to set it up for me",
+    /* family settings */
+    "守护设置": "Guardian settings", "通知": "Notifications",
+    "决定什么情况、用什么方式提醒你。": "Decide what to be alerted about, and how.",
+    "从哪一级开始通知": "Notify starting from level",
+    "L1 留意 / L2 待确认 / L3 需介入": "L1 Watch / L2 Check-in / L3 Step-in",
+    "夜间免打扰": "Night do-not-disturb", "22:00–07:00 静音": "Silent 22:00–07:00",
+    "紧急情况绕过免打扰": "Emergencies bypass DND",
+    "L3 及以上即使夜间也提醒": "L3+ alerts even at night",
+    "App 推送": "App push", "短信": "SMS", "微信服务通知": "WeChat service notice",
+    "设备离线提醒": "Device-offline alerts",
+    "家中设备掉线时通知你": "Notify when a home device goes offline",
+    "守护灵敏度": "Guardian sensitivity",
+    "安静多久算异常。调小更灵敏（更容易升级），调大更宽松。这些会立刻改变沙盘里的演进速度。": "How long quiet counts as unusual. Lower = more sensitive (escalates sooner); higher = more relaxed. Takes effect immediately in the sandbox.",
+    "留意（L0→L1）": "Watch (L0→L1)", "安静多久进入留意": "Quiet time before Watch",
+    "请报平安（L1→L2）": "Check-in request (L1→L2)",
+    "安静多久自动请老人报平安": "Quiet time before an automatic check-in request",
+    "等待回应（L2→L3）": "Awaiting response (L2→L3)",
+    "请了之后多久没回应升到子女介入": "How long without a response before Family step-in",
+    "夜间更宽松": "More relaxed at night",
+    "夜间（22–7 点）阈值自动放宽，避免睡觉误报": "Thresholds auto-relax at night (22:00–07:00) to avoid false alarms during sleep",
+    "智能家居与平台": "Smart home & platforms",
+    "对接上海养老平台「一键通」": "Connect to Shanghai eldercare platform \"One-Touch\"",
+    "急救升级时联动社区一键通通道": "Link the community One-Touch channel on emergency escalation",
+    "守护网络与升级": "Guardian network & escalation",
+    "决定升级阶梯怎么走。": "Decide how the escalation ladder works.",
+    "启用社区网格员层": "Enable community grid-worker tier",
+    "关闭后，邻里无法处理时可直接请急救（跳过网格员）": "If off, emergency services can be requested directly when neighbors cannot help (skipping the grid worker)",
+    "隐私与数据": "Privacy & data",
+    "默认最小化采集，尊重老人。": "Minimal data collection by default, respecting the elder.",
+    "位置守护": "Location guardianship",
+    "已开启（仅外出走失时用）": "On (only if lost while out)", "默认关闭": "Off by default",
+    "与家庭医生共享健康档案": "Share health record with the family doctor",
+    "已导出健康数据（占位）": "Health data exported (placeholder)",
+    "导出数据": "Export data", "删除数据": "Delete data",
+    /* grid-worker settings */
+    "网格员设置": "Grid-worker settings", "在岗状态": "Duty status",
+    "不在岗时不再接收新的上门探访派单。": "When off duty, you won't receive new home-visit dispatches.",
+    "当前在岗": "On duty", "可接收派单": "Can receive dispatches",
+    "已下班，新派单将转给备班": "Off duty — new dispatches go to backup",
+    "管辖区域": "Coverage area", "你负责的网格范围。": "The grid you're responsible for.",
+    "新派单提醒": "New-dispatch alerts", "声音 + 弹窗提醒": "Sound + popup alerts",
+    "有新上门探访任务时立即提醒": "Alert immediately on new home-visit tasks",
+    "在岗期间默认开启提醒": "Alerts on by default while on duty",
+    " 数据使用边界": " Data-use boundary",
+    "你只在收到派单时，才能看到该老人的地址、紧急医疗卡与最近被动信号；任务解除后即不可再查看。全程留痕可追溯。": "You can see the elder's address, emergency medical card, and recent passive signals only while a dispatch is active; access ends once the task is cleared. Everything is logged and auditable.",
+    /* elder SOS + home */
+    "正在帮您联系家人": "Contacting your family for you",
+    "别担心，马上就好。如果按错了，点下面取消。": "Don't worry — help is coming. Pressed by mistake? Tap Cancel below.",
+    "我没事，取消": "I'm fine — cancel", "我没事了": "I'm fine now",
+    "← 回首页": "← Home",
+    "记录今天的身体": "Log today's health",
+    "记下来，医生和": "Logging helps the doctor and ", "会更放心。": " feel more at ease.",
+    "量了血压就记一下": "Log your blood pressure after measuring",
+    "如 130/82": "e.g. 130/82", "记下": "Log it",
+    "今天的药": "Today's medication", "已经吃过啦": "Already taken",
+    "好的，记下了": "Okay, noted", "我吃过了": "I've taken it",
+    " · 上海有点凉，记得加件外套": " · A bit cool in Shanghai — remember a jacket",
+    "语音播报": "Voice announcement",
+    "想知道您今天好不好": " wants to know how you're doing today",
+    "点一下，告诉她一声就好。": "Just tap once to let her know.",
+    "我很好": "I'm fine", "一直惦记着您": " has been thinking of you",
+    "她想知道您今天过得好不好。": "She'd like to know how your day is going.",
+    "给家人打个电话": "Call your family", "报个平安": "Check in",
+    " 我很好，报个平安": " I'm fine — check in",
+    " 记一下今天的身体": " Log today's health",
+    "需要帮助": "Need help", " 需要帮助": " Need help",
+    " 设置 · 家人能看到什么": " Settings · What family can see",
+    /* family home cards */
+    "妈妈暂停了守护": "Mom paused guardianship",
+    "她需要清静，到明早自动恢复。": "She needs some quiet; resumes automatically tomorrow morning.",
+    "妈妈外出中": "Mom is out",
+    "外出模式期间不会打扰她。": "She won't be disturbed while Away mode is on.",
+    "妈妈按下了求助": "Mom pressed the help button",
+    "请尽快联系她。": "Please contact her right away.",
+    "去处理": "Handle it",
+    "妈妈今天一切都好": "Mom is doing fine today",
+    "有一阵没看到妈妈活动了": "No activity from Mom for a while",
+    "已请妈妈报平安": "Asked Mom to check in",
+    "正在等待她回应「我很好」。": "Waiting for her to respond \"I'm fine\".",
+    "需要你来看看": "She needs you to step in",
+    "请了平安仍没回应，先联系妈妈。": "No response to the check-in request — contact Mom first.",
+    "去升级中心": "Go to Escalation Center",
+    "已通知就近的邻里": "Nearby neighbor notified",
+    "王阿姨正在前往，保持手机畅通。": "Auntie Wang is on her way — keep your phone handy.",
+    "查看": "View",
+    "社区网格员处理中": "Community grid worker handling it",
+    "已请求急救协助": "Emergency assistance requested",
+    "正在通过「一键通」对接急救。": "Connecting to emergency services via \"One-Touch\".",
+    /* health record */
+    "健康档案": "Health record", "紧急医疗卡": "Emergency medical card",
+    "可出示给急救": "Show to responders",
+    "姓名：": "Name: ", " 岁　血型：": " yrs · Blood type: ",
+    "慢病：": "Chronic: ", "过敏：": "Allergies: ", "紧急联系人：": "Emergency contact: ",
+    "用药计划": "Medication plan", "每天 ": "Daily ", "已服": "Taken", "待服": "Due",
+    "体征记录": "Vitals log", "家庭医生（社区卫生）": "Family doctor (community health)",
+    /* devices page (family) */
+    "主力信号 · 智能家居（无感）": "Primary signals · Smart home (unobtrusive)",
+    "妈妈无需佩戴、无需操作，日常用水用电开门就是平安信号。": "Mom wears and operates nothing — everyday water, power, and door use are her safety signals.",
+    "增强信号 · 可选佩戴": "Enhanced signals · Optional wearables",
+    "愿意戴的话能多一层体征与跌倒保障，不戴也不影响守护。": "Wearing one adds vitals and fall protection; guardianship works fine without.",
+    "设备与信号": "Devices & signals",
+    "平时通过这些日常信号默默守护，不打扰妈妈；信号安静了才会请她报平安。": "These everyday signals quietly keep watch without disturbing Mom; only when they go quiet do we ask her to check in.",
+    "已自动识别家中已安装的智慧养老设备（如社区/街道统一安装的水表、烟感）。要模拟设备产生信号，切到「设备信号台」角色。": "Installed smart-eldercare devices were detected automatically (e.g. community-installed water meters and smoke detectors). To simulate signals, switch to the \"Device Console\" role.",
+    "位置 · 外出": "Location · Outings",
+    "默认不开启。仅在妈妈开启「外出模式」时，用于走失时找到她。": "Off by default. Used only when Mom turns on Away mode, to find her if she gets lost.",
+    "已开": "On", "开启": "Turn on", "外出模式中": "Away mode on", "在家附近": "Near home",
+    "最近位置：": "Last location: ", "（街道级，非精确）。": "(subdistrict level, not precise).",
+    "当前在电子围栏范围内。": "Currently inside the geofence.",
+    "位置默认关闭，尊重妈妈的隐私。": "Location is off by default, respecting Mom's privacy.",
+    "最近活动": "Last activity", "今日用药": "Today's meds", "已服 / 计划": "Taken / planned",
+    "这一周的作息": "This week's rhythm", "看节律 ›": "View rhythm ›",
+    "未开启「作息分享」，尊重她的选择。": "\"Rhythm sharing\" is off — respecting her choice.",
+    "更多": "More", "结束外出": "End outing",
+    "已结束外出模式": "Away mode ended", "已开启外出模式": "Away mode turned on",
+    "最近": "Recent", "作息未分享": "Rhythm not shared",
+    "在她的设置里关闭了「让家人看到大致作息」。你依然会在异常时收到守护提醒。": "She turned off \"Let family see general rhythm\" in her settings. You'll still receive guardian alerts when something is unusual.",
+    /* rhythm */
+    "生活节律": "Daily rhythm",
+    "这些是为了她需要时有人在，不是监视。": "This is so someone is there when she needs it — not surveillance.",
+    "夜": "Ngt", "凌": "Dwn", "早": "Mrn", "上": "AM", "午": "Noon", "下": "PM", "昏": "Dsk", "晚": "Eve",
+    "颜色越深，那个时段越活跃。这一周作息和往常差不多": "Darker means more active in that slot. This week's rhythm is about the same as usual",
+    "，今天午后比平时安静一些": ", though this afternoon is a bit quieter than usual",
+    /* network */
+    "守护网络": "Guardian network",
+    "升级时先提醒家人，确认联系不上才请邻里 → 社区网格员 → 急救，绝不自动越级。": "Escalation alerts family first; only when they're confirmed unreachable does it go neighbor → community grid worker → emergency services. It never skips a level automatically.",
+    "微信邀请（占位）": "WeChat invite (placeholder)",
+    "＋ 邀请新成员（微信）": "+ Invite a member (WeChat)",
+    "首页": "Home", "节律": "Rhythm", "升级": "Escalate", "网络": "Network",
+    /* escalation center */
+    "确认请求急救协助？": "Confirm emergency assistance request?",
+    "将通过「一键通」对接 120。请确认确实联系不上、且邻里/网格员也无法处理。": "This connects to 120 via \"One-Touch\". Confirm she is truly unreachable and neighbors / the grid worker cannot help.",
+    "先不用，继续等等": "Not yet — keep waiting",
+    "确认请求急救": "Confirm emergency request",
+    "升级中心": "Escalation Center",
+    "系统不会自动联系任何人，每一步都由你决定。": "The system never contacts anyone automatically — every step is your call.",
+    "目前一切正常": "All is well right now",
+    "需要时，这里会一步步引导你处理。": "When needed, this walks you through it step by step.",
+    "① 先联系": "① First, contact ", "已完成": "Done", "进行中": "In progress",
+    " 打电话": " Call", "发起视频…": "Starting video…", "视频": "Video",
+    "我联系不上她，请就近的人帮忙 →": "I can't reach her — ask someone nearby →",
+    "② 请就近的人": "② Ask someone nearby", "未开始": "Not started",
+    "还是不放心，请社区网格员 →": "Still worried — request the community grid worker →",
+    "③ 社区网格员": "③ Community grid worker",
+    "由街道社区网格员上门探访（中国特色兜底层）。": "A subdistrict grid worker makes a home visit (China's community safety-net tier).",
+    "仍需要，请求急救协助 →": "Still needed — request emergency assistance →",
+    "④ 急救协助": "④ Emergency assistance",
+    "已通过「一键通」对接 120，紧急医疗卡已就绪。": "Connected to 120 via \"One-Touch\"; the emergency medical card is ready.",
+    "前面都无法处理时，才请求急救。": "Request emergency services only when earlier steps cannot resolve it.",
+    "一旦回应「我很好」，所有升级会立刻解除。": " — once she responds \"I'm fine\", every escalation clears immediately.",
+    "已派单，等待网格员接收": "Dispatched — awaiting the grid worker",
+    "网格员已接单": "Grid worker accepted",
+    "网格员在路上": "Grid worker en route",
+    "网格员已到达": "Grid worker arrived",
+    "上门确认平安，已解除": "Visit confirmed safe — cleared",
+    "反馈：需进一步协助": "Report: further assistance needed",
+    /* grid-worker console */
+    "无任务": "No tasks", "待接单": "Pending acceptance", "已接单": "Accepted",
+    "前往中": "En route", "已到达": "Arrived", "已解除": "Cleared",
+    "需进一步协助": "Needs further assistance",
+    "张姐 · 社区网格员": "Ms. Zhang · Community grid worker",
+    "在岗": "On duty", "已下班": "Off duty",
+    "当前不在岗": "Currently off duty",
+    "下班期间不接收新派单，新任务会转给备班网格员。": "No new dispatches while off duty — new tasks go to the backup grid worker.",
+    "去「设置」上岗": "Go to \"Settings\" to clock in",
+    "暂无待办探访任务": "No pending visit tasks",
+    "当子女在升级中心点「请社区网格员」时，这里会收到上门探访派单。": "When family taps \"Request grid worker\" in the Escalation Center, home-visit dispatches arrive here.",
+    "切到「子女端 → 升级中心」走到第 ③ 步即可派单；或用顶部时钟让信号沉默自动升级到 L5。": "Switch to \"Family view → Escalation Center\" and reach step ③ to dispatch; or use the top clock to let silent signals auto-escalate to L5.",
+    "上次任务已完成": "Last task completed",
+    " 已确认平安，守护恢复。": " confirmed safe; guardianship restored.",
+    "上门探访 · ": "Home visit · ", " 岁）": " yrs)",
+    "地址与联系": "Address & contacts",
+    " 紧急联系人：": " Emergency contact: ", " 邻居：": " Neighbor: ",
+    "（同楼 3 楼）": "(Floor 3, same building)",
+    "血型：": "Blood type: ", "家医：": "Family doctor: ",
+    "最近被动信号（辅助判断）": "Recent passive signals (for context)",
+    "上门处置": "On-site handling",
+    "接单": "Accept", "出发": "Depart", "到达": "Arrive", "核实": "Verify",
+    "已出发": "Set off", "出发前往": "Set off",
+    "已上报：平安，守护解除": "Reported: safe — guardianship cleared",
+    " 上门确认平安": " Confirm safe in person",
+    "已反馈子女：需进一步协助": "Family notified: further assistance needed",
+    " 联系子女": " Contact family",
+    "处置记录": "Handling log",
+    /* device console */
+    "这是「信号聚合中台」的操作面板：复用上海存量智能家居设备，把日常活动汇聚成被动信号。": "This is the signal-aggregation console: it reuses Shanghai's existing smart-home devices, turning everyday activity into passive signals.",
+    " 让某些设备「沉默」（不点触发）+ 用顶部时钟推进时间": " Keep some devices \"silent\" (don't tap Trigger) + advance time with the top clock",
+    "，就能看到系统逐级反应；随时点「触发活动」可让它自愈。": " to watch the system react level by level; tap \"Trigger activity\" anytime to let it self-recover.",
+    "主力信号 · 智能家居（无感、有尊严）": "Primary signals · Smart home (unobtrusive, dignified)",
+    "增强信号 · 可选佩戴（体征 / 跌倒）": "Enhanced signals · Optional wearables (vitals / falls)",
+    "水表 / 红外 / 门磁 / 烟感 / 水壶 —— 老人无需佩戴操作，复用社区存量设备。": "Water meter / motion / door / smoke / kettle — nothing to wear or operate; reuses existing community devices.",
+    "智能手表 / 手环 —— 愿戴多一层保障，不戴也不影响守护。": "Smartwatch / band — extra protection if worn; guardianship works fine without.",
+    " 触发活动": " Trigger activity",
+    "怎么玩这个沙盘": "How to play this sandbox",
+    "点顶部 ": "Tap the top ", "▶ 自动运行": "▶ Auto-run",
+    "（或多次 ": " (or tap ", "+15 分钟": "+15 min",
+    "），且不去点任何「触发活动」——信号沉默累积。": " repeatedly), and don't tap any \"Trigger activity\" — silence accumulates.",
+    "到 ": "At ", " 分钟进入 ": " min it enters ", "L1 留意": "L1 Watch",
+    " 分钟自动 ": " min it automatically sends a ",
+    "请老人报平安（L2）": "check-in request to the elder (L2)",
+    "切到 ": "Switch to ",
+    " 点「我很好」可秒复位；不理它，再过 ": " and tap \"I'm fine\" to reset instantly; ignore it, and after another ",
+    " 分钟升到 ": " min it rises to ",
+    "子女端 → 升级中心": "Family view → Escalation Center",
+    "，手动逐级：联系不上 → 邻里 → ": ", then escalate manually: unreachable → neighbor → ",
+    "社区网格员（派单）": "community grid worker (dispatch)",
+    " → 急救。": " → emergency services.",
+    "网格员端": "Grid-worker view",
+    " 接单、上门、确认平安 —— 整个守护闭环解除。": " to accept, visit, and confirm safe — closing the whole guardianship loop.",
+    /* substring-oriented fragments (dynamic sentence parts) */
+    "监测到活动，自动恢复安好": " detected activity — automatically back to All good",
+    "监测到一次活动": " detected activity",
+    " 吃过啦": " — taken",
+    "秀兰已服用 ": "Xiulan took ",
+    "秀兰记录了": "Xiulan logged ",
+    "记好啦，今天": "Logged — today's ",
+    "已出发前往秀兰家": "has set off for Xiulan's home",
+    " 已接单": " accepted the task",
+    "已到达，正在上门核实": "has arrived and is verifying in person",
+    "上门确认秀兰平安，守护已解除": "confirmed in person that Xiulan is safe — guardianship cleared",
+    " 反馈：需进一步协助，建议请求急救": " reports: further assistance needed — emergency assistance recommended",
+    "反馈：需进一步协助，建议请求急救": " reports: further assistance needed — emergency assistance recommended",
+    "已接到上门探访请求。": " has received the home-visit request.",
+    "最近活动 ": "Last activity ",
+    "都有在用": " all in use",
+    "日常信号": "everyday signals",
+    "已安静约 ": "Quiet for about ",
+    "，再等等，必要时会请她报平安。": ". We'll wait a bit and ask her to check in if needed.",
+    "已安静 ": "Quiet for ",
+    "安静 ": "Quiet ",
+    "拨打 ": "Call ",
+    "已通知 ": "Notified ",
+    "前往。": " — on the way.",
+    "今日任务：": "Today's tasks: ",
+    " 触发了一次活动": " triggered an activity",
+    " 有活动": " active", " 已连接": " connected",
+    "今天一切都好，家人都惦记着您。": "All is well today — your family is thinking of you.",
+    "分钟": "min", "小时": "hr",
+    /* punctuation-only text nodes (JSX fragments) */
+    "。": ".", "，": ", ", "：": ": ", "；": "; ", "、": ", ",
+    "（": "(", "）": ")", "「": "\"", "」": "\"", "　": " "
+  };
+
+  /* ---------- regex rules for dynamic sentences (run before substring pass) ---------- */
+  var R = [
+    [/^你拨打了 (.+) 的电话$/, "You called $1"],
+    [/^联系不上秀兰，已请就近的 (.+) 去看看$/, "Couldn't reach Xiulan — asked $1 nearby to check on her"],
+    [/^子女派单：请上门探访 (.+)$/, "Family dispatch: home visit requested for $1"],
+    [/^已请社区网格员 (.+) 上门探访$/, "Community grid worker $1 asked to make a home visit"],
+    [/^让(.+)看到大致作息$/, "Let $1 see your general rhythm"],
+    [/^已通知(.+)，她会帮您设置$/, "$1 has been notified — she'll help you set it up"],
+    [/^如需删除(.+)的数据，请联系客服$/, "To delete $1's data, please contact support"],
+    [/^已经告诉(.+)，您很好 ❤$/, "We've told $1 you're doing fine ❤"],
+    [/^已经告诉(.+)啦$/, "We've told $1"],
+    [/^(.+)很快会联系您，安心等一下。$/, "$1 will contact you soon — please rest easy."],
+    [/^记好啦，(.+)也能看到您今天挺稳的$/, "Logged — $1 can see you're steady today"],
+    [/^记好啦，今天血压 (.+)$/, "Logged — today's blood pressure: $1"],
+    [/^记好啦，今天血糖 (.+)$/, "Logged — today's blood sugar: $1"],
+    [/^秀兰记录了血压：(.+)$/, "Xiulan logged blood pressure: $1"],
+    [/^秀兰记录了血糖：(.+)$/, "Xiulan logged blood sugar: $1"],
+    [/^正在拨打 (.+)…$/, "Calling $1…"],
+    [/^记得 (.+) 服用$/, "Take at $1"],
+    [/^已通知 (.+)（(.+)）前往。$/, "Notified $1 ($2) — on the way."],
+    [/^联系不上时，会请 (.+) 就近查看。$/, "If unreachable, $1 will be asked to check in person."],
+    [/^有一阵没看到活动了（约 (\d+) 分钟）$/, "No activity for a while (~$1 min)"],
+    [/(.+)想知道您今天好不好，点一下报个平安就好。/, "$1 wants to know how you're doing — just tap to check in."],
+    [/^(\d{1,2}:\d{2}) 有活动$/, "Active at $1"],
+    [/^(\d{1,2}:\d{2}) 已连接$/, "Connected at $1"],
+    [/(\d+) 小时 (\d+) 分钟/g, "$1 hr $2 min"],
+    [/(\d+) 小时/g, "$1 hr"],
+    [/(\d+) 分钟/g, "$1 min"]
+  ];
+
+  var HAN = /[㐀-䶿一-鿿豈-﫿]/;
+  var SUB = [];
+  (function () {
+    for (var k in D) {
+      if (Object.prototype.hasOwnProperty.call(D, k) && k.trim().length >= 2 && HAN.test(k)) {
+        SUB.push([k, D[k]]);
+      }
+    }
+    SUB.sort(function (a, b) { return b[0].length - a[0].length; });
+  })();
+
+  function punct(x) {
+    return x.replace(/。/g, ". ").replace(/，/g, ", ").replace(/：/g, ": ")
+      .replace(/；/g, "; ").replace(/、/g, ", ").replace(/（/g, " (").replace(/）/g, ") ")
+      .replace(/[「」]/g, "\"").replace(/！/g, "! ").replace(/？/g, "? ")
+      .replace(/　/g, " ").replace(/ {2,}/g, " ")
+      .replace(/ ([.,:;!?)])/g, "$1").replace(/\( /g, "(").replace(/\s+$/, "");
+  }
+
+  function trText(s) {
+    if (!s) return null;
+    if (Object.prototype.hasOwnProperty.call(D, s)) return D[s];
+    var m = s.match(/^(\s*)([\s\S]*?)(\s*)$/);
+    if (m && m[2] && Object.prototype.hasOwnProperty.call(D, m[2])) return m[1] + D[m[2]] + m[3];
+    if (!HAN.test(s)) return null;
+    var r = s, i, k;
+    for (i = 0; i < R.length; i++) {
+      r = r.replace(R[i][0], R[i][1]);
+      if (!HAN.test(r)) break;
+    }
+    if (HAN.test(r)) {
+      for (i = 0; i < SUB.length; i++) {
+        k = SUB[i][0];
+        if (r.indexOf(k) !== -1) {
+          r = r.split(k).join(SUB[i][1]);
+          if (!HAN.test(r)) break;
+        }
+      }
+    }
+    r = punct(r);
+    return r !== s ? r : null;
+  }
+
+  /* ---------- DOM application ---------- */
+  var doneText = new WeakMap();   /* text node -> value we last wrote/inspected */
+  var doneAttr = new WeakMap();   /* element -> { attrName: value } */
+  var ATTRS = ["placeholder", "title", "aria-label"];
+
+  function handleText(t) {
+    var v = t.nodeValue;
+    if (v == null || doneText.get(t) === v) return;
+    var r = trText(v);
+    if (r != null && r !== v) { doneText.set(t, r); t.nodeValue = r; }
+    else doneText.set(t, v);
+  }
+
+  function handleAttrs(el) {
+    var rec = doneAttr.get(el);
+    if (!rec) { rec = {}; doneAttr.set(el, rec); }
+    for (var i = 0; i < ATTRS.length; i++) {
+      var a = ATTRS[i];
+      if (!el.hasAttribute || !el.hasAttribute(a)) continue;
+      var v = el.getAttribute(a);
+      if (rec[a] === v) continue;
+      var r = trText(v);
+      if (r != null && r !== v) { rec[a] = r; el.setAttribute(a, r); }
+      else rec[a] = v;
+    }
+  }
+
+  function rejectEl(n) {
+    var nm = n.nodeName;
+    return nm === "SCRIPT" || nm === "STYLE" || nm === "NOSCRIPT" || n.id === SW_ID;
+  }
+
+  function walk(root) {
+    if (!root) return;
+    if (root.nodeType === 3) { handleText(root); return; }
+    if (root.nodeType !== 1 && root.nodeType !== 9 && root.nodeType !== 11) return;
+    if (root.nodeType === 1) {
+      if (rejectEl(root) || (root.closest && root.closest("#" + SW_ID))) return;
+      handleAttrs(root);
+    }
+    var w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT, {
+      acceptNode: function (n) {
+        if (n.nodeType === 1) return rejectEl(n) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT;
+        return NodeFilter.FILTER_ACCEPT;
+      }
+    });
+    var n;
+    while ((n = w.nextNode())) {
+      if (n.nodeType === 1) handleAttrs(n);
+      else handleText(n);
+    }
+  }
+
+  /* batched observer */
+  var pending = new Set();
+  var scheduled = false;
+  function flush() {
+    if (!scheduled) return;                 /* rAF 与 setTimeout 双通道,先到先冲刷,幂等 */
+    scheduled = false;
+    var items = Array.from(pending);
+    pending.clear();
+    for (var i = 0; i < items.length; i++) walk(items[i]);
+    syncTitle();
+  }
+  function schedule(node) {
+    if (!node) return;
+    pending.add(node);
+    if (!scheduled) {
+      scheduled = true;
+      /* rAF 在后台标签/不渲染的视图里不会触发,必须带 setTimeout 兜底 */
+      window.setTimeout(flush, 32);
+      if (window.requestAnimationFrame) window.requestAnimationFrame(flush);
+    }
+  }
+
+  function syncTitle() {
+    var r = trText(document.title);
+    if (r != null && r !== document.title) document.title = r;
+  }
+
+  var mo = new MutationObserver(function (muts) {
+    for (var i = 0; i < muts.length; i++) {
+      var mu = muts[i];
+      if (mu.type === "characterData") schedule(mu.target);
+      else if (mu.type === "attributes") schedule(mu.target);
+      else if (mu.type === "childList") {
+        for (var j = 0; j < mu.addedNodes.length; j++) schedule(mu.addedNodes[j]);
+      }
+    }
+  });
+  mo.observe(document.documentElement, {
+    childList: true, subtree: true, characterData: true,
+    attributes: true, attributeFilter: ATTRS
+  });
+
+  /* window.confirm — the sandbox reset dialog */
+  var oConfirm = window.confirm.bind(window);
+  window.confirm = function (msg) {
+    if (typeof msg === "string") { var r = trText(msg); if (r != null) msg = r; }
+    return oConfirm(msg);
+  };
+
+  /* speech announcements (elder view auto voice) */
+  if (window.speechSynthesis && window.speechSynthesis.speak) {
+    var oSpeak = window.speechSynthesis.speak.bind(window.speechSynthesis);
+    window.speechSynthesis.speak = function (u) {
+      try {
+        if (u && typeof u.text === "string" && HAN.test(u.text)) {
+          var r = trText(u.text);
+          if (r != null) { u.text = r; u.lang = "en-US"; }
+        }
+      } catch (e) {}
+      return oSpeak(u);
+    };
+  }
+
+  document.documentElement.lang = "en";
+  syncTitle();
+  walk(document.documentElement);
+  window.__ovlTr = trText; /* debug hook */
+})();
+    </script>
   </body>
 </html>

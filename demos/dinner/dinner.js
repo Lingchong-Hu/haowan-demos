@@ -11,7 +11,7 @@ const SLUG = 'dinner';
 const F = window.FOOD;
 const ING = F.ING, STAPLES = F.STAPLES;
 const STORE = 'food_state_v1';
-const DIFF = { easy:'简单', medium:'中等', hard:'有点挑战' };
+const DIFF = { easy:GG.T('简单','Easy'), medium:GG.T('中等','Medium'), hard:GG.T('有点挑战','A bit tricky') };
 const el = GG.el;
 
 let main, modeMount;
@@ -240,9 +240,9 @@ function daysLeft(it){ return shelfOf(it.key) - (it.days||0); }
 function band(it){
   if(it.staple) return null;
   const d = daysLeft(it);
-  if(d<=1) return {k:'red',    txt: d<=0?'今天就该吃':'明天到期'};
-  if(d<=3) return {k:'yellow', txt: d+' 天内吃掉'};
-  return {k:'green', txt:'还新鲜'};
+  if(d<=1) return {k:'red',    txt: d<=0?GG.T('今天就该吃','Eat today'):GG.T('明天到期','Expires tomorrow')};
+  if(d<=3) return {k:'yellow', txt: GG.T(d+' 天内吃掉','Eat within '+d+' days')};
+  return {k:'green', txt:GG.T('还新鲜','Still fresh')};
 }
 function bandColor(b){ return b? (b.k==='red'?'var(--bad)':b.k==='yellow'?'var(--warn)':'var(--good)') : 'var(--good)'; }
 function ringPct(it){ const d=daysLeft(it), s=shelfOf(it.key); return Math.max(0, Math.min(100, Math.round(d/s*100))); }
@@ -265,9 +265,22 @@ function guessEmoji(name){
     花生:'🥜',核桃:'🥜',玉米:'🌽',土豆:'🥔',洋葱:'🧅',胡萝卜:'🥕',番茄:'🍅',黄瓜:'🥒',青椒:'🫑',香菇:'🍄',
     蘑:'🍄',南瓜:'🎃',红薯:'🍠',排骨:'🍖',冬瓜:'🥒',芦笋:'🌿',藜麦:'🌾',蛋:'🥚'};
   for(const k in map){ if(name.indexOf(k)>=0) return map[k]; }
+  if(GG.EN){
+    const emap={'sweet potato':'🍠','chicken':'🍗','beef':'🐄','salmon':'🐟','bass':'🐟','fish':'🐟','shrimp':'🦐','prawn':'🦐',
+      'tofu':'🧈','broccoli':'🥦','lettuce':'🥬','greens':'🥬','spinach':'🥬','bread':'🍞','toast':'🍞','rice':'🍚','noodle':'🍜',
+      'soba':'🍜','vermicelli':'🍜','oat':'🥣','milk':'🥛','yogurt':'🍶','banana':'🍌','blueberr':'🫐','avocado':'🥑',
+      'peanut':'🥜','walnut':'🥜','corn':'🌽','potato':'🥔','onion':'🧅','carrot':'🥕','tomato':'🍅','cucumber':'🥒',
+      'pepper':'🫑','mushroom':'🍄','shiitake':'🍄','enoki':'🍄','pumpkin':'🎃','rib':'🍖','melon':'🥒','asparagus':'🌿',
+      'quinoa':'🌾','millet':'🌾','egg':'🥚'};
+    const low=name.toLowerCase();
+    for(const k in emap){ if(low.indexOf(k)>=0) return emap[k]; }
+  }
   return '🍽️';
 }
-function isCondiment(name){ return /盐|油|生抽|酱油|糖|醋|辣椒|花椒|胡椒|蒜|姜|葱|料酒|淀粉|蜂蜜|芝麻/.test(name); }
+function isCondiment(name){
+  return /盐|油|生抽|酱油|糖|醋|辣椒|花椒|胡椒|蒜|姜|葱|料酒|淀粉|蜂蜜|芝麻/.test(name)
+    || (GG.EN && /\b(salt|oil|soy sauce|sugar|vinegar|chili|chile|sichuan pepper(corn)?s?|black pepper|white pepper|garlic|ginger|scallion|cooking wine|starch|honey|sesame)\b/i.test(name));
+}
 function nameInFridge(name){
   return state.fridge.some(it=>it.n>0 && ING[it.key] && ING[it.key].label && name.indexOf(ING[it.key].label)>=0)
     || STAPLES.some(k=> ING[k] && name.indexOf(ING[k].label)>=0);
@@ -278,6 +291,10 @@ function guessCat(name){
   if(isCondiment(name)) return '调料';
   if(/肉|鱼|虾|蛋|豆腐|排骨/.test(name)) return '蛋白';
   if(/饭|面|米|包|麦|薯|粉/.test(name)) return '主食';
+  if(GG.EN){
+    if(/meat|pork|beef|chicken|thigh|breast|fish|bass|salmon|shrimp|prawn|egg|tofu|ribs?/i.test(name)) return '蛋白';
+    if(/rice|noodle|soba|vermicelli|bread|toast|bun|oat|wheat|flour|millet|quinoa|potato/i.test(name)) return '主食';
+  }
   return '蔬菜';
 }
 
@@ -335,7 +352,7 @@ function planSlot(pool, goal, taste, seed, biasUrgent){
   return out;
 }
 function buildWeek(p){
-  const days=['第1天','第2天','第3天','第4天','第5天','第6天','第7天'];
+  const days=[GG.T('第1天','Day 1'),GG.T('第2天','Day 2'),GG.T('第3天','Day 3'),GG.T('第4天','Day 4'),GG.T('第5天','Day 5'),GG.T('第6天','Day 6'),GG.T('第7天','Day 7')];
   const b =planSlot(availableMeals('早',p.goal,p.avoids), p.goal,p.taste, p.seed+':b', false);
   const l =planSlot(availableMeals('午',p.goal,p.avoids), p.goal,p.taste, p.seed+':l', true);
   const dn=planSlot(availableMeals('晚',p.goal,p.avoids), p.goal,p.taste, p.seed+':d', true);
@@ -361,6 +378,16 @@ function iconFor(t){
   if(/淋|收汁|大火|爆香/.test(t)) return 'flame';
   if(/撒|出锅|装盘|盛出|铺|码|浇/.test(t)) return 'plate';
   if(/静置|泡|等|计时/.test(t)) return 'timer';
+  if(GG.EN){
+    if(/marinate|toss|mix|whisk|beat|mash|combine|dress/i.test(t)) return 'mix';
+    if(/chop|slice|cut|dice|shred|smash|peel|prep/i.test(t)) return 'knife';
+    if(/stir-fry|fry|sear|saut|scramble/i.test(t)) return 'pan';
+    if(/boil|simmer|stew|braise|blanch|poach|soup/i.test(t)) return 'pot';
+    if(/bake|roast|toast|steam|grill/i.test(t)) return 'oven';
+    if(/drizzle|high heat|reduce|sizzle|aroma/i.test(t)) return 'flame';
+    if(/serve|plate|garnish|sprinkle|transfer|top with/i.test(t)) return 'plate';
+    if(/rest|soak|wait|set aside|timer/i.test(t)) return 'timer';
+  }
   return 'pan';
 }
 function recipeFromOllie(d){
@@ -381,9 +408,10 @@ function recipeFromMeal(m){
   };
 }
 function weekTagline(m){
-  const t=[]; if(m.tags.includes('素')) t.push('素'); if(m.tags.includes('辣')) t.push('微辣');
-  const best=Object.keys(m.goalFit).filter(g=>m.goalFit[g]===2)[0]; if(best) t.push('适合'+best);
-  return t.join(' · ') || '家常一餐';
+  const t=[]; if(m.tags.includes('素')) t.push(GG.T('素','Veggie')); if(m.tags.includes('辣')) t.push(GG.T('微辣','Mild heat'));
+  const best=Object.keys(m.goalFit).filter(g=>m.goalFit[g]===2)[0];
+  if(best) t.push(GG.T('适合'+best, 'Good for '+({'减脂':'fat loss','增肌':'muscle gain','均衡':'balance'}[best]||best)));
+  return t.join(' · ') || GG.T('家常一餐','An everyday homestyle meal');
 }
 function normalizeRecipe(d, source){
   d=d||{};
@@ -398,7 +426,7 @@ function normalizeRecipe(d, source){
     icon:ICONSET.includes(x.icon)?x.icon:iconFor(String(x.title)+String(x.detail))
   }));
   return {
-    is_food: d.is_food!==false, dish_name:(d.dish_name&&String(d.dish_name))||'未命名料理',
+    is_food: d.is_food!==false, dish_name:(d.dish_name&&String(d.dish_name))||GG.T('未命名料理','Untitled dish'),
     one_line:d.one_line?String(d.one_line):'', servings:parseInt(d.servings,10)||null,
     time_minutes:parseInt(d.time_minutes,10)||null, difficulty:DIFF[d.difficulty]?d.difficulty:null,
     ingredients:ings, steps, source_snippet:d.source_snippet?String(d.source_snippet):'', source
@@ -435,7 +463,7 @@ function addToShopping(items){
 }
 function buyItem(s){
   const key=mapKey(s.name);
-  if(key){ const ex=findItem(key); if(ex){ ex.n+=(s.n||1); ex.days=0; } else state.fridge.push({key, n:s.n||1, unit:'新买', days:0}); }
+  if(key){ const ex=findItem(key); if(ex){ ex.n+=(s.n||1); ex.days=0; } else state.fridge.push({key, n:s.n||1, unit:GG.T('新买','Just bought'), days:0}); }
   state.shopping=state.shopping.filter(x=>x!==s);
   save();
 }
@@ -455,7 +483,7 @@ function plateSVG(name, ings){
       '" fill="'+cols[i]+'" opacity=".9" transform="rotate('+rot+' '+cx.toFixed(1)+' '+cy.toFixed(1)+')"/>';
   }
   const em=(ings&&ings[0]&&ings[0].emoji)||'🍽️', em2=(ings&&ings[2]&&ings[2].emoji)||'';
-  return '<svg class="kt-plate" viewBox="0 0 148 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+(name||'料理')+' 示意图">'+
+  return '<svg class="kt-plate" viewBox="0 0 148 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="'+(name||GG.T('料理','Dish'))+GG.T(' 示意图',' illustration')+'">'+
     '<defs><clipPath id="'+id+'"><circle cx="74" cy="74" r="50"/></clipPath></defs>'+
     '<circle cx="74" cy="74" r="63" fill="#fff" stroke="var(--line)" stroke-width="2"/>'+
     '<circle cx="74" cy="74" r="52" fill="#faf6f0" stroke="var(--line-2)" stroke-width="1"/>'+
@@ -516,7 +544,7 @@ function buildRecipeCanvas(rec){
   const srcLines=rec.source_snippet? wrap('“'+rec.source_snippet+'”', Ff(400,15), innerW):[];
   const s0=rec.steps[0]||null;
   const stepLines=s0? wrap(s0.detail||s0.title||'', Ff(400,15), innerW).slice(0,2):[];
-  const badges=[]; if(rec.servings) badges.push(rec.servings+' 人份'); if(rec.time_minutes) badges.push(rec.time_minutes+' 分钟'); if(rec.difficulty) badges.push(DIFF[rec.difficulty]);
+  const badges=[]; if(rec.servings) badges.push(GG.T(rec.servings+' 人份','Serves '+rec.servings)); if(rec.time_minutes) badges.push(GG.T(rec.time_minutes+' 分钟',rec.time_minutes+' min')); if(rec.difficulty) badges.push(DIFF[rec.difficulty]);
   const headH=Math.max(plateD, 8+titleLines.length*36+(oneLines.length?8+oneLines.length*22:0)+24+24);
   let H=PAD+22+10+headH+8;
   if(srcLines.length) H+=srcLines.length*24+14;
@@ -524,10 +552,10 @@ function buildRecipeCanvas(rec){
   const cv=document.createElement('canvas'); cv.width=W*scale; cv.height=H*scale; cv.style.width=W+'px'; cv.style.height=H+'px';
   const ctx=cv.getContext('2d'); ctx.scale(scale,scale); ctx.textBaseline='alphabetic';
   ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H); ctx.fillStyle=accent; ctx.fillRect(0,0,W,8);
-  let y=PAD; const brand='🍲 今天吃什么';
+  let y=PAD; const brand=GG.T('🍲 今天吃什么','🍲 What to Eat Today');
   ctx.font=Ff(700,15); ctx.fillStyle=accent; ctx.fillText(brand, PAD, y+16);
   const bw=ctx.measureText(brand).width; ctx.font=Ff(400,13); ctx.fillStyle='#8a8a93';
-  ctx.fillText('冰箱有啥就做啥', PAD+bw+12, y+16); y+=32;
+  ctx.fillText(GG.T('冰箱有啥就做啥','Cook with what your fridge has'), PAD+bw+12, y+16); y+=32;
   const headTop=y; drawPlate(ctx, PAD+plateD/2, headTop+plateD/2, plateD/2-4, rec);
   let ty=headTop; ctx.fillStyle='#1d1d1f'; ctx.font=Ff(750,30);
   for(const ln of titleLines){ ty+=36; ctx.fillText(ln, rightX, ty); }
@@ -539,12 +567,12 @@ function buildRecipeCanvas(rec){
   if(srcLines.length){ const blockH=srcLines.length*24; ctx.fillStyle=accent; ctx.fillRect(PAD,y,3,blockH);
     ctx.fillStyle='#55555c'; ctx.font=Ff(400,15); let sy=y+17; for(const ln of srcLines){ ctx.fillText(ln, PAD+13, sy); sy+=24; } y+=blockH+14; }
   ctx.strokeStyle='#f0f0ec'; ctx.beginPath(); ctx.moveTo(PAD,y); ctx.lineTo(PAD+innerW,y); ctx.stroke(); y+=25;
-  if(s0){ ctx.fillStyle=accent; ctx.font=Ff(700,13); ctx.fillText('第一步', PAD, y); y+=20;
+  if(s0){ ctx.fillStyle=accent; ctx.font=Ff(700,13); ctx.fillText(GG.T('第一步','Step 1'), PAD, y); y+=20;
     ctx.fillStyle='#1d1d1f'; ctx.font=Ff(650,16); ctx.fillText('① '+(s0.title||''), PAD, y); y+=24;
     ctx.fillStyle='#55555c'; ctx.font=Ff(400,15); for(const ln of stepLines){ ctx.fillText(ln, PAD, y); y+=22; } y+=12; }
   ctx.strokeStyle='#f0f0ec'; ctx.beginPath(); ctx.moveTo(PAD,y); ctx.lineTo(PAD+innerW,y); ctx.stroke(); y+=22;
-  ctx.fillStyle='#b0b0b8'; ctx.font=Ff(400,12); ctx.fillText('今天吃什么 · 好玩的东西', PAD, y);
-  ctx.fillStyle=accent; ctx.font=Ff(600,13); ctx.textAlign='right'; ctx.fillText('把冰箱交给它，少点浪费 →', PAD+innerW, y); ctx.textAlign='left';
+  ctx.fillStyle='#b0b0b8'; ctx.font=Ff(400,12); ctx.fillText(GG.T('今天吃什么 · 好玩的东西','What to Eat Today · Playground'), PAD, y);
+  ctx.fillStyle=accent; ctx.font=Ff(600,13); ctx.textAlign='right'; ctx.fillText(GG.T('把冰箱交给它，少点浪费 →','Let it run your fridge, waste less →'), PAD+innerW, y); ctx.textAlign='left';
   return cv;
 }
 
@@ -552,7 +580,7 @@ function buildRecipeCanvas(rec){
 function overlay(node){
   const ov=el('div',{class:'kt-ov', onClick:(e)=>{ if(e.target===ov) ov.remove(); }});
   ov.appendChild(el('div',{class:'kt-ovpanel'}, node,
-    el('button',{class:'btn ghost block', style:{marginTop:'12px'}, onClick:()=>ov.remove()}, '关闭')));
+    el('button',{class:'btn ghost block', style:{marginTop:'12px'}, onClick:()=>ov.remove()}, GG.T('关闭','Close'))));
   document.body.appendChild(ov); return ov;
 }
 function closeOverlays(){ GG.$$('.kt-ov').forEach(o=>o.remove()); }
@@ -568,15 +596,15 @@ function start(){
 function welcome(){
   GG.clear(main);
   main.appendChild(el('div',{class:'kt-welcome'},
-    el('div',{class:'kt-wbrand'}, el('span',null,'🧊'), el('span',null,'今天吃什么')),
-    el('div',{class:'kt-wtitle'}, '打开冰箱前，它已经替你想好今晚吃什么'),
-    el('p',{class:'kt-wsub'}, '一台看得见里面的冰箱：知道你有什么、哪样快坏了。今晚做什么、排一周、缺什么买什么——都从这一个地方开始。'),
+    el('div',{class:'kt-wbrand'}, el('span',null,'🧊'), el('span',null,GG.T('今天吃什么','What to Eat Today'))),
+    el('div',{class:'kt-wtitle'}, GG.T('打开冰箱前，它已经替你想好今晚吃什么','It knows what’s for dinner before you even open the fridge')),
+    el('p',{class:'kt-wsub'}, GG.T('一台看得见里面的冰箱：知道你有什么、哪样快坏了。今晚做什么、排一周、缺什么买什么——都从这一个地方开始。','A fridge that can see inside itself: it knows what you have and what’s about to go bad. Tonight’s dinner, the week’s plan, what to buy — it all starts here.')),
     el('div',{class:'kt-wrow'},
-      wfeat('🍳','今晚','用现有的，先吃快坏的'),
-      wfeat('📅','一周','排好计划，只买缺的'),
-      wfeat('🛒','清单','买到自动回填冰箱')),
-    el('button',{class:'btn primary lg', onClick:enter}, '打开我的冰箱 →'),
-    el('div',{class:'kt-wprivacy'}, el('span',null,'🔒'), el('span',null,'演示用的虚拟冰箱，数据只存在你这台浏览器，里面的东西随便改。'))
+      wfeat('🍳',GG.T('今晚','Tonight'),GG.T('用现有的，先吃快坏的','Cook what you have, eat the expiring first')),
+      wfeat('📅',GG.T('一周','This Week'),GG.T('排好计划，只买缺的','Plan the week, buy only what’s missing')),
+      wfeat('🛒',GG.T('清单','List'),GG.T('买到自动回填冰箱','Purchases restock the fridge automatically'))),
+    el('button',{class:'btn primary lg', onClick:enter}, GG.T('打开我的冰箱 →','Open my fridge →')),
+    el('div',{class:'kt-wprivacy'}, el('span',null,'🔒'), el('span',null,GG.T('演示用的虚拟冰箱，数据只存在你这台浏览器，里面的东西随便改。','A demo fridge — data lives only in this browser, feel free to change anything.')))
   ));
 }
 function wfeat(em,t,s){ return el('div',{class:'kt-wfeat'}, el('div',{class:'em'},em), el('div',{class:'t'},t), el('div',{class:'s'},s)); }
@@ -592,7 +620,7 @@ function app(){
 }
 function modeNav(){
   const nav=el('div',{class:'kt-nav'});
-  [['tonight','🍳 今晚'],['week','📅 一周']].forEach(pair=>{
+  [['tonight',GG.T('🍳 今晚','🍳 Tonight')],['week',GG.T('📅 一周','📅 This Week')]].forEach(pair=>{
     nav.appendChild(el('button',{class:'kt-navpill'+(state.mode===pair[0]?' on':''),
       onClick:()=>{ state.mode=pair[0]; save(); app(); }}, pair[1]));
   });
@@ -614,23 +642,23 @@ function fridgeHeader(){
   const items=state.fridge.filter(it=>!it.staple && it.n>0);
   const urg=urgent();
   wrap.appendChild(el('div',{class:'kt-fhead'},
-    el('div',{class:'kt-ftitle'}, '🧊 我的冰箱', el('span',{class:'kt-fcount'}, items.length+' 样')),
+    el('div',{class:'kt-ftitle'}, GG.T('🧊 我的冰箱','🧊 My Fridge'), el('span',{class:'kt-fcount'}, GG.T(items.length+' 样',items.length+' items'))),
     el('div',{class:'kt-fhead-r'},
-      el('button',{class:'kt-flink', onClick:rescan}, '↻ 重新识别'),
-      el('button',{class:'kt-flink', onClick:()=>{ fridgeOpen=!fridgeOpen; app(); }}, fridgeOpen?'收起':'查看全部'))
+      el('button',{class:'kt-flink', onClick:rescan}, GG.T('↻ 重新识别','↻ Rescan')),
+      el('button',{class:'kt-flink', onClick:()=>{ fridgeOpen=!fridgeOpen; app(); }}, fridgeOpen?GG.T('收起','Collapse'):GG.T('查看全部','View all')))
   ));
   if(urg.length){
     const rail=el('div',{class:'kt-urgent'});
-    rail.appendChild(el('span',{class:'kt-urgcap'}, '先吃我'));
+    rail.appendChild(el('span',{class:'kt-urgcap'}, GG.T('先吃我','EAT ME FIRST')));
     urg.slice(0,6).forEach(o=>{ const m=ING[o.it.key]||{};
       rail.appendChild(el('span',{class:'kt-urgchip kt-'+o.b.k}, (m.emoji||'')+' '+(m.label||o.it.key)+' · '+o.b.txt)); });
     wrap.appendChild(rail);
   }
-  wrap.appendChild(el('div',{class:'kt-sensor'}, '📷 摄像头识别品类 · ⚖️ 称重估余量 · 🌡️ 气味传感判新鲜 —— 自动盘点，你什么都不用输'));
+  wrap.appendChild(el('div',{class:'kt-sensor'}, GG.T('📷 摄像头识别品类 · ⚖️ 称重估余量 · 🌡️ 气味传感判新鲜 —— 自动盘点，你什么都不用输','📷 Camera IDs the items · ⚖️ Scales estimate amounts · 🌡️ Odor sensor checks freshness — auto inventory, nothing to type')));
   if(fridgeOpen) wrap.appendChild(fridgeGrid());
   return wrap;
 }
-function rescan(){ GG.toast('📷 关门——冰箱重新认了一遍 ✓'); app(); }
+function rescan(){ GG.toast(GG.T('📷 关门——冰箱重新认了一遍 ✓','📷 Door closed — fridge re-scanned ✓')); app(); }
 function fridgeGrid(){
   const box=el('div');
   const grid=el('div',{class:'kt-grid'});
@@ -644,71 +672,72 @@ function fridgeGrid(){
     ));
   });
   const staples=state.fridge.filter(it=>it.staple && it.n>0).map(it=>(ING[it.key]||{}).label).filter(Boolean);
-  if(staples.length) grid.appendChild(el('div',{class:'kt-staples'}, '🧂 常备调料：'+staples.join(' · ')));
+  if(staples.length) grid.appendChild(el('div',{class:'kt-staples'}, GG.T('🧂 常备调料：','🧂 Pantry staples: ')+staples.join(' · ')));
   box.appendChild(grid);
-  box.appendChild(el('div',{class:'kt-addrow'}, el('button',{class:'btn ghost small', onClick:addItemPrompt}, '＋ 手动加一样')));
+  box.appendChild(el('div',{class:'kt-addrow'}, el('button',{class:'btn ghost small', onClick:addItemPrompt}, GG.T('＋ 手动加一样','＋ Add one manually'))));
   return box;
 }
 function itemMenu(it){
   const m=ING[it.key]||{}, b=band(it);
   const ov=overlay(el('div',null,
     el('div',{class:'kt-ovtitle'}, (m.emoji||'')+' '+(m.label||it.key)),
-    el('div',{class:'kt-ovsub'}, '现在 '+(it.unit||('×'+it.n))+' · '+(b?b.txt:'新鲜')),
+    el('div',{class:'kt-ovsub'}, GG.T('现在 ','Now ')+(it.unit||('×'+it.n))+' · '+(b?b.txt:GG.T('新鲜','fresh'))),
     el('div',{class:'kt-ovacts'},
-      el('button',{class:'btn', onClick:()=>{ it.n=Math.max(0,it.n-1); if(it.n<=0) state.fridge=state.fridge.filter(f=>f!==it); save(); ov.remove(); app(); }}, '用掉一些'),
-      el('button',{class:'btn', onClick:()=>{ it.days=0; save(); GG.toast('标记为刚补的 ✓'); ov.remove(); app(); }}, '刚补·标新鲜'),
-      el('button',{class:'btn ghost', onClick:()=>{ state.fridge=state.fridge.filter(f=>f!==it); save(); ov.remove(); app(); }}, '扔了'))
+      el('button',{class:'btn', onClick:()=>{ it.n=Math.max(0,it.n-1); if(it.n<=0) state.fridge=state.fridge.filter(f=>f!==it); save(); ov.remove(); app(); }}, GG.T('用掉一些','Use some')),
+      el('button',{class:'btn', onClick:()=>{ it.days=0; save(); GG.toast(GG.T('标记为刚补的 ✓','Marked as freshly restocked ✓')); ov.remove(); app(); }}, GG.T('刚补·标新鲜','Restocked · mark fresh')),
+      el('button',{class:'btn ghost', onClick:()=>{ state.fridge=state.fridge.filter(f=>f!==it); save(); ov.remove(); app(); }}, GG.T('扔了','Toss it')))
   ));
 }
 function addItemPrompt(){
   const present=new Set(state.fridge.map(f=>f.key));
   const chips=el('div',{class:'chips'});
   Object.keys(ING).filter(k=>!present.has(k) && !STAPLES.includes(k)).forEach(k=>{ const m=ING[k];
-    chips.appendChild(el('button',{class:'chip', onClick:()=>{ state.fridge.push({key:k,n:1,unit:'新加',days:0}); save(); closeOverlays(); app(); }}, (m.emoji||'')+' '+m.label)); });
-  overlay(el('div',null, el('div',{class:'kt-ovtitle'},'加点什么进冰箱'), el('div',{class:'kt-ovsub'},'（这些你冰箱里现在没有）'), el('div',{style:{marginTop:'12px'}}, chips)));
+    chips.appendChild(el('button',{class:'chip', onClick:()=>{ state.fridge.push({key:k,n:1,unit:GG.T('新加','Just added'),days:0}); save(); closeOverlays(); app(); }}, (m.emoji||'')+' '+m.label)); });
+  overlay(el('div',null, el('div',{class:'kt-ovtitle'},GG.T('加点什么进冰箱','Add something to the fridge')), el('div',{class:'kt-ovsub'},GG.T('（这些你冰箱里现在没有）','(things your fridge doesn’t have right now)')), el('div',{style:{marginTop:'12px'}}, chips)));
 }
 
 /* ════════ mode：今晚 ════════ */
 function renderTonight(mount){
   const dishes=cookFromFridge();
-  mount.appendChild(el('div',{class:'kt-h1'}, '🍳 今晚吃什么'));
+  mount.appendChild(el('div',{class:'kt-h1'}, GG.T('🍳 今晚吃什么','🍳 What’s for Tonight')));
   if(dishes.length){
     const hero=dishes[tonightSeed % dishes.length], r=hero.r;
     mount.appendChild(el('div',{class:'kt-hero'},
       el('div',{class:'kt-heroem'}, r.emoji),
       el('div',{class:'kt-heroinfo'},
-        el('div',{class:'kt-herotag'}, hero.missing.length? ('差 '+hero.missing.length+' 样就能做') : '现在就能做'),
+        el('div',{class:'kt-herotag'}, hero.missing.length? GG.T('差 '+hero.missing.length+' 样就能做',hero.missing.length+' item'+(hero.missing.length>1?'s':'')+' short') : GG.T('现在就能做','Ready to cook now')),
         el('div',{class:'kt-heroname'}, r.name),
         el('div',{class:'kt-heroblurb'}, r.blurb),
         hero.urgentUse.length? el('div',{class:'kt-herourg'}, '🔴 '+heroUrgentText(hero)):null),
       el('div',{class:'kt-heroacts'},
-        el('button',{class:'btn primary', onClick:()=>openRecipe(recipeFromOllie(hero))}, '照着做 →'),
-        el('button',{class:'btn', onClick:()=>{ tonightSeed++; renderMode(); }}, '换一个'))
+        el('button',{class:'btn primary', onClick:()=>openRecipe(recipeFromOllie(hero))}, GG.T('照着做 →','Cook this →')),
+        el('button',{class:'btn', onClick:()=>{ tonightSeed++; renderMode(); }}, GG.T('换一个','Another one')))
     ));
   } else {
-    mount.appendChild(el('div',{class:'card pad muted'}, '冰箱快空了——在「一周」排个购物清单补点货。'));
+    mount.appendChild(el('div',{class:'card pad muted'}, GG.T('冰箱快空了——在「一周」排个购物清单补点货。','The fridge is almost empty — build a shopping list in “This Week” to restock.')));
   }
   mount.appendChild(GG.llm.bar(()=>renderMode()));
   if(GG.llm.connected()){
-    mount.appendChild(el('button',{class:'btn block', style:{marginTop:'10px'}, onClick:aiTonight}, '✨ 让 AI 用我冰箱里的，现想一道'));
+    mount.appendChild(el('button',{class:'btn block', style:{marginTop:'10px'}, onClick:aiTonight}, GG.T('✨ 让 AI 用我冰箱里的，现想一道','✨ Let AI improvise a dish from my fridge')));
   }
   const ins=unlockInsight();
   if(ins){ const m=ING[ins.key]||{};
     mount.appendChild(el('div',{class:'kt-insight'},
-      el('span',null, '💡 再买 '+(m.emoji||'')+(m.label||ins.key)+'，今晚能做的从 '+ins.now+' 道 → '+ins.after+' 道'),
-      el('button',{class:'kt-ilink', onClick:()=>{ addToShopping([{name:m.label||ins.key, cat:m.cat}]); GG.toast('已加入购物清单 🛒'); app(); }}, '加入清单')));
+      el('span',null, GG.T('💡 再买 '+(m.emoji||'')+(m.label||ins.key)+'，今晚能做的从 '+ins.now+' 道 → '+ins.after+' 道','💡 Buy '+(m.emoji||'')+(m.label||ins.key)+' and tonight’s options go from '+ins.now+' → '+ins.after+' dishes')),
+      el('button',{class:'kt-ilink', onClick:()=>{ addToShopping([{name:m.label||ins.key, cat:m.cat}]); GG.toast(GG.T('已加入购物清单 🛒','Added to shopping list 🛒')); app(); }}, GG.T('加入清单','Add to list'))));
   }
-  mount.appendChild(el('div',{class:'kt-h2'}, '冰箱现在能配出的菜 · '+dishes.length+' 道'));
+  mount.appendChild(el('div',{class:'kt-h2'}, GG.T('冰箱现在能配出的菜 · '+dishes.length+' 道','Dishes your fridge can make · '+dishes.length)));
   const list=el('div',{class:'kt-dishlist'});
   dishes.slice(0,10).forEach(d=>list.appendChild(dishRow(d)));
   mount.appendChild(list);
 }
-function urgPhrase(it){ const d=daysLeft(it); return d<=0?'今天该吃的':(d===1?'明天到期的':'这两天得吃的'); }
+function urgPhrase(it){ const d=daysLeft(it); return d<=0?GG.T('今天该吃的','due today'):(d===1?GG.T('明天到期的','expiring tomorrow'):GG.T('这两天得吃的','due in the next couple days')); }
 function heroUrgentText(hero){
   const k=hero.urgentUse.slice().sort((a,b)=>{ const ia=findItem(a),ib=findItem(b);
     return (ia?daysLeft(ia):99)-(ib?daysLeft(ib):99); })[0];
   const m=ING[k]||{}, it=findItem(k);
-  return '正好用掉'+(it?urgPhrase(it):'快到期的')+(m.label||k);
+  const ph=it?urgPhrase(it):GG.T('快到期的','expiring soon');
+  return GG.EN ? ('Uses up the '+(m.label||k)+' that’s '+ph) : ('正好用掉'+ph+(m.label||k));
 }
 function dishRow(d){
   const r=d.r, now=d.missing.length===0;
@@ -717,19 +746,19 @@ function dishRow(d){
     el('div',{class:'kt-dishbody'},
       el('div',{class:'kt-dishnm'}, r.name),
       el('div',{class:'kt-drbadges'},
-        now? el('span',{class:'kt-badge ok'},'✓ 现在能做') : el('span',{class:'kt-badge warn'},'差 '+d.missing.length+' 样'),
-        el('span',{class:'kt-badge'}, '⏱ '+r.minutes+' 分钟'),
-        d.urgentUse.length? el('span',{class:'kt-badge urg'}, '🔴 用掉先吃我'):null),
-      d.missing.length? el('div',{class:'kt-drmiss'}, '还差：'+d.missing.map(k=>(ING[k]||{}).label||k).join('、'),
+        now? el('span',{class:'kt-badge ok'},GG.T('✓ 现在能做','✓ Ready now')) : el('span',{class:'kt-badge warn'},GG.T('差 '+d.missing.length+' 样','Missing '+d.missing.length)),
+        el('span',{class:'kt-badge'}, GG.T('⏱ '+r.minutes+' 分钟','⏱ '+r.minutes+' min')),
+        d.urgentUse.length? el('span',{class:'kt-badge urg'}, GG.T('🔴 用掉先吃我','🔴 Uses eat-me-first')):null),
+      d.missing.length? el('div',{class:'kt-drmiss'}, GG.T('还差：','Still missing: ')+d.missing.map(k=>(ING[k]||{}).label||k).join(GG.T('、',', ')),
         el('button',{class:'kt-ilink', onClick:(e)=>{ e.stopPropagation();
-          addToShopping(d.missing.map(k=>({name:(ING[k]||{}).label||k, cat:(ING[k]||{}).cat}))); GG.toast('缺的已进清单 🛒'); app(); }}, '加入清单')):null),
+          addToShopping(d.missing.map(k=>({name:(ING[k]||{}).label||k, cat:(ING[k]||{}).cat}))); GG.toast(GG.T('缺的已进清单 🛒','Missing items added to list 🛒')); app(); }}, GG.T('加入清单','Add to list'))):null),
     el('span',{class:'kt-dishgo'}, '›'));
   return row;
 }
 async function aiTonight(){
-  if(!GG.llm.connected()){ GG.toast('先连接 AI'); return; }
+  if(!GG.llm.connected()){ GG.toast(GG.T('先连接 AI','Connect AI first')); return; }
   const have=state.fridge.filter(it=>it.n>0).map(it=>(ING[it.key]||{}).label).filter(Boolean);
-  GG.toast('✨ AI 用你冰箱里的现想中…');
+  GG.toast(GG.T('✨ AI 用你冰箱里的现想中…','✨ AI is improvising from your fridge…'));
   try{
     const obj=await GG.llm.json(SYS_FROM_FRIDGE, '冰箱现有：'+have.join('、')+'。优先用掉快坏的：'+(urgentLabels().join('、')||'无'), {max_tokens:1200});
     openRecipe(normalizeRecipe(obj,'tonight'));
@@ -737,54 +766,55 @@ async function aiTonight(){
 }
 
 /* ════════ mode：一周 ════════ */
+function slotLabel(s){ return GG.T(s, ({'早':'AM','午':'Noon','晚':'PM'})[s]||s); }
 function renderWeek(mount){
-  mount.appendChild(el('div',{class:'kt-h1'}, '📅 这一周吃什么'));
+  mount.appendChild(el('div',{class:'kt-h1'}, GG.T('📅 这一周吃什么','📅 The Week’s Meals')));
   mount.appendChild(weekPrefBar());
   mount.appendChild(GG.llm.bar(()=>renderMode()));
   const wk=buildWeek(weekPrefs);
-  mount.appendChild(el('div',{class:'kt-h2'}, '7 天安排 · 前两天先用掉冰箱里快坏的'));
+  mount.appendChild(el('div',{class:'kt-h2'}, GG.T('7 天安排 · 前两天先用掉冰箱里快坏的','7-day plan · first two days use up what’s expiring')));
   const slots=wk.useLunch?['早','午','晚']:['早','晚'];
   const pw=el('div',{class:'kt-week'});
   wk.plan.forEach(day=>{
     pw.appendChild(el('div',{class:'kt-wday'},
       el('div',{class:'kt-wdaylabel'}, day.label),
       el('div',{class:'kt-wmeals'}, slots.map(s=> day[s]?
-        el('button',{class:'kt-wmeal', onClick:()=>openRecipe(recipeFromMeal(day[s]))}, el('span',{class:'kt-wslot'}, s), day[s].name)
-        : el('span',{class:'kt-wmeal muted'}, el('span',{class:'kt-wslot'}, s), '—')))
+        el('button',{class:'kt-wmeal', onClick:()=>openRecipe(recipeFromMeal(day[s]))}, el('span',{class:'kt-wslot'}, slotLabel(s)), day[s].name)
+        : el('span',{class:'kt-wmeal muted'}, el('span',{class:'kt-wslot'}, slotLabel(s)), '—')))
     ));
   });
   mount.appendChild(pw);
   const sl=weekShopping(wk.plan);
-  mount.appendChild(el('div',{class:'kt-h2'}, '购物清单 · 已减去冰箱现成的'));
+  mount.appendChild(el('div',{class:'kt-h2'}, GG.T('购物清单 · 已减去冰箱现成的','Shopping list · minus what the fridge already has')));
   mount.appendChild(weekShopCard(sl));
 }
 function weekPrefBar(){
   const bar=el('div',{class:'kt-prefs'});
   ['均衡','减脂','增肌'].forEach(g=> bar.appendChild(el('button',{class:'chip'+(weekPrefs.goal===g?' on':''),
-    onClick:()=>{ weekPrefs.goal=g; renderMode(); }}, g)));
+    onClick:()=>{ weekPrefs.goal=g; renderMode(); }}, GG.T(g, ({'均衡':'Balanced','减脂':'Fat loss','增肌':'Muscle gain'})[g]||g))));
   bar.appendChild(el('span',{class:'kt-prefsep'}));
   ['清淡','均衡','重口'].forEach(t=> bar.appendChild(el('button',{class:'chip'+(weekPrefs.taste===t?' on':''),
-    onClick:()=>{ weekPrefs.taste=t; renderMode(); }}, t)));
+    onClick:()=>{ weekPrefs.taste=t; renderMode(); }}, GG.T(t, ({'清淡':'Light','均衡':'Balanced','重口':'Bold'})[t]||t))));
   bar.appendChild(el('span',{class:'kt-prefsep'}));
   ['不吃辣','素食','不吃海鲜'].forEach(a=> bar.appendChild(el('button',{class:'chip'+(weekPrefs.avoids.includes(a)?' on':''),
-    onClick:()=>{ const i=weekPrefs.avoids.indexOf(a); if(i>=0) weekPrefs.avoids.splice(i,1); else weekPrefs.avoids.push(a); renderMode(); }}, a)));
+    onClick:()=>{ const i=weekPrefs.avoids.indexOf(a); if(i>=0) weekPrefs.avoids.splice(i,1); else weekPrefs.avoids.push(a); renderMode(); }}, GG.T(a, ({'不吃辣':'No spicy','素食':'Vegetarian','不吃海鲜':'No seafood'})[a]||a))));
   bar.appendChild(el('button',{class:'kt-flink', style:{marginLeft:'auto'},
-    onClick:()=>{ weekPrefs.seed=(weekPrefs.seed*7+13)%9000; renderMode(); }}, '↻ 换一批'));
+    onClick:()=>{ weekPrefs.seed=(weekPrefs.seed*7+13)%9000; renderMode(); }}, GG.T('↻ 换一批','↻ Shuffle')));
   return bar;
 }
-function catLabel(c){ return ({'蔬菜':'🥬 蔬菜','蛋白':'🍗 蛋白','肉蛋':'🍗 蛋白','主食':'🍚 主食','调料':'🧂 调料','其他':'🧺 其他'})[c]||c; }
+function catLabel(c){ return ({'蔬菜':GG.T('🥬 蔬菜','🥬 Veggies'),'蛋白':GG.T('🍗 蛋白','🍗 Protein'),'肉蛋':GG.T('🍗 蛋白','🍗 Protein'),'主食':GG.T('🍚 主食','🍚 Staples'),'调料':GG.T('🧂 调料','🧂 Seasonings'),'其他':GG.T('🧺 其他','🧺 Other')})[c]||c; }
 function weekShopCard(sl){
   const card=el('div',{class:'card pad'});
   card.appendChild(el('p',{class:'small muted', style:{marginTop:0}},
-    '要买 '+sl.need.length+' 样；冰箱已有 '+sl.own.length+' 样不用买。'));
+    GG.T('要买 '+sl.need.length+' 样；冰箱已有 '+sl.own.length+' 样不用买。',sl.need.length+' to buy; '+sl.own.length+' already in the fridge.')));
   ['蔬菜','蛋白','肉蛋','主食','调料','其他'].forEach(cat=>{
     const items=sl.need.filter(x=>x.cat===cat); if(!items.length) return;
     card.appendChild(el('div',{class:'kt-shopcat'}, catLabel(cat)));
     card.appendChild(el('div',{class:'chips'}, items.map(x=>el('span',{class:'chip', style:{cursor:'default'}}, x.name+(x.n>1?' ×'+x.n:'')))));
   });
-  if(sl.own.length) card.appendChild(el('div',{class:'kt-haveline'}, '✓ 冰箱已有，省下不用买：'+sl.own.map(x=>x.name).join('、')));
+  if(sl.own.length) card.appendChild(el('div',{class:'kt-haveline'}, GG.T('✓ 冰箱已有，省下不用买：','✓ Already in the fridge, no need to buy: ')+sl.own.map(x=>x.name).join(GG.T('、',', '))));
   card.appendChild(el('button',{class:'btn primary block', style:{marginTop:'14px'},
-    onClick:()=>{ addToShopping(sl.need); GG.toast('已存进购物清单 🛒'); app(); }}, '把要买的存进购物清单'));
+    onClick:()=>{ addToShopping(sl.need); GG.toast(GG.T('已存进购物清单 🛒','Saved to shopping list 🛒')); app(); }}, GG.T('把要买的存进购物清单','Save these to the shopping list')));
   return card;
 }
 
@@ -792,7 +822,7 @@ function weekShopCard(sl){
 const SYS_FROM_FRIDGE=[
   '你是家常菜助手：根据用户冰箱现有食材，给出一道现在就能做、优先用掉快坏食材的家常菜。',
   '只输出严格 JSON（单个对象），字段同上：is_food/dish_name/one_line/servings/time_minutes/difficulty/ingredients[{name,amount,emoji}]/steps[{title,detail,minutes,icon}]/source_snippet（此处留空字符串）。',
-  'icon 只从 knife pan pot oven mix timer plate flame 里选；ingredients 尽量用用户现有食材；全部简体中文。'
+  'icon 只从 knife pan pot oven mix timer plate flame 里选；ingredients 尽量用用户现有食材；'+GG.T('全部简体中文。','所有用户可见字段（dish_name/one_line/ingredients.name/ingredients.amount/steps.title/steps.detail）一律用英文返回。')
 ].join('\n');
 
 /* ════════ 共享菜谱页 + 闭环 ════════ */
@@ -808,102 +838,102 @@ function renderRecipe(rec, opts){
       el('div',{class:'kt-rname'}, rec.dish_name),
       rec.one_line? el('div',{class:'kt-roneline'}, rec.one_line):null,
       el('div',{class:'kt-rbadges'},
-        rec.servings? rbadge('👥 '+rec.servings+' 人份'):null,
-        rec.time_minutes? rbadge('⏱ '+rec.time_minutes+' 分钟'):null,
+        rec.servings? rbadge(GG.T('👥 '+rec.servings+' 人份','👥 Serves '+rec.servings)):null,
+        rec.time_minutes? rbadge(GG.T('⏱ '+rec.time_minutes+' 分钟','⏱ '+rec.time_minutes+' min')):null,
         rec.difficulty? rbadge('🔥 '+DIFF[rec.difficulty]):null))));
-  if(rec.source_snippet) card.appendChild(el('div',{class:'kt-rsource'}, el('b',null,'来自你贴的这段'), '“'+rec.source_snippet+'”'));
+  if(rec.source_snippet) card.appendChild(el('div',{class:'kt-rsource'}, el('b',null,GG.T('来自你贴的这段','From the post you pasted')), '“'+rec.source_snippet+'”'));
   const miss=missingForRecipe(rec);
   card.appendChild(el('div',{class:'kt-rdiff '+(miss.length?'has':'ok')},
-    el('span',null, miss.length? ('🛒 这道菜你冰箱缺 '+miss.length+' 样：'+miss.map(x=>x.name).join('、')) : '✓ 这道菜的主料你冰箱都有'),
-    miss.length? el('button',{class:'kt-ilink', onClick:()=>{ addToShopping(miss.map(x=>({name:x.name}))); GG.toast('缺的已进清单 🛒'); }}, '加入购物清单'):null));
-  card.appendChild(el('div',{class:'kt-rh'}, '要买什么 · '+rec.ingredients.length+' 样'));
+    el('span',null, miss.length? (GG.T('🛒 这道菜你冰箱缺 '+miss.length+' 样：','🛒 Your fridge is missing '+miss.length+' for this dish: ')+miss.map(x=>x.name).join(GG.T('、',', '))) : GG.T('✓ 这道菜的主料你冰箱都有','✓ Your fridge has all the main ingredients')),
+    miss.length? el('button',{class:'kt-ilink', onClick:()=>{ addToShopping(miss.map(x=>({name:x.name}))); GG.toast(GG.T('缺的已进清单 🛒','Missing items added to list 🛒')); }}, GG.T('加入购物清单','Add to shopping list')):null));
+  card.appendChild(el('div',{class:'kt-rh'}, GG.T('要买什么 · '+rec.ingredients.length+' 样','Ingredients · '+rec.ingredients.length)));
   const ig=el('div',{class:'kt-rings'});
   rec.ingredients.forEach(x=> ig.appendChild(el('div',{class:'kt-ring2'+(x.have?' have':'')},
     el('span',{class:'em'}, x.emoji), el('span',{class:'nm'}, x.name),
-    x.have? el('span',{class:'tag have'},'冰箱有') : (x.amount? el('span',{class:'tag'}, x.amount):null))));
+    x.have? el('span',{class:'tag have'},GG.T('冰箱有','In fridge')) : (x.amount? el('span',{class:'tag'}, x.amount):null))));
   card.appendChild(ig);
   if(rec.steps.length){
-    card.appendChild(el('div',{class:'kt-rh'}, '怎么做 · '+rec.steps.length+' 步'));
+    card.appendChild(el('div',{class:'kt-rh'}, GG.T('怎么做 · '+rec.steps.length+' 步','How to make it · '+rec.steps.length+' steps')));
     const sd=el('div',{class:'kt-rsteps'});
     rec.steps.forEach((s,i)=>{ const ic=document.createElement('div'); ic.className='kt-stepicon'; ic.innerHTML=icon(s.icon);
       sd.appendChild(el('div',{class:'kt-step'}, ic, el('div',{class:'body'},
-        el('div',{class:'t'}, el('span',{class:'no'},'第'+(i+1)+'步'), s.title, (s.minutes!=null)?el('span',{class:'min'},'约 '+s.minutes+' 分钟'):null),
+        el('div',{class:'t'}, el('span',{class:'no'},GG.T('第'+(i+1)+'步','Step '+(i+1))), s.title, (s.minutes!=null)?el('span',{class:'min'},GG.T('约 '+s.minutes+' 分钟','~'+s.minutes+' min')):null),
         s.detail? el('div',{class:'d'}, s.detail):null))); });
     card.appendChild(sd);
   } else {
     card.appendChild(el('div',{class:'kt-nosteps'},
-      el('span',null, GG.llm.connected()? '连了 AI，可生成这道菜的详细做法。' : '详细做法连接 AI 后可生成；这里先给你食材和缺料。'),
-      GG.llm.connected()? el('button',{class:'kt-ilink', onClick:()=>genSteps(rec, card)}, '生成做法'):null));
+      el('span',null, GG.llm.connected()? GG.T('连了 AI，可生成这道菜的详细做法。','AI is connected — generate full steps for this dish.') : GG.T('详细做法连接 AI 后可生成；这里先给你食材和缺料。','Connect AI to generate full steps; for now here are the ingredients and what’s missing.')),
+      GG.llm.connected()? el('button',{class:'kt-ilink', onClick:()=>genSteps(rec, card)}, GG.T('生成做法','Generate steps')):null));
   }
   const acts=el('div',{class:'kt-ractions'});
-  acts.appendChild(el('button',{class:'btn primary', onClick:()=>{ const r=cookDish(rec); celebrateCook(r); closeOverlays(); app(); }}, '✅ 做完了 · 扣库存'));
-  acts.appendChild(el('button',{class:'btn', onClick:()=>shareRecipe(rec)}, '📷 分享卡'));
+  acts.appendChild(el('button',{class:'btn primary', onClick:()=>{ const r=cookDish(rec); celebrateCook(r); closeOverlays(); app(); }}, GG.T('✅ 做完了 · 扣库存','✅ Cooked it · update fridge')));
+  acts.appendChild(el('button',{class:'btn', onClick:()=>shareRecipe(rec)}, GG.T('📷 分享卡','📷 Share card')));
   card.appendChild(acts);
   return card;
 }
 async function genSteps(rec, card){
-  if(!GG.llm.connected()){ GG.toast('先连接 AI'); return; }
-  GG.toast('AI 生成做法中…');
+  if(!GG.llm.connected()){ GG.toast(GG.T('先连接 AI','Connect AI first')); return; }
+  GG.toast(GG.T('AI 生成做法中…','AI is writing the steps…'));
   try{
-    const obj=await GG.llm.json('你是家常菜助手。给出这道菜的做法。只输出 JSON：{"steps":[{"title":"小标题","detail":"一句话","minutes":数或null}]}，3到6步，简体中文。',
+    const obj=await GG.llm.json('你是家常菜助手。给出这道菜的做法。只输出 JSON：{"steps":[{"title":"小标题","detail":"一句话","minutes":数或null}]}，3到6步，'+GG.T('简体中文。','title 和 detail 用英文返回。'),
       '菜名：'+rec.dish_name+'，食材：'+rec.ingredients.map(i=>i.name).join('、'), {max_tokens:800});
     const steps=(obj.steps||[]).map(s=>({title:String(s.title||''), detail:String(s.detail||''),
       minutes:(s.minutes==null?null:parseInt(s.minutes,10)||null), icon:iconFor(String(s.title)+String(s.detail))}));
     if(steps.length){ rec.steps=steps; const fresh=renderRecipe(rec, {modal:card.classList.contains('modal')}); card.replaceWith(fresh); }
-    else GG.toast('这次没生成出来，再试一次');
+    else GG.toast(GG.T('这次没生成出来，再试一次','Nothing came back this time — try again'));
   }catch(e){ GG.toast(GG.llm.errMsg(e)); }
 }
 function celebrateCook(r){
-  if(r.savedNames && r.savedNames.length) GG.toast('🎉 赶在变质前吃掉了 '+r.savedNames.join('、')+'，本月已救回 ¥'+state.saved.yuan);
-  else GG.toast('记一笔，冰箱已更新 ✓');
+  if(r.savedNames && r.savedNames.length) GG.toast(GG.T('🎉 赶在变质前吃掉了 '+r.savedNames.join('、')+'，本月已救回 ¥'+state.saved.yuan,'🎉 Ate the '+r.savedNames.join(', ')+' before it went bad — ¥'+state.saved.yuan+' rescued this month'));
+  else GG.toast(GG.T('记一笔，冰箱已更新 ✓','Logged — fridge updated ✓'));
 }
 function shareRecipe(rec){
   const cv=buildRecipeCanvas(rec);
-  overlay(el('div',null, el('div',{class:'kt-ovtitle'},'分享这道菜'),
+  overlay(el('div',null, el('div',{class:'kt-ovtitle'},GG.T('分享这道菜','Share this dish')),
     el('div',{class:'kt-shareprev'}, cv),
     el('div',{class:'kt-ovacts'},
-      el('button',{class:'btn primary', onClick:()=>GG.copyCanvas(cv)}, '📷 复制图'),
-      el('button',{class:'btn', onClick:()=>GG.downloadCanvas(cv, '今天吃什么-'+rec.dish_name)}, '⬇️ 存图'))));
+      el('button',{class:'btn primary', onClick:()=>GG.copyCanvas(cv)}, GG.T('📷 复制图','📷 Copy image')),
+      el('button',{class:'btn', onClick:()=>GG.downloadCanvas(cv, GG.T('今天吃什么-','what-to-eat-')+rec.dish_name)}, GG.T('⬇️ 存图','⬇️ Save image')))));
 }
 
 /* ════════ mode：购物清单 + 救回计数 ════════ */
 function renderShopping(mount){
-  mount.appendChild(el('div',{class:'kt-h1'}, '🛒 购物清单'));
+  mount.appendChild(el('div',{class:'kt-h1'}, GG.T('🛒 购物清单','🛒 Shopping List')));
   mount.appendChild(savedCard());
   if(!state.shopping.length){
-    mount.appendChild(el('div',{class:'card pad muted', style:{marginTop:'14px'}}, '清单是空的。去「今晚」把缺的料、或「一周」的购物清单加进来；买到了一勾，就自动回填进冰箱。'));
+    mount.appendChild(el('div',{class:'card pad muted', style:{marginTop:'14px'}}, GG.T('清单是空的。去「今晚」把缺的料、或「一周」的购物清单加进来；买到了一勾，就自动回填进冰箱。','The list is empty. Add missing items from “Tonight” or the “This Week” shopping list; check them off when bought and they restock the fridge automatically.')));
     return;
   }
   const card=el('div',{class:'card pad', style:{marginTop:'14px'}});
   card.appendChild(el('div',{class:'row', style:{justifyContent:'space-between', marginBottom:'6px'}},
-    el('div',{class:'small muted'}, state.shopping.reduce((a,s)=>a+(s.n||1),0)+' 样待买'),
-    el('button',{class:'kt-flink', onClick:()=>{ state.shopping.slice().forEach(s=>buyItem(s)); GG.toast('全部买到，已回填冰箱 🧊'); app(); }}, '全部买到 → 回填冰箱')));
+    el('div',{class:'small muted'}, GG.T(state.shopping.reduce((a,s)=>a+(s.n||1),0)+' 样待买',state.shopping.reduce((a,s)=>a+(s.n||1),0)+' to buy')),
+    el('button',{class:'kt-flink', onClick:()=>{ state.shopping.slice().forEach(s=>buyItem(s)); GG.toast(GG.T('全部买到，已回填冰箱 🧊','All bought — fridge restocked 🧊')); app(); }}, GG.T('全部买到 → 回填冰箱','All bought → restock fridge'))));
   ['蔬菜','蛋白','肉蛋','主食','调料','其他'].forEach(cat=>{
     const items=state.shopping.filter(s=>s.cat===cat); if(!items.length) return;
     card.appendChild(el('div',{class:'kt-shopcat'}, catLabel(cat)));
     items.forEach(s=> card.appendChild(el('div',{class:'kt-shopitem'},
-      el('button',{class:'kt-check', title:'买到了', onClick:()=>{ const back=!!mapKey(s.name); buyItem(s); GG.toast(back?'已回填冰箱 🧊':'已买到 ✓'); app(); }}, '○'),
+      el('button',{class:'kt-check', title:GG.T('买到了','Bought it'), onClick:()=>{ const back=!!mapKey(s.name); buyItem(s); GG.toast(back?GG.T('已回填冰箱 🧊','Restocked into the fridge 🧊'):GG.T('已买到 ✓','Bought ✓')); app(); }}, '○'),
       el('span',{class:'kt-shopnm'}, s.name+(s.n>1?' ×'+s.n:'')),
-      el('button',{class:'kt-shopdel', title:'删除', onClick:()=>{ state.shopping=state.shopping.filter(x=>x!==s); save(); app(); }}, '×'))));
+      el('button',{class:'kt-shopdel', title:GG.T('删除','Delete'), onClick:()=>{ state.shopping=state.shopping.filter(x=>x!==s); save(); app(); }}, '×'))));
   });
   mount.appendChild(card);
 }
 function savedCard(){
   return el('div',{class:'kt-saved'},
-    el('div',{class:'kt-savedl'}, el('div',{class:'kt-savedbig'}, '¥'+state.saved.yuan), el('div',{class:'kt-savedsub'}, '本月帮你救回')),
+    el('div',{class:'kt-savedl'}, el('div',{class:'kt-savedbig'}, '¥'+state.saved.yuan), el('div',{class:'kt-savedsub'}, GG.T('本月帮你救回','rescued for you this month'))),
     el('div',{class:'kt-saveddiv'}),
-    el('div',{class:'kt-savedl'}, el('div',{class:'kt-savedbig'}, state.saved.kg+'kg'), el('div',{class:'kt-savedsub'}, '食材没进垃圾桶')),
-    el('button',{class:'kt-savedshare', onClick:shareSaved}, '📷 晒一下'));
+    el('div',{class:'kt-savedl'}, el('div',{class:'kt-savedbig'}, state.saved.kg+'kg'), el('div',{class:'kt-savedsub'}, GG.T('食材没进垃圾桶','of food kept out of the bin'))),
+    el('button',{class:'kt-savedshare', onClick:shareSaved}, GG.T('📷 晒一下','📷 Show it off')));
 }
 function shareSaved(){
-  const cv=GG.shareCard({ slug:SLUG, title:'本月我帮冰箱救回的',
-    big:{value:'¥'+state.saved.yuan, label:'＋ '+state.saved.kg+'kg 没浪费'},
-    note:'用快坏的先做、按冰箱排菜，省下的不只是钱', tags:['今天吃什么','少点浪费','先吃我'] });
-  overlay(el('div',null, el('div',{class:'kt-ovtitle'},'晒一下这个月'),
+  const cv=GG.shareCard({ slug:SLUG, title:GG.T('本月我帮冰箱救回的','What I rescued from my fridge this month'),
+    big:{value:'¥'+state.saved.yuan, label:GG.T('＋ '+state.saved.kg+'kg 没浪费','+ '+state.saved.kg+'kg not wasted')},
+    note:GG.T('用快坏的先做、按冰箱排菜，省下的不只是钱','Cook the expiring first, plan around the fridge — you save more than money'), tags:[GG.T('今天吃什么','What to Eat Today'),GG.T('少点浪费','Less waste'),GG.T('先吃我','Eat me first')] });
+  overlay(el('div',null, el('div',{class:'kt-ovtitle'},GG.T('晒一下这个月','Show off this month')),
     el('div',{class:'kt-shareprev'}, cv),
     el('div',{class:'kt-ovacts'},
-      el('button',{class:'btn primary', onClick:()=>GG.copyCanvas(cv)}, '📷 复制图'),
-      el('button',{class:'btn', onClick:()=>GG.downloadCanvas(cv,'今天吃什么-救回')}, '⬇️ 存图'))));
+      el('button',{class:'btn primary', onClick:()=>GG.copyCanvas(cv)}, GG.T('📷 复制图','📷 Copy image')),
+      el('button',{class:'btn', onClick:()=>GG.downloadCanvas(cv,GG.T('今天吃什么-救回','what-to-eat-rescued'))}, GG.T('⬇️ 存图','⬇️ Save image')))));
 }
 
 /* ── 开发自检钩子（仅供本地/无头验证，不伪造主链路） ── */

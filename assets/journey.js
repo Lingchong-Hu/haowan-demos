@@ -61,6 +61,10 @@
   document.head.appendChild(style);
 
   var en = window.LANG === 'en';
+  if (window.LANG !== 'en' && window.LANG !== 'zh') {   /* demo/思考页无 i18n.js——读同一份偏好 */
+    var _l = null; try { _l = localStorage.getItem('site.lang'); } catch (e) {}
+    en = (_l === 'en') || (_l !== 'zh' && (navigator.language || 'en').toLowerCase().indexOf('zh') !== 0);
+  }
   var LABEL = mode === 'site'
     ? (en ? '🧭 <span>Guided tour</span>' : '🧭 <span>旅程式浏览</span>')
     : (en ? '🧭 <span>Back to tour</span>' : '🧭 <span>继续旅程</span>');

@@ -44,10 +44,40 @@ GG.$  = (s,r)=> (r||document).querySelector(s);
 GG.$$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
 GG.clear = n => { while(n.firstChild) n.removeChild(n.firstChild); return n; };
 
-/* ---------------- registry ---------------- */
-GG.meta = slug => (window.DEMOS||[]).find(d=>d.slug===slug) || {slug, title:slug, accent:'#e8543f', industry:'', emoji:'✨'};
+/* ---------------- 语言（与门户 i18n.js 共用同一偏好 localStorage['site.lang']；同源全站生效） ---------------- */
+GG.LANG = (function(){
+  try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+  var nav = (navigator.language||'en').toLowerCase();
+  return nav.indexOf('zh')===0 ? 'zh' : 'en';
+})();
+GG.EN = GG.LANG === 'en';
+GG.T = function(zh, en){ return (GG.EN && en != null) ? en : zh; };
+GG.setLang = function(v){ try{ localStorage.setItem('site.lang', v); }catch(e){} location.reload(); };
+GG.langToggle = function(){
+  if(!document.getElementById('gg-lang-css')){
+    const st = document.createElement('style'); st.id = 'gg-lang-css';
+    st.textContent = '.gg-lang{display:inline-flex;gap:2px;flex:none;margin-left:10px}'+
+      '.gg-lang button{font:600 11px system-ui,sans-serif;color:inherit;opacity:.55;background:none;'+
+      'border:1px solid transparent;border-radius:8px;padding:3px 7px;cursor:pointer}'+
+      '.gg-lang button.act{opacity:1;border-color:currentColor}';
+    document.head.appendChild(st);
+  }
+  return GG.el('span',{class:'gg-lang'},
+    GG.el('button',{type:'button', class:GG.EN?'':'act', onClick:()=>GG.setLang('zh')}, '中文'),
+    GG.el('button',{type:'button', class:GG.EN?'act':'', onClick:()=>GG.setLang('en')}, 'EN'));
+};
 
-const DISC_TEXT = '本演示仅作交互展示，结果由本地启发式即时生成，非医疗 / 法律 / 财务建议，请勿据此决策。';
+/* ---------------- registry（EN 时合并 *_en 字段） ---------------- */
+GG.meta = slug => {
+  const m = (window.DEMOS||[]).find(d=>d.slug===slug) || {slug, title:slug, accent:'#e8543f', industry:'', emoji:'✨'};
+  if(GG.EN) return Object.assign({}, m, {
+    title: m.title_en || m.title, tagline: m.tagline_en || m.tagline, industry: m.industry_en || m.industry });
+  return m;
+};
+
+const DISC_TEXT = GG.T(
+  '本演示仅作交互展示，结果由本地启发式即时生成，非医疗 / 法律 / 财务建议，请勿据此决策。',
+  'This demo is for interactive showcase only. Results are generated locally by heuristics and are not medical / legal / financial advice.');
 GG.disclaimer = function(slug){
   const m = GG.meta(slug);
   if(!m.disclaimer) return null;
@@ -59,15 +89,16 @@ GG.mountShell = function(slug, opts={}){
   const m = GG.meta(slug);
   document.documentElement.style.setProperty('--accent', m.accent||'#e8543f');
   document.documentElement.style.setProperty('--accent-soft', GG._soft(m.accent||'#e8543f'));
-  document.title = (m.title||slug)+' · 那一下';
+  document.title = (m.title||slug)+GG.T(' · 那一下', ' · That Moment');
   const app = GG.$('#app') || document.body;
   GG.clear(app);
   const bar = GG.el('div',{class:'topbar'},
     GG.el('div',{class:'row'},
-      GG.el('a',{class:'back', href:'../../index.html'}, '←', GG.el('span',{class:'back-label'}, ' 好玩的东西')),
+      GG.el('a',{class:'back', href:'../../index.html'}, '←', GG.el('span',{class:'back-label'}, GG.T(' 好玩的东西', ' Playground'))),
       GG.el('div',{class:'ttl'}, GG.el('span',{class:'em'}, m.emoji||'✨'), m.title||slug),
       GG.el('div',{class:'spacer'}),
-      m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null
+      m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null,
+      GG.langToggle()
     )
   );
   const main = GG.el('main',{class:'wrap'});
@@ -95,23 +126,24 @@ GG.login = function(slug, opts, onEnter){
   const accent = opts.accent || m.accent || '#3d5a80';
   document.documentElement.style.setProperty('--accent', accent);
   document.documentElement.style.setProperty('--accent-soft', GG._soft(accent));
-  document.title = (m.title||slug)+' · 那一下';
+  document.title = (m.title||slug)+GG.T(' · 那一下', ' · That Moment');
   const app = GG.$('#app') || document.body;
   GG.clear(app);
   app.appendChild(GG.el('div',{class:'topbar'},
     GG.el('div',{class:'row'},
-      GG.el('a',{class:'back', href:'../../index.html'}, '←', GG.el('span',{class:'back-label'}, ' 好玩的东西')),
+      GG.el('a',{class:'back', href:'../../index.html'}, '←', GG.el('span',{class:'back-label'}, GG.T(' 好玩的东西', ' Playground'))),
       GG.el('div',{class:'ttl'}, GG.el('span',{class:'em'}, m.emoji||'✨'), m.title||slug),
       GG.el('div',{class:'spacer'}),
-      m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null)));
+      m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null,
+      GG.langToggle())));
 
-  const co = opts.co||'示例公司', dept = opts.dept||'业务部',
-        name = opts.name||'员工', email = opts.email||'demo@example.com',
-        workspace = opts.workspace || ((m.title||slug)+'工作台');
+  const co = opts.co||GG.T('示例公司','Demo Co.'), dept = opts.dept||GG.T('业务部','Business Ops'),
+        name = opts.name||GG.T('员工','Staff'), email = opts.email||'demo@example.com',
+        workspace = opts.workspace || GG.T((m.title||slug)+'工作台', (m.title||slug)+' Workspace');
 
   const emailIn = GG.el('input',{class:'gl-input', type:'email', value:email, spellcheck:'false', autocomplete:'off'});
   const pwIn = GG.el('input',{class:'gl-input', type:'password', value:'demo-account-2026', autocomplete:'off'});
-  const eye = GG.el('button',{class:'gl-eye', type:'button', title:'显示 / 隐藏密码',
+  const eye = GG.el('button',{class:'gl-eye', type:'button', title:GG.T('显示 / 隐藏密码','Show / hide password'),
     onClick:()=>{ pwIn.type = pwIn.type==='password'?'text':'password'; }}, '👁');
 
   function enter(){
@@ -121,8 +153,8 @@ GG.login = function(slug, opts, onEnter){
       const who = GG.el('span',{class:'gl-who'},
         GG.el('span',{class:'gl-av'}, String(name).slice(0,1)),
         GG.el('span',{class:'gl-whotxt'}, name+' · '+dept),
-        GG.el('button',{class:'gl-logout', title:'退出登录',
-          onClick:()=>GG.login(slug, opts, onEnter)}, '退出'));
+        GG.el('button',{class:'gl-logout', title:GG.T('退出登录','Log out'),
+          onClick:()=>GG.login(slug, opts, onEnter)}, GG.T('退出','Log out')));
       const badge = GG.$('.badge-industry', row);
       if(badge) row.replaceChild(who, badge); else row.appendChild(who);
     }
@@ -136,24 +168,24 @@ GG.login = function(slug, opts, onEnter){
         GG.el('div',{class:'gl-dept'}, dept+' · '+workspace)),
       GG.el('span',{class:'gl-badge'}, 'DEMO')),
     GG.el('div',{class:'gl-body'},
-      GG.el('div',{class:'gl-hi'}, '欢迎回来 👋'),
-      GG.el('div',{class:'gl-sub'}, opts.sub || ('登录进入你的「'+workspace+'」。')),
-      GG.el('div',{class:'gl-field'}, GG.el('label', null, '员工邮箱'), emailIn),
-      GG.el('div',{class:'gl-field'}, GG.el('label', null, '密码'),
+      GG.el('div',{class:'gl-hi'}, GG.T('欢迎回来 👋','Welcome back 👋')),
+      GG.el('div',{class:'gl-sub'}, opts.sub || GG.T('登录进入你的「'+workspace+'」。','Sign in to your “'+workspace+'”.')),
+      GG.el('div',{class:'gl-field'}, GG.el('label', null, GG.T('员工邮箱','Work email')), emailIn),
+      GG.el('div',{class:'gl-field'}, GG.el('label', null, GG.T('密码','Password')),
         GG.el('div',{class:'gl-pwrap'}, pwIn, eye),
-        GG.el('div',{class:'gl-demohint'}, GG.el('span', null, '⚠'), '演示账号已预填，请勿输入真实密码')),
-      GG.el('button',{class:'gl-go', onClick:enter}, '登录工作台', GG.el('span', null, '→')),
-      GG.el('div',{class:'gl-or'}, '或'),
-      GG.el('button',{class:'gl-sso', onClick:enter}, GG.el('span',{class:'wx'}, '❖'), '用企业微信登录'),
+        GG.el('div',{class:'gl-demohint'}, GG.el('span', null, '⚠'), GG.T('演示账号已预填，请勿输入真实密码','Demo account pre-filled — never enter a real password'))),
+      GG.el('button',{class:'gl-go', onClick:enter}, GG.T('登录工作台','Sign in to workspace'), GG.el('span', null, '→')),
+      GG.el('div',{class:'gl-or'}, GG.T('或','or')),
+      GG.el('button',{class:'gl-sso', onClick:enter}, GG.el('span',{class:'wx'}, '❖'), GG.T('用企业微信登录','Sign in with WeCom')),
       GG.el('div',{class:'gl-foot-row'},
-        GG.el('label', null, GG.el('input',{type:'checkbox', checked:''}), '记住此设备'),
-        GG.el('a',{onClick:()=>GG.toast('演示环境 · 无需找回密码')}, '忘记密码？'))));
+        GG.el('label', null, GG.el('input',{type:'checkbox', checked:''}), GG.T('记住此设备','Remember this device')),
+        GG.el('a',{onClick:()=>GG.toast(GG.T('演示环境 · 无需找回密码','Demo environment · no password recovery needed'))}, GG.T('忘记密码？','Forgot password?')))));
 
   app.appendChild(GG.el('div',{class:'gl-wrap'},
     card,
     GG.el('div',{class:'gl-privacy'},
       GG.el('span', null, '🔒'),
-      GG.el('span', null, opts.privacy || '演示环境 · 你的数据只存在本机浏览器，不上传任何服务器。'))));
+      GG.el('span', null, opts.privacy || GG.T('演示环境 · 你的数据只存在本机浏览器，不上传任何服务器。','Demo environment · your data stays in this browser and is never uploaded.')))));
 };
 
 /* ---------------- toast ---------------- */
@@ -166,16 +198,16 @@ GG.toast = function(msg){
 
 /* ---------------- clipboard ---------------- */
 GG.copyText = async function(s){
-  try{ await navigator.clipboard.writeText(s); GG.toast('已复制文字 ✓'); return true; }
+  try{ await navigator.clipboard.writeText(s); GG.toast(GG.T('已复制文字 ✓','Text copied ✓')); return true; }
   catch(e){
     try{ const ta=GG.el('textarea',{},s); ta.style.position='fixed'; ta.style.opacity='0';
       document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
-      GG.toast('已复制文字 ✓'); return true; }
-    catch(_){ GG.toast('复制失败，请手动选择'); return false; }
+      GG.toast(GG.T('已复制文字 ✓','Text copied ✓')); return true; }
+    catch(_){ GG.toast(GG.T('复制失败，请手动选择','Copy failed — please select manually')); return false; }
   }
 };
 GG.copyLink = async function(){
-  try{ await navigator.clipboard.writeText(location.href); GG.toast('已复制可复现链接 ✓'); return true; }
+  try{ await navigator.clipboard.writeText(location.href); GG.toast(GG.T('已复制可复现链接 ✓','Shareable link copied ✓')); return true; }
   catch(e){ return GG.copyText(location.href); }
 };
 
@@ -199,7 +231,7 @@ GG.decodeState = function(){
 
 /* ---------------- thinking ---------------- */
 GG.thinking = function(parent, msgs, ms){
-  msgs = msgs && msgs.length ? msgs : ['分析中…'];
+  msgs = msgs && msgs.length ? msgs : [GG.T('分析中…','Analyzing…')];
   ms = ms || 1100;
   GG.clear(parent);
   const msgEl = GG.el('div',{class:'msg'}, msgs[0]);
@@ -287,7 +319,7 @@ GG.shareCard = function(spec){
   }
   if(spec.swatches && spec.swatches.length){ h += 18 + 96; }
   if(spec.tags && spec.tags.length){ h += 16 + 38; }
-  const footer = spec.footer || ('那一下 · '+(m.title||spec.slug||'AI 交互 Demo 画廊'));
+  const footer = spec.footer || (GG.T('那一下','That Moment')+' · '+(m.title||spec.slug||GG.T('AI 交互 Demo 画廊','AI Interactive Demo Gallery')));
   const footLines = wrap(measure, footer, F(400,14), innerW);
   h += 24 + footLines.length*20 + PAD;  // footer + bottom pad
   let discLines = [];
@@ -310,7 +342,7 @@ GG.shareCard = function(spec){
   // brand row: emoji + 标题/产业
   ctx.font = F(400,26); ctx.fillText(m.emoji||'✨', PAD, y);
   ctx.font = F(680,15); ctx.fillStyle = accent;
-  ctx.fillText('那一下 · '+(m.industry||'AI Demo'), PAD+40, y-3);
+  ctx.fillText(GG.T('那一下','That Moment')+' · '+(m.industry||'AI Demo'), PAD+40, y-3);
   y += 30;
 
   // title
@@ -413,10 +445,10 @@ GG._round = function(ctx,x,y,w,h,r){
 GG.downloadCanvas = function(cv, name){
   cv.toBlob(b=>{
     const url = URL.createObjectURL(b);
-    const a = GG.el('a',{href:url, download:(name||'那一下-结果')+'.png'});
+    const a = GG.el('a',{href:url, download:(name||GG.T('那一下-结果','that-moment-result'))+'.png'});
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url), 1500);
-    GG.toast('已存图 ✓');
+    GG.toast(GG.T('已存图 ✓','Image saved ✓'));
   }, 'image/png');
 };
 GG.copyCanvas = async function(cv){
@@ -424,7 +456,7 @@ GG.copyCanvas = async function(cv){
     if(!window.ClipboardItem) throw new Error('no ClipboardItem');
     const blob = await new Promise(r=>cv.toBlob(r,'image/png'));
     await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
-    GG.toast('结果图已复制 ✓'); return true;
+    GG.toast(GG.T('结果图已复制 ✓','Result image copied ✓')); return true;
   }catch(e){ GG.downloadCanvas(cv); return false; }
 };
 
@@ -435,10 +467,10 @@ GG.shareBar = function(spec){
   let cardCache = null;
   const getCard = ()=> (cardCache || (cardCache = GG.shareCard(spec)));
   const bar = GG.el('div',{class:'sharebar'},
-    GG.el('button',{class:'btn primary', onClick:()=>GG.copyCanvas(getCard())}, '📷 复制结果图'),
-    GG.el('button',{class:'btn', onClick:()=>GG.downloadCanvas(getCard(), (spec.slug||'结果'))}, '⬇️ 存图'),
-    GG.el('button',{class:'btn', onClick:()=>GG.copyText(textSummary)}, '📝 复制文字'),
-    GG.el('button',{class:'btn', onClick:()=>GG.copyLink()}, '🔗 复制链接')
+    GG.el('button',{class:'btn primary', onClick:()=>GG.copyCanvas(getCard())}, GG.T('📷 复制结果图','📷 Copy result image')),
+    GG.el('button',{class:'btn', onClick:()=>GG.downloadCanvas(getCard(), (spec.slug||GG.T('结果','result')))}, GG.T('⬇️ 存图','⬇️ Save image')),
+    GG.el('button',{class:'btn', onClick:()=>GG.copyText(textSummary)}, GG.T('📝 复制文字','📝 Copy text')),
+    GG.el('button',{class:'btn', onClick:()=>GG.copyLink()}, GG.T('🔗 复制链接','🔗 Copy link'))
   );
   return bar;
 };
@@ -448,10 +480,10 @@ GG._autoText = function(spec){
   if(spec.subtitle) lines.push(spec.subtitle);
   if(spec.big) lines.push(`${spec.big.label||''} ${spec.big.value}`);
   if(spec.note) lines.push('“'+spec.note+'”');
-  if(spec.bars) spec.bars.forEach(b=>lines.push(`· ${b.label}：${Math.round(b.pct)}%`));
-  if(spec.rows) spec.rows.forEach(r=>lines.push(`· ${r.label}：${r.value}`));
+  if(spec.bars) spec.bars.forEach(b=>lines.push(GG.T(`· ${b.label}：${Math.round(b.pct)}%`, `· ${b.label}: ${Math.round(b.pct)}%`)));
+  if(spec.rows) spec.rows.forEach(r=>lines.push(GG.T(`· ${r.label}：${r.value}`, `· ${r.label}: ${r.value}`)));
   if(spec.tags && spec.tags.length) lines.push(spec.tags.map(t=>'#'+t).join(' '));
-  lines.push(''); lines.push('—— 那一下 · AI 交互 Demo 画廊  '+location.href);
+  lines.push(''); lines.push(GG.T('—— 那一下 · AI 交互 Demo 画廊  ','— That Moment · AI Interactive Demo Gallery  ')+location.href);
   return lines.join('\n');
 };
 
@@ -504,7 +536,7 @@ GG.llm = (function(){
     if(api.PROXY){
       const r = await fetch(api.PROXY, { method:'POST', headers:{'content-type':'application/json'},
         body: JSON.stringify({ system, user, max_tokens:opts.max_tokens||1200 }) });
-      if(!r.ok) throw new Error('后端代理出错（'+r.status+'）');
+      if(!r.ok) throw new Error(GG.T('后端代理出错（','Proxy error (')+r.status+GG.T('）',')'));
       const j = await r.json();
       return j && j.text!==undefined ? j.text : (typeof j==='string'? j : JSON.stringify(j));
     }
@@ -523,7 +555,7 @@ GG.llm = (function(){
     }catch(e){ const err=new Error('NET'); err.code='NET'; throw err; }
     if(r.status===401){ const e=new Error('BAD_KEY'); e.code='BAD_KEY'; throw e; }
     if(!r.ok){ let m=''; try{ const j=await r.json(); m=(j.error&&j.error.message)||''; }catch(_){}
-      throw new Error('调用失败（'+r.status+'）'+(m?'：'+m:'')); }
+      throw new Error(GG.T('调用失败（','Request failed (')+r.status+GG.T('）',')')+(m?(GG.T('：',': ')+m):'')); }
     const data = await r.json();
     return (data.content && data.content[0] && data.content[0].text) || '';
   }
@@ -548,24 +580,28 @@ GG.llm = (function(){
       const on = api.connected();
       root.appendChild(GG.el('span',{class:'llmdot'+(on?' on':'')}));
       root.appendChild(GG.el('span',{class:'llmtxt'},
-        on ? '已连接 AI · 用真实模型生成' : '未连接 · 现用本地示例引擎（连接后升级为真实 AI）'));
-      root.appendChild(GG.el('button',{class:'llmlink', onClick:toggle}, on?'管理':'连接 AI 升级'));
+        on ? GG.T('已连接 AI · 用真实模型生成','AI connected · generating with a real model')
+           : GG.T('未连接 · 现用本地示例引擎（连接后升级为真实 AI）','Not connected · using the local sample engine (connect to upgrade to real AI)')));
+      root.appendChild(GG.el('button',{class:'llmlink', onClick:toggle}, on?GG.T('管理','Manage'):GG.T('连接 AI 升级','Connect AI to upgrade')));
     }
     function toggle(){
       if(panel){ panel.remove(); panel=null; return; }
       const input = GG.el('input',{class:'field', type:'password', autocomplete:'off',
-        placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:api.getKey()});
+        placeholder:GG.T('粘贴 Anthropic API Key（sk-ant-…）','Paste an Anthropic API key (sk-ant-…)'), value:api.getKey()});
       const save = GG.el('button',{class:'btn primary', onClick:()=>{
-        api.setKey(input.value.trim()); GG.toast(input.value.trim()?'已连接 ✓':'已清除');
+        api.setKey(input.value.trim()); GG.toast(input.value.trim()?GG.T('已连接 ✓','Connected ✓'):GG.T('已清除','Cleared'));
         paint(); onChange && onChange(api.connected());
-      }}, '保存');
+      }}, GG.T('保存','Save'));
       const clr = api.getKey() ? GG.el('button',{class:'btn ghost', onClick:()=>{
-        api.setKey(''); GG.toast('已清除'); paint(); onChange && onChange(false);
-      }}, '清除') : null;
+        api.setKey(''); GG.toast(GG.T('已清除','Cleared')); paint(); onChange && onChange(false);
+      }}, GG.T('清除','Clear')) : null;
       panel = GG.el('div',{class:'llmpanel'},
-        GG.el('p',{html:'纯静态站点没有后端。给一个 Anthropic API Key 即可用<b>真实模型</b>生成——'+
+        GG.el('p',{html:GG.T('纯静态站点没有后端。给一个 Anthropic API Key 即可用<b>真实模型</b>生成——'+
           'key <b>只存你本机浏览器</b>、不上传服务器；用便宜的 Haiku，花费极低。没有 key 也能玩（走本地示例引擎）。<br>'+
-          '⚠️ 要公开分享给别人用，应改后端代理（见 app.js 里 GG.llm 顶部 TODO）。'}),
+          '⚠️ 要公开分享给别人用，应改后端代理（见 app.js 里 GG.llm 顶部 TODO）。',
+          'This is a static site with no backend. Provide an Anthropic API key to generate with a <b>real model</b> — '+
+          'the key <b>stays in your browser</b> and is never uploaded; it uses the inexpensive Haiku model. No key? You can still play (local sample engine).<br>'+
+          '⚠️ To share publicly, switch to a backend proxy (see the TODO at the top of GG.llm in app.js).')}),
         GG.el('div',{class:'row', style:{flexWrap:'wrap'}}, input, save, clr));
       root.appendChild(panel); input.focus();
     }
@@ -574,16 +610,16 @@ GG.llm = (function(){
   };
 
   api.badge = function(ai){ return GG.el('span',{class:'llm-badge'+(ai?' ai':'')},
-    ai ? '✨ 真实 AI 生成' : '本地示例引擎'); };
+    ai ? GG.T('✨ 真实 AI 生成','✨ Real AI generated') : GG.T('本地示例引擎','Local sample engine')); };
 
   /* 统一的错误兜底文案（demo 可用） */
   api.errMsg = function(err){
     const c = err && err.code;
-    if(c==='NEED_SETUP') return '还没连接 AI，已用本地引擎';
-    if(c==='BAD_KEY') return 'API Key 无效，已用本地引擎';
-    if(c==='NET') return '连不上模型，已用本地引擎';
-    if(c==='PARSE_FAIL') return 'AI 返回异常，已用本地引擎';
-    return 'AI 生成失败，已用本地引擎';
+    if(c==='NEED_SETUP') return GG.T('还没连接 AI，已用本地引擎','AI not connected — used the local engine');
+    if(c==='BAD_KEY') return GG.T('API Key 无效，已用本地引擎','Invalid API key — used the local engine');
+    if(c==='NET') return GG.T('连不上模型，已用本地引擎','Could not reach the model — used the local engine');
+    if(c==='PARSE_FAIL') return GG.T('AI 返回异常，已用本地引擎','Unexpected AI response — used the local engine');
+    return GG.T('AI 生成失败，已用本地引擎','AI generation failed — used the local engine');
   };
 
   return api;

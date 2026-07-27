@@ -21,6 +21,13 @@
 (function () {
   if (window.GGFB) return;
 
+  // 门户页由 i18n.js 设 window.LANG；demo / 独立页没有 i18n.js——用同一份偏好补齐
+  if (window.LANG !== 'en' && window.LANG !== 'zh') {
+    var _l = null; try { _l = localStorage.getItem('site.lang'); } catch (e) {}
+    window.LANG = (_l === 'en' || _l === 'zh') ? _l
+      : ((navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en');
+  }
+
   // 本地预览（tools/serve.py 带 mock 接口）走同源；线上走 Cloudflare Worker
   var LOCAL = /^(127\.0\.0\.1|localhost)$/.test(location.hostname);
   var API = LOCAL ? '' : 'https://api.interantai.com';

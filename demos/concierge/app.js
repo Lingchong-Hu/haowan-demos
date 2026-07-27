@@ -12,6 +12,12 @@
    ════════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
+  /* —— 站点语言偏好（全站统一 localStorage['site.lang']：'zh' | 'en'；无值时按浏览器语言）—— */
+  let LANG; try { LANG = localStorage.getItem('site.lang'); } catch (_) { LANG = null; }
+  if (LANG !== 'zh' && LANG !== 'en') LANG = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
+  const EN = LANG === 'en';
+  const T = (zh, en) => (EN ? en : zh);
+
   const C = window.YUE_CONFIG;
   const KEY_LS = 'saltwater_anthropic_key';
 
@@ -24,7 +30,7 @@
   $('#villaName').textContent = C.BRAND.name;
   $('#villaTag').textContent = C.BRAND.tagline;
   $('#crest').textContent = C.BRAND.monogram;
-  document.title = C.BRAND.name + ' · Villa Concierge';
+  document.title = C.BRAND.name + T(' · 别墅管家', ' · Villa Concierge');
 
   const history = [];
   let proxyAvailable = null;
@@ -277,10 +283,10 @@
 
   /* ---------------- 快捷提问：直达四个主场景 ---------------- */
   const CHIPS = [
-    { label: '多住一晚 · Extra night', q: '我们想周日再住一晚，可以吗？' },
-    { label: '泳池加热坏了 · Heater', q: '泳池加热好像坏了' },
-    { label: '下雨带娃去哪 · Rainy day', q: '下雨天带小孩今天能去哪？' },
-    { label: '退我一晚钱 · Refund', q: '能退我一晚的钱吗？' },
+    { label: T('多住一晚 · Extra night', 'One more night'), q: T('我们想周日再住一晚，可以吗？', 'Could we stay an extra night on Sunday?') },
+    { label: T('泳池加热坏了 · Heater', 'Pool heater down'), q: T('泳池加热好像坏了', 'The pool heater seems to be broken') },
+    { label: T('下雨带娃去哪 · Rainy day', 'Rainy day with kids'), q: T('下雨天带小孩今天能去哪？', 'Where can we take the kids on a rainy day like this?') },
+    { label: T('退我一晚钱 · Refund', 'Refund a night'), q: T('能退我一晚的钱吗？', 'Could you refund us for one night?') },
   ];
   const chipsBox = $('#chips');
   CHIPS.forEach((c) => { const b = el('button', 'chip', c.label); b.type = 'button'; b.addEventListener('click', () => send(c.q)); chipsBox.appendChild(b); });
@@ -292,8 +298,8 @@
   $('#gear').addEventListener('click', () => {
     if (keyPanel) { keyPanel.remove(); keyPanel = null; return; }
     keyPanel = el('div', 'keypanel');
-    keyPanel.innerHTML = '<p>本地试用：填入你自己的 Anthropic API key（仅存本机浏览器，用于直连）。正式部署请在 Vercel 配置 ANTHROPIC_API_KEY。</p>' +
-      '<div class="row"><input type="password" placeholder="sk-ant-…" id="keyInput" /><button id="keySave">保存</button>' + (getKey() ? '<button class="clear" id="keyClear">清除</button>' : '') + '</div>';
+    keyPanel.innerHTML = '<p>' + T('本地试用：填入你自己的 Anthropic API key（仅存本机浏览器，用于直连）。正式部署请在 Vercel 配置 ANTHROPIC_API_KEY。', 'Local trial: paste your own Anthropic API key (kept only in this browser, used to call the API directly). For production, set ANTHROPIC_API_KEY in Vercel.') + '</p>' +
+      '<div class="row"><input type="password" placeholder="sk-ant-…" id="keyInput" /><button id="keySave">' + T('保存', 'Save') + '</button>' + (getKey() ? '<button class="clear" id="keyClear">' + T('清除', 'Clear') + '</button>' : '') + '</div>';
     const composer = $('#composer'); composer.parentNode.insertBefore(keyPanel, composer);
     const ki = keyPanel.querySelector('#keyInput'); ki.value = getKey(); ki.focus();
     keyPanel.querySelector('#keySave').addEventListener('click', () => { setKey(ki.value.trim()); proxyAvailable = null; keyPanel.remove(); keyPanel = null; });
@@ -303,7 +309,26 @@
   /* ---------------- 启动 ---------------- */
   $('#composer').addEventListener('submit', (e) => { e.preventDefault(); send(input.value); });
   bubble('bot', C.BRAND.welcome);
-  thread.appendChild(el('div', 'demo-note', '● 演示数据 · 房态 / 收款 / 工单 / 转人工 均为模拟'));
+  thread.appendChild(el('div', 'demo-note', T('● 演示数据 · 房态 / 收款 / 工单 / 转人工 均为模拟', '● Demo data · availability / payments / tickets / handoffs are simulated')));
   scrollEnd();
   input.focus();
+
+  /* ---------------- 双语：EN 时应用静态 data-en* 文案 ---------------- */
+  document.documentElement.lang = EN ? 'en' : 'zh';
+  if (EN) {
+    document.querySelectorAll('[data-en]').forEach((n) => { n.textContent = n.getAttribute('data-en'); });
+    document.querySelectorAll('[data-en-ph]').forEach((n) => { n.placeholder = n.getAttribute('data-en-ph'); });
+    document.querySelectorAll('[data-en-title]').forEach((n) => { n.title = n.getAttribute('data-en-title'); });
+  }
+
+  /* ---------------- 语言切换控件（中文 | EN） ---------------- */
+  const langSwitch = $('#langSwitch');
+  if (langSwitch) langSwitch.querySelectorAll('.lang-btn').forEach((b) => {
+    if (b.dataset.lang === LANG) b.classList.add('active');
+    b.addEventListener('click', () => {
+      if (b.dataset.lang === LANG) return;
+      try { localStorage.setItem('site.lang', b.dataset.lang); } catch (_) {}
+      location.reload();
+    });
+  });
 })();

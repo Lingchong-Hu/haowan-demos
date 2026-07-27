@@ -13,7 +13,8 @@ let main;
 function aqSys(topic, level){
   return '你是出题老师。就主题「'+topic+'」出一道四选一单选题，难度等级 '+level+'/5（1 最易、5 最难），'+
     '题目真实准确、有区分度，四个选项里只有一个正确。只输出严格 JSON：'+
-    '{"q":"题干","options":["A","B","C","D"],"answer":正确选项下标0到3}。全部简体中文。';
+    '{"q":"题干","options":["A","B","C","D"],"answer":正确选项下标0到3}。'+
+    GG.T('全部简体中文。','"q" 和 "options" 的每一项都必须用地道英文（English）书写。');
 }
 async function genQuestion(topic, level, asked){
   const avoid = [...asked].slice(-6).join(' / ');
@@ -31,7 +32,7 @@ async function genQuestion(topic, level, asked){
 function stars(level){
   return '★'.repeat(level) + '☆'.repeat(MAX_L-level);
 }
-const LEVEL_NAME = {1:'入门', 2:'基础', 3:'中等', 4:'进阶', 5:'高难'};
+const LEVEL_NAME = {1:GG.T('入门','Beginner'), 2:GG.T('基础','Basic'), 3:GG.T('中等','Intermediate'), 4:GG.T('进阶','Advanced'), 5:GG.T('高难','Expert')};
 
 /* ---------- 品牌欢迎门面（与 nl-home / insure-need 同一套 .gate 样式，颜色取本 demo 的 --accent） ---------- */
 const GATE_CSS = `
@@ -53,13 +54,13 @@ function welcome(){
   main.appendChild(GG.el('div',{class:'gate'},
     GG.el('div',{class:'gate-head'},
       GG.el('div',{class:'gate-glyph'}, '🧠'),
-      GG.el('div',{class:'gate-name'}, '自适应测验'),
-      GG.el('div',{class:'gate-tag'}, '题目跟着你的水平变难')),
+      GG.el('div',{class:'gate-name'}, GG.T('自适应测验','Adaptive Quiz')),
+      GG.el('div',{class:'gate-tag'}, GG.T('题目跟着你的水平变难','Questions that adapt to your level'))),
     GG.el('div',{class:'gate-body'},
-      GG.el('div',{class:'gate-hook'}, '你的真实水平，到底在哪一档？'),
-      GG.el('p',{class:'gate-sub'}, '从「中等」起步，答对升级、答错降级——难度始终追着你。8 题后给你预测分、难度轨迹，再定位你的能力边界、专项攻顶。'),
-      GG.el('button',{class:'gate-cta', onClick:()=>{ GG.clear(main); intro(); }}, '🧠 开始测验 →'),
-      GG.el('div',{class:'gate-priv'}, '🔒 纯本地题库即可玩 · 连 AI 可任意主题出题 · 作答只留在这台浏览器')
+      GG.el('div',{class:'gate-hook'}, GG.T('你的真实水平，到底在哪一档？','Where does your true ability really sit?')),
+      GG.el('p',{class:'gate-sub'}, GG.T('从「中等」起步，答对升级、答错降级——难度始终追着你。8 题后给你预测分、难度轨迹，再定位你的能力边界、专项攻顶。','Start at Intermediate — get it right and the level rises, miss and it steps down, so the difficulty tracks you the whole way. After 8 questions you get a predicted score and difficulty trajectory, plus your ability frontier and a focus sprint to break through it.')),
+      GG.el('button',{class:'gate-cta', onClick:()=>{ GG.clear(main); intro(); }}, GG.T('🧠 开始测验 →','🧠 Start the quiz →')),
+      GG.el('div',{class:'gate-priv'}, GG.T('🔒 纯本地题库即可玩 · 连 AI 可任意主题出题 · 作答只留在这台浏览器','🔒 Fully playable with the built-in bank · connect AI for any-topic questions · your answers never leave this browser'))
     )
   ));
 }
@@ -79,28 +80,28 @@ function start(){
 function intro(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
-    GG.el('h1', null, '自适应测验：题目跟着你变难'),
-    GG.el('p', null, `从「中等」难度起步，答对升级、答错降级——难度始终在追你的真实水平。答满 ${TOTAL} 题，给你预测分、难度轨迹，还会定位你的「能力边界」，再针对边界难度专项攻顶。`)
+    GG.el('h1', null, GG.T('自适应测验：题目跟着你变难','Adaptive Quiz: questions that grow with you')),
+    GG.el('p', null, GG.T(`从「中等」难度起步，答对升级、答错降级——难度始终在追你的真实水平。答满 ${TOTAL} 题，给你预测分、难度轨迹，还会定位你的「能力边界」，再针对边界难度专项攻顶。`, `Start at Intermediate difficulty — correct answers level you up, misses step you down, so the difficulty keeps chasing your true ability. Complete ${TOTAL} questions to get a predicted score, a difficulty trajectory, and your "ability frontier" — then take a focus sprint aimed right at it.`))
   ));
   main.appendChild(GG.llm.bar());
 
   // ✨ AI 任意主题出题
   const topicInput = GG.el('input',{class:'field', type:'text',
-    placeholder:'输入任意主题让 AI 出题，如：宋词 / 机器学习 / 红楼梦'});
+    placeholder:GG.T('输入任意主题让 AI 出题，如：宋词 / 机器学习 / 红楼梦','Enter any topic for AI questions, e.g. jazz / machine learning / the Renaissance')});
   topicInput.addEventListener('keydown', e=>{ if(e.key==='Enter') goAI(); });
   function goAI(){
     const t = topicInput.value.trim();
-    if(!t){ GG.toast('先输入一个主题'); topicInput.focus(); return; }
-    if(!GG.llm.connected()){ GG.toast('先连接 AI 才能用任意主题出题'); return; }
+    if(!t){ GG.toast(GG.T('先输入一个主题','Enter a topic first')); topicInput.focus(); return; }
+    if(!GG.llm.connected()){ GG.toast(GG.T('先连接 AI 才能用任意主题出题','Connect AI first to unlock any-topic questions')); return; }
     play(null, t);
   }
   main.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'10px'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 出题（任意主题）'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('✨ AI 出题（任意主题）','✨ AI-generated questions (any topic)')),
     topicInput,
-    GG.el('button',{class:'btn primary block', style:{marginTop:'12px'}, onClick:goAI}, '用 AI 给我出题 →')
+    GG.el('button',{class:'btn primary block', style:{marginTop:'12px'}, onClick:goAI}, GG.T('用 AI 给我出题 →','Have AI quiz me →'))
   ));
 
-  main.appendChild(GG.el('div',{class:'section-t'}, '或选一个内置科目'));
+  main.appendChild(GG.el('div',{class:'section-t'}, GG.T('或选一个内置科目','Or pick a built-in subject')));
   const grid = GG.el('div',{class:'stack'});
   Object.keys(QUIZ).forEach(key=>{
     const s = QUIZ[key];
@@ -111,8 +112,8 @@ function intro(){
       GG.el('span',{style:{fontSize:'30px', flex:'none'}}, s.emoji),
       GG.el('div',{style:{flex:'1'}},
         GG.el('div',{style:{fontSize:'18px', fontWeight:'700'}}, s.name),
-        GG.el('div',{class:'small muted', style:{marginTop:'2px'}}, `${s.bank.length} 道题库 · 难度 1~5 分级`)),
-      GG.el('span',{class:'pill', style:{color:'var(--accent)', fontWeight:'700'}}, '开始 →')
+        GG.el('div',{class:'small muted', style:{marginTop:'2px'}}, GG.T(`${s.bank.length} 道题库 · 难度 1~5 分级`, `${s.bank.length}-question bank · levels 1–5`))),
+      GG.el('span',{class:'pill', style:{color:'var(--accent)', fontWeight:'700'}}, GG.T('开始 →','Start →'))
     ));
   });
   main.appendChild(grid);
@@ -153,7 +154,8 @@ function play(subjKey, aiTopic, focus){
   GG.clear(main);
   const head = GG.el('div',{class:'hero', style:{paddingBottom:'4px'}},
     GG.el('h1',{style:{fontSize:'22px'}}, subj.emoji+' '+subj.name+' · '+
-      (isFocus ? ('专项攻顶 · 难度 '+level+'（'+LEVEL_NAME[level]+'）') : ('自适应测验'+(ai?'（AI 出题）':'')))));
+      (isFocus ? GG.T(`专项攻顶 · 难度 ${level}（${LEVEL_NAME[level]}）`, `Focus Sprint · Level ${level} (${LEVEL_NAME[level]})`)
+               : (GG.T('自适应测验','Adaptive Quiz')+(ai?GG.T('（AI 出题）',' (AI-generated)'):'')))));
   main.appendChild(head);
 
   // 顶部状态条：进度 + 当前难度
@@ -168,9 +170,9 @@ function play(subjKey, aiTopic, focus){
   const qBox = GG.el('div'); main.appendChild(qBox);
 
   function renderStatus(flash){
-    progEl.innerHTML = `第 <b style="color:var(--ink-2)">${qNum+1}</b> / ${total} 题`;
+    progEl.innerHTML = GG.T(`第 <b style="color:var(--ink-2)">${qNum+1}</b> / ${total} 题`, `Question <b style="color:var(--ink-2)">${qNum+1}</b> / ${total}`);
     levelEl.innerHTML =
-      `<div class="small muted" style="margin-bottom:2px">${isFocus?'专项 · 难度固定':'当前难度'} · ${LEVEL_NAME[level]}</div>` +
+      `<div class="small muted" style="margin-bottom:2px">${isFocus?GG.T('专项 · 难度固定','Sprint · level locked'):GG.T('当前难度','Current level')} · ${LEVEL_NAME[level]}</div>` +
       `<div style="font-size:22px;letter-spacing:2px;color:var(--accent);font-weight:700">${stars(level)}</div>`;
     if(flash){
       levelEl.animate(
@@ -194,7 +196,7 @@ function play(subjKey, aiTopic, focus){
       qBox.appendChild(GG.el('div',{class:'card pad'},
         GG.el('div',{class:'thinking', style:{padding:'30px 0'}},
           GG.el('div',{class:'spinner'}),
-          GG.el('div',{class:'msg'}, 'AI 正在按「'+LEVEL_NAME[level]+'」难度出第 '+(qNum+1)+' 题…'))));
+          GG.el('div',{class:'msg'}, GG.T(`AI 正在按「${LEVEL_NAME[level]}」难度出第 ${qNum+1} 题…`, `AI is writing question ${qNum+1} at ${LEVEL_NAME[level]} difficulty…`)))));
       try{ item = await genQuestion(aiTopic, level, asked); }
       catch(e){
         GG.toast(GG.llm.errMsg(e));
@@ -214,7 +216,7 @@ function play(subjKey, aiTopic, focus){
     const card = GG.el('div',{class:'card pad'},
       GG.el('div',{class:'row', style:{justifyContent:'space-between', marginBottom:'10px'}},
         GG.el('span',{class:'pill', style:{background:'var(--accent)', color:'#fff', padding:'3px 10px',
-          borderRadius:'999px', fontSize:'12px', fontWeight:'700'}}, `难度 ${item.level} · ${LEVEL_NAME[item.level]}`),
+          borderRadius:'999px', fontSize:'12px', fontWeight:'700'}}, GG.T(`难度 ${item.level} · ${LEVEL_NAME[item.level]}`, `Level ${item.level} · ${LEVEL_NAME[item.level]}`)),
         GG.el('span',{class:'small muted'}, stars(item.level))
       ),
       GG.el('h3',{style:{fontSize:'20px', margin:'4px 0 16px', lineHeight:'1.5'}}, item.q)
@@ -249,8 +251,8 @@ function play(subjKey, aiTopic, focus){
         level = GG.clamp(level + (right?1:-1), MIN_L, MAX_L);
         moved = level!==prevLevel;
         const dirTxt = right
-          ? (moved? `答对！下一题难度升到 ${LEVEL_NAME[level]}（${stars(level)}）↑` : `答对！难度已封顶 ${LEVEL_NAME[level]}`)
-          : (moved? `答错。下一题难度降到 ${LEVEL_NAME[level]}（${stars(level)}）↓` : `答错。难度已是最低 ${LEVEL_NAME[level]}`);
+          ? (moved? GG.T(`答对！下一题难度升到 ${LEVEL_NAME[level]}（${stars(level)}）↑`, `Correct! The next question moves up to ${LEVEL_NAME[level]} (${stars(level)}) ↑`) : GG.T(`答对！难度已封顶 ${LEVEL_NAME[level]}`, `Correct! You're already at the top level — ${LEVEL_NAME[level]}`))
+          : (moved? GG.T(`答错。下一题难度降到 ${LEVEL_NAME[level]}（${stars(level)}）↓`, `Not quite. The next question steps down to ${LEVEL_NAME[level]} (${stars(level)}) ↓`) : GG.T(`答错。难度已是最低 ${LEVEL_NAME[level]}`, `Not quite. You're already at the lowest level — ${LEVEL_NAME[level]}`));
         card.appendChild(GG.el('div',{class:'card', style:{marginTop:'14px', padding:'12px 14px',
           borderColor: right?'var(--good)':'var(--bad)',
           background: right?'rgba(46,158,123,.07)':'rgba(216,80,63,.07)',
@@ -262,13 +264,13 @@ function play(subjKey, aiTopic, focus){
           borderColor: right?'var(--good)':'var(--bad)',
           background: right?'rgba(46,158,123,.07)':'rgba(216,80,63,.07)',
           color: right?'var(--good)':'var(--bad)', fontWeight:'600'}},
-          (right?'✓ 答对！':'✕ 答错。') + ` 难度保持 ${LEVEL_NAME[level]}`));
+          (right?GG.T('✓ 答对！','✓ Correct!'):GG.T('✕ 答错。','✕ Not quite.')) + GG.T(` 难度保持 ${LEVEL_NAME[level]}`, ` Level stays at ${LEVEL_NAME[level]}`)));
       }
       renderStatus(moved);
       qNum++;
       card.appendChild(GG.el('div',{class:'center', style:{marginTop:'14px'}},
         GG.el('button',{class:'btn primary lg', onClick:nextQuestion},
-          qNum>=total? (isFocus?'看攻顶结果 →':'看我的预测分 →') : `下一题（第 ${qNum+1}/${total}）→`)));
+          qNum>=total? (isFocus?GG.T('看攻顶结果 →','See sprint results →'):GG.T('看我的预测分 →','See my predicted score →')) : GG.T(`下一题（第 ${qNum+1}/${total}）→`, `Next question (${qNum+1}/${total}) →`))));
     }
   }
 
@@ -286,11 +288,11 @@ function grade(trace){
   let score = acc*60 + ((reached-1)/(MAX_L-1))*28 + ((avgL-1)/(MAX_L-1))*12;
   score = Math.round(GG.clamp(score, 0, 100));
   let grade, gloss;
-  if(score>=85){ grade='A'; gloss='水平拔尖：你不仅答得准，还能稳住在高难度区间。'; }
-  else if(score>=70){ grade='B'; gloss='掌握扎实：难题也能接住，再冲一冲就够到顶尖。'; }
-  else if(score>=55){ grade='C'; gloss='基础稳固：在中等难度站得住，向上还有清晰空间。'; }
-  else if(score>=40){ grade='D'; gloss='正在打地基：先把基础题做熟，难度自然会跟着抬上去。'; }
-  else { grade='E'; gloss='起步阶段：别急，系统已把难度降到适合你的区间，逐题来。'; }
+  if(score>=85){ grade='A'; gloss=GG.T('水平拔尖：你不仅答得准，还能稳住在高难度区间。','Top-tier performance: you answered accurately and held steady in the hardest range.'); }
+  else if(score>=70){ grade='B'; gloss=GG.T('掌握扎实：难题也能接住，再冲一冲就够到顶尖。','Solid mastery: you can handle the tough ones — one more push puts you at the top.'); }
+  else if(score>=55){ grade='C'; gloss=GG.T('基础稳固：在中等难度站得住，向上还有清晰空间。','Firm foundations: you hold your own at intermediate level, with clear room to climb.'); }
+  else if(score>=40){ grade='D'; gloss=GG.T('正在打地基：先把基础题做熟，难度自然会跟着抬上去。','Building the groundwork: master the basics first and the difficulty will rise with you.'); }
+  else { grade='E'; gloss=GG.T('起步阶段：别急，系统已把难度降到适合你的区间，逐题来。','Just getting started: no rush — the system has matched the difficulty to you. Take it one question at a time.'); }
   return {correct, n, acc, reached, avgL, score, grade, gloss};
 }
 
@@ -304,18 +306,18 @@ function abilityPos(trace){
   if(reached===0){   // 一题没对
     const lowAttempt = GG.clamp(Math.min(...trace.map(t=>t.level)), MIN_L, 2);
     return { stable:MIN_L, challenge:lowAttempt, atTop:false, neverRight:true,
-      verdict:`这一轮还没站稳——系统已把难度降到适合你的区间。先从 难度 1~2 把基础打牢，再一档档往上走。` };
+      verdict:GG.T(`这一轮还没站稳——系统已把难度降到适合你的区间。先从 难度 1~2 把基础打牢，再一档档往上走。`, `This round hasn't settled yet — the system has lowered the difficulty to fit you. Shore up Levels 1–2 first, then climb one step at a time.`) };
   }
   const atTop = reached>=MAX_L;
   const stable = reached;
   const challenge = GG.clamp(reached + (atTop?0:1), MIN_L, MAX_L);
   let verdict;
   if(atTop)
-    verdict = `你摸到了最高 难度 ${MAX_L}（${LEVEL_NAME[MAX_L]}）并答对——已经站上顶区。专项再测 5 道，确认你能稳定守住、而不是偶然碰对。`;
+    verdict = GG.T(`你摸到了最高 难度 ${MAX_L}（${LEVEL_NAME[MAX_L]}）并答对——已经站上顶区。专项再测 5 道，确认你能稳定守住、而不是偶然碰对。`, `You reached the top — Level ${MAX_L} (${LEVEL_NAME[MAX_L]}) — and answered correctly. Take a 5-question sprint to confirm you can hold it consistently, not just by luck.`);
   else if(wrong.length)
-    verdict = `你能稳定接住到 难度 ${stable}（${LEVEL_NAME[stable]}）；再往上的 难度 ${challenge}（${LEVEL_NAME[challenge]}）就是你现在的边界——把它练到稳，水平分会上一个台阶。`;
+    verdict = GG.T(`你能稳定接住到 难度 ${stable}（${LEVEL_NAME[stable]}）；再往上的 难度 ${challenge}（${LEVEL_NAME[challenge]}）就是你现在的边界——把它练到稳，水平分会上一个台阶。`, `You can reliably handle Level ${stable} (${LEVEL_NAME[stable]}); one step up — Level ${challenge} (${LEVEL_NAME[challenge]}) — is your current frontier. Make it stick and your score jumps a tier.`);
   else
-    verdict = `你一路没失手，最高摸到 难度 ${stable}（${LEVEL_NAME[stable]}）。下一步直接挑战 难度 ${challenge}（${LEVEL_NAME[challenge]}），看看你的天花板在哪。`;
+    verdict = GG.T(`你一路没失手，最高摸到 难度 ${stable}（${LEVEL_NAME[stable]}）。下一步直接挑战 难度 ${challenge}（${LEVEL_NAME[challenge]}），看看你的天花板在哪。`, `A flawless run — you reached Level ${stable} (${LEVEL_NAME[stable]}) without a single miss. Next, take on Level ${challenge} (${LEVEL_NAME[challenge]}) and find your ceiling.`);
   return { stable, challenge, atTop, neverRight:false, verdict };
 }
 function posPill(label, val, col){
@@ -326,7 +328,7 @@ function posPill(label, val, col){
 
 function startChallenge(subjKey, level){
   if(typeof subjKey==='string' && subjKey.indexOf('ai:')===0){
-    if(!GG.llm.connected()){ GG.toast('AI 出题需要先连接 AI'); return; }
+    if(!GG.llm.connected()){ GG.toast(GG.T('AI 出题需要先连接 AI','Connect AI first to generate questions')); return; }
     play(null, subjKey.slice(3), {level, count:5});
   } else {
     play(subjKey, null, {level, count:5});
@@ -339,23 +341,23 @@ function challengeResult(key, level, trace){
   const pass = got>=4 ? 'break' : got>=2 ? 'partial' : 'base';
   const col = pass==='break'?'var(--good)':pass==='partial'?'var(--warn)':'var(--bad)';
   const verdict = pass==='break'
-      ? `突破了！难度 ${level}（${LEVEL_NAME[level]}）你已经拿下，下一步可以往 难度 ${Math.min(level+1,MAX_L)} 冲。`
+      ? GG.T(`突破了！难度 ${level}（${LEVEL_NAME[level]}）你已经拿下，下一步可以往 难度 ${Math.min(level+1,MAX_L)} 冲。`, `Breakthrough! You've conquered Level ${level} (${LEVEL_NAME[level]}) — next, push on toward Level ${Math.min(level+1,MAX_L)}.`)
     : pass==='partial'
-      ? `${got}/${n}，难度 ${level}（${LEVEL_NAME[level]}）还差临门一脚——再来一轮，或回去把这一层的基础补补。`
-      : `难度 ${level}（${LEVEL_NAME[level]}）暂时偏难，先回低一档练熟，再来攻这层。`;
-  const subjName = (typeof key==='string'&&key.indexOf('ai:')===0)? key.slice(3) : (QUIZ[key]?QUIZ[key].name:'测验');
+      ? GG.T(`${got}/${n}，难度 ${level}（${LEVEL_NAME[level]}）还差临门一脚——再来一轮，或回去把这一层的基础补补。`, `${got}/${n} — Level ${level} (${LEVEL_NAME[level]}) is within reach. Run another round, or go back and patch the gaps at this level first.`)
+      : GG.T(`难度 ${level}（${LEVEL_NAME[level]}）暂时偏难，先回低一档练熟，再来攻这层。`, `Level ${level} (${LEVEL_NAME[level]}) is a stretch for now. Drop down a level to build fluency, then come back for it.`);
+  const subjName = (typeof key==='string'&&key.indexOf('ai:')===0)? key.slice(3) : (QUIZ[key]?QUIZ[key].name:GG.T('测验','Quiz'));
   const stage = GG.el('div'); main.appendChild(stage);
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
-    GG.el('h1',{style:{fontSize:'23px'}}, '🎯 专项攻顶结果')));
+    GG.el('h1',{style:{fontSize:'23px'}}, GG.T('🎯 专项攻顶结果','🎯 Focus Sprint Results'))));
   stage.appendChild(GG.el('div',{class:'card pad', style:{textAlign:'center', marginBottom:'16px',
       background:'linear-gradient(160deg,var(--accent-soft),#fff 65%)'}},
-    GG.el('div',{class:'small muted'}, subjName+' · 难度 '+level+'（'+LEVEL_NAME[level]+'）专项 5 题'),
+    GG.el('div',{class:'small muted'}, GG.T(`${subjName} · 难度 ${level}（${LEVEL_NAME[level]}）专项 5 题`, `${subjName} · Level ${level} (${LEVEL_NAME[level]}) · 5-question sprint`)),
     GG.el('div',{style:{fontSize:'50px', fontWeight:'800', color:col, lineHeight:'1.1', margin:'6px 0'}}, got+' / '+n),
-    GG.el('div',{style:{fontSize:'17px', fontWeight:'700', color:col}}, pass==='break'?'突破 ✓':pass==='partial'?'接近':'再练'),
+    GG.el('div',{style:{fontSize:'17px', fontWeight:'700', color:col}}, pass==='break'?GG.T('突破 ✓','Breakthrough ✓'):pass==='partial'?GG.T('接近','Close'):GG.T('再练','Keep practicing')),
     GG.el('p',{style:{margin:'10px auto 0', maxWidth:'420px', color:'var(--ink-2)', lineHeight:'1.6'}}, verdict)));
   stage.appendChild(GG.el('div',{class:'row', style:{justifyContent:'center', gap:'12px', flexWrap:'wrap', marginTop:'4px'}},
-    GG.el('button',{class:'btn primary', onClick:()=>startChallenge(key, level)}, '🔁 再攻一轮'),
-    GG.el('button',{class:'btn', onClick:()=>{ location.hash=''; start(); }}, '↻ 换科目')));
+    GG.el('button',{class:'btn primary', onClick:()=>startChallenge(key, level)}, GG.T('🔁 再攻一轮','🔁 Run it again')),
+    GG.el('button',{class:'btn', onClick:()=>{ location.hash=''; start(); }}, GG.T('↻ 换科目','↻ Switch subject'))));
 }
 
 /* 难度轨迹折线图（inline SVG，对错用颜色区分） */
@@ -387,34 +389,34 @@ function traceSVG(trace){
 async function showResult(subjKey, trace, correctCount, fromLink){
   main = main || GG.mountShell(SLUG);
   GG.clear(main);
-  const subj = QUIZ[subjKey] || {name:(typeof subjKey==='string'&&subjKey.indexOf('ai:')===0)?subjKey.slice(3):'测验', emoji:'🧠'};
+  const subj = QUIZ[subjKey] || {name:(typeof subjKey==='string'&&subjKey.indexOf('ai:')===0)?subjKey.slice(3):GG.T('测验','Quiz'), emoji:'🧠'};
   const stage = GG.el('div'); main.appendChild(stage);
   if(!fromLink){
-    await GG.thinking(stage, ['汇总你的作答…','分析难度轨迹…','结合到达难度与正确率…','算出你的预测分…'], 1500);
+    await GG.thinking(stage, [GG.T('汇总你的作答…','Compiling your answers…'),GG.T('分析难度轨迹…','Analyzing your difficulty trajectory…'),GG.T('结合到达难度与正确率…','Weighing peak level against accuracy…'),GG.T('算出你的预测分…','Calculating your predicted score…')], 1500);
   }
   const r = grade(trace);
   const ap = abilityPos(trace);
   GG.clear(stage);
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
-    GG.el('h1',{style:{fontSize:'24px'}}, '🎯 你的自适应测验结果')));
+    GG.el('h1',{style:{fontSize:'24px'}}, GG.T('🎯 你的自适应测验结果','🎯 Your Adaptive Quiz Results'))));
 
   // 大分数卡
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', textAlign:'center',
       background:'linear-gradient(160deg,var(--accent-soft),#fff 65%)'}},
-    GG.el('div',{class:'small muted'}, subj.name+' · 预测水平分'),
+    GG.el('div',{class:'small muted'}, subj.name+GG.T(' · 预测水平分',' · Predicted ability score')),
     GG.el('div',{style:{fontSize:'56px', fontWeight:'800', color:'var(--accent)', lineHeight:'1.1', margin:'4px 0'}},
       String(r.score)),
-    GG.el('div',{style:{fontSize:'20px', fontWeight:'700'}}, '等级 '+r.grade),
+    GG.el('div',{style:{fontSize:'20px', fontWeight:'700'}}, GG.T('等级 ','Grade ')+r.grade),
     GG.el('p',{class:'small', style:{margin:'10px auto 0', maxWidth:'440px', color:'var(--ink-2)'}}, r.gloss)
   ));
 
   // 关键指标
   const stat = GG.el('div',{class:'row', style:{gap:'12px', marginBottom:'16px', flexWrap:'wrap'}});
-  [['正确率', Math.round(r.acc*100)+'%'],
-   ['答对题数', r.correct+' / '+r.n],
-   ['到达难度', stars(r.reached)],
-   ['平均难度', r.avgL.toFixed(1)]
+  [[GG.T('正确率','Accuracy'), Math.round(r.acc*100)+'%'],
+   [GG.T('答对题数','Correct answers'), r.correct+' / '+r.n],
+   [GG.T('到达难度','Peak level'), stars(r.reached)],
+   [GG.T('平均难度','Average level'), r.avgL.toFixed(1)]
   ].forEach(([lab,val])=>{
     stat.appendChild(GG.el('div',{class:'card pad', style:{flex:'1', minWidth:'120px', textAlign:'center'}},
       GG.el('div',{class:'small muted'}, lab),
@@ -424,49 +426,49 @@ async function showResult(subjKey, trace, correctCount, fromLink){
 
   // 难度轨迹图
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '难度轨迹（每题难度 · 绿=答对 红=答错）'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('难度轨迹（每题难度 · 绿=答对 红=答错）','Difficulty trajectory (per-question level · green = correct, red = wrong)')),
     GG.el('div',{html:traceSVG(trace)}),
     GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}},
-      '折线越往上走，说明你连续答对、系统把题不断调难；下探则是答错后系统主动降难帮你站稳。')
+      GG.T('折线越往上走，说明你连续答对、系统把题不断调难；下探则是答错后系统主动降难帮你站稳。','A rising line means you kept answering correctly and the system kept raising the bar; dips show it easing off after a miss to help you find your footing.'))
   ));
 
   // ＋1：能力定位
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'4px solid var(--accent)'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '📍 你的能力定位'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('📍 你的能力定位','📍 Your Ability Profile')),
     GG.el('div',{class:'row', style:{gap:'10px', flexWrap:'wrap', margin:'4px 0 12px'}},
-      posPill('稳定接住', '难度 '+ap.stable+' · '+LEVEL_NAME[ap.stable], 'var(--good)'),
-      posPill('当前边界', '难度 '+ap.challenge+' · '+LEVEL_NAME[ap.challenge], 'var(--warn)')),
+      posPill(GG.T('稳定接住','Solid ground'), GG.T('难度 ','Level ')+ap.stable+' · '+LEVEL_NAME[ap.stable], 'var(--good)'),
+      posPill(GG.T('当前边界','Current frontier'), GG.T('难度 ','Level ')+ap.challenge+' · '+LEVEL_NAME[ap.challenge], 'var(--warn)')),
     GG.el('p',{style:{margin:'0', color:'var(--ink-2)', lineHeight:'1.6'}}, ap.verdict)
   ));
 
   // ＋1：专项攻顶
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', textAlign:'center',
       background:'linear-gradient(160deg,var(--accent-soft),#fff 70%)'}},
-    GG.el('div',{style:{fontWeight:'700', fontSize:'16px', marginBottom:'4px'}}, '🎯 专项攻顶'),
+    GG.el('div',{style:{fontWeight:'700', fontSize:'16px', marginBottom:'4px'}}, GG.T('🎯 专项攻顶','🎯 Focus Sprint')),
     GG.el('div',{class:'small muted', style:{marginBottom:'12px'}},
-      '只挑你边界「难度 '+ap.challenge+' · '+LEVEL_NAME[ap.challenge]+'」的题，连答 5 道，看你能不能突破'),
+      GG.T(`只挑你边界「难度 ${ap.challenge} · ${LEVEL_NAME[ap.challenge]}」的题，连答 5 道，看你能不能突破`, `5 questions in a row, all at your frontier — Level ${ap.challenge} · ${LEVEL_NAME[ap.challenge]} — to see if you can break through`)),
     GG.el('button',{class:'btn primary lg', onClick:()=>startChallenge(subjKey, ap.challenge)},
-      '攻坚 难度 '+ap.challenge+' ×5 →')
+      GG.T(`攻坚 难度 ${ap.challenge} ×5 →`, `Take on Level ${ap.challenge} ×5 →`))
   ));
 
   const shareSpec = {
-    slug:SLUG, title:'自适应测验结果',
-    big:{value:r.score, label:'预测分'},
-    subtitle: `${subj.name} · 正确率 ${Math.round(r.acc*100)}%`,
+    slug:SLUG, title:GG.T('自适应测验结果','Adaptive Quiz Results'),
+    big:{value:r.score, label:GG.T('预测分','Predicted score')},
+    subtitle: GG.T(`${subj.name} · 正确率 ${Math.round(r.acc*100)}%`, `${subj.name} · ${Math.round(r.acc*100)}% accuracy`),
     rows:[
-      {label:'等级', value:r.grade+'（'+LEVEL_NAME[Math.round(GG.clamp(r.avgL,1,5))]+'区间）'},
-      {label:'稳定接住', value:'难度 '+ap.stable+' · '+LEVEL_NAME[ap.stable]},
-      {label:'当前边界', value:'难度 '+ap.challenge+' · '+LEVEL_NAME[ap.challenge]},
-      {label:'难度轨迹', value:trace.map(t=>t.level).join(' → ')},
+      {label:GG.T('等级','Grade'), value:GG.T(`${r.grade}（${LEVEL_NAME[Math.round(GG.clamp(r.avgL,1,5))]}区间）`, `${r.grade} (${LEVEL_NAME[Math.round(GG.clamp(r.avgL,1,5))]} range)`)},
+      {label:GG.T('稳定接住','Solid ground'), value:GG.T('难度 ','Level ')+ap.stable+' · '+LEVEL_NAME[ap.stable]},
+      {label:GG.T('当前边界','Current frontier'), value:GG.T('难度 ','Level ')+ap.challenge+' · '+LEVEL_NAME[ap.challenge]},
+      {label:GG.T('难度轨迹','Level trajectory'), value:trace.map(t=>t.level).join(' → ')},
     ],
-    tags:[subj.name, '难度自适应', '等级'+r.grade],
+    tags:[subj.name, GG.T('难度自适应','Adaptive difficulty'), GG.T('等级','Grade ')+r.grade],
     note: ap.verdict,
   };
 
   stage.appendChild(GG.resultCard(SLUG,
-    GG.el('div',{class:'center muted small'}, '截图分享你的预测分 ↓'), shareSpec));
+    GG.el('div',{class:'center muted small'}, GG.T('截图分享你的预测分 ↓','Screenshot and share your predicted score ↓')), shareSpec));
   stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
-    GG.el('button',{class:'btn', onClick:()=>{ location.hash=''; start(); }}, '↻ 再测一次 / 换科目')
+    GG.el('button',{class:'btn', onClick:()=>{ location.hash=''; start(); }}, GG.T('↻ 再测一次 / 换科目','↻ Test again / switch subject'))
   ));
 }
 

@@ -27,6 +27,11 @@
           <div class="status" title="Concierge online">
             <span class="dot"></span><span class="status-label">Concierge · 24/7</span>
           </div>
+          <div class="lang-switch" id="langSwitch" role="group" aria-label="Language / 语言">
+            <button class="lang-btn" type="button" data-lang="zh">中文</button>
+            <span class="lang-sep" aria-hidden="true">|</span>
+            <button class="lang-btn" type="button" data-lang="en">EN</button>
+          </div>
         </div>
       </header>
 
@@ -43,6 +48,7 @@
           id="input"
           type="text"
           placeholder="Ask anything · 用任何语言提问…"
+          data-en-ph="Ask me anything, in any language…"
           aria-label="Message the concierge"
         />
         <button class="send" id="send" type="submit" aria-label="Send">

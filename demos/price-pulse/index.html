@@ -42,6 +42,10 @@ body{font-family:var(--sans); color:var(--ink); background:var(--paper);
   border:1.5px solid var(--acc); border-radius:6px; color:var(--acc); font-size:12px; font-weight:800}
 .bar .spacer{flex:1}
 .bar .firm{font-size:11.5px; color:var(--ink-3); letter-spacing:.02em; white-space:nowrap}
+.langsw{display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:999px; overflow:hidden; flex:none; background:var(--surface)}
+.langsw button{border:none; background:transparent; color:var(--ink-3); font-size:11.5px; font-weight:650; padding:4px 11px; cursor:pointer; font-family:inherit; line-height:1.4; transition:.13s}
+.langsw button+button{border-left:1px solid var(--line-2)}
+.langsw button.on{background:var(--acc-soft); color:var(--acc)}
 
 .wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px 90px}
 
@@ -213,46 +217,54 @@ body{font-family:var(--sans); color:var(--ink); background:var(--paper);
 <body>
 
 <div class="bar"><div class="in">
-  <div class="mark"><span class="glyph">%</span> 采购价格透明面板</div>
+  <div class="mark"><span class="glyph">%</span> <span data-en="Procurement Price Transparency Panel">采购价格透明面板</span></div>
   <div class="spacer"></div>
-  <div class="firm">华人餐饮供应链 · Demo 06 · Iterant AI</div>
+  <div class="langsw" id="langsw"><button type="button" id="lang-zh">中文</button><button type="button" id="lang-en">EN</button></div>
+  <div class="firm" data-en="Chinese Restaurant Supply Chain · Demo 06 · Iterant AI">华人餐饮供应链 · Demo 06 · Iterant AI</div>
 </div></div>
 
 <div class="wrap">
 
   <section class="hero">
-    <div class="eyebrow">Price Pulse · 价格记忆 + 异常监测</div>
-    <h1>悄悄涨的价，<span class="em">摆到台面上</span></h1>
-    <p class="lede">最阴险的不是一次跳涨——是<b>每周涨一点</b>：单看哪周都"正常"，拉长十二周已经贵了一成。
-      这块面板是 <b>Demo 04 / 05 的数据副产品</b>：你每晚拍的送货单，攒三个月自动长成每个品的价格曲线——
-      <b>跳涨、爬价、量价分解</b>，异常自己浮出来，一个字不用录。</p>
-    <div class="ethic">⛔ <b>这块面板不做「回扣检测」。</b>数据只能呈现价格和数量的异常，<b>不能证明任何人的动机</b>——
+    <div class="eyebrow" data-en="Price Pulse · Price Memory + Anomaly Watch">Price Pulse · 价格记忆 + 异常监测</div>
+    <h1><span data-en="Quiet price creep, ">悄悄涨的价，</span><span class="em" data-en="laid out on the table">摆到台面上</span></h1>
+    <p class="lede"><span data-en="The sneakiest increase is not a one-time spike — it is ">最阴险的不是一次跳涨——是</span><b data-en="a little more every week">每周涨一点</b><span data-en=": any single week looks “normal”, yet twelve weeks on you are paying a tenth more. This panel is ">：单看哪周都"正常"，拉长十二周已经贵了一成。
+      这块面板是 </span><b data-en="a data by-product of Demo 04 / 05">Demo 04 / 05 的数据副产品</b><span data-en=": the delivery slips you photograph every night quietly grow, over three months, into a price curve for every SKU — ">：你每晚拍的送货单，攒三个月自动长成每个品的价格曲线——
+      </span><b data-en="spikes, creep, volume-price decomposition">跳涨、爬价、量价分解</b><span data-en=" — anomalies surface on their own, without typing a single word.">，异常自己浮出来，一个字不用录。</span></p>
+    <div class="ethic">⛔ <b data-en="This panel does NOT do “kickback detection”.">这块面板不做「回扣检测」。</b><span data-en=" Data can only surface price and quantity anomalies — ">数据只能呈现价格和数量的异常，</span><b data-en="it cannot prove anyone’s motive">不能证明任何人的动机</b><span data-en=" — a price rise may simply be the market; more volume may simply be better business. A false accusation destroys your own kitchen. Our part: put the anomalies on the table, ">——
       涨价可能就是市场涨了，量多可能就是生意好了。错误的指控毁掉的是你的后厨。
-      我们的本分：把异常摆到台面上，<b>判断永远留给你</b>。</div>
-    <div class="srcnote">📷 零录入——数据来自每晚三分钟的送货单照片（此处为 12 周演示数据）</div>
+      我们的本分：把异常摆到台面上，</span><b data-en="the judgment always stays with you">判断永远留给你</b><span data-en=".">。</span></div>
+    <div class="srcnote" data-en="📷 Zero data entry — built from three minutes of delivery-slip photos each night (12 weeks of demo data shown here)">📷 零录入——数据来自每晚三分钟的送货单照片（此处为 12 周演示数据）</div>
     <div class="aibar" id="aibar"></div>
   </section>
 
   <div class="storerow">
-    <span class="hint">切换门店看两种状态：</span>
-    <button class="store on" id="st-wfl">万福楼 · 近 12 周</button>
-    <button class="store" id="st-lsc">老四川 · 近 12 周</button>
+    <span class="hint" data-en="Switch stores to see the two states:">切换门店看两种状态：</span>
+    <button class="store on" id="st-wfl" data-en="Wanfu House · last 12 wks">万福楼 · 近 12 周</button>
+    <button class="store" id="st-lsc" data-en="Old Sichuan · last 12 wks">老四川 · 近 12 周</button>
   </div>
 
   <div id="stage"></div>
 
   <div class="foot">
-    <b>这个演示的红线（写在代码里）：</b>只做<b>采购侧</b>价格与数量的呈现，不碰营收、不碰税务；
-    <b>绝不输出动机推测</b>——连 AI 生成的小结，任何含「回扣 / 偷 / 贪 / 吃差价」等字样的行都会被代码丢弃；
+    <b data-en="This demo’s hard lines (written into the code): ">这个演示的红线（写在代码里）：</b><span data-en="it presents ">只做</span><b data-en="procurement-side">采购侧</b><span data-en=" prices and quantities only — no revenue, no tax; it ">价格与数量的呈现，不碰营收、不碰税务；
+    </span><b data-en="never outputs motive speculation">绝不输出动机推测</b><span data-en=" — even in the AI-polished summary, any line containing words like “kickback / steal / skim” is discarded by code; anomaly thresholds are public (spike = this week vs. trailing 4-week average unit price +8%; creep = 12-week cumulative +10% with most weeks up week-over-week; volume-price decomposition = spend change split into quantity and price, presented neutrally). V1 does no cross-restaurant price benchmarking (needs data from multiple restaurants — later). All data stays in your browser.">——连 AI 生成的小结，任何含「回扣 / 偷 / 贪 / 吃差价」等字样的行都会被代码丢弃；
     异常阈值公开可查（跳涨 = 本周对前四周均价 +8%；爬价 = 十二周累计 +10% 且多数周环比上行；量价分解 = 支出变化拆成量与价两部分，中性呈现）。
-    V1 不做跨餐馆比价（需多家数据，留待后期）。所有数据留在浏览器本地。<br>
-    Iterant AI · 华人餐饮供应链系列 Demo 06 · Price Pulse
+    V1 不做跨餐馆比价（需多家数据，留待后期）。所有数据留在浏览器本地。</span><br>
+    <span data-en="Iterant AI · Chinese Restaurant Supply Chain Demo Series 06 · Price Pulse">Iterant AI · 华人餐饮供应链系列 Demo 06 · Price Pulse</span>
   </div>
 </div>
 
 <div id="toast"></div>
 
 <script>
+/* ════════════════ i18n 助手（自包含 · 全站统一 localStorage['site.lang']） ════════════════ */
+let LANG=''; try{ LANG=localStorage.getItem('site.lang')||''; }catch(e){}
+const EN = LANG==='en' || (!LANG && !/^zh/i.test(navigator.language||''));
+const T=(zh,en)=>EN?en:zh;
+document.documentElement.lang=EN?'en':'zh-CN';
+document.title=T('悄悄涨的价，摆到台面上 · 采购价格透明面板','Quiet Price Creep, On the Table · Procurement Price Transparency Panel');
+
 /* ════════════════ 小工具 ════════════════ */
 const $=(s,r)=>(r||document).querySelector(s);
 const $$=(s,r)=>Array.from((r||document).querySelectorAll(s));
@@ -272,10 +284,10 @@ function el(tag,props,...kids){
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 function toast(m){ const t=$('#toast'); t.textContent=m; t.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove('on'),2600); }
 function copyText(s){
-  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(()=>toast('已复制')).catch(()=>fb(s));
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(s).then(()=>toast(T('已复制','Copied'))).catch(()=>fb(s));
   else fb(s);
   function fb(x){ const ta=document.createElement('textarea'); ta.value=x; ta.style.cssText='position:fixed;opacity:0';
-    document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast('已复制'); }catch(e){ toast('复制失败'); }
+    document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); toast(T('已复制','Copied')); }catch(e){ toast(T('复制失败','Copy failed')); }
     document.body.removeChild(ta); }
 }
 const money=n=>'$'+(Math.round(n*100)/100).toLocaleString('en-US',{minimumFractionDigits:2});
@@ -285,49 +297,49 @@ const mean=a=>a.reduce((s,x)=>s+x,0)/a.length;
 /* ════════════════ 演示数据（12 周 · 两家店） ════════════════
    qty = 每周采购量（用于金额影响与量价分解）。 */
 const STORES={
-  wfl:{ name:'万福楼', items:[
-    {key:'peanut_oil', zh:'花生油', unit:'件', qtyW:2,
+  wfl:{ name:T('万福楼','Wanfu House'), items:[
+    {key:'peanut_oil', zh:T('花生油','Peanut oil'), unit:T('件','carton'), qtyW:2,
      prices:[46.5,46.5,47,46.5,46.5,47,46.5,46.5,47,46.5,46.5,52],
      qty:[2,2,2,2,2,2,2,2,2,2,2,2]},
-    {key:'shrimp', zh:'虾 21/25', unit:'箱', qtyW:3,
+    {key:'shrimp', zh:T('虾 21/25','Shrimp 21/25'), unit:T('箱','case'), qtyW:3,
      prices:[86,86.5,87.5,88,89,90,90.5,91.5,92.5,93.5,95,96],
      qty:[3,3,3,3,3,3,3,3,3,3,3,3]},
-    {key:'chicken_leg', zh:'鸡腿肉', unit:'箱', qtyW:2,
+    {key:'chicken_leg', zh:T('鸡腿肉','Chicken leg meat'), unit:T('箱','case'), qtyW:2,
      prices:[58,58,57.5,58,58.5,58,58,57.5,58,58,58.5,58],
      qty:[2,2,2,2,2,2,2,2,2,2,2,2]},
-    {key:'beef_brisket', zh:'牛腩', unit:'磅', qtyW:20,
+    {key:'beef_brisket', zh:T('牛腩','Beef brisket'), unit:T('磅','lb'), qtyW:20,
      prices:[6.6,6.7,6.6,6.8,6.7,6.6,6.7,6.8,6.7,6.7,6.8,6.7],
      qty:[20,20,20,20,20,20,20,20,20,20,20,20]},
-    {key:'pork_belly', zh:'五花肉', unit:'磅', qtyW:80,
+    {key:'pork_belly', zh:T('五花肉','Pork belly'), unit:T('磅','lb'), qtyW:80,
      prices:[3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2,3.2],
      qty:[80,78,82,80,79,81,80,88,95,98,102,105]},
-    {key:'bokchoy', zh:'青江菜', unit:'磅', qtyW:10,
+    {key:'bokchoy', zh:T('青江菜','Bok choy'), unit:T('磅','lb'), qtyW:10,
      prices:[1.4,1.42,1.45,1.44,1.45,1.46,1.45,1.44,1.45,1.46,1.45,1.45],
      qty:[10,10,10,10,10,10,10,10,10,10,10,10]},
-    {key:'rice', zh:'大米', unit:'袋', qtyW:4,
+    {key:'rice', zh:T('大米','Rice'), unit:T('袋','bag'), qtyW:4,
      prices:[32,32,32,32,32,32.5,32,32,32,32.5,32,32],
      qty:[4,4,4,4,4,4,4,4,4,4,4,4]},
-    {key:'takeout_box', zh:'外卖盒', unit:'箱', qtyW:3,
+    {key:'takeout_box', zh:T('外卖盒','Takeout boxes'), unit:T('箱','case'), qtyW:3,
      prices:[41,41,41,40.5,40.5,40,40,39.5,39,39,38.5,38.5],
      qty:[3,3,3,3,3,3,3,3,3,3,3,3]}
   ]},
-  lsc:{ name:'老四川', items:[
-    {key:'peanut_oil', zh:'花生油', unit:'件', qtyW:2,
+  lsc:{ name:T('老四川','Old Sichuan'), items:[
+    {key:'peanut_oil', zh:T('花生油','Peanut oil'), unit:T('件','carton'), qtyW:2,
      prices:[46.5,46.5,46.5,47,46.5,46.5,47,46.5,46.5,47,46.5,46.5],
      qty:[2,2,2,2,2,2,2,2,2,2,2,2]},
-    {key:'shrimp', zh:'虾 21/25', unit:'箱', qtyW:2,
+    {key:'shrimp', zh:T('虾 21/25','Shrimp 21/25'), unit:T('箱','case'), qtyW:2,
      prices:[89,89,88.5,89,89.5,89,89,88.5,89,89,89.5,89],
      qty:[2,2,2,2,2,2,2,2,2,2,2,2]},
-    {key:'chicken_leg', zh:'鸡腿肉', unit:'箱', qtyW:2,
+    {key:'chicken_leg', zh:T('鸡腿肉','Chicken leg meat'), unit:T('箱','case'), qtyW:2,
      prices:[58,58,58,57.5,58,58,58.5,58,58,57.5,58,58],
      qty:[2,2,2,2,2,2,2,2,2,2,2,2]},
-    {key:'beef_brisket', zh:'牛腩', unit:'磅', qtyW:25,
+    {key:'beef_brisket', zh:T('牛腩','Beef brisket'), unit:T('磅','lb'), qtyW:25,
      prices:[6.7,6.7,6.6,6.7,6.8,6.7,6.7,6.6,6.7,6.7,6.8,6.7],
      qty:[25,25,25,25,25,25,25,25,25,25,25,25]},
-    {key:'tofu', zh:'豆腐', unit:'箱', qtyW:4,
+    {key:'tofu', zh:T('豆腐','Tofu'), unit:T('箱','case'), qtyW:4,
      prices:[18,18,18,18,18,18,18,18,18,18,18,18],
      qty:[4,4,4,4,4,4,4,4,4,4,4,4]},
-    {key:'takeout_box', zh:'外卖盒', unit:'箱', qtyW:4,
+    {key:'takeout_box', zh:T('外卖盒','Takeout boxes'), unit:T('箱','case'), qtyW:4,
      prices:[42,42,42,41.5,41.5,41,41,40.5,40.5,40,40,39.5],
      qty:[4,4,4,4,4,4,4,4,4,4,4,4]}
   ]}
@@ -366,19 +378,19 @@ function analyzeItem(it){
 /* ════════════════ SVG 曲线 ════════════════ */
 function chartSVG(a){
   const p=a.it.prices, n=p.length;
-  const W=620, H=230, L=44, R=14, T=18, B=30;
+  const W=620, H=230, L=44, R=14, TOP=18, B=30;
   const lo=Math.min.apply(null,p), hi=Math.max.apply(null,p);
   const pad=(hi-lo)*0.25||lo*0.03||1;
   const y0=lo-pad, y1=hi+pad;
   const X=i=>L+i*(W-L-R)/(n-1);
-  const Y=v=>T+(H-T-B)*(1-(v-y0)/(y1-y0));
+  const Y=v=>TOP+(H-TOP-B)*(1-(v-y0)/(y1-y0));
   const color=a.kind==='spike'?'#b3402e':a.kind==='creep'?'#7a4fa3':a.kind==='drop'?'#2f7d5b':a.kind==='split'?'#b9842a':'#4a5564';
   let s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
   /* 基准带：前 8 周均 ±8% */
   const bT=Y(a.base8*1.08), bB=Y(a.base8*0.92);
   s+='<rect x="'+L+'" y="'+bT.toFixed(1)+'" width="'+(W-L-R)+'" height="'+(bB-bT).toFixed(1)+'" fill="#1c2530" opacity="0.05"/>';
   s+='<line x1="'+L+'" y1="'+Y(a.base8).toFixed(1)+'" x2="'+(W-R)+'" y2="'+Y(a.base8).toFixed(1)+'" stroke="#8b94a3" stroke-width="1" stroke-dasharray="4 4"/>';
-  s+='<text x="'+(L+4)+'" y="'+(Y(a.base8)-5).toFixed(1)+'" font-size="10" fill="#8b94a3">基准 '+money(a.base8)+'（前8周均 ±8%）</text>';
+  s+='<text x="'+(L+4)+'" y="'+(Y(a.base8)-5).toFixed(1)+'" font-size="10" fill="#8b94a3">'+T('基准 ','Baseline ')+money(a.base8)+T('（前8周均 ±8%）',' (first-8-wk avg ±8%)')+'</text>';
   /* y 轴刻度 */
   [y0+pad*0.2, (y0+y1)/2, y1-pad*0.2].forEach(v=>{
     s+='<text x="'+(L-6)+'" y="'+(Y(v)+3.5).toFixed(1)+'" font-size="10" fill="#b2b9c4" text-anchor="end">'+(v>=10?v.toFixed(0):v.toFixed(2))+'</text>';
@@ -395,26 +407,30 @@ function chartSVG(a){
   /* 异常注记 */
   if(a.kind==='spike') s+='<text x="'+(X(n-1)-8)+'" y="'+(Y(p[n-1])-12).toFixed(1)+'" font-size="11" font-weight="700" fill="#b3402e" text-anchor="end">+'+(a.spikePct*100).toFixed(1)+'% ↑</text>';
   if(a.kind==='creep'){
-    s+='<text x="'+((L+W-R)/2)+'" y="'+(T+12)+'" font-size="11" font-weight="700" fill="#7a4fa3" text-anchor="middle">12 周爬了 +'+(a.creepPct*100).toFixed(1)+'%（单周从未超过 '+(TH_SPIKE*100)+'%）</text>';
+    s+='<text x="'+((L+W-R)/2)+'" y="'+(TOP+12)+'" font-size="11" font-weight="700" fill="#7a4fa3" text-anchor="middle">'+T('12 周爬了 +'+(a.creepPct*100).toFixed(1)+'%（单周从未超过 '+(TH_SPIKE*100)+'%）','Crept +'+(a.creepPct*100).toFixed(1)+'% over 12 wks (no single week above '+(TH_SPIKE*100)+'%)')+'</text>';
   }
-  if(a.kind==='drop') s+='<text x="'+(X(n-1)-8)+'" y="'+(Y(p[n-1])-12).toFixed(1)+'" font-size="11" font-weight="700" fill="#2f7d5b" text-anchor="end">在降价 ↓</text>';
+  if(a.kind==='drop') s+='<text x="'+(X(n-1)-8)+'" y="'+(Y(p[n-1])-12).toFixed(1)+'" font-size="11" font-weight="700" fill="#2f7d5b" text-anchor="end">'+T('在降价 ↓','Falling ↓')+'</text>';
   s+='</svg>';
   return s;
 }
 
 /* ════════════════ 渲染 ════════════════ */
 const KIND_META={
-  spike:{chip:'跳涨', c:'red', dot:'d-red', badge:'b-red'},
-  creep:{chip:'爬价', c:'vio', dot:'d-vio', badge:'b-vio'},
-  split:{chip:'量涨了', c:'amber', dot:'d-amber', badge:'b-amber'},
-  drop:{chip:'在降价 ↓', c:'ok', dot:'d-ok', badge:'b-ok'},
-  stable:{chip:'稳定', c:'ok', dot:'d-stable', badge:'b-stable'}
+  spike:{chip:T('跳涨','Spike'), c:'red', dot:'d-red', badge:'b-red'},
+  creep:{chip:T('爬价','Creep'), c:'vio', dot:'d-vio', badge:'b-vio'},
+  split:{chip:T('量涨了','Volume up'), c:'amber', dot:'d-amber', badge:'b-amber'},
+  drop:{chip:T('在降价 ↓','Falling ↓'), c:'ok', dot:'d-ok', badge:'b-ok'},
+  stable:{chip:T('稳定','Stable'), c:'ok', dot:'d-stable', badge:'b-stable'}
 };
 let curStore='wfl', curKey=null, analyses=[];
 
 function scriptFor(a){
-  if(a.kind==='spike') return a.it.zh+'这周 '+money(a.last)+'，前一个月都在 '+money(a.prev4)+' 左右——是市场涨了还是单子写错了？帮我看看。';
-  if(a.kind==='creep') return a.it.zh+'这三个月从 '+money(a.it.prices[0])+' 走到 '+money(a.last)+' 了，市场是都这样吗？帮我看看还有没有空间。';
+  if(a.kind==='spike') return T(
+    a.it.zh+'这周 '+money(a.last)+'，前一个月都在 '+money(a.prev4)+' 左右——是市场涨了还是单子写错了？帮我看看。',
+    a.it.zh+' is '+money(a.last)+' this week, but it has been around '+money(a.prev4)+' for the past month — did the market move, or is the invoice off? Could you take a look?');
+  if(a.kind==='creep') return T(
+    a.it.zh+'这三个月从 '+money(a.it.prices[0])+' 走到 '+money(a.last)+' 了，市场是都这样吗？帮我看看还有没有空间。',
+    a.it.zh+' has gone from '+money(a.it.prices[0])+' to '+money(a.last)+' over the past three months — is the whole market like this? Could you check whether there is any room on the price?');
   return '';
 }
 
@@ -432,37 +448,37 @@ function render(){
   /* 裁决 */
   let vcls,vt,vs;
   if(anoms.length){
-    vcls='v-watch verdict'; vt='这 12 周，有 '+anoms.length+' 个品值得看一眼';
-    vs='跳涨看得见，爬价看不见——单看每周都"正常"，拉长才现形。都不一定有问题：市场波动、生意变好都是正常解释。<b>但看过和没看过，是两种老板。</b>'+(weekImpact>0?(' 若都谈回基准价，约省 <b>'+money0(weekImpact)+'/周</b>。'):'');
+    vcls='v-watch verdict'; vt=T('这 12 周，有 '+anoms.length+' 个品值得看一眼','Across these 12 weeks, '+anoms.length+' SKU'+(anoms.length>1?'s are':' is')+' worth a look');
+    vs=T('跳涨看得见，爬价看不见——单看每周都"正常"，拉长才现形。都不一定有问题：市场波动、生意变好都是正常解释。<b>但看过和没看过，是两种老板。</b>','Spikes are easy to spot; creep is not — each week looks “normal” on its own and only shows once you zoom out. None of it necessarily means trouble: market moves and better business are normal explanations. <b>But an owner who has looked and one who has not are two different owners.</b>')+(weekImpact>0?T(' 若都谈回基准价，约省 <b>'+money0(weekImpact)+'/周</b>。',' Negotiate them back to baseline and you save about <b>'+money0(weekImpact)+'/wk</b>.'):'');
   } else {
-    vcls='v-green verdict'; vt='这 12 周价格都在正常带里';
-    vs='没有跳涨、没有爬价、量价都稳'+(drops.length?('——还有 '+drops.length+' 个品在降价，这家供应商的价格纪律值得记一笔'):'')+'。面板安静，说明账目健康——这本身就是核出来的信息。';
+    vcls='v-green verdict'; vt=T('这 12 周价格都在正常带里','All prices stayed inside the normal band these 12 weeks');
+    vs=T('没有跳涨、没有爬价、量价都稳','No spikes, no creep, volume and price both steady')+(drops.length?T('——还有 '+drops.length+' 个品在降价，这家供应商的价格纪律值得记一笔',' — plus '+drops.length+' SKU'+(drops.length>1?'s':'')+' trending down; this supplier\'s price discipline deserves a note')+T('。面板安静，说明账目健康——这本身就是核出来的信息。','. A quiet panel means healthy books — that itself is information the audit produced.'):T('。面板安静，说明账目健康——这本身就是核出来的信息。','. A quiet panel means healthy books — that itself is information the audit produced.'));
   }
   stage.appendChild(el('div',{class:vcls},
     el('div',{class:'band'}),
     el('div',{class:'body'},
       el('div',null, el('div',{class:'vt'},vt), el('div',{class:'vs',html:vs})),
       el('div',{class:'stats'},
-        analyses.filter(a=>a.kind==='spike').length?el('span',{class:'stat red'},analyses.filter(a=>a.kind==='spike').length+' 跳涨'):null,
-        analyses.filter(a=>a.kind==='creep').length?el('span',{class:'stat vio'},analyses.filter(a=>a.kind==='creep').length+' 爬价'):null,
-        analyses.filter(a=>a.kind==='split').length?el('span',{class:'stat amber'},analyses.filter(a=>a.kind==='split').length+' 量涨'):null,
-        drops.length?el('span',{class:'stat ok'},drops.length+' 在降价'):null,
-        el('span',{class:'stat ok'},analyses.filter(a=>a.kind==='stable').length+' 稳定')))));
+        analyses.filter(a=>a.kind==='spike').length?el('span',{class:'stat red'},T(analyses.filter(a=>a.kind==='spike').length+' 跳涨',analyses.filter(a=>a.kind==='spike').length+' spiked')):null,
+        analyses.filter(a=>a.kind==='creep').length?el('span',{class:'stat vio'},T(analyses.filter(a=>a.kind==='creep').length+' 爬价',analyses.filter(a=>a.kind==='creep').length+' creeping')):null,
+        analyses.filter(a=>a.kind==='split').length?el('span',{class:'stat amber'},T(analyses.filter(a=>a.kind==='split').length+' 量涨',analyses.filter(a=>a.kind==='split').length+' volume up')):null,
+        drops.length?el('span',{class:'stat ok'},T(drops.length+' 在降价',drops.length+' falling')):null,
+        el('span',{class:'stat ok'},T(analyses.filter(a=>a.kind==='stable').length+' 稳定',analyses.filter(a=>a.kind==='stable').length+' stable'))))));
 
   /* ROI */
   stage.appendChild(el('div',{class:'roi'},
-    el('div',{class:'cell now'}, el('div',{class:'k'},'这块面板'),
-      el('div',{class:'v',html:'<b>'+store.items.length+'</b> 个品 × 12 周价格记忆 · <b>零录入</b><br>Demo 04/05 的送货单自动攒出来的'})),
-    el('div',{class:'cell'}, el('div',{class:'k'},'换成人工'),
-      el('div',{class:'v',html:'谁记得住三个月前的进价？<br><b>爬价对人的记忆免疫</b>——这正是它的设计'})),
-    el('div',{class:'cell'}, el('div',{class:'k'},'看见的价值'),
-      el('div',{class:'v',html:saveYear>0?('若把异常品谈回基准价：<br>≈ <b>'+money0(saveYear)+'/年</b><span style="font-size:11.5px;color:var(--ink-4)">（按当前用量粗算，仅示意）</span>'):'价格纪律好的供应商，<br><b>值得把量给他</b>——这也是弹药'}))));
+    el('div',{class:'cell now'}, el('div',{class:'k'},T('这块面板','This panel')),
+      el('div',{class:'v',html:T('<b>'+store.items.length+'</b> 个品 × 12 周价格记忆 · <b>零录入</b><br>Demo 04/05 的送货单自动攒出来的','<b>'+store.items.length+'</b> SKUs × 12 weeks of price memory · <b>zero data entry</b><br>accumulated automatically from Demo 04/05 delivery slips')})),
+    el('div',{class:'cell'}, el('div',{class:'k'},T('换成人工','Done by hand')),
+      el('div',{class:'v',html:T('谁记得住三个月前的进价？<br><b>爬价对人的记忆免疫</b>——这正是它的设计','Who remembers a unit price from three months ago?<br><b>Creep is immune to human memory</b> — that is exactly its design')})),
+    el('div',{class:'cell'}, el('div',{class:'k'},T('看见的价值','Value of seeing it')),
+      el('div',{class:'v',html:saveYear>0?T('若把异常品谈回基准价：<br>≈ <b>'+money0(saveYear)+'/年</b><span style="font-size:11.5px;color:var(--ink-4)">（按当前用量粗算，仅示意）</span>','Negotiate flagged SKUs back to baseline:<br>≈ <b>'+money0(saveYear)+'/yr</b><span style="font-size:11.5px;color:var(--ink-4)"> (rough estimate at current volume, illustrative only)</span>'):T('价格纪律好的供应商，<br><b>值得把量给他</b>——这也是弹药','A supplier with good price discipline<br><b>deserves more of your volume</b> — that is leverage too')}))));
 
   /* 曲线区 */
   stage.appendChild(el('div',null,
-    el('div',{class:'sec-eyebrow'},'Curves · 价格曲线'),
-    el('div',{class:'sec-h'},'每个品，12 周走势'),
-    el('div',{class:'sec-sub'},'灰带 = 前 8 周均价 ±8% 的正常区间。点下面的品切换；异常品的圆点已标色。')));
+    el('div',{class:'sec-eyebrow'},T('Curves · 价格曲线','Curves · Price history')),
+    el('div',{class:'sec-h'},T('每个品，12 周走势','Every SKU, 12 weeks of movement')),
+    el('div',{class:'sec-sub'},T('灰带 = 前 8 周均价 ±8% 的正常区间。点下面的品切换；异常品的圆点已标色。','Grey band = normal range (first-8-week average unit price ±8%). Click a SKU below to switch; anomalous SKUs carry colored dots.'))));
   const chips=el('div',{class:'itemchips'});
   analyses.forEach(a=>{
     chips.appendChild(el('button',{class:'ichip'+(a.it.key===curKey?' on':''), 'data-k':a.it.key,
@@ -475,14 +491,14 @@ function render(){
 
   /* 异常清单 */
   stage.appendChild(el('div',null,
-    el('div',{class:'sec-eyebrow'},'Findings · 值得看一眼的'),
-    el('div',{class:'sec-h'},'异常摆在这，判断是你的'),
-    el('div',{class:'sec-sub'},'每条都给了正常解释的可能，也给了开口就能用的一句话——问了不伤和气，不问永远不知道。')));
+    el('div',{class:'sec-eyebrow'},T('Findings · 值得看一眼的','Findings · Worth a look')),
+    el('div',{class:'sec-h'},T('异常摆在这，判断是你的','Anomalies on the table — the judgment is yours')),
+    el('div',{class:'sec-sub'},T('每条都给了正常解释的可能，也给了开口就能用的一句话——问了不伤和气，不问永远不知道。','Each finding lists a possible normal explanation plus a line you can use as-is — asking costs no goodwill; not asking means never knowing.'))));
   const groups=[
-    {cls:'g-red', t:'跳涨', s:'本周价对前四周均价 +8% 以上', list:analyses.filter(a=>a.kind==='spike')},
-    {cls:'g-vio', t:'爬价', s:'单周都不超阈值，12 周累计超 10%——对人的记忆免疫', list:analyses.filter(a=>a.kind==='creep')},
-    {cls:'g-amber', t:'量涨了', s:'支出上升拆开看：价没动，量在涨——中性呈现，不加评论', list:analyses.filter(a=>a.kind==='split')},
-    {cls:'g-ok', t:'在降价 · 值得记住', s:'主动降价的供应商，是用数据才看得见的靠谱', list:drops}
+    {cls:'g-red', t:T('跳涨','Spike'), s:T('本周价对前四周均价 +8% 以上','This week’s unit price is +8% or more vs. the trailing 4-week average'), list:analyses.filter(a=>a.kind==='spike')},
+    {cls:'g-vio', t:T('爬价','Creep'), s:T('单周都不超阈值，12 周累计超 10%——对人的记忆免疫','No single week over threshold, yet 12-week cumulative above 10% — immune to human memory'), list:analyses.filter(a=>a.kind==='creep')},
+    {cls:'g-amber', t:T('量涨了','Volume up'), s:T('支出上升拆开看：价没动，量在涨——中性呈现，不加评论','Spend increase decomposed: unit price flat, quantity rising — shown neutrally, no commentary'), list:analyses.filter(a=>a.kind==='split')},
+    {cls:'g-ok', t:T('在降价 · 值得记住','Falling · worth remembering'), s:T('主动降价的供应商，是用数据才看得见的靠谱','A supplier who cuts prices unprompted — reliability only data can reveal'), list:drops}
   ];
   groups.forEach(g=>{
     if(!g.list.length) return;
@@ -492,16 +508,16 @@ function render(){
     g.list.forEach(a=>{
       const meta=KIND_META[a.kind];
       let note='', extra=null;
-      if(a.kind==='spike') note='这周 <b>'+money(a.last)+'</b>，前四周均价 '+money(a.prev4)+'——单周 <b>+'+(a.spikePct*100).toFixed(1)+'%</b>。可能市场真涨了，也可能单子写错了。';
-      if(a.kind==='creep') note='从 W1 的 '+money(a.it.prices[0])+' 走到 W12 的 <b>'+money(a.last)+'</b>，累计 <b>+'+(a.creepPct*100).toFixed(1)+'%</b>——期间没有任何一周的涨幅超过 '+(TH_SPIKE*100)+'%，<b>这正是它躲过每晚核对的原因</b>。';
+      if(a.kind==='spike') note=T('这周 <b>'+money(a.last)+'</b>，前四周均价 '+money(a.prev4)+'——单周 <b>+'+(a.spikePct*100).toFixed(1)+'%</b>。可能市场真涨了，也可能单子写错了。','This week <b>'+money(a.last)+'</b> vs. a trailing 4-week average of '+money(a.prev4)+' — <b>+'+(a.spikePct*100).toFixed(1)+'%</b> in a single week. The market may really have moved, or the invoice may be off.');
+      if(a.kind==='creep') note=T('从 W1 的 '+money(a.it.prices[0])+' 走到 W12 的 <b>'+money(a.last)+'</b>，累计 <b>+'+(a.creepPct*100).toFixed(1)+'%</b>——期间没有任何一周的涨幅超过 '+(TH_SPIKE*100)+'%，<b>这正是它躲过每晚核对的原因</b>。','From '+money(a.it.prices[0])+' in W1 to <b>'+money(a.last)+'</b> in W12, cumulative <b>+'+(a.creepPct*100).toFixed(1)+'%</b> — no single week rose more than '+(TH_SPIKE*100)+'%, <b>which is exactly how it slips past the nightly check</b>.');
       if(a.kind==='split'){
-        note='近四周周支出 '+money0(a.spendB)+'，比头四周（'+money0(a.spendA)+'）<b>+'+(a.spendPct*100).toFixed(0)+'%</b>。拆开看：<b>价格几乎没动（'+(a.prcPct>=0?'+':'')+(a.prcPct*100).toFixed(1)+'%），全部来自采购量（+'+(a.qtyPct*100).toFixed(0)+'%）</b>。生意变好、菜单调整都是正常解释——数字摆在这。';
+        note=T('近四周周支出 '+money0(a.spendB)+'，比头四周（'+money0(a.spendA)+'）<b>+'+(a.spendPct*100).toFixed(0)+'%</b>。拆开看：<b>价格几乎没动（'+(a.prcPct>=0?'+':'')+(a.prcPct*100).toFixed(1)+'%），全部来自采购量（+'+(a.qtyPct*100).toFixed(0)+'%）</b>。生意变好、菜单调整都是正常解释——数字摆在这。','Weekly spend over the last four weeks is '+money0(a.spendB)+', vs. '+money0(a.spendA)+' in the first four — <b>+'+(a.spendPct*100).toFixed(0)+'%</b>. Decomposed: <b>unit price barely moved ('+(a.prcPct>=0?'+':'')+(a.prcPct*100).toFixed(1)+'%); it comes entirely from purchase volume (+'+(a.qtyPct*100).toFixed(0)+'%)</b>. Better business or a menu change are normal explanations — the numbers are right here.');
         const qw=Math.abs(a.qtyPct), pw=Math.abs(a.prcPct), tot=qw+pw||1;
         extra=el('div',{class:'split'},
-          el('div',{class:'sp qty', style:'flex:'+(qw/tot*100)}, '量 +'+(a.qtyPct*100).toFixed(0)+'%'),
-          pw>0.005?el('div',{class:'sp prc', style:'flex:'+(pw/tot*100)}, '价 '+(a.prcPct*100).toFixed(1)+'%'):null);
+          el('div',{class:'sp qty', style:'flex:'+(qw/tot*100)}, T('量 +','Qty +')+(a.qtyPct*100).toFixed(0)+'%'),
+          pw>0.005?el('div',{class:'sp prc', style:'flex:'+(pw/tot*100)}, T('价 ','Price ')+(a.prcPct*100).toFixed(1)+'%'):null);
       }
-      if(a.kind==='drop') note='从 '+money(a.it.prices[0])+' 一路降到 <b>'+money(a.last)+'</b>——没人要求的降价，是供应商价格纪律的最好证明。';
+      if(a.kind==='drop') note=T('从 '+money(a.it.prices[0])+' 一路降到 <b>'+money(a.last)+'</b>——没人要求的降价，是供应商价格纪律的最好证明。','Down from '+money(a.it.prices[0])+' all the way to <b>'+money(a.last)+'</b> — a price cut nobody asked for is the best proof of a supplier\'s price discipline.');
       const sc=scriptFor(a);
       const node=el('div',{class:'fitem', 'data-k':a.it.key, onClick:()=>{ curKey=a.it.key; renderChart();
           $$('.ichip').forEach(c=>c.classList.toggle('on', c.dataset.k===curKey));
@@ -510,11 +526,11 @@ function render(){
           el('span',{class:'dot '+meta.dot, style:'width:10px;height:10px;border-radius:50%'}),
           el('span',{class:'lb'}, a.it.zh),
           el('span',{class:'chip c-'+meta.c}, meta.chip),
-          a.weekImpact>0?el('span',{class:'money'},'≈ +'+money0(a.weekImpact)+'/周'):null,
-          a.kind==='drop'?el('span',{class:'money save'},'省着呢'):null),
+          a.weekImpact>0?el('span',{class:'money'},'≈ +'+money0(a.weekImpact)+T('/周','/wk')):null,
+          a.kind==='drop'?el('span',{class:'money save'},T('省着呢','saving you money')):null),
         el('div',{class:'note', html:note}),
         extra,
-        sc?el('div',{class:'script'}, el('span',{class:'st'},'开口就能用（中性 · 不指控）'), '“'+sc+'”'):null);
+        sc?el('div',{class:'script'}, el('span',{class:'st'},T('开口就能用（中性 · 不指控）','Say it as-is (neutral · no accusation)')), '“'+sc+'”'):null);
       grp.appendChild(node);
     });
     stage.appendChild(grp);
@@ -524,18 +540,21 @@ function render(){
   const summary=buildSummary(store, analyses, weekImpact, saveYear);
   stage.appendChild(el('div',{class:'act'},
     el('div',{class:'ahd'},
-      el('div',{class:'t'},'📝 本月采购小结（拿去跟供应商谈，或自己留底）'),
-      el('div',{class:'s'},'只描述面板上算出来的数字，不带任何动机推测——连 AI 润色的版本也过同一道词汇红线。')),
+      el('div',{class:'t'},T('📝 本月采购小结（拿去跟供应商谈，或自己留底）','📝 Monthly procurement summary (bring it to your supplier, or keep on file)')),
+      el('div',{class:'s'},T('只描述面板上算出来的数字，不带任何动机推测——连 AI 润色的版本也过同一道词汇红线。','Describes only the numbers computed on this panel, zero motive speculation — even the AI-polished version passes the same wording red line.'))),
     el('div',{class:'abody'},
       el('div',{class:'letter', id:'summary'}, summary),
       el('div',{class:'arow'},
-        el('button',{class:'btn-p', onClick:()=>copyText($('#summary').textContent)},'复制小结'),
-        el('button',{class:'btn-s', onClick:aiPolish},'✦ 让 AI 润色（需连接 · 同样过红线）')))));
+        el('button',{class:'btn-p', onClick:()=>copyText($('#summary').textContent)},T('复制小结','Copy summary')),
+        el('button',{class:'btn-s', onClick:aiPolish},T('✦ 让 AI 润色（需连接 · 同样过红线）','✦ Polish with AI (connection required · same red line)'))))));
 
   stage.appendChild(el('div',{class:'disc'},
-    '⚠︎ 本面板只呈现采购侧的价格与数量事实，不涉及营收、税务或任何人的行为评价。'+
+    T('⚠︎ 本面板只呈现采购侧的价格与数量事实，不涉及营收、税务或任何人的行为评价。'+
     '价格上涨与采购量变化都可能有完全正常的解释（市场行情、季节、生意变化）——本工具不做、也做不了动机判断。'+
-    '阈值公开：跳涨 +8%（对前四周均）、爬价 +10%（12 周累计）、量价分解 +20%（支出变化）。此处为演示数据；真实产品的数据来自你自己的送货单照片，全程留在本地。'));
+    '阈值公开：跳涨 +8%（对前四周均）、爬价 +10%（12 周累计）、量价分解 +20%（支出变化）。此处为演示数据；真实产品的数据来自你自己的送货单照片，全程留在本地。',
+    '⚠︎ This panel presents procurement-side price and quantity facts only — no revenue, no tax, no judgment of anyone\'s conduct. '+
+    'Price rises and purchase-volume changes can have perfectly normal explanations (market conditions, season, business changes) — this tool does not and cannot judge motive. '+
+    'Thresholds are public: spike +8% (vs. trailing 4-week average), creep +10% (12-week cumulative), volume-price decomposition +20% (spend change). Demo data shown here; in the real product the data comes from your own delivery-slip photos and never leaves your device.')));
 }
 
 function renderChart(){
@@ -546,33 +565,33 @@ function renderChart(){
   card.appendChild(el('div',{class:'chartbox', html:chartSVG(a)}));
   card.appendChild(el('div',{class:'chartside'},
     el('div',{class:'ct'}, a.it.zh),
-    el('div',{class:'cs'}, '每周约进 '+a.it.qtyW+' '+a.it.unit),
+    el('div',{class:'cs'}, T('每周约进 '+a.it.qtyW+' '+a.it.unit,'≈ '+a.it.qtyW+' '+a.it.unit+' purchased weekly')),
     el('span',{class:'badge-anom '+meta.badge}, meta.chip+(a.kind==='spike'?(' +'+(a.spikePct*100).toFixed(1)+'%'):a.kind==='creep'?(' +'+(a.creepPct*100).toFixed(1)+'%'):'')),
-    el('div',{class:'kv'}, el('div',{class:'k'},'本周价'), el('div',{class:'v'}, money(a.last)+'/'+a.it.unit)),
-    el('div',{class:'kv'}, el('div',{class:'k'},'前四周均'), el('div',{class:'v'}, money(a.prev4))),
-    el('div',{class:'kv'}, el('div',{class:'k'},'12 周变化'),
+    el('div',{class:'kv'}, el('div',{class:'k'},T('本周价','This week')), el('div',{class:'v'}, money(a.last)+'/'+a.it.unit)),
+    el('div',{class:'kv'}, el('div',{class:'k'},T('前四周均','Trailing 4-wk avg')), el('div',{class:'v'}, money(a.prev4))),
+    el('div',{class:'kv'}, el('div',{class:'k'},T('12 周变化','12-wk change')),
       el('div',{class:'v', html:(chg>=0.005?'<span class="up">+':chg<=-0.005?'<span class="down">':'<span>')+(chg*100).toFixed(1)+'%</span>'})),
-    a.saveYear>0?el('div',{class:'kv'}, el('div',{class:'k'},'谈回基准 ≈ 年省'), el('div',{class:'v'}, money0(a.saveYear))):null));
+    a.saveYear>0?el('div',{class:'kv'}, el('div',{class:'k'},T('谈回基准 ≈ 年省','Back to baseline ≈ /yr saved')), el('div',{class:'v'}, money0(a.saveYear))):null));
 }
 
 function buildSummary(store, analyses, weekImpact, saveYear){
   const anoms=analyses.filter(a=>['spike','creep','split'].includes(a.kind));
   const drops=analyses.filter(a=>a.kind==='drop');
-  const L=['【'+store.name+' · 近 12 周采购价格小结】',''];
+  const L=[T('【'+store.name+' · 近 12 周采购价格小结】','['+store.name+' · 12-week procurement price summary]'),''];
   if(!anoms.length){
-    L.push('本期 '+analyses.length+' 个常购品价格均在正常带内（前 8 周均价 ±8%）。');
-    if(drops.length) L.push('其中 '+drops.map(a=>a.it.zh).join('、')+' 呈下行——供应商主动降价，值得记录。');
-    L.push('','结论：价格纪律良好，维持现有合作节奏。');
+    L.push(T('本期 '+analyses.length+' 个常购品价格均在正常带内（前 8 周均价 ±8%）。','All '+analyses.length+' regularly purchased SKUs stayed within the normal band this period (first-8-week average unit price ±8%).'));
+    if(drops.length) L.push(T('其中 '+drops.map(a=>a.it.zh).join('、')+' 呈下行——供应商主动降价，值得记录。','Of these, '+drops.map(a=>a.it.zh).join(', ')+' trended down — unprompted supplier price cuts, worth recording.'));
+    L.push('',T('结论：价格纪律良好，维持现有合作节奏。','Conclusion: price discipline is good; maintain the current cadence of the relationship.'));
   } else {
     anoms.forEach(a=>{
-      if(a.kind==='spike') L.push('· '+a.it.zh+'：本周 '+money(a.last)+'，较前四周均价（'+money(a.prev4)+'）+'+(a.spikePct*100).toFixed(1)+'%。待与供应商确认是行情还是单据口径。');
-      if(a.kind==='creep') L.push('· '+a.it.zh+'：12 周自 '+money(a.it.prices[0])+' 升至 '+money(a.last)+'（累计 +'+(a.creepPct*100).toFixed(1)+'%），无单周超 8%。拟询问市场行情并商谈价格空间。');
-      if(a.kind==='split') L.push('· '+a.it.zh+'：近四周周支出较头四周 +'+(a.spendPct*100).toFixed(0)+'%，其中价格变化 '+(a.prcPct*100).toFixed(1)+'%、采购量变化 +'+(a.qtyPct*100).toFixed(0)+'%——支出上升来自用量。');
+      if(a.kind==='spike') L.push(T('· '+a.it.zh+'：本周 '+money(a.last)+'，较前四周均价（'+money(a.prev4)+'）+'+(a.spikePct*100).toFixed(1)+'%。待与供应商确认是行情还是单据口径。','· '+a.it.zh+': '+money(a.last)+' this week, +'+(a.spikePct*100).toFixed(1)+'% vs. the trailing 4-week average ('+money(a.prev4)+'). To confirm with the supplier whether this is market movement or an invoicing discrepancy.'));
+      if(a.kind==='creep') L.push(T('· '+a.it.zh+'：12 周自 '+money(a.it.prices[0])+' 升至 '+money(a.last)+'（累计 +'+(a.creepPct*100).toFixed(1)+'%），无单周超 8%。拟询问市场行情并商谈价格空间。','· '+a.it.zh+': rose from '+money(a.it.prices[0])+' to '+money(a.last)+' over 12 weeks (cumulative +'+(a.creepPct*100).toFixed(1)+'%), no single week above 8%. Plan to ask about market conditions and discuss pricing room.'));
+      if(a.kind==='split') L.push(T('· '+a.it.zh+'：近四周周支出较头四周 +'+(a.spendPct*100).toFixed(0)+'%，其中价格变化 '+(a.prcPct*100).toFixed(1)+'%、采购量变化 +'+(a.qtyPct*100).toFixed(0)+'%——支出上升来自用量。','· '+a.it.zh+': weekly spend in the last four weeks is +'+(a.spendPct*100).toFixed(0)+'% vs. the first four; unit-price change '+(a.prcPct*100).toFixed(1)+'%, purchase-volume change +'+(a.qtyPct*100).toFixed(0)+'% — the spend increase comes from usage.'));
     });
-    if(drops.length) L.push('· '+drops.map(a=>a.it.zh).join('、')+'：价格下行，供应商主动降价，记录在案。');
+    if(drops.length) L.push(T('· '+drops.map(a=>a.it.zh).join('、')+'：价格下行，供应商主动降价，记录在案。','· '+drops.map(a=>a.it.zh).join(', ')+': prices trending down — unprompted supplier cuts, on record.'));
     L.push('');
-    if(weekImpact>0) L.push('若异常品回到基准价：约 '+money0(weekImpact)+'/周（'+money0(saveYear)+'/年，按当前用量粗算）。');
-    L.push('以上均为价格与数量事实，不构成对任何人的评价；待逐项与供应商核实。');
+    if(weekImpact>0) L.push(T('若异常品回到基准价：约 '+money0(weekImpact)+'/周（'+money0(saveYear)+'/年，按当前用量粗算）。','If flagged SKUs return to baseline: about '+money0(weekImpact)+'/wk ('+money0(saveYear)+'/yr, rough estimate at current volume).'));
+    L.push(T('以上均为价格与数量事实，不构成对任何人的评价；待逐项与供应商核实。','All of the above are price and quantity facts, not judgments of anyone; each item to be verified with the supplier.'));
   }
   return L.join('\n');
 }
@@ -585,12 +604,12 @@ const LLM=(function(){
   const set=v=>{ try{ v?localStorage.setItem(KEY_LS,v):localStorage.removeItem(KEY_LS); }catch(e){} };
   const connected=()=>!!get();
   const SYS=[
-'你是餐馆采购数据的小结润色器。输入是一份由确定性引擎算出的价格小结。',
-'任务：把它润成更通顺的中文商务小结。铁律：',
-'1) 只能使用输入里已有的数字，绝不新增、修改或推算任何数字；',
-'2) 绝对禁止任何动机推测：不得出现或暗示 回扣、偷、贪、吃差价、猫腻、中饱私囊、有问题的人 等含义；',
-'3) 涨价与量变只能归因于「待核实」「市场行情」「用量变化」这类中性表述；',
-'4) 输出小结正文，无前后说明。'
+T('你是餐馆采购数据的小结润色器。输入是一份由确定性引擎算出的价格小结。','You polish procurement summaries for a restaurant. The input is a price summary computed by a deterministic engine.'),
+T('任务：把它润成更通顺的中文商务小结。铁律：','Task: polish it into a smoother English business summary. Hard rules:'),
+T('1) 只能使用输入里已有的数字，绝不新增、修改或推算任何数字；','1) Use only numbers already present in the input; never add, modify, or derive numbers;'),
+T('2) 绝对禁止任何动机推测：不得出现或暗示 回扣、偷、贪、吃差价、猫腻、中饱私囊、有问题的人 等含义；','2) Absolutely no motive speculation: never state or imply kickbacks, stealing, skimming, shady dealing, or "problem people";'),
+T('3) 涨价与量变只能归因于「待核实」「市场行情」「用量变化」这类中性表述；','3) Attribute price and volume changes only to neutral phrasings such as "to be verified", "market conditions", "usage change";'),
+T('4) 输出小结正文，无前后说明。','4) Output only the summary body, no preamble or closing notes.')
   ].join('\n');
   async function run(text){
     const key=get();
@@ -611,27 +630,27 @@ const LLM=(function(){
   }
   function errMsg(err){
     const c=err&&err.code;
-    if(c==='NEED_SETUP') return '先在顶部「连接 AI」里填入 API Key——离线小结本身已可用';
-    if(c==='BAD_KEY') return 'API Key 无效（401）';
-    if(c==='NET') return '连不上模型——大陆需科学上网；file:// 打开会被拦，请用本地 HTTP 预览';
-    if(c==='HTTP') return '接口返回 '+(err.status||'错误');
-    return 'AI 调用失败，请重试';
+    if(c==='NEED_SETUP') return T('先在顶部「连接 AI」里填入 API Key——离线小结本身已可用','Add an API key under "Connect AI" at the top first — the offline summary already works on its own');
+    if(c==='BAD_KEY') return T('API Key 无效（401）','Invalid API key (401)');
+    if(c==='NET') return T('连不上模型——大陆需科学上网；file:// 打开会被拦，请用本地 HTTP 预览','Cannot reach the model — file:// pages are blocked by the browser, use a local HTTP preview');
+    if(c==='HTTP') return T('接口返回 ','API returned ')+(err.status||T('错误','an error'));
+    return T('AI 调用失败，请重试','AI call failed, please retry');
   }
   return {get,set,connected,run,errMsg};
 })();
 
 async function aiPolish(){
-  if(!LLM.connected()){ toast('未连接 AI——点顶部「连接 AI」填 Key；本地小结已可直接用'); return; }
+  if(!LLM.connected()){ toast(T('未连接 AI——点顶部「连接 AI」填 Key；本地小结已可直接用','AI not connected — click "Connect AI" at the top to add a key; the local summary already works as-is')); return; }
   const cur=$('#summary'); if(!cur) return;
-  toast('AI 润色中…');
+  toast(T('AI 润色中…','Polishing with AI…'));
   try{
     const raw=await LLM.run(cur.textContent);
-    /* 红线：任何含动机推测词的行直接丢弃 */
-    const BAN=/回扣|吃差价|中饱|私吞|贪|偷|猫腻|黑幕|做手脚|有问题的人/;
+    /* 红线：任何含动机推测词的行直接丢弃（EN 模式用对应英文词表） */
+    const BAN=EN?/kickback|bribe|steal|stealing|skim|pocketing|embezzl|graft|corrupt|shady|under the table|dishonest/i:/回扣|吃差价|中饱|私吞|贪|偷|猫腻|黑幕|做手脚|有问题的人/;
     const clean=raw.split('\n').filter(l=>!BAN.test(l)).join('\n').trim();
-    if(!clean){ toast('AI 输出未通过动机词汇红线，已保留本地版本'); return; }
+    if(!clean){ toast(T('AI 输出未通过动机词汇红线，已保留本地版本','AI output failed the motive-wording red line; local version kept')); return; }
     cur.textContent=clean;
-    toast('已润色（同一道红线过滤后）');
+    toast(T('已润色（同一道红线过滤后）','Polished (after the same red-line filter)'));
   }catch(e){ toast(LLM.errMsg(e)); }
 }
 
@@ -641,15 +660,15 @@ function renderAibar(){
   const on=LLM.connected();
   bar.appendChild(el('span',{class:'aidot'+(on?' on':'')}));
   bar.appendChild(el('span',{class:'aitxt'}, on
-    ? '已连接 AI——可润色采购小结（数字与判断全部来自本地引擎，动机词汇红线代码过滤）'
-    : '未连接 AI——曲线、异常检测、小结全部本地生成，纯离线'));
-  bar.appendChild(el('button',{class:'ailink', onClick:()=>{ const p=$('#aipanel'); p.style.display=p.style.display==='none'?'block':'none'; }}, on?'管理连接':'连接 AI（可选）'));
+    ? T('已连接 AI——可润色采购小结（数字与判断全部来自本地引擎，动机词汇红线代码过滤）','AI connected — can polish the procurement summary (all numbers and judgments come from the local engine; the motive-wording red line is enforced in code)')
+    : T('未连接 AI——曲线、异常检测、小结全部本地生成，纯离线','AI not connected — curves, anomaly detection and the summary are all generated locally, fully offline')));
+  bar.appendChild(el('button',{class:'ailink', onClick:()=>{ const p=$('#aipanel'); p.style.display=p.style.display==='none'?'block':'none'; }}, on?T('管理连接','Manage connection'):T('连接 AI（可选）','Connect AI (optional)')));
   const panel=el('div',{class:'aipanel', id:'aipanel', style:'display:none'},
-    el('p',null,'纯静态演示、无后端。填入你自己的 Anthropic API Key（只存本机浏览器 localStorage）。AI 在这里只做一件事：把本地算好的小结润得更通顺——不新增数字，且任何含动机推测（回扣/偷/贪…）的输出行都会被代码丢弃。'),
+    el('p',null,T('纯静态演示、无后端。填入你自己的 Anthropic API Key（只存本机浏览器 localStorage）。AI 在这里只做一件事：把本地算好的小结润得更通顺——不新增数字，且任何含动机推测（回扣/偷/贪…）的输出行都会被代码丢弃。','Pure static demo, no backend. Paste your own Anthropic API key (stored only in this browser\'s localStorage). AI does exactly one thing here: polish the locally computed summary — no new numbers, and any output line containing motive speculation (kickback / steal / skim…) is discarded by code.')),
     el('div',{class:'row'},
-      el('input',{class:'keyin', id:'keyin', type:'password', placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:LLM.get()}),
-      el('button',{class:'btn-s', onClick:()=>{ LLM.set($('#keyin').value.trim()); renderAibar(); toast(LLM.connected()?'已连接':'已清除'); }},'保存'),
-      el('button',{class:'btn-s', onClick:()=>{ LLM.set(''); renderAibar(); toast('已清除'); }},'清除')));
+      el('input',{class:'keyin', id:'keyin', type:'password', placeholder:T('粘贴 Anthropic API Key（sk-ant-…）','Paste Anthropic API key (sk-ant-…)'), value:LLM.get()}),
+      el('button',{class:'btn-s', onClick:()=>{ LLM.set($('#keyin').value.trim()); renderAibar(); toast(LLM.connected()?T('已连接','Connected'):T('已清除','Cleared')); }},T('保存','Save')),
+      el('button',{class:'btn-s', onClick:()=>{ LLM.set(''); renderAibar(); toast(T('已清除','Cleared')); }},T('清除','Clear'))));
   bar.appendChild(panel);
 }
 
@@ -658,6 +677,20 @@ $('#st-wfl').addEventListener('click',()=>{ curStore='wfl'; curKey=null;
   $('#st-wfl').classList.add('on'); $('#st-lsc').classList.remove('on'); render(); });
 $('#st-lsc').addEventListener('click',()=>{ curStore='lsc'; curKey=null;
   $('#st-lsc').classList.add('on'); $('#st-wfl').classList.remove('on'); render(); });
+
+/* ── 语言切换控件 ── */
+$('#lang-zh').classList.toggle('on',!EN);
+$('#lang-en').classList.toggle('on',EN);
+$('#lang-zh').addEventListener('click',()=>{ try{ localStorage.setItem('site.lang','zh'); }catch(e){} location.reload(); });
+$('#lang-en').addEventListener('click',()=>{ try{ localStorage.setItem('site.lang','en'); }catch(e){} location.reload(); });
+
+/* ── EN 模式：应用静态 HTML 的 data-en / data-en-ph / data-en-title ── */
+if(EN){
+  $$('[data-en]').forEach(n=>{ n.textContent=n.getAttribute('data-en'); });
+  $$('[data-en-ph]').forEach(n=>{ n.setAttribute('placeholder',n.getAttribute('data-en-ph')); });
+  $$('[data-en-title]').forEach(n=>{ n.setAttribute('title',n.getAttribute('data-en-title')); });
+}
+
 renderAibar();
 render();
 </script>

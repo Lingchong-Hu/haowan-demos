@@ -45,6 +45,14 @@ body{font-family:var(--sans); color:var(--ink); background:var(--paper);
 .bar .spacer{flex:1}
 .bar .firm{font-size:11.5px; color:var(--ink-3); letter-spacing:.02em; white-space:nowrap}
 
+/* 语言切换（中文 | EN） */
+.langsw{display:flex; align-items:center; gap:2px; flex:none; border:1px solid var(--line);
+  background:var(--surface); border-radius:999px; padding:2px}
+.langsw button{appearance:none; border:none; background:transparent; color:var(--ink-3); font-family:inherit;
+  font-size:11.5px; font-weight:620; letter-spacing:.02em; padding:3px 10px; border-radius:999px; cursor:pointer; transition:.13s}
+.langsw button:hover{color:var(--brand)}
+.langsw button.on{background:var(--brand); color:#fff}
+
 .wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px 90px}
 
 /* ── Hero（仅首屏） ── */
@@ -248,7 +256,11 @@ body{font-family:var(--sans); color:var(--ink); background:var(--paper);
     <!-- TODO: 替换品牌资产（wordmark / logo） -->
     <div class="mark"><span class="glyph">A</span>AnyHome</div>
     <div class="spacer"></div>
-    <div class="firm">需求结构化前台 · 帮你理清楚，再交给我们团队</div>
+    <div class="firm" data-en="Intake desk · We sort it out, then hand it to our team">需求结构化前台 · 帮你理清楚，再交给我们团队</div>
+    <div class="langsw" id="langsw" role="group" aria-label="Language">
+      <button type="button" data-lang="zh">中文</button>
+      <button type="button" data-lang="en">EN</button>
+    </div>
   </div>
 </div>
 
@@ -258,6 +270,12 @@ body{font-family:var(--sans); color:var(--ink); background:var(--paper);
 <script>
 (function(){
 "use strict";
+
+/* ════════════════ i18n 助手（自包含；全站语言偏好统一存 localStorage['site.lang']） ════════════════ */
+let LANG=''; try{ LANG = localStorage.getItem('site.lang') || ''; }catch(e){}
+if(LANG!=='zh' && LANG!=='en') LANG = /^zh/i.test(navigator.language||'') ? 'zh' : 'en';
+const EN = LANG==='en';
+const T = function(zh,en){ return EN ? en : zh; };
 
 /* ════════════════ 工具（照抄 _SHARED.md，勿改实现） ════════════════ */
 function el(tag, props){
@@ -280,10 +298,10 @@ function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); return n; }
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let toastT; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1900); }
-async function copy(text){ try{ await navigator.clipboard.writeText(text); toast('已复制 ✓'); }
+async function copy(text){ try{ await navigator.clipboard.writeText(text); toast(T('已复制 ✓','Copied ✓')); }
   catch(e){ try{ const ta=el('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('已复制 ✓'); }
-    catch(_){ toast('复制失败，请手动选择'); } } }
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast(T('已复制 ✓','Copied ✓')); }
+    catch(_){ toast(T('复制失败，请手动选择','Copy failed — please select manually')); } } }
 
 /* ════════════════ LLM 连接器（照抄 _SHARED.md makeLLM，只换 SYS / maxTokens） ════════════════ */
 function makeLLM(SYS, maxTokens){
@@ -312,11 +330,11 @@ function makeLLM(SYS, maxTokens){
     const obj=safeParse('{'+txt);
     if(!obj){ const e=new Error('PARSE_FAIL'); e.code='PARSE_FAIL'; throw e; } return obj; }
   function errMsg(err){ const c=err&&err.code;
-    if(c==='NEED_SETUP') return '还没连接 AI，已显示离线示例';
-    if(c==='BAD_KEY') return 'API Key 无效';
-    if(c==='NET') return '连不上模型（注意：file:// 直接打开可能被浏览器拦截，请用本地 HTTP 预览）';
-    if(c==='PARSE_FAIL') return 'AI 返回格式异常，请重试';
-    return 'AI 生成失败，请重试'; }
+    if(c==='NEED_SETUP') return T('还没连接 AI，已显示离线示例','AI is not connected yet — showing the offline sample');
+    if(c==='BAD_KEY') return T('API Key 无效','Invalid API key');
+    if(c==='NET') return T('连不上模型（注意：file:// 直接打开可能被浏览器拦截，请用本地 HTTP 预览）','Cannot reach the model (note: opening via file:// may be blocked by the browser — use a local HTTP preview)');
+    if(c==='PARSE_FAIL') return T('AI 返回格式异常，请重试','Unexpected AI response format — please retry');
+    return T('AI 生成失败，请重试','AI generation failed — please retry'); }
   return { get,set,connected,run,errMsg };
 }
 
@@ -326,7 +344,8 @@ function makeLLM(SYS, maxTokens){
 const SYS = [
 '你是 AnyHome（NYC 留学生租房中介）的 lead 摘要润色助手。',
 '输入是一名学生在引导式问答里已经【填好】的结构化答案（JSON），以及系统已判定的 flagged 项。',
-'你的唯一任务：把这些已知信息改写成一段给中介团队看的、干净通顺的中文 lead 摘要，外加一个 flagged 要点列表。',
+T('你的唯一任务：把这些已知信息改写成一段给中介团队看的、干净通顺的中文 lead 摘要，外加一个 flagged 要点列表。',
+  'Your only task: rewrite this known information into one clean, fluent English lead summary for the agency team, plus a list of flagged points in English.'),
 '',
 '铁律：',
 '1. 只用输入里【已经存在】的信息。学生没填的字段一律不提、不补、不猜。',
@@ -336,15 +355,17 @@ const SYS = [
 '',
 '只返回 JSON，无前后文、无 markdown 围栏。Schema：',
 '{',
-'  "summary": "一段 3-5 句的中文 lead 摘要，覆盖学校/时间线/预算/居住偏好/区域等已填要点",',
-'  "flags": [ "逐条复述系统给的 flagged 要点（中文）", ... ]',
+T('  "summary": "一段 3-5 句的中文 lead 摘要，覆盖学校/时间线/预算/居住偏好/区域等已填要点",',
+  '  "summary": "an English lead summary of 3-5 sentences covering the filled-in school/timeline/budget/living-preference/area points",'),
+T('  "flags": [ "逐条复述系统给的 flagged 要点（中文）", ... ]',
+  '  "flags": [ "restate each system-provided flagged point, one per item (in English)", ... ]'),
 '}'
 ].join('\n');
 
 const LLM = makeLLM(SYS, 1000);
 
 /* ════════════════ 学校下拉（同 Demo1） ════════════════ */
-const SCHOOLS = ['NYU','Columbia','Parsons (The New School)','FIT','Pace','Fordham (Lincoln Center)','Baruch (CUNY)','NYU Tandon','Cooper Union','其他'];
+const SCHOOLS = ['NYU','Columbia','Parsons (The New School)','FIT','Pace','Fordham (Lincoln Center)','Baruch (CUNY)','NYU Tandon','Cooper Union',T('其他','Other')];
 
 /* ════════════════ 常见 neighborhood（多选，可自定义追加） ════════════════ */
 const NEIGHBORHOODS = ['Murray Hill','Midtown','Upper East Side','Upper West Side','Greenwich Village',
@@ -353,14 +374,14 @@ const NEIGHBORHOODS = ['Murray Hill','Midtown','Upper East Side','Upper West Sid
 
 /* ════════════════ must-haves（多选） ════════════════ */
 const MUST_HAVES = [
-  {v:'in-unit laundry', sub:'室内洗衣'},
-  {v:'doorman', sub:'门卫'},
-  {v:'gym', sub:'健身房'},
-  {v:'furnished', sub:'带家具'},
-  {v:'elevator', sub:'电梯'},
-  {v:'dishwasher', sub:'洗碗机'},
-  {v:'pet-friendly', sub:'可养宠物'},
-  {v:'A/C', sub:'空调'},
+  {v:'in-unit laundry', sub:T('室内洗衣','')},
+  {v:'doorman', sub:T('门卫','')},
+  {v:'gym', sub:T('健身房','')},
+  {v:'furnished', sub:T('带家具','')},
+  {v:'elevator', sub:T('电梯','')},
+  {v:'dishwasher', sub:T('洗碗机','')},
+  {v:'pet-friendly', sub:T('可养宠物','')},
+  {v:'A/C', sub:T('空调','')},
 ];
 
 /* ════════════════ 状态机：问题流（确定性，~15 项，带分支） ════════════════
@@ -368,63 +389,63 @@ const MUST_HAVES = [
    type: 'single' | 'multi' | 'text' | 'range' | 'beds' | 'roommate' | 'origin'
    分支：showIf(state) 决定该题是否出现（Q11 guarantor 仅在 Q10 答“无”时出现）。 */
 const QUESTIONS = [
-  { id:'school', kicker:'第 1 步', q:'你的目标学校是哪所？', hint:'我们会按学校所在区位帮你理需求。',
-    type:'single', options:SCHOOLS, other:true, otherPlaceholder:'其他学校名…' },
+  { id:'school', kicker:T('第 1 步','Step 1'), q:T('你的目标学校是哪所？','Which school are you headed to?'), hint:T('我们会按学校所在区位帮你理需求。','We use your campus location to shape the search.'),
+    type:'single', options:SCHOOLS, other:true, otherPlaceholder:T('其他学校名…','School name…') },
 
-  { id:'program_start', kicker:'第 2 步', q:'项目大概什么时候开学？',
-    hint:'比如 2026 Fall、2026 年 1 月。', type:'text', placeholder:'例：2026 Fall / 2026 年 9 月' },
+  { id:'program_start', kicker:T('第 2 步','Step 2'), q:T('项目大概什么时候开学？','When does your program start?'),
+    hint:T('比如 2026 Fall、2026 年 1 月。','e.g. Fall 2026, or January 2026.'), type:'text', placeholder:T('例：2026 Fall / 2026 年 9 月','e.g. Fall 2026 / September 2026') },
 
-  { id:'move_in', kicker:'第 3 步', q:'你期望什么时候入住？',
-    hint:'有大致月份就行，越具体越好安排看房节奏。', type:'text', placeholder:'例：2026 年 8 月中 / ASAP' },
+  { id:'move_in', kicker:T('第 3 步','Step 3'), q:T('你期望什么时候入住？','When would you like to move in?'),
+    hint:T('有大致月份就行，越具体越好安排看房节奏。','A rough month is fine — the more specific, the easier it is to pace your viewings.'), type:'text', placeholder:T('例：2026 年 8 月中 / ASAP','e.g. mid-August 2026 / ASAP') },
 
-  { id:'budget', kicker:'第 4 步', q:'预算大概在什么区间？',
-    hint:'按每月租金（USD / 月）。先给个范围，后面还会问弹性。', type:'range', unit:'$ / 月',
-    minPlaceholder:'最低', maxPlaceholder:'最高' },
+  { id:'budget', kicker:T('第 4 步','Step 4'), q:T('预算大概在什么区间？','What\'s your budget range?'),
+    hint:T('按每月租金（USD / 月）。先给个范围，后面还会问弹性。','Monthly rent in USD. A rough range works — we\'ll ask about flexibility later.'), type:'range', unit:T('$ / 月','$ / month'),
+    minPlaceholder:T('最低','Min'), maxPlaceholder:T('最高','Max') },
 
-  { id:'living', kicker:'第 5 步', q:'你打算独住，还是合租？',
+  { id:'living', kicker:T('第 5 步','Step 5'), q:T('你打算独住，还是合租？','Living solo, or sharing with roommates?'),
     type:'roommate' },
 
-  { id:'areas', kicker:'第 6 步', q:'有想住的区域吗？（可多选）',
-    hint:'不确定可以少选或跳过，我们会按学校通勤帮你补。', type:'multi', options:NEIGHBORHOODS, custom:true,
-    customPlaceholder:'其他区域…' },
+  { id:'areas', kicker:T('第 6 步','Step 6'), q:T('有想住的区域吗？（可多选）','Any neighborhoods in mind? (select all that apply)'),
+    hint:T('不确定可以少选或跳过，我们会按学校通勤帮你补。','Not sure? Pick a few or skip — we\'ll fill in suggestions based on your commute.'), type:'multi', options:NEIGHBORHOODS, custom:true,
+    customPlaceholder:T('其他区域…','Another neighborhood…') },
 
-  { id:'layout', kicker:'第 7 步', q:'户型上有要求吗？',
-    hint:'卧室 / 卫生间数量，不确定填大概。', type:'beds' },
+  { id:'layout', kicker:T('第 7 步','Step 7'), q:T('户型上有要求吗？','Any layout preferences?'),
+    hint:T('卧室 / 卫生间数量，不确定填大概。','Beds and baths — a rough idea is fine.'), type:'beds' },
 
-  { id:'must_haves', kicker:'第 8 步', q:'有哪些必须要有的（must-have）？（可多选）',
-    hint:'只选你真在意的，不在意的留空就好。', type:'multi', objOptions:MUST_HAVES },
+  { id:'must_haves', kicker:T('第 8 步','Step 8'), q:T('有哪些必须要有的（must-have）？（可多选）','Any must-haves? (select all that apply)'),
+    hint:T('只选你真在意的，不在意的留空就好。','Only pick what you truly care about — leave the rest blank.'), type:'multi', objOptions:MUST_HAVES },
 
-  { id:'lease', kicker:'第 9 步', q:'打算租多久？',
-    type:'single', options:['12 个月（标准 lease）','少于 12 个月 / 短租','灵活，看房源','还不确定'] },
+  { id:'lease', kicker:T('第 9 步','Step 9'), q:T('打算租多久？','How long do you plan to lease?'),
+    type:'single', options:[T('12 个月（标准 lease）','12 months (standard lease)'),T('少于 12 个月 / 短租','Under 12 months / short-term'),T('灵活，看房源','Flexible — depends on the place'),T('还不确定','Not sure yet')] },
 
-  { id:'us_credit', kicker:'第 10 步 · 关键', q:'你目前有美国本地的信用记录或收入吗？',
-    hint:'这一项决定后面要不要走 guarantor 流程，对国际学生很常见，如实选即可。',
-    type:'single', options:['有（美国信用 / 收入）','没有（典型国际学生）','部分 / 不确定'],
+  { id:'us_credit', kicker:T('第 10 步 · 关键','Step 10 · Key question'), q:T('你目前有美国本地的信用记录或收入吗？','Do you currently have US credit history or income?'),
+    hint:T('这一项决定后面要不要走 guarantor 流程，对国际学生很常见，如实选即可。','This decides whether we go down the guarantor path. Very common for international students — just answer honestly.'),
+    type:'single', options:[T('有（美国信用 / 收入）','Yes (US credit / income)'),T('没有（典型国际学生）','No (typical international student)'),T('部分 / 不确定','Some / not sure')],
     branchKey:true },
 
   // 分支题：仅当 Q10 答“没有”或“部分/不确定”时出现
-  { id:'guarantor', kicker:'追问 · guarantor', branch:true,
-    q:'关于 guarantor（担保人），你这边是什么情况？',
-    hint:'没有美国信用 / 收入时，房东通常会要求 guarantor。先告诉我们你的方向，具体怎么解由我们团队来。',
+  { id:'guarantor', kicker:T('追问 · guarantor','Follow-up · guarantor'), branch:true,
+    q:T('关于 guarantor（担保人），你这边是什么情况？','Where do you stand on a guarantor?'),
+    hint:T('没有美国信用 / 收入时，房东通常会要求 guarantor。先告诉我们你的方向，具体怎么解由我们团队来。','Without US credit or income, landlords usually require a guarantor. Just tell us your direction — our team will work out the details.'),
     type:'single', options:[
-      '有 US guarantor（美国本地担保人）',
-      '想用 guarantor service（如 Insurent / TheGuarantors）',
-      '可以预付（prepay 几个月）',
-      '还不清楚，需要团队帮我理'],
-    showIf: st => st.us_credit==='没有（典型国际学生）' || st.us_credit==='部分 / 不确定' },
+      T('有 US guarantor（美国本地担保人）','I have a US-based guarantor'),
+      T('想用 guarantor service（如 Insurent / TheGuarantors）','Planning to use a guarantor service (e.g. Insurent / TheGuarantors)'),
+      T('可以预付（prepay 几个月）','I can prepay a few months upfront'),
+      T('还不清楚，需要团队帮我理','Not sure yet — I need the team\'s help')],
+    showIf: st => st.us_credit===T('没有（典型国际学生）','No (typical international student)') || st.us_credit===T('部分 / 不确定','Some / not sure') },
 
-  { id:'pets', kicker:'第 12 步', q:'有宠物吗？',
-    type:'single', options:['没有','有猫','有狗','其他宠物'] },
+  { id:'pets', kicker:T('第 12 步','Step 12'), q:T('有宠物吗？','Any pets?'),
+    type:'single', options:[T('没有','No pets'),T('有猫','A cat'),T('有狗','A dog'),T('其他宠物','Other pets')] },
 
-  { id:'origin', kicker:'第 13 步', q:'你现在人在哪里？',
-    hint:'在国内的话我们会安排异步跟进，避免时差错过你。', type:'origin' },
+  { id:'origin', kicker:T('第 13 步','Step 13'), q:T('你现在人在哪里？','Where are you right now?'),
+    hint:T('在国内的话我们会安排异步跟进，避免时差错过你。','If you\'re in China, we\'ll follow up asynchronously so time zones never get in the way.'), type:'origin' },
 
-  { id:'contact', kicker:'第 14 步', q:'方便留个联系方式吗？',
-    hint:'我们整理好后会主动联系你。WeChat 或 email 都行。', type:'contact' },
+  { id:'contact', kicker:T('第 14 步','Step 14'), q:T('方便留个联系方式吗？','How can we reach you?'),
+    hint:T('我们整理好后会主动联系你。WeChat 或 email 都行。','We\'ll reach out once everything is organized. WeChat or email — either works.'), type:'contact' },
 
-  { id:'budget_flex', kicker:'第 15 步 · 最后一步', q:'如果遇到很合适的，预算能往上浮动一点吗？',
-    hint:'帮我们判断要不要给你看略超预算但很对的房源。', type:'single',
-    options:['硬上限，不能超','可以小幅上浮（~10%）','好房源可以谈','优先地段，预算其次'] },
+  { id:'budget_flex', kicker:T('第 15 步 · 最后一步','Step 15 · Last one'), q:T('如果遇到很合适的，预算能往上浮动一点吗？','If we find a great fit, is there room above budget?'),
+    hint:T('帮我们判断要不要给你看略超预算但很对的房源。','Helps us decide whether to show you places slightly over budget but spot-on.'), type:'single',
+    options:[T('硬上限，不能超','Hard cap — no going over'),T('可以小幅上浮（~10%）','Can stretch a little (~10%)'),T('好房源可以谈','Negotiable for the right place'),T('优先地段，预算其次','Location first, budget second')] },
 ];
 
 /* ════════════════ 状态 ════════════════ */
@@ -456,17 +477,19 @@ function isAnswered(q){
 function renderHero(){
   const app = clear(document.getElementById('app'));
   app.appendChild(el('div',{class:'hero'},
-    el('div',{class:'eyebrow'}, '租房需求 · 自助梳理'),
-    el('h1',null,['花 2 分钟，', el('br'), '我们帮你把租房需求', el('span',{class:'em'},'理清楚')]),
+    el('div',{class:'eyebrow'}, T('租房需求 · 自助梳理','Rental needs · Self-serve intake')),
+    el('h1',null,[T('花 2 分钟，','Take 2 minutes — '), el('br'), T('我们帮你把租房需求','we\'ll get your rental needs '), el('span',{class:'em'},T('理清楚','sorted'))]),
     el('p',{class:'lede'},
-      '一题一题来，友好不啰嗦。填完会生成一张干净的需求卡交给 AnyHome 团队——'+
-      '在国内也能 24 小时随时填，不用迁就时差，重复的事一次说清。'),
+      T('一题一题来，友好不啰嗦。填完会生成一张干净的需求卡交给 AnyHome 团队——'+
+      '在国内也能 24 小时随时填，不用迁就时差，重复的事一次说清。',
+      'One question at a time — friendly, never long-winded. When you finish, a clean requirement card goes to the AnyHome team. '+
+      'Fill it in from China at any hour, no time-zone juggling, and say everything just once.')),
     el('button',{class:'start', onClick:()=>{ state.started=true; state.i=0; renderQ(); }},
-      ['开始梳理需求 →']),
+      [T('开始梳理需求 →','Get started →')]),
     el('div',{class:'reassure'},
-      el('i',null,'🕒 国内可随时填'),
-      el('i',null,'🧭 只帮你理清，不替你做决定'),
-      el('i',null,'🔒 信息只交给 AnyHome 团队'))
+      el('i',null,T('🕒 国内可随时填','🕒 Open any hour, any time zone')),
+      el('i',null,T('🧭 只帮你理清，不替你做决定','🧭 We organize — you decide')),
+      el('i',null,T('🔒 信息只交给 AnyHome 团队','🔒 Shared only with the AnyHome team')))
   ));
 }
 
@@ -478,8 +501,8 @@ function progressBar(){
   const pct = Math.round((state.i/total)*100);
   return el('div',{class:'prog'},
     el('div',{class:'meta'},
-      el('span',{class:'step'}, ['第 ', el('b',null,String(cur)), ' / '+total+' 题']),
-      el('span',{class:'pct'}, pct+'% 完成')),
+      el('span',{class:'step'}, [T('第 ','Question '), el('b',null,String(cur)), ' / '+total+T(' 题','')]),
+      el('span',{class:'pct'}, pct+T('% 完成','% complete'))),
     el('div',{class:'track'}, el('div',{class:'fill', style:{width:pct+'%'}}))
   );
 }
@@ -504,14 +527,14 @@ function renderQ(){
 
   // 导航
   const nav = el('div',{class:'qnav'});
-  if(state.i>0) nav.appendChild(el('button',{class:'btn back', onClick:goBack}, '← 上一题'));
+  if(state.i>0) nav.appendChild(el('button',{class:'btn back', onClick:goBack}, T('← 上一题','← Back')));
   const nextBtn = el('button',{class:'btn next',
-    onClick:()=>{ goNext(); }}, state.i===vis.length-1 ? ['生成需求卡 →'] : ['下一题 →']);
+    onClick:()=>{ goNext(); }}, state.i===vis.length-1 ? [T('生成需求卡 →','Generate my card →')] : [T('下一题 →','Next →')]);
   refreshNext(nextBtn, q);
   nav.appendChild(nextBtn);
   // 选填题给「跳过」
   if(!q.branchKey && q.id!=='school'){
-    nav.appendChild(el('button',{class:'btn skip', onClick:()=>{ goNext(true); }}, '跳过'));
+    nav.appendChild(el('button',{class:'btn skip', onClick:()=>{ goNext(true); }}, T('跳过','Skip')));
   }
   card.appendChild(nav);
   app.appendChild(card);
@@ -550,11 +573,11 @@ function renderInput(q){
       if(q.other){
         const known = q.options.includes(a[q.id]);
         const cur = (!known && a[q.id]) ? a[q.id] : '';
-        const otherSel = a[q.id]==='其他' || (!known && !!a[q.id]);
+        const otherSel = a[q.id]===T('其他','Other') || (!known && !!a[q.id]);
         const inp = el('input',{class:'tin', style:{marginTop:'2px'}, type:'text',
-          placeholder:q.otherPlaceholder||'其他…', value:cur,
-          onInput:e=>{ const v=e.target.value.trim(); a[q.id]= v || '其他'; syncNext(); }});
-        if(otherSel || a[q.id]==='其他') wrap.appendChild(inp);
+          placeholder:q.otherPlaceholder||T('其他…','Other…'), value:cur,
+          onInput:e=>{ const v=e.target.value.trim(); a[q.id]= v || T('其他','Other'); syncNext(); }});
+        if(otherSel || a[q.id]===T('其他','Other')) wrap.appendChild(inp);
       }
       return wrap;
     }
@@ -567,30 +590,30 @@ function renderInput(q){
     case 'range': {
       const v = a[q.id] || (a[q.id]={min:'',max:''});
       const row = el('div',{class:'dual'},
-        el('input',{class:'tin', type:'number', inputmode:'numeric', min:'0', placeholder:q.minPlaceholder||'最低',
+        el('input',{class:'tin', type:'number', inputmode:'numeric', min:'0', placeholder:q.minPlaceholder||T('最低','Min'),
           value:v.min, onInput:e=>{ v.min=e.target.value; syncNext(); }}),
         el('span',{class:'sep'},'—'),
-        el('input',{class:'tin', type:'number', inputmode:'numeric', min:'0', placeholder:q.maxPlaceholder||'最高',
+        el('input',{class:'tin', type:'number', inputmode:'numeric', min:'0', placeholder:q.maxPlaceholder||T('最高','Max'),
           value:v.max, onInput:e=>{ v.max=e.target.value; syncNext(); }}));
       const box = el('div',null, row);
-      box.appendChild(el('div',{class:'inline-note'}, '单位：'+(q.unit||'$ / 月')+'。只填一个也行，留范围我们更好排房源。'));
+      box.appendChild(el('div',{class:'inline-note'}, T('单位：','Unit: ')+(q.unit||T('$ / 月','$ / month'))+T('。只填一个也行，留范围我们更好排房源。','. One number is fine — a range helps us line up listings.')));
       return box;
     }
 
     case 'roommate': {
       const v = a[q.id] || (a[q.id]={mode:'',count:''});
       const opts = el('div',{class:'opts'});
-      [['独住','一个人住'],['合租','和室友一起 / share']].forEach(([m,sub])=>{
+      [[T('独住','Solo'),T('一个人住','Living alone')],[T('合租','Share'),T('和室友一起 / share','With roommates')]].forEach(([m,sub])=>{
         const sel=v.mode===m;
         opts.appendChild(el('button',{class:'opt radio'+(sel?' sel':''),
-          onClick:()=>{ v.mode=m; if(m==='独住') v.count=''; renderQ(); }},
+          onClick:()=>{ v.mode=m; if(m===T('独住','Solo')) v.count=''; renderQ(); }},
           el('span',{class:'box'}, sel?'●':''),
           el('span',{class:'txt'}, [m, el('span',{class:'sub'}, sub)])));
       });
       const box = el('div',null, opts);
-      if(v.mode==='合租'){
+      if(v.mode===T('合租','Share')){
         box.appendChild(el('div',{style:{marginTop:'11px'}},
-          el('input',{class:'tin', type:'number', inputmode:'numeric', min:'1', placeholder:'打算几人合租？（含你，可留空）',
+          el('input',{class:'tin', type:'number', inputmode:'numeric', min:'1', placeholder:T('打算几人合租？（含你，可留空）','How many people total? (including you — optional)'),
             value:v.count, onInput:e=>{ v.count=e.target.value; syncNext(); }})));
       }
       return box;
@@ -602,13 +625,13 @@ function renderInput(q){
         el('div',{class:'inline-note', style:{marginTop:'0',marginBottom:'6px'}}, label),
         el('input',{class:'tin', type:'text', placeholder:ph, value:v[key],
           onInput:e=>{ v[key]=e.target.value; syncNext(); }}));
-      return el('div',{class:'dual'}, mk('beds','卧室 beds','例：1 / studio / 2+'), mk('baths','卫生间 baths','例：1 / 不限'));
+      return el('div',{class:'dual'}, mk('beds',T('卧室 beds','Bedrooms'),T('例：1 / studio / 2+','e.g. 1 / studio / 2+')), mk('baths',T('卫生间 baths','Bathrooms'),T('例：1 / 不限','e.g. 1 / any')));
     }
 
     case 'origin': {
       const v = a[q.id] || (a[q.id]={where:'',detail:''});
       const opts = el('div',{class:'opts'});
-      [['在国内','China','需异步跟进，避免时差'],['已在美国','US',''],['其他地区','Other','']].forEach(([w,code,sub])=>{
+      [[T('在国内','In China'),'China',T('需异步跟进，避免时差','Async follow-up across time zones')],[T('已在美国','Already in the US'),'US',''],[T('其他地区','Elsewhere'),'Other','']].forEach(([w,code,sub])=>{
         const sel=v.where===w;
         opts.appendChild(el('button',{class:'opt radio'+(sel?' sel':''),
           onClick:()=>{ v.where=w; renderQ(); }},
@@ -617,7 +640,7 @@ function renderInput(q){
       });
       const box = el('div',null, opts);
       box.appendChild(el('div',{style:{marginTop:'11px'}},
-        el('input',{class:'tin', type:'text', placeholder:'具体城市（可留空，例：上海 / NYC）',
+        el('input',{class:'tin', type:'text', placeholder:T('具体城市（可留空，例：上海 / NYC）','City — optional (e.g. Shanghai / NYC)'),
           value:v.detail, onInput:e=>{ v.detail=e.target.value; syncNext(); }})));
       return box;
     }
@@ -634,7 +657,7 @@ function renderInput(q){
       const box = el('div',null, opts);
       box.appendChild(el('div',{style:{marginTop:'11px'}},
         el('input',{class:'tin', type:'text',
-          placeholder:v.kind==='Email'?'你的 email…':'你的 WeChat ID…',
+          placeholder:v.kind==='Email'?T('你的 email…','Your email…'):T('你的 WeChat ID…','Your WeChat ID…'),
           value:v.value, onInput:e=>{ v.value=e.target.value; syncNext(); }})));
       return box;
     }
@@ -665,16 +688,16 @@ function renderInput(q){
       }
       if(q.custom){
         let val='';
-        const inp = el('input',{class:'tin', placeholder:q.customPlaceholder||'其他…',
+        const inp = el('input',{class:'tin', placeholder:q.customPlaceholder||T('其他…','Other…'),
           onInput:e=>{ val=e.target.value; },
           onKeydown:e=>{ if(e.key==='Enter'){ e.preventDefault(); const t=val.trim(); if(t && !list.includes(t)){ list.push(t); renderQ(); } } }});
-        const addBtn = el('button',{class:'addbtn', onClick:()=>{ const t=(inp.value||'').trim(); if(t && !list.includes(t)){ list.push(t); renderQ(); } }}, '添加');
+        const addBtn = el('button',{class:'addbtn', onClick:()=>{ const t=(inp.value||'').trim(); if(t && !list.includes(t)){ list.push(t); renderQ(); } }}, T('添加','Add'));
         box.appendChild(el('div',{class:'addrow'}, inp, addBtn));
       }
       return box;
     }
   }
-  return el('div',null,'（未知题型）');
+  return el('div',null,T('（未知题型）','(unknown question type)'));
 }
 
 /* ── 导航逻辑 ── */
@@ -696,16 +719,16 @@ function goBack(){
 function fmtRange(r){
   if(!r) return '';
   const lo=(r.min!=null?String(r.min):'').trim(), hi=(r.max!=null?String(r.max):'').trim();
-  if(lo && hi) return '$'+lo+' – $'+hi+' / 月';
-  if(lo) return '$'+lo+'+ / 月';
-  if(hi) return '最高 $'+hi+' / 月';
+  if(lo && hi) return '$'+lo+' – $'+hi+T(' / 月',' / mo');
+  if(lo) return '$'+lo+'+'+T(' / 月',' / mo');
+  if(hi) return T('最高 $','Up to $')+hi+T(' / 月',' / mo');
   return '';
 }
 function fmtLiving(v){
   if(!v||!v.mode) return '';
-  if(v.mode==='独住') return '独住 (solo)';
+  if(v.mode===T('独住','Solo')) return T('独住 (solo)','Solo');
   const c=(v.count!=null?String(v.count):'').trim();
-  return '合租 (share)'+(c?(' · 约 '+c+' 人'):'');
+  return T('合租 (share)','Share')+(c?(T(' · 约 ',' · ~')+c+T(' 人',' people')):'');
 }
 function fmtBeds(v){
   if(!v) return '';
@@ -720,11 +743,12 @@ function fmtOrigin(v){
 }
 function fmtContact(v){
   if(!v||!(v.value||'').trim()) return '';
-  return v.kind+'：'+v.value.trim();
+  return v.kind+T('：',': ')+v.value.trim();
 }
-function fmtList(arr){ return (Array.isArray(arr)&&arr.length)?arr.join('、'):''; }
+function fmtList(arr){ return (Array.isArray(arr)&&arr.length)?arr.join(T('、',', ')):''; }
 
-/* lead 分组结构（呈现 + 复制都用它）。value 为空表示该项未填（标“待补”，绝不编造）。 */
+/* lead 分组结构（呈现 + 复制都用它）。value 为空表示该项未填（标“待补”，绝不编造）。
+   EN 模式下 name / 行首中文 key 不渲染，只用第三位英文标签。 */
 function buildLead(){
   const a = state.answers;
   const groups = [
@@ -766,22 +790,22 @@ function buildLead(){
   // flagged 项（确定性强制 —— 红线核心）
   const flags = [];
   // 1) guarantor / 无美国信用
-  if(a.us_credit==='没有（典型国际学生）' || a.us_credit==='部分 / 不确定'){
-    const gv = a.guarantor ? ('学生方向：'+a.guarantor) : '学生尚未明确 guarantor 方向，需团队跟进。';
+  if(a.us_credit===T('没有（典型国际学生）','No (typical international student)') || a.us_credit===T('部分 / 不确定','Some / not sure')){
+    const gv = a.guarantor ? (T('学生方向：','Student\'s direction: ')+a.guarantor) : T('学生尚未明确 guarantor 方向，需团队跟进。','Student hasn\'t settled on a guarantor direction — team follow-up needed.');
     flags.push({
       kind:'guarantor',
       icon:'⚠️',
-      title:'无 / 不确定美国信用·收入，需 guarantor 方案',
-      note: gv + '（只标记不解决——guarantor 方案是团队的活。）'
+      title:T('无 / 不确定美国信用·收入，需 guarantor 方案','No / unsure US credit & income — guarantor plan needed'),
+      note: gv + T('（只标记不解决——guarantor 方案是团队的活。）',' (Flagged only, not solved — the guarantor plan is the team\'s job.)')
     });
   }
   // 2) 在国内 → 时差
-  if(a.origin && a.origin.where==='在国内'){
+  if(a.origin && a.origin.where===T('在国内','In China')){
     flags.push({
       kind:'tz',
       icon:'🕒',
-      title:'学生在国内，时差跟进',
-      note:'建议异步联系（'+(fmtContact(a.contact)||'联系方式待补')+'），避免时差错过。'
+      title:T('学生在国内，时差跟进','Student in China — time-zone follow-up'),
+      note:T('建议异步联系（','Async contact recommended (')+(fmtContact(a.contact)||T('联系方式待补','contact TBD'))+T('），避免时差错过。','), so time zones never cause a missed connection.')
     });
   }
 
@@ -792,31 +816,31 @@ function buildLead(){
 function offlineSummary(d){
   const a = d.answers;
   const bits = [];
-  const school = a.school || '（学校待补）';
-  let s1 = '该学生目标 '+school;
-  if(a.program_start) s1 += '，'+a.program_start+' 入学';
-  if(a.move_in) s1 += '，期望 '+a.move_in+' 入住';
-  bits.push(s1+'。');
+  const school = a.school || T('（学校待补）','(school TBD)');
+  let s1 = T('该学生目标 ','Student targeting ')+school;
+  if(a.program_start) s1 += T('，',', ')+a.program_start+T(' 入学',' start');
+  if(a.move_in) s1 += T('，期望 ',', hoping to move in ')+a.move_in+T(' 入住','');
+  bits.push(s1);
 
   const budget = fmtRange(a.budget);
   if(budget){
-    let s2 = '预算 '+budget;
-    if(a.budget_flex) s2 += '（'+a.budget_flex+'）';
-    bits.push(s2+'。');
+    let s2 = T('预算 ','Budget ')+budget;
+    if(a.budget_flex) s2 += T('（',' (')+a.budget_flex+T('）',')');
+    bits.push(s2);
   }
   const live = fmtLiving(a.living), beds = fmtBeds(a.layout);
-  const livestr = [live, beds].filter(Boolean).join('，');
-  if(livestr) bits.push('居住偏好：'+livestr+(a.lease?('，租期 '+a.lease):'')+'。');
+  const livestr = [live, beds].filter(Boolean).join(T('，',', '));
+  if(livestr) bits.push(T('居住偏好：','Living preference: ')+livestr+(a.lease?(T('，租期 ',', lease ')+a.lease):''));
 
   const areas = fmtList(a.areas), mh = fmtList(a.must_haves);
-  if(areas) bits.push('意向区域：'+areas+'。');
-  if(mh) bits.push('Must-haves：'+mh+'。');
+  if(areas) bits.push(T('意向区域：','Target neighborhoods: ')+areas);
+  if(mh) bits.push(T('Must-haves：','Must-haves: ')+mh);
 
-  if(a.us_credit) bits.push('美国信用/收入：'+a.us_credit+(a.guarantor?('；guarantor 方向：'+a.guarantor):'')+'。');
+  if(a.us_credit) bits.push(T('美国信用/收入：','US credit/income: ')+a.us_credit+(a.guarantor?(T('；guarantor 方向：','; guarantor direction: ')+a.guarantor):''));
   const origin = fmtOrigin(a.origin), contact = fmtContact(a.contact);
-  if(origin||contact) bits.push('现所在地：'+(origin||'待补')+(contact?('；'+contact):'')+'。');
+  if(origin||contact) bits.push(T('现所在地：','Current location: ')+(origin||T('待补','TBD'))+(contact?(T('；','; ')+contact):''));
 
-  return bits.join('');
+  return bits.length ? bits.join(T('。','. '))+T('。','.') : '';
 }
 
 /* ════════════════ lead 卡渲染 ════════════════ */
@@ -839,10 +863,10 @@ function renderLead(){
   // 报头
   pad.appendChild(el('div',{class:'lead-mast'},
     el('div',{class:'kanji'}, 'AnyHome · Tenant Lead'),
-    el('h2',null,'学生需求 Lead 卡'),
+    el('h2',null,T('学生需求 Lead 卡','Student Lead Card')),
     el('div',{class:'sub'},
-      el('span',null,['学校：',el('b',null, esc(d.answers.school||'待补'))]),
-      el('span',null,['生成时间：',el('b',null, new Date().toLocaleString('zh-CN',{hour12:false}))]))
+      el('span',null,[T('学校：','School: '),el('b',null, esc(d.answers.school||T('待补','TBD')))]),
+      el('span',null,[T('生成时间：','Generated: '),el('b',null, new Date().toLocaleString(T('zh-CN','en-US'),{hour12:false}))]))
   ));
 
   // 完整度
@@ -851,8 +875,8 @@ function renderLead(){
   pad.appendChild(el('div',{class:'compl'},
     el('div',{class:'num'}, c.answered+'/'+c.total),
     el('div',{class:'meta'},
-      el('div',{class:'t'}, '需求完整度 '+pct+'%'),
-      el('div',{class:'s'}, '已填 '+c.answered+' 项，共 '+c.total+' 项'+(c.answered<c.total?'　·　空项已如实标「待补」，未编造':'　·　全部填齐'))),
+      el('div',{class:'t'}, T('需求完整度 ','Profile completeness ')+pct+'%'),
+      el('div',{class:'s'}, T('已填 ','Answered ')+c.answered+T(' 项，共 ',' of ')+c.total+T(' 项','')+(c.answered<c.total?T('　·　空项已如实标「待补」，未编造',' · Blanks honestly marked TBD — nothing invented'):T('　·　全部填齐',' · All complete')))),
     el('div',{class:'track'}, el('div',{class:'fl', style:{width:pct+'%'}}))
   ));
 
@@ -870,26 +894,26 @@ function renderLead(){
   // 摘要段（AI 润色优先；否则离线模板）
   const summaryText = _aiSummary || offlineSummary(d);
   pad.appendChild(el('div',{class:'summary'},
-    el('span',{class:'sl'}, _aiSummary ? '✦ AI 润色摘要' : '📝 需求摘要'),
+    el('span',{class:'sl'}, _aiSummary ? T('✦ AI 润色摘要','✦ AI-polished summary') : T('📝 需求摘要','📝 Requirements summary')),
     el('div',null, summaryText)));
 
   // 结构化分组
   d.groups.forEach(g=>{
     const sec = el('div',{class:'dsec'});
-    sec.appendChild(el('div',{class:'dsec-h'}, el('span',{class:'no'},g.ix), g.en+' · '+g.name));
+    sec.appendChild(el('div',{class:'dsec-h'}, el('span',{class:'no'},g.ix), EN ? g.en : (g.en+' · '+g.name)));
     g.rows.forEach(([k,v,en])=>{
       const filled = v && String(v).trim()!=='';
       sec.appendChild(el('div',{class:'drow'},
-        el('div',{class:'k'}, [k, en?el('span',{class:'en'},'　'+en):null]),
-        el('div',{class:'v'+(filled?'':' dim')}, filled ? esc(v) : '待补')));
+        el('div',{class:'k'}, [EN&&en?en:k, (!EN&&en)?el('span',{class:'en'},'　'+en):null]),
+        el('div',{class:'v'+(filled?'':' dim')}, filled ? esc(v) : T('待补','TBD'))));
     });
     pad.appendChild(sec);
   });
 
   // 工具栏
   pad.appendChild(el('div',{class:'toolbar'},
-    el('button',{class:'tool primary', onClick:()=>copy(leadText(d))}, '📋 复制 lead 卡（给团队）'),
-    el('button',{class:'tool', onClick:()=>{ resetAll(); }}, '↻ 重新填一遍')
+    el('button',{class:'tool primary', onClick:()=>copy(leadText(d))}, T('📋 复制 lead 卡（给团队）','📋 Copy lead card (for the team)')),
+    el('button',{class:'tool', onClick:()=>{ resetAll(); }}, T('↻ 重新填一遍','↻ Start over'))
   ));
 
   wrap.appendChild(lead);
@@ -897,9 +921,9 @@ function renderLead(){
   // 脚注（firm 水印，无显眼 CTA）
   wrap.appendChild(el('div',{class:'foot'},
     el('div',{class:'pos'}, [
-      '这张 lead 卡只做三件事：',el('b',null,'呈现你填的需求'),'、',el('b',null,'结构化分组'),'、',el('b',null,'标出需团队跟进的点'),
-      '。它不判断你的需求合不合适、不推荐任何具体房源——那是 AnyHome 团队的活。']),
-    el('div',{class:'brand'}, 'AnyHome · 内部工具 · 呈现而非判断　// TODO: 替换品牌资产'))
+      T('这张 lead 卡只做三件事：','This lead card does exactly three things: '),el('b',null,T('呈现你填的需求','show what you entered')),T('、',', '),el('b',null,T('结构化分组','structure it into groups')),T('、',', and '),el('b',null,T('标出需团队跟进的点','flag what needs team follow-up')),
+      T('。它不判断你的需求合不合适、不推荐任何具体房源——那是 AnyHome 团队的活。','. It never judges whether your needs make sense and never recommends specific listings — that\'s the AnyHome team\'s job.')]),
+    el('div',{class:'brand'}, T('AnyHome · 内部工具 · 呈现而非判断　// TODO: 替换品牌资产','AnyHome · Internal tool · Present, not judge  // TODO: replace brand assets')))
   );
 
   app.appendChild(wrap);
@@ -910,39 +934,39 @@ function renderLead(){
 function leadText(d){
   const a = d.answers;
   const L = [];
-  L.push('【AnyHome · 学生需求 Lead 卡】');
-  L.push('学校：'+(a.school||'待补')+'　|　生成：'+new Date().toLocaleString('zh-CN',{hour12:false}));
-  L.push('完整度：'+d.completeness.answered+'/'+d.completeness.total+' 项');
+  L.push(T('【AnyHome · 学生需求 Lead 卡】','[AnyHome · Student Lead Card]'));
+  L.push(T('学校：','School: ')+(a.school||T('待补','TBD'))+T('　|　生成：',' | Generated: ')+new Date().toLocaleString(T('zh-CN','en-US'),{hour12:false}));
+  L.push(T('完整度：','Completeness: ')+d.completeness.answered+'/'+d.completeness.total+T(' 项',''));
   L.push('');
   if(d.flags.length){
-    L.push('— ⚑ 需团队跟进 —');
+    L.push(T('— ⚑ 需团队跟进 —','— ⚑ Team follow-up —'));
     d.flags.forEach(f=>{ L.push('  '+f.icon+' '+f.title); L.push('     '+f.note); });
     L.push('');
   }
   const summaryText = _aiSummary || offlineSummary(d);
-  L.push('— 摘要 —');
+  L.push(T('— 摘要 —','— Summary —'));
   L.push('  '+summaryText);
   L.push('');
   d.groups.forEach(g=>{
-    L.push('— '+g.name+' / '+g.en+' —');
-    g.rows.forEach(([k,v])=>{
+    L.push('— '+(EN ? g.en : (g.name+' / '+g.en))+' —');
+    g.rows.forEach(([k,v,en])=>{
       const filled = v && String(v).trim()!=='';
-      L.push('  '+k+'：'+(filled?v:'____（待补）'));
+      L.push('  '+(EN&&en?en:k)+T('：',': ')+(filled?v:T('____（待补）','____ (TBD)')));
     });
     L.push('');
   });
-  L.push('—— AnyHome 需求结构化前台 · 只呈现/结构化/标记，不判断匹配');
+  L.push(T('—— AnyHome 需求结构化前台 · 只呈现/结构化/标记，不判断匹配','—— AnyHome intake · Presents / structures / flags only — no matching judgments'));
   return L.join('\n');
 }
 
 /* ════════════════ 可选：AI 润色摘要（非主路径） ════════════════ */
-const AI_MSGS = ['整理你填的需求…','改写成给团队看的中文摘要…','复述需跟进的标记项…'];
+const AI_MSGS = [T('整理你填的需求…','Organizing your answers…'),T('改写成给团队看的中文摘要…','Rewriting into a team-ready summary…'),T('复述需跟进的标记项…','Restating the flagged items…')];
 async function polishWithAI(d){
   // 仅把【已填】答案 + 已判定 flags 传给模型，要求只润色摘要、复述 flags、不新增信息。
   const payload = {
     answers: d.answers,
-    flagged: d.flags.map(f=>f.title+'：'+f.note),
-    instruction:'仅基于以上已填信息，生成 summary（中文 lead 摘要）与 flags（复述上面的 flagged，不新增）。绝不编造未填字段。'
+    flagged: d.flags.map(f=>f.title+T('：',': ')+f.note),
+    instruction:T('仅基于以上已填信息，生成 summary（中文 lead 摘要）与 flags（复述上面的 flagged，不新增）。绝不编造未填字段。','Based only on the information above, produce summary (an English lead summary) and flags (restating the flagged items above, adding nothing). Never invent unfilled fields.')
   };
   const obj = await LLM.run(JSON.stringify(payload, null, 2));
   // 归一：只接受字符串字段，绝不让模型篡改结构化数据
@@ -958,13 +982,13 @@ function aiBar(leadData){
     const on = LLM.connected();
     root.appendChild(el('span',{class:'aidot'+(on?' on':'')}));
     root.appendChild(el('span',{class:'aitxt'}, on
-      ? '已连接 AI · 可让模型把摘要润色得更顺（结构化数据不变）'
-      : '未连接 · 现用离线模板摘要（已完整可用，连接后仅润色摘要那段）'));
+      ? T('已连接 AI · 可让模型把摘要润色得更顺（结构化数据不变）','AI connected · Let the model polish the summary (structured data stays untouched)')
+      : T('未连接 · 现用离线模板摘要（已完整可用，连接后仅润色摘要那段）','Not connected · Using the offline template summary (fully usable — connecting only polishes the summary)')));
     if(on){
-      root.appendChild(el('button',{class:'ailink', onClick:runPolish}, _aiSummary?'重新润色':'用 AI 润色摘要'));
+      root.appendChild(el('button',{class:'ailink', onClick:runPolish}, _aiSummary?T('重新润色','Polish again'):T('用 AI 润色摘要','Polish with AI')));
       root.appendChild(el('span',{class:'aitxt'},' · '));
     }
-    root.appendChild(el('button',{class:'ailink', onClick:toggle}, on?'管理 Key':'连接 AI（可选）'));
+    root.appendChild(el('button',{class:'ailink', onClick:toggle}, on?T('管理 Key','Manage key'):T('连接 AI（可选）','Connect AI (optional)')));
   }
   async function runPolish(){
     const d = buildLead();
@@ -977,7 +1001,7 @@ function aiBar(leadData){
     try{
       await polishWithAI(d);
       clearInterval(timer);
-      toast('已用 AI 润色摘要 ✓');
+      toast(T('已用 AI 润色摘要 ✓','Summary polished with AI ✓'));
       renderLead();   // 重渲染，带上 _aiSummary
     }catch(err){
       clearInterval(timer);
@@ -988,14 +1012,17 @@ function aiBar(leadData){
   function toggle(){
     if(panel){ panel.remove(); panel=null; return; }
     const input = el('input',{class:'field', type:'password', autocomplete:'off',
-      placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:LLM.get()});
+      placeholder:T('粘贴 Anthropic API Key（sk-ant-…）','Paste your Anthropic API key (sk-ant-…)'), value:LLM.get()});
     const save = el('button',{class:'minibtn primary', onClick:()=>{
-      LLM.set(input.value.trim()); toast(input.value.trim()?'已连接 ✓':'已清除'); paint(); }}, '保存');
-    const clr = LLM.get() ? el('button',{class:'minibtn ghost', onClick:()=>{ LLM.set(''); _aiSummary=null; _aiFlags=null; toast('已清除'); paint(); }}, '清除') : null;
+      LLM.set(input.value.trim()); toast(input.value.trim()?T('已连接 ✓','Connected ✓'):T('已清除','Cleared')); paint(); }}, T('保存','Save'));
+    const clr = LLM.get() ? el('button',{class:'minibtn ghost', onClick:()=>{ LLM.set(''); _aiSummary=null; _aiFlags=null; toast(T('已清除','Cleared')); paint(); }}, T('清除','Clear')) : null;
     panel = el('div',{class:'aipanel'},
-      el('p',{html:'纯静态演示、无后端。lead 卡<b>无需 key 就已完整可用</b>（离线模板摘要）。'+
+      el('p',{html:T('纯静态演示、无后端。lead 卡<b>无需 key 就已完整可用</b>（离线模板摘要）。'+
         '给一个 Anthropic API Key 仅用于把摘要那段<b>润色得更顺</b>——'+
-        'key <b>只存你本机浏览器</b>、不上传任何服务器；结构化数据与 flagged 项始终由本地确定性逻辑生成，AI 不改它们。'}),
+        'key <b>只存你本机浏览器</b>、不上传任何服务器；结构化数据与 flagged 项始终由本地确定性逻辑生成，AI 不改它们。',
+        'Pure static demo, no backend. The lead card is <b>fully usable without a key</b> (offline template summary). '+
+        'An Anthropic API key is used only to make the summary read <b>a little smoother</b> — '+
+        'the key <b>stays in your browser</b> and is never uploaded; structured data and flags always come from local deterministic logic, untouched by AI.')}),
       el('div',{class:'row'}, input, save, clr));
     root.appendChild(panel); input.focus();
   }
@@ -1016,13 +1043,13 @@ window.INTAKE_DEV = {
   // 预填一组完整答案，直达 lead 卡（含两个分支触发），便于自检
   demo(){
     state.answers = {
-      school:'NYU', program_start:'2026 Fall', move_in:'2026 年 8 月中',
-      budget:{min:'2500',max:'3500'}, living:{mode:'合租',count:'2'},
+      school:'NYU', program_start:'2026 Fall', move_in:T('2026 年 8 月中','mid-August 2026'),
+      budget:{min:'2500',max:'3500'}, living:{mode:T('合租','Share'),count:'2'},
       areas:['Murray Hill','East Village'], layout:{beds:'1',baths:'1'},
-      must_haves:['in-unit laundry','furnished','elevator'], lease:'12 个月（标准 lease）',
-      us_credit:'没有（典型国际学生）', guarantor:'想用 guarantor service（如 Insurent / TheGuarantors）',
-      pets:'没有', origin:{where:'在国内',detail:'上海'},
-      contact:{kind:'WeChat',value:'anyhome_demo'}, budget_flex:'可以小幅上浮（~10%）'
+      must_haves:['in-unit laundry','furnished','elevator'], lease:T('12 个月（标准 lease）','12 months (standard lease)'),
+      us_credit:T('没有（典型国际学生）','No (typical international student)'), guarantor:T('想用 guarantor service（如 Insurent / TheGuarantors）','Planning to use a guarantor service (e.g. Insurent / TheGuarantors)'),
+      pets:T('没有','No pets'), origin:{where:T('在国内','In China'),detail:T('上海','Shanghai')},
+      contact:{kind:'WeChat',value:'anyhome_demo'}, budget_flex:T('可以小幅上浮（~10%）','Can stretch a little (~10%)')
     };
     state.i = visibleQ().length;
     renderLead();
@@ -1030,6 +1057,19 @@ window.INTAKE_DEV = {
 };
 
 /* ════════════════ 启动 ════════════════ */
+document.title = T('AnyHome · 帮你理清楚租房需求','AnyHome · Get your rental needs sorted');
+document.documentElement.lang = EN ? 'en' : 'zh-CN';
+// 静态 HTML 文案：EN 时应用 data-en / data-en-ph / data-en-title
+if(EN){
+  document.querySelectorAll('[data-en]').forEach(n=>{ n.textContent = n.getAttribute('data-en'); });
+  document.querySelectorAll('[data-en-ph]').forEach(n=>{ n.setAttribute('placeholder', n.getAttribute('data-en-ph')); });
+  document.querySelectorAll('[data-en-title]').forEach(n=>{ n.setAttribute('title', n.getAttribute('data-en-title')); });
+}
+// 语言切换控件：写 localStorage['site.lang'] 并整页刷新
+document.querySelectorAll('#langsw button').forEach(b=>{
+  if(b.getAttribute('data-lang')===LANG) b.classList.add('on');
+  b.addEventListener('click', ()=>{ try{ localStorage.setItem('site.lang', b.getAttribute('data-lang')); }catch(e){} location.reload(); });
+});
 renderHero();
 })();
 </script>

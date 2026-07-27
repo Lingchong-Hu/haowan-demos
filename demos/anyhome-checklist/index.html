@@ -48,6 +48,14 @@ body{font-family:var(--sans); color:var(--ink); background:var(--paper);
 .bar .spacer{flex:1}
 .bar .firm{font-size:11.5px; color:var(--ink-3); letter-spacing:.02em; white-space:nowrap}
 
+/* ── 语言切换 ── */
+.langsw{display:flex; align-items:center; flex:none; border:1px solid var(--line); border-radius:999px;
+  background:var(--surface); overflow:hidden}
+.langsw button{appearance:none; border:none; background:transparent; color:var(--ink-3); font-size:12px;
+  font-weight:600; padding:4px 11px; cursor:pointer; font-family:inherit; transition:.13s; line-height:1.4}
+.langsw button.on{background:var(--brand); color:#fff}
+.langsw button:not(.on):hover{color:var(--brand)}
+
 .wrap{max-width:var(--maxw); margin:0 auto; padding:0 22px 90px}
 
 /* ── Hero ── */
@@ -223,7 +231,11 @@ select.field:focus, input.field:focus{outline:none; border-color:var(--brand); b
     <!-- TODO: 替换品牌资产（wordmark / logo） -->
     <div class="mark"><span class="glyph">A</span>AnyHome</div>
     <div class="spacer"></div>
-    <div class="firm">签约材料清单 · 省口头重复解释，不替你判断房源</div>
+    <div class="firm" data-en="Signing checklist · Skip the repeated explanations — we never judge listings for you">签约材料清单 · 省口头重复解释，不替你判断房源</div>
+    <div class="langsw" id="langsw" aria-label="Language / 语言">
+      <button type="button" data-lang="zh">中文</button>
+      <button type="button" data-lang="en">EN</button>
+    </div>
   </div>
 </div>
 
@@ -233,6 +245,13 @@ select.field:focus, input.field:focus{outline:none; border-color:var(--brand); b
 <script>
 (function(){
 "use strict";
+
+/* ── 语言助手（自包含，无 GG）：偏好统一存 localStorage['site.lang']（'zh'|'en'）──
+   无值时按 navigator.language：中文 → zh，其余 → en。 */
+let __lang; try{ __lang = localStorage.getItem('site.lang'); }catch(e){ __lang = null; }
+if(__lang!=='zh' && __lang!=='en') __lang = /^zh/i.test(navigator.language||'') ? 'zh' : 'en';
+const EN = __lang==='en';
+function T(zh,en){ return EN ? en : zh; }
 
 /* ════════════════ 工具（照抄 _SHARED.md，勿改） ════════════════ */
 function el(tag, props){
@@ -255,10 +274,10 @@ function clear(n){ while(n.firstChild) n.removeChild(n.firstChild); return n; }
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let toastT; function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
   clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),1900); }
-async function copy(text){ try{ await navigator.clipboard.writeText(text); toast('已复制 ✓'); }
+async function copy(text){ try{ await navigator.clipboard.writeText(text); toast(T('已复制 ✓','Copied ✓')); }
   catch(e){ try{ const ta=el('textarea'); ta.value=text; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast('已复制 ✓'); }
-    catch(_){ toast('复制失败，请手动选择'); } } }
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); toast(T('已复制 ✓','Copied ✓')); }
+    catch(_){ toast(T('复制失败，请手动选择','Copy failed — please select and copy manually')); } } }
 
 /* ════════════════ LLM 连接器（照抄 _SHARED.md makeLLM，仅换 SYS / max_tokens） ════════════════ */
 function makeLLM(SYS, maxTokens){
@@ -287,16 +306,16 @@ function makeLLM(SYS, maxTokens){
     const obj=safeParse('{'+txt);
     if(!obj){ const e=new Error('PARSE_FAIL'); e.code='PARSE_FAIL'; throw e; } return obj; }
   function errMsg(err){ const c=err&&err.code;
-    if(c==='NEED_SETUP') return '还没连接 AI，已显示模板清单';
-    if(c==='BAD_KEY') return 'API Key 无效';
-    if(c==='NET') return '连不上模型（注意：file:// 直接打开可能被浏览器拦截，请用本地 HTTP 预览）';
-    if(c==='PARSE_FAIL') return 'AI 返回格式异常，已用模板清单';
-    return 'AI 生成失败，已用模板清单'; }
+    if(c==='NEED_SETUP') return T('还没连接 AI，已显示模板清单','AI isn\'t connected yet — showing the template checklist');
+    if(c==='BAD_KEY') return T('API Key 无效','That API key doesn\'t look valid');
+    if(c==='NET') return T('连不上模型（注意：file:// 直接打开可能被浏览器拦截，请用本地 HTTP 预览）','Couldn\'t reach the model (note: opening via file:// may be blocked by the browser — use a local HTTP preview)');
+    if(c==='PARSE_FAIL') return T('AI 返回格式异常，已用模板清单','Unexpected AI response format — showing the template checklist');
+    return T('AI 生成失败，已用模板清单','AI polish failed — showing the template checklist'); }
   return { get,set,connected,run,errMsg };
 }
 
 /* 润色用 system prompt：只许改措辞，不许增删条目、不许填数字。 */
-const POLISH_SYS = [
+const POLISH_SYS = T([
 '你是 AnyHome 的中文文案润色器。我会给你一份 NYC 租房签约材料 checklist 的条目数组。',
 '你的唯一任务：把每条的 zh（中文名）与 why（为什么需要）润色得更友好、更口语、更让留学生安心。',
 '铁律：',
@@ -306,11 +325,21 @@ const POLISH_SYS = [
 '  4. 不谈判、不评价房源、不给"怎么解决"的建议——只润色"是什么 / 为什么需要"的表述。',
 '只返回 JSON，无前后文、无 markdown 围栏。Schema：',
 '{ "items": [ { "id":"原样id", "zh":"润色后中文名", "why":"润色后为什么需要" }, ... ] }'
-].join('\n');
+].join('\n'), [
+'You are AnyHome\'s copy editor. I will give you an array of checklist items for an NYC lease application.',
+'Your only task: polish each item\'s zh (display name) and why (reason it\'s needed) so they read friendlier, more conversational, and more reassuring to international students.',
+'Hard rules:',
+'  1. Never add or remove items; the array length and every id must exactly match the input;',
+'  2. Never modify en (proper nouns stay exactly as given);',
+'  3. Never introduce any specific amounts, month counts, rates, or vendor quotes (those are decided by the landlord/building — this tool never estimates for the student);',
+'  4. No negotiating, no judging listings, no "how to fix it" advice — only polish the wording of what each item is and why it\'s needed.',
+'Return JSON only — no surrounding text, no markdown fences. Schema:',
+'{ "items": [ { "id":"same id", "zh":"polished display name", "why":"polished reason" }, ... ] }'
+].join('\n'));
 const LLM = makeLLM(POLISH_SYS, 1400);
 
 /* ════════════════ 问卷模型（短问卷 · 单选/是否） ════════════════ */
-const VISAS = ['F-1','J-1','M-1','OPT / STEM-OPT','H-1B','绿卡 / Permanent Resident','其他 / 待定'];
+const VISAS = ['F-1','J-1','M-1','OPT / STEM-OPT','H-1B',T('绿卡 / Permanent Resident','Green card / Permanent Resident'),T('其他 / 待定','Other / TBD')];
 // 默认身份组合：典型国际学生 —— 无美国信用 + 无收入 + 想用 guarantor service
 const DEFAULT_PROFILE = {
   credit:'no',      // 是否有美国信用记录
@@ -328,19 +357,19 @@ const DEFAULT_PROFILE = {
 function baseDocs(p){
   const visa = p.visa || 'F-1';
   const items = [
-    { id:'passport', zh:'护照（含个人信息页 + 美签页）', en:'Passport (bio page + U.S. visa page)',
-      why:'房东 / 经纪需核验你的身份与合法入境身份，这是任何申请的第一步。' },
-    { id:'id', zh:'学生证 / 政府身份证件', en:'Student ID / Government photo ID',
-      why:'作为辅助身份证明，部分楼盘会同时要护照与一张带照片的 ID。' },
-    { id:'i20', zh:visa==='F-1'?'I-20 表（F-1 学生身份证明）':(visa==='J-1'?'DS-2019（J-1 身份证明）':'在美合法身份文件（I-20 / DS-2019 / EAD 等）'),
+    { id:'passport', zh:T('护照（含个人信息页 + 美签页）','Passport (bio page + U.S. visa page)'), en:'Passport (bio page + U.S. visa page)',
+      why:T('房东 / 经纪需核验你的身份与合法入境身份，这是任何申请的第一步。','Landlords and brokers need to verify who you are and your lawful entry status — the first step of any application.') },
+    { id:'id', zh:T('学生证 / 政府身份证件','Student ID / Government photo ID'), en:'Student ID / Government photo ID',
+      why:T('作为辅助身份证明，部分楼盘会同时要护照与一张带照片的 ID。','A secondary proof of identity — some buildings ask for a photo ID alongside your passport.') },
+    { id:'i20', zh: visa==='F-1'?T('I-20 表（F-1 学生身份证明）','Form I-20 (proof of F-1 student status)'):(visa==='J-1'?T('DS-2019（J-1 身份证明）','Form DS-2019 (proof of J-1 status)'):T('在美合法身份文件（I-20 / DS-2019 / EAD 等）','Proof of U.S. status (I-20 / DS-2019 / EAD, etc.)')),
       en: visa==='F-1'?'Form I-20':(visa==='J-1'?'Form DS-2019':'Proof of U.S. status (I-20 / DS-2019 / EAD)'),
-      why:'证明你在美国的合法身份与在读 / 在职状态，留学生租房几乎必备。', tag:'身份' },
-    { id:'visa_status', zh:'签证 / 身份页（'+visa+'）', en:'Visa / status page ('+visa+')',
-      why:'与护照、I-20 互相印证你当前的合法停留身份。' },
-    { id:'enroll', zh:'在读证明 / 录取通知（Enrollment / Offer letter）', en:'Enrollment verification / Acceptance letter',
-      why:'证明你是在校学生，解释你"为什么没有美国收入"，是国际学生申请的关键背景材料。', tag:'身份' },
-    { id:'app_fee', zh:'申请费 / 背景调查费（application fee）', en:'Application & screening fee',
-      why:'多数楼盘收取一笔不可退的申请费用于跑信用 / 背景调查；具体金额以该楼盘要求为准。' },
+      why:T('证明你在美国的合法身份与在读 / 在职状态，留学生租房几乎必备。','Shows your lawful U.S. status and that you\'re enrolled or employed — near-essential for international student rentals.'), tag:T('身份','Status') },
+    { id:'visa_status', zh:T('签证 / 身份页（'+visa+'）','Visa / status page ('+visa+')'), en:'Visa / status page ('+visa+')',
+      why:T('与护照、I-20 互相印证你当前的合法停留身份。','Cross-checks with your passport and I-20 to confirm your current lawful stay.') },
+    { id:'enroll', zh:T('在读证明 / 录取通知（Enrollment / Offer letter）','Enrollment verification / Acceptance letter'), en:'Enrollment verification / Acceptance letter',
+      why:T('证明你是在校学生，解释你"为什么没有美国收入"，是国际学生申请的关键背景材料。','Proves you\'re a current student and explains why you don\'t have U.S. income yet — key context in an international student application.'), tag:T('身份','Status') },
+    { id:'app_fee', zh:T('申请费 / 背景调查费（application fee）','Application & screening fee'), en:'Application & screening fee',
+      why:T('多数楼盘收取一笔不可退的申请费用于跑信用 / 背景调查；具体金额以该楼盘要求为准。','Most buildings charge a non-refundable fee to run credit and background checks; the exact amount is set by the building.') },
   ];
   return items;
 }
@@ -348,98 +377,98 @@ function baseDocs(p){
 // 资金证明（首月 + 押金 + broker fee）—— 措辞不含具体月数/金额
 function fundsDocs(){
   return [
-    { id:'funds', zh:'资金证明：首月租金 + 押金（deposit）+ 经纪费（broker fee）', en:'Proof of funds: first month + security deposit + broker fee',
-      why:'签约时通常需一次性备齐这几笔；具体几个月、是否收 broker fee 以房东 / 楼盘要求为准，本工具不替你估算金额。', tag:'资金' },
-    { id:'bank', zh:'银行存款证明 / 账户流水', en:'Bank statement / proof of savings',
-      why:'在没有美国收入时，足额存款是证明你"付得起房租"的主要方式。' },
+    { id:'funds', zh:T('资金证明：首月租金 + 押金（deposit）+ 经纪费（broker fee）','Proof of funds: first month + security deposit + broker fee'), en:'Proof of funds: first month + security deposit + broker fee',
+      why:T('签约时通常需一次性备齐这几笔；具体几个月、是否收 broker fee 以房东 / 楼盘要求为准，本工具不替你估算金额。','You\'ll usually need these ready together at signing. How many months, and whether a broker fee applies, is up to the landlord or building — this tool never estimates amounts for you.'), tag:T('资金','Funds') },
+    { id:'bank', zh:T('银行存款证明 / 账户流水','Bank statement / proof of savings'), en:'Bank statement / proof of savings',
+      why:T('在没有美国收入时，足额存款是证明你"付得起房租"的主要方式。','Without U.S. income, healthy savings are your main way of showing you can comfortably cover the rent.') },
   ];
 }
 
 // 有信用 + 收入 路径
 function pathHasCredit(p){
   const secs = [];
-  secs.push({ no:'01', en:'Identity', zh:'身份与基础材料', items: baseDocs(p) });
-  secs.push({ no:'02', en:'Income', zh:'收入与信用', items:[
-    { id:'paystub', zh:'收入证明：工资单 / offer letter', en:'Pay stubs / offer letter',
-      why:'房东用收入来判断你的支付能力；通常看年收入与月租的倍数关系，具体倍数以楼盘要求为准。', tag:'收入' },
-    { id:'employ', zh:'在职证明 / employment letter', en:'Employment verification letter',
-      why:'佐证你工作的稳定性与收入来源，与工资单互相印证。' },
-    { id:'tax', zh:'报税记录（W-2 / 1040，如有）', en:'Tax returns (W-2 / 1040)',
-      why:'部分楼盘要往年报税记录核对收入真实性；没有可先以工资单 + offer 替代。' },
-    { id:'credit', zh:'美国信用报告 / 信用分（credit report）', en:'U.S. credit report / score',
-      why:'有美国信用记录时，房东会直接拉你的 credit report 评估违约风险，这是你相对国际学生的优势项。', tag:'信用' },
+  secs.push({ no:'01', en:'Identity', zh:T('身份与基础材料','Identity & basics'), items: baseDocs(p) });
+  secs.push({ no:'02', en:'Income', zh:T('收入与信用','Income & credit'), items:[
+    { id:'paystub', zh:T('收入证明：工资单 / offer letter','Pay stubs / offer letter'), en:'Pay stubs / offer letter',
+      why:T('房东用收入来判断你的支付能力；通常看年收入与月租的倍数关系，具体倍数以楼盘要求为准。','Landlords gauge affordability from income — usually annual income as a multiple of the monthly rent. The exact multiple is set by the building.'), tag:T('收入','Income') },
+    { id:'employ', zh:T('在职证明 / employment letter','Employment verification letter'), en:'Employment verification letter',
+      why:T('佐证你工作的稳定性与收入来源，与工资单互相印证。','Backs up your job stability and income source, cross-checking your pay stubs.') },
+    { id:'tax', zh:T('报税记录（W-2 / 1040，如有）','Tax returns (W-2 / 1040, if any)'), en:'Tax returns (W-2 / 1040)',
+      why:T('部分楼盘要往年报税记录核对收入真实性；没有可先以工资单 + offer 替代。','Some buildings check past tax returns to verify income; if you don\'t have them yet, pay stubs plus an offer letter usually stand in.') },
+    { id:'credit', zh:T('美国信用报告 / 信用分（credit report）','U.S. credit report / score'), en:'U.S. credit report / score',
+      why:T('有美国信用记录时，房东会直接拉你的 credit report 评估违约风险，这是你相对国际学生的优势项。','With U.S. credit history, landlords pull your report to assess risk — a real advantage over most international applicants.'), tag:T('信用','Credit') },
   ]});
-  secs.push({ no:'03', en:'References', zh:'推荐与资金', items:[
-    { id:'ref', zh:'推荐人 / references（前房东或雇主）', en:'References (prior landlord / employer)',
-      why:'前房东或雇主的背书能加分，尤其在竞争激烈的房源上。' },
+  secs.push({ no:'03', en:'References', zh:T('推荐与资金','References & funds'), items:[
+    { id:'ref', zh:T('推荐人 / references（前房东或雇主）','References (prior landlord / employer)'), en:'References (prior landlord / employer)',
+      why:T('前房东或雇主的背书能加分，尤其在竞争激烈的房源上。','A good word from a prior landlord or employer earns points, especially on competitive listings.') },
     ...fundsDocs(),
   ]});
-  return { pathKey:'has_credit', pathLabel:'有美国信用 + 收入 · 标准申请', sections:secs };
+  return { pathKey:'has_credit', pathLabel:T('有美国信用 + 收入 · 标准申请','U.S. credit + income · Standard application'), sections:secs };
 }
 
 // 无信用/收入 —— 共同部分
 function pathNoCreditBase(p){
   const secs = [];
-  secs.push({ no:'01', en:'Identity', zh:'身份与基础材料', items: baseDocs(p) });
+  secs.push({ no:'01', en:'Identity', zh:T('身份与基础材料','Identity & basics'), items: baseDocs(p) });
   return secs;
 }
 
 // 无信用 → US guarantor 路径
 function pathUSGuarantor(p){
   const secs = pathNoCreditBase(p);
-  secs.push({ no:'02', en:'Guarantor', zh:'担保人（US guarantor）材料', items:[
-    { id:'g_id', zh:'担保人身份证件（护照 / 驾照）', en:"Guarantor's photo ID",
-      why:'房东需核验为你担保的人是谁、是否真实存在。', tag:'guarantor' },
-    { id:'g_income', zh:'担保人收入证明（工资单 / offer / 在职证明）', en:"Guarantor's proof of income",
-      why:'guarantor 的收入要求通常高于租客本人（往往按更高的月租倍数核），具体倍数以房东 / 楼盘要求为准。', tag:'guarantor' },
-    { id:'g_credit', zh:'担保人美国信用报告 / 信用分', en:"Guarantor's U.S. credit report",
-      why:'担保人需有良好美国信用，房东以此判断"租客违约时这位担保人是否兜得住"。', tag:'guarantor' },
-    { id:'g_tax', zh:'担保人报税记录（W-2 / 1040，如有）', en:"Guarantor's tax returns",
-      why:'进一步佐证担保人收入的稳定与真实，部分楼盘会要求。', tag:'guarantor' },
-    { id:'g_letter', zh:'担保协议 / guarantor agreement（房东模板）', en:'Guarantor agreement (landlord form)',
-      why:'担保人需签署房东提供的担保协议，正式承担连带责任；以房东模板为准。', tag:'guarantor' },
+  secs.push({ no:'02', en:'Guarantor', zh:T('担保人（US guarantor）材料','U.S. guarantor documents'), items:[
+    { id:'g_id', zh:T('担保人身份证件（护照 / 驾照）','Guarantor\'s photo ID (passport / driver\'s license)'), en:"Guarantor's photo ID",
+      why:T('房东需核验为你担保的人是谁、是否真实存在。','The landlord needs to verify who is guaranteeing you and that they\'re a real person.'), tag:'guarantor' },
+    { id:'g_income', zh:T('担保人收入证明（工资单 / offer / 在职证明）','Guarantor\'s proof of income (pay stubs / offer / employment letter)'), en:"Guarantor's proof of income",
+      why:T('guarantor 的收入要求通常高于租客本人（往往按更高的月租倍数核），具体倍数以房东 / 楼盘要求为准。','A guarantor is usually held to a higher income bar than the tenant (often a larger rent multiple); the exact multiple is set by the landlord or building.'), tag:'guarantor' },
+    { id:'g_credit', zh:T('担保人美国信用报告 / 信用分','Guarantor\'s U.S. credit report / score'), en:"Guarantor's U.S. credit report",
+      why:T('担保人需有良好美国信用，房东以此判断"租客违约时这位担保人是否兜得住"。','The guarantor needs solid U.S. credit — it\'s how the landlord judges whether they could truly cover the rent if you couldn\'t.'), tag:'guarantor' },
+    { id:'g_tax', zh:T('担保人报税记录（W-2 / 1040，如有）','Guarantor\'s tax returns (W-2 / 1040, if any)'), en:"Guarantor's tax returns",
+      why:T('进一步佐证担保人收入的稳定与真实，部分楼盘会要求。','Further evidence that the guarantor\'s income is steady and real; some buildings require it.'), tag:'guarantor' },
+    { id:'g_letter', zh:T('担保协议 / guarantor agreement（房东模板）','Guarantor agreement (landlord\'s form)'), en:'Guarantor agreement (landlord form)',
+      why:T('担保人需签署房东提供的担保协议，正式承担连带责任；以房东模板为准。','Your guarantor signs the landlord\'s own agreement to formally take on joint liability — always on the landlord\'s template.'), tag:'guarantor' },
   ]});
-  secs.push({ no:'03', en:'Funds', zh:'资金证明', items: fundsDocs() });
-  return { pathKey:'us_guarantor', pathLabel:'无美国信用 / 收入 · US guarantor 路径', sections:secs, guarantor:'us' };
+  secs.push({ no:'03', en:'Funds', zh:T('资金证明','Proof of funds'), items: fundsDocs() });
+  return { pathKey:'us_guarantor', pathLabel:T('无美国信用 / 收入 · US guarantor 路径','No U.S. credit / income · U.S. guarantor route'), sections:secs, guarantor:'us' };
 }
 
 // 无信用 → guarantor service 路径
 function pathService(p){
   const secs = pathNoCreditBase(p);
-  secs.push({ no:'02', en:'Service', zh:'担保服务（Insurent / TheGuarantors）申请材料', items:[
-    { id:'s_check', zh:'确认该楼盘是否接受 guarantor service', en:'Confirm the building accepts a guarantor service',
-      why:'并非所有房东都接受 Insurent / TheGuarantors，先确认再申请，免得白跑；以该楼盘政策为准。', tag:'service' },
-    { id:'s_id', zh:'本人身份与身份文件（护照 / 签证 / I-20）', en:'Your ID & status docs (passport / visa / I-20)',
-      why:'担保服务也要核验你的身份与在美合法身份，与房东申请所需基本一致。', tag:'service' },
-    { id:'s_enroll', zh:'在读证明 / offer letter', en:'Enrollment / offer letter',
-      why:'担保服务据此评估你的背景，国际学生 / 无美国收入者正是其主要客群。', tag:'service' },
-    { id:'s_funds', zh:'资金 / 存款证明（按 service 要求）', en:'Proof of funds / savings (per service)',
-      why:'部分担保服务对无收入申请人会看存款；具体门槛以该 service 当时要求为准。', tag:'service' },
-    { id:'s_fee', zh:'担保服务费用（一次性 / 按比例）', en:'Guarantor service fee',
-      why:'担保服务会收一笔费用；具体怎么收、收多少以该 service 报价为准，本工具不替你估算。', tag:'service' },
-    { id:'s_cert', zh:'担保批准函 / certificate（拿到后交房东）', en:'Approval certificate (submit to landlord)',
-      why:'service 批准后会出一份担保凭证，需连同你的申请一并交给房东。', tag:'service' },
+  secs.push({ no:'02', en:'Service', zh:T('担保服务（Insurent / TheGuarantors）申请材料','Guarantor service (Insurent / TheGuarantors) application'), items:[
+    { id:'s_check', zh:T('确认该楼盘是否接受 guarantor service','Confirm the building accepts a guarantor service'), en:'Confirm the building accepts a guarantor service',
+      why:T('并非所有房东都接受 Insurent / TheGuarantors，先确认再申请，免得白跑；以该楼盘政策为准。','Not every landlord takes Insurent or TheGuarantors — confirm first so you don\'t apply for nothing; the building\'s policy decides.'), tag:'service' },
+    { id:'s_id', zh:T('本人身份与身份文件（护照 / 签证 / I-20）','Your ID & status docs (passport / visa / I-20)'), en:'Your ID & status docs (passport / visa / I-20)',
+      why:T('担保服务也要核验你的身份与在美合法身份，与房东申请所需基本一致。','The service verifies your identity and U.S. status too — largely the same set as the landlord application.'), tag:'service' },
+    { id:'s_enroll', zh:T('在读证明 / offer letter','Enrollment verification / offer letter'), en:'Enrollment / offer letter',
+      why:T('担保服务据此评估你的背景，国际学生 / 无美国收入者正是其主要客群。','The service uses this to assess your background — international students without U.S. income are exactly who they serve.'), tag:'service' },
+    { id:'s_funds', zh:T('资金 / 存款证明（按 service 要求）','Proof of funds / savings (per the service)'), en:'Proof of funds / savings (per service)',
+      why:T('部分担保服务对无收入申请人会看存款；具体门槛以该 service 当时要求为准。','Some services look at savings for no-income applicants; the exact threshold is whatever the service requires at the time.'), tag:'service' },
+    { id:'s_fee', zh:T('担保服务费用（一次性 / 按比例）','Guarantor service fee (one-time / percentage)'), en:'Guarantor service fee',
+      why:T('担保服务会收一笔费用；具体怎么收、收多少以该 service 报价为准，本工具不替你估算。','The service charges a fee; how it\'s structured and how much is per their quote — this tool never estimates it for you.'), tag:'service' },
+    { id:'s_cert', zh:T('担保批准函 / certificate（拿到后交房东）','Approval certificate (hand it to the landlord)'), en:'Approval certificate (submit to landlord)',
+      why:T('service 批准后会出一份担保凭证，需连同你的申请一并交给房东。','Once approved, the service issues a certificate that goes to the landlord together with your application.'), tag:'service' },
   ]});
-  secs.push({ no:'03', en:'Funds', zh:'资金证明', items: fundsDocs() });
-  return { pathKey:'service', pathLabel:'无美国信用 / 收入 · 担保服务路径', sections:secs, guarantor:'service' };
+  secs.push({ no:'03', en:'Funds', zh:T('资金证明','Proof of funds'), items: fundsDocs() });
+  return { pathKey:'service', pathLabel:T('无美国信用 / 收入 · 担保服务路径','No U.S. credit / income · Guarantor service route'), sections:secs, guarantor:'service' };
 }
 
 // 无信用 → 预付 路径
 function pathPrepay(p){
   const secs = pathNoCreditBase(p);
-  secs.push({ no:'02', en:'Prepay', zh:'预付方案材料', items:[
-    { id:'p_confirm', zh:'与房东确认可接受预付及预付月数', en:'Confirm prepayment is accepted & how many months',
-      why:'是否接受预付、预付几个月完全由房东决定，先谈妥再准备；预付月数以房东要求为准，本工具不替你定。', tag:'预付' },
-    { id:'p_funds', zh:'预付资金证明（银行存款 / 流水）', en:'Proof of funds for prepayment',
-      why:'预付意味着一次性付出较大金额，房东要先看到你账户里确有这笔钱。', tag:'预付' },
-    { id:'p_source', zh:'资金来源说明（如父母资助 / 汇款记录）', en:'Source of funds (e.g. parental support / remittance)',
-      why:'大额一次性付款时，部分房东会问资金来源，提前备好汇款 / 资助说明更顺。', tag:'预付' },
+  secs.push({ no:'02', en:'Prepay', zh:T('预付方案材料','Prepayment documents'), items:[
+    { id:'p_confirm', zh:T('与房东确认可接受预付及预付月数','Confirm the landlord accepts prepayment & how many months'), en:'Confirm prepayment is accepted & how many months',
+      why:T('是否接受预付、预付几个月完全由房东决定，先谈妥再准备；预付月数以房东要求为准，本工具不替你定。','Whether prepay works — and for how many months — is entirely the landlord\'s call. Settle it before preparing anything; this tool never sets the number for you.'), tag:T('预付','Prepay') },
+    { id:'p_funds', zh:T('预付资金证明（银行存款 / 流水）','Proof of funds for prepayment (bank statement / savings)'), en:'Proof of funds for prepayment',
+      why:T('预付意味着一次性付出较大金额，房东要先看到你账户里确有这笔钱。','Prepaying means a large one-time payment — the landlord wants to see the money actually in your account first.'), tag:T('预付','Prepay') },
+    { id:'p_source', zh:T('资金来源说明（如父母资助 / 汇款记录）','Source of funds (e.g. parental support / remittance records)'), en:'Source of funds (e.g. parental support / remittance)',
+      why:T('大额一次性付款时，部分房东会问资金来源，提前备好汇款 / 资助说明更顺。','With a large lump-sum payment, some landlords ask where the money comes from — having remittance or support records ready keeps things smooth.'), tag:T('预付','Prepay') },
   ]});
-  secs.push({ no:'03', en:'Funds', zh:'其余签约资金', items:[
-    { id:'p_deposit', zh:'押金（deposit）+ 经纪费（broker fee，如有）', en:'Security deposit + broker fee (if any)',
-      why:'即使预付了租金，押金与可能的 broker fee 通常仍单独收；是否收、收多少以房东 / 楼盘为准。', tag:'资金' },
+  secs.push({ no:'03', en:'Funds', zh:T('其余签约资金','Other signing costs'), items:[
+    { id:'p_deposit', zh:T('押金（deposit）+ 经纪费（broker fee，如有）','Security deposit + broker fee (if any)'), en:'Security deposit + broker fee (if any)',
+      why:T('即使预付了租金，押金与可能的 broker fee 通常仍单独收；是否收、收多少以房东 / 楼盘为准。','Even with rent prepaid, the deposit and any broker fee are usually charged separately; whether and how much is up to the landlord or building.'), tag:T('资金','Funds') },
   ]});
-  return { pathKey:'prepay', pathLabel:'无美国信用 / 收入 · 预付路径', sections:secs, guarantor:'prepay' };
+  return { pathKey:'prepay', pathLabel:T('无美国信用 / 收入 · 预付路径','No U.S. credit / income · Prepay route'), sections:secs, guarantor:'prepay' };
 }
 
 /* 主分支函数：profile → checklist 对象 */
@@ -464,9 +493,9 @@ function buildChecklist(p){
 // guarantor 高亮文案（按路径）
 function guarHighlight(d){
   const g = d.guarantor;
-  if(g==='us') return ['核心卡点 · US Guarantor','这一单走 <b>US guarantor（美国担保人）</b> 路径：房东要的不只是你的材料，更要担保人的<b>收入、信用、身份</b>三件套。担保人的信用与收入要求通常比租客本人更高 —— 具体口径以房东 / 楼盘要求为准。'];
-  if(g==='service') return ['核心卡点 · Guarantor Service','这一单走 <b>担保服务（Insurent / TheGuarantors）</b>：先确认楼盘<b>是否接受</b>该 service，再走 service 自己的申请。服务会收一笔费用、并在批准后出担保凭证交给房东。'];
-  if(g==='prepay') return ['核心卡点 · Prepay 预付','这一单走 <b>预付</b>：是否接受、预付<b>几个月</b>由房东决定 —— 本工具不替你定月数。核心是用<b>足额资金证明</b>让房东放心。'];
+  if(g==='us') return [T('核心卡点 · US Guarantor','Key hurdle · U.S. Guarantor'), T('这一单走 <b>US guarantor（美国担保人）</b> 路径：房东要的不只是你的材料，更要担保人的<b>收入、信用、身份</b>三件套。担保人的信用与收入要求通常比租客本人更高 —— 具体口径以房东 / 楼盘要求为准。','This application runs on a <b>U.S.-based guarantor</b>: the landlord wants more than your documents — they need the guarantor\'s <b>income, credit, and ID</b>, all three. Guarantors are usually held to higher credit and income bars than the tenant — the exact bar is set by the landlord or building.')];
+  if(g==='service') return [T('核心卡点 · Guarantor Service','Key hurdle · Guarantor Service'), T('这一单走 <b>担保服务（Insurent / TheGuarantors）</b>：先确认楼盘<b>是否接受</b>该 service，再走 service 自己的申请。服务会收一笔费用、并在批准后出担保凭证交给房东。','This application runs on a <b>guarantor service (Insurent / TheGuarantors)</b>: first confirm the building <b>accepts</b> the service, then complete the service\'s own application. It charges a fee and, once you\'re approved, issues a certificate for the landlord.')];
+  if(g==='prepay') return [T('核心卡点 · Prepay 预付','Key hurdle · Prepay'), T('这一单走 <b>预付</b>：是否接受、预付<b>几个月</b>由房东决定 —— 本工具不替你定月数。核心是用<b>足额资金证明</b>让房东放心。','This application runs on <b>prepayment</b>: whether it\'s accepted — and for <b>how many months</b> — is the landlord\'s call; this tool never sets the number. The key is <b>solid proof of funds</b> that puts the landlord at ease.')];
   return null;
 }
 
@@ -476,7 +505,7 @@ function renderChecklist(d){
   const wrap = el('div',{class:'results'});
 
   wrap.appendChild(el('div',{class:'sec-eyebrow'},
-    '个性化清单 · Tailored checklist', el('span',{class:'badge'},'确定性生成')));
+    T('个性化清单 · Tailored checklist','Your tailored checklist'), el('span',{class:'badge'},T('确定性生成','Deterministically generated'))));
 
   const doc = el('div',{class:'doc', id:'doc'});
   doc.appendChild(el('div',{class:'doc-top'}));
@@ -486,12 +515,12 @@ function renderChecklist(d){
   // 报头
   const total = d.sections.reduce((n,s)=>n+s.items.length,0);
   pad.appendChild(el('div',{class:'doc-mast'},
-    el('div',{class:'kanji'}, 'Lease Application Checklist · NYC'),
-    el('h2',null,'签约材料清单'),
+    el('div',{class:'kanji'}, T('Lease Application Checklist · NYC','签约材料清单 · NYC')),
+    el('h2',null,T('签约材料清单','Lease Application Checklist')),
     el('div',{class:'sub'},
-      el('span',null,['身份：',el('b',null, d.profile.visa||'F-1')]),
-      el('span',null,['共 ',el('b',null, total+' 项'),' 材料']),
-      el('span',null,['分 ',el('b',null, d.sections.length+' 段')]))
+      el('span',null,[T('身份：','Status: '),el('b',null, d.profile.visa||'F-1')]),
+      el('span',null,[T('共 ',''),el('b',null, total+T(' 项',' items')),T(' 材料','')]),
+      el('span',null,[T('分 ',''),el('b',null, d.sections.length+T(' 段',' sections'))]))
   ));
 
   // 路径徽章
@@ -512,14 +541,14 @@ function renderChecklist(d){
     const s = el('div',{class:'dsec'});
     s.appendChild(el('div',{class:'dsec-h'},
       el('span',{class:'no'}, sec.no),
-      sec.zh, el('span',{class:'en'}, '· '+sec.en)));
+      sec.zh, EN ? null : el('span',{class:'en'}, '· '+sec.en)));
     sec.items.forEach(it=>{
-      const isAcc = it.tag && ['guarantor','service','预付'].indexOf(it.tag)>=0;
+      const isAcc = it.tag && ['guarantor','service',T('预付','Prepay')].indexOf(it.tag)>=0;
       const body = el('div',{class:'body'});
       body.appendChild(el('div',{class:'zh'}, [ it.zh,
         it.tag ? el('span',{class:'tag'+(isAcc?' acc':'')}, it.tag) : null ]));
-      body.appendChild(el('div',{class:'en'}, it.en));
-      body.appendChild(el('div',{class:'why'}, [ el('span',{class:'wl'},'为什么需要'), it.why ]));
+      if(!EN) body.appendChild(el('div',{class:'en'}, it.en));
+      body.appendChild(el('div',{class:'why'}, [ el('span',{class:'wl'},T('为什么需要','Why it\'s needed')), it.why ]));
       s.appendChild(el('div',{class:'item'},
         el('div',{class:'chk'}), body));
     });
@@ -529,14 +558,18 @@ function renderChecklist(d){
   // 底部免责（不绝对化）
   pad.appendChild(el('div',{class:'disc'},
     el('span',{class:'ic'},'⚠'),
-    el('span',{html:'本清单基于<b>通用 NYC 租赁申请要求</b>整理，仅供准备参考。'+
+    el('span',{html:T('本清单基于<b>通用 NYC 租赁申请要求</b>整理，仅供准备参考。'+
       '不同房东 / 楼盘 / 经纪的具体要求各异（含金额、月数、可否预付、接受哪种担保），'+
-      '<b>最终一律以你所申请的具体房东 / 楼盘要求为准</b>。本工具只列材料，不谈判、不替你判断房源是否值得租。'})));
+      '<b>最终一律以你所申请的具体房东 / 楼盘要求为准</b>。本工具只列材料，不谈判、不替你判断房源是否值得租。',
+      'This checklist is compiled from <b>common NYC rental application requirements</b> and is for preparation only. '+
+      'Every landlord / building / broker differs (amounts, month counts, whether prepay is accepted, which guarantees count) — '+
+      '<b>always follow the requirements of the specific landlord or building you apply to</b>. '+
+      'This tool only lists documents; it doesn\'t negotiate and doesn\'t judge whether a listing is worth renting.')})));
 
   pad.appendChild(el('div',{class:'toolbar'},
-    el('button',{class:'tool primary', onClick:()=>copy(checklistText(d))}, '📋 复制清单'),
-    el('button',{class:'tool', id:'exportBtn', onClick:()=>exportImage(d)}, '🖼 导出图片'),
-    el('button',{class:'tool', onClick:()=>{ document.getElementById('quiz').scrollIntoView({behavior:'smooth',block:'start'}); }}, '↻ 改身份重生成')
+    el('button',{class:'tool primary', onClick:()=>copy(checklistText(d))}, T('📋 复制清单','📋 Copy checklist')),
+    el('button',{class:'tool', id:'exportBtn', onClick:()=>exportImage(d)}, T('🖼 导出图片','🖼 Export image')),
+    el('button',{class:'tool', onClick:()=>{ document.getElementById('quiz').scrollIntoView({behavior:'smooth',block:'start'}); }}, T('↻ 改身份重生成','↻ Change answers'))
   ));
 
   wrap.appendChild(doc);
@@ -544,27 +577,27 @@ function renderChecklist(d){
   // 脚注（firm 水印）
   wrap.appendChild(el('div',{class:'foot'},
     el('div',{class:'pos'}, [
-      '这套工具只做一件事：',el('b',null,'按你的身份情况，把签约要准备的材料列清楚、讲明白为什么'),
-      '。它不谈判、不替你判断房源、不编造任何金额或月数 —— 判断权永远在你。']),
-    el('div',{class:'brand'}, 'AnyHome · 内部工具 · 呈现而非判断　// TODO: 替换品牌资产')));
+      T('这套工具只做一件事：','This tool does exactly one thing: '),el('b',null,T('按你的身份情况，把签约要准备的材料列清楚、讲明白为什么','lay out what your situation requires for signing, and explain why each item matters')),
+      T('。它不谈判、不替你判断房源、不编造任何金额或月数 —— 判断权永远在你。','. It never negotiates, never judges a listing, never invents an amount or a month count — the judgment stays yours.')]),
+    el('div',{class:'brand'}, T('AnyHome · 内部工具 · 呈现而非判断　// TODO: 替换品牌资产','AnyHome · Internal tool · Presenting, not deciding // TODO: replace brand assets'))));
 
   clear(mountResults); mountResults.appendChild(wrap);
 }
 
 /* ── 文本导出 ── */
 function checklistText(d){
-  const L = ['【AnyHome · 签约材料清单】  身份：'+(d.profile.visa||'F-1'), '路径：'+d.pathLabel, ''];
+  const L = [T('【AnyHome · 签约材料清单】  身份：','[AnyHome · Lease Application Checklist]  Status: ')+(d.profile.visa||'F-1'), T('路径：','Route: ')+d.pathLabel, ''];
   d.sections.forEach(sec=>{
-    L.push('— '+sec.zh+' / '+sec.en+' —');
+    L.push(EN ? ('— '+sec.zh+' —') : ('— '+sec.zh+' / '+sec.en+' —'));
     sec.items.forEach(it=>{
-      L.push('☐ '+it.zh + (it.tag?('（'+it.tag+'）'):''));
-      L.push('   '+it.en);
-      L.push('   · 为什么需要：'+it.why);
+      L.push('☐ '+it.zh + (it.tag?T('（'+it.tag+'）',' ('+it.tag+')'):''));
+      if(!EN) L.push('   '+it.en);
+      L.push(T('   · 为什么需要：','   · Why: ')+it.why);
     });
     L.push('');
   });
-  L.push('※ 本清单基于通用 NYC 租赁申请要求，具体含金额/月数/担保方式一律以你所申请的房东/楼盘要求为准。');
-  L.push('—— AnyHome · 只列材料，不谈判、不判断房源');
+  L.push(T('※ 本清单基于通用 NYC 租赁申请要求，具体含金额/月数/担保方式一律以你所申请的房东/楼盘要求为准。','* Based on common NYC rental application requirements. Amounts, month counts, and accepted guarantee options always follow the specific landlord / building you apply to.'));
+  L.push(T('—— AnyHome · 只列材料，不谈判、不判断房源','— AnyHome · Documents only. No negotiating, no judging listings.'));
   return L.join('\n');
 }
 
@@ -573,23 +606,23 @@ async function exportImage(d){
   const node = document.getElementById('doc');
   const btn = document.getElementById('exportBtn');
   if(typeof window.html2canvas !== 'function'){
-    toast('图片库未加载，已改为复制文字清单');
+    toast(T('图片库未加载，已改为复制文字清单','Image library didn\'t load — copied the text version instead'));
     copy(checklistText(d));
     return;
   }
-  if(btn){ btn.disabled = true; btn.textContent = '⏳ 生成图片中…'; }
+  if(btn){ btn.disabled = true; btn.textContent = T('⏳ 生成图片中…','⏳ Rendering image…'); }
   try{
     const canvas = await window.html2canvas(node, {
       backgroundColor:'#fffefb', scale: Math.min(2, window.devicePixelRatio||1), useCORS:true, logging:false });
     const url = canvas.toDataURL('image/png');
-    const a = el('a',{href:url, download:'AnyHome-签约材料清单.png'});
+    const a = el('a',{href:url, download:T('AnyHome-签约材料清单.png','AnyHome-lease-checklist.png')});
     document.body.appendChild(a); a.click(); a.remove();
-    toast('已导出图片 ✓');
+    toast(T('已导出图片 ✓','Image saved ✓'));
   }catch(err){
-    toast('导出图片失败，已改为复制文字清单');
+    toast(T('导出图片失败，已改为复制文字清单','Image export failed — copied the text version instead'));
     copy(checklistText(d));
   }finally{
-    if(btn){ btn.disabled = false; btn.textContent = '🖼 导出图片'; }
+    if(btn){ btn.disabled = false; btn.textContent = T('🖼 导出图片','🖼 Export image'); }
   }
 }
 
@@ -613,7 +646,7 @@ function applyPolish(d, items){
   }));
 }
 
-const POLISH_MSGS = ['按你的身份匹配分支…','整理需要的材料…','把措辞润色得更友好…','补上每条"为什么需要"…'];
+const POLISH_MSGS = [T('按你的身份匹配分支…','Matching your profile…'),T('整理需要的材料…','Gathering the documents…'),T('把措辞润色得更友好…','Polishing the wording…'),T('补上每条"为什么需要"…','Filling in every "why"…')];
 async function generate(p, opts){
   opts = opts || {};
   const d = buildChecklist(p);
@@ -635,12 +668,12 @@ async function generate(p, opts){
 
   try{
     const payload = JSON.stringify({ items: flattenItems(d) });
-    const raw = await LLM.run('这是需要润色的 checklist 条目（保持 id 与数组长度不变）：\n'+payload);
+    const raw = await LLM.run(T('这是需要润色的 checklist 条目（保持 id 与数组长度不变）：\n','Here are the checklist items to polish (keep every id and the array length unchanged):\n')+payload);
     clearInterval(timer);
     applyPolish(d, raw && raw.items);
     renderChecklist(d);
     mountResults.scrollIntoView({behavior:'smooth', block:'start'});
-    toast('已用 AI 润色措辞 ✓');
+    toast(T('已用 AI 润色措辞 ✓','Wording polished with AI ✓'));
   }catch(err){
     clearInterval(timer);
     renderChecklist(d); // 失败兜底：模板清单照常出
@@ -658,21 +691,24 @@ function aiBar(){
     const on = LLM.connected();
     root.appendChild(el('span',{class:'aidot'+(on?' on':'')}));
     root.appendChild(el('span',{class:'aitxt'}, on
-      ? '已连接 AI · 生成时可选用模型把清单措辞润色得更友好（claude-sonnet-4-6）'
-      : '未连接 · 清单为确定性模板生成，无需 key 即出完整正确清单（连接后可选润色措辞）'));
-    root.appendChild(el('button',{class:'ailink', onClick:toggle}, on?'管理':'连接 AI（可选）'));
+      ? T('已连接 AI · 生成时可选用模型把清单措辞润色得更友好（claude-sonnet-4-6）','AI connected · Optionally have the model polish the checklist wording when generating (claude-sonnet-4-6)')
+      : T('未连接 · 清单为确定性模板生成，无需 key 即出完整正确清单（连接后可选润色措辞）','Not connected · Checklists are generated deterministically — complete and accurate with no key (connect to optionally polish the wording)')));
+    root.appendChild(el('button',{class:'ailink', onClick:toggle}, on?T('管理','Manage'):T('连接 AI（可选）','Connect AI (optional)')));
   }
   function toggle(){
     if(panel){ panel.remove(); panel=null; return; }
     const input = el('input',{class:'field-pw', type:'password', autocomplete:'off',
-      placeholder:'粘贴 Anthropic API Key（sk-ant-…）', value:LLM.get()});
+      placeholder:T('粘贴 Anthropic API Key（sk-ant-…）','Paste an Anthropic API key (sk-ant-…)'), value:LLM.get()});
     const save = el('button',{class:'minibtn primary', onClick:()=>{
-      LLM.set(input.value.trim()); toast(input.value.trim()?'已连接 ✓':'已清除'); paint(); }}, '保存');
-    const clr = LLM.get() ? el('button',{class:'minibtn ghost', onClick:()=>{ LLM.set(''); toast('已清除'); paint(); }}, '清除') : null;
+      LLM.set(input.value.trim()); toast(input.value.trim()?T('已连接 ✓','Connected ✓'):T('已清除','Cleared')); paint(); }}, T('保存','Save'));
+    const clr = LLM.get() ? el('button',{class:'minibtn ghost', onClick:()=>{ LLM.set(''); toast(T('已清除','Cleared')); paint(); }}, T('清除','Clear')) : null;
     panel = el('div',{class:'aipanel'},
-      el('p',{html:'纯静态演示、无后端。<b>清单本身完全由确定性分支生成，不需要 key 也准确</b>。'+
+      el('p',{html:T('纯静态演示、无后端。<b>清单本身完全由确定性分支生成，不需要 key 也准确</b>。'+
         '给一个 Anthropic API Key 仅用于<b>可选</b>把中文措辞润色得更友好——'+
-        'key <b>只存你本机浏览器</b>、不上传任何服务器；用 sonnet，单次花费极低。AI 不会改动材料项本身或英文术语。'}),
+        'key <b>只存你本机浏览器</b>、不上传任何服务器；用 sonnet，单次花费极低。AI 不会改动材料项本身或英文术语。',
+        'Fully static demo, no backend. <b>The checklist itself is generated deterministically — accurate with no key at all.</b> '+
+        'An Anthropic API key is used <b>only</b> for optional wording polish — '+
+        'the key <b>stays in your browser</b> and is never uploaded anywhere. Runs on Sonnet, so a single pass costs very little. The AI never alters the document items or English terms.')}),
       el('div',{class:'row'}, input, save, clr));
     root.appendChild(panel); input.focus();
   }
@@ -718,57 +754,57 @@ function buildQuiz(){
   const pad = el('div',{class:'quiz-pad'});
   box.appendChild(pad);
 
-  pad.appendChild(el('div',{class:'quiz-h'}, '先回答几个问题（单选）'));
-  pad.appendChild(el('div',{class:'quiz-sub'}, '据此生成你这一单要准备的签约材料。默认已按「典型国际学生」预填，可直接生成或按需修改。'));
+  pad.appendChild(el('div',{class:'quiz-h'}, T('先回答几个问题（单选）','A few quick questions (single choice)')));
+  pad.appendChild(el('div',{class:'quiz-sub'}, T('据此生成你这一单要准备的签约材料。默认已按「典型国际学生」预填，可直接生成或按需修改。','Your answers shape the signing checklist for this application. Pre-filled for a typical international student — generate as-is, or adjust first.')));
 
   quizRefs.paints = {};
 
   // Q1 信用
   const q1 = el('div',{class:'qitem'});
-  q1.appendChild(el('div',{class:'qlabel'}, ['是否有美国信用记录？', el('span',{class:'en'},'U.S. credit history')]));
-  const g1 = segGroup([{v:'yes',label:'有'},{v:'no',label:'没有'}], ()=>STATE.credit, v=>STATE.credit=v);
+  q1.appendChild(el('div',{class:'qlabel'}, [T('是否有美国信用记录？','Do you have U.S. credit history?'), EN?null:el('span',{class:'en'},'U.S. credit history')]));
+  const g1 = segGroup([{v:'yes',label:T('有','Yes')},{v:'no',label:T('没有','No')}], ()=>STATE.credit, v=>STATE.credit=v);
   q1.appendChild(g1.row); quizRefs.paints.credit=g1.paint; pad.appendChild(q1);
 
   // Q2 收入
   const q2 = el('div',{class:'qitem'});
-  q2.appendChild(el('div',{class:'qlabel'}, ['是否有美国收入 / offer？', el('span',{class:'en'},'U.S. income / job offer')]));
-  const g2 = segGroup([{v:'yes',label:'有'},{v:'no',label:'没有'}], ()=>STATE.income, v=>STATE.income=v);
+  q2.appendChild(el('div',{class:'qlabel'}, [T('是否有美国收入 / offer？','Do you have U.S. income or a job offer?'), EN?null:el('span',{class:'en'},'U.S. income / job offer')]));
+  const g2 = segGroup([{v:'yes',label:T('有','Yes')},{v:'no',label:T('没有','No')}], ()=>STATE.income, v=>STATE.income=v);
   q2.appendChild(g2.row); quizRefs.paints.income=g2.paint; pad.appendChild(q2);
 
   // Q3 US guarantor（分支）
   const q3 = el('div',{class:'qitem'});
-  q3.appendChild(el('div',{class:'qlabel'}, ['是否有可用的 US guarantor（美国担保人）？', el('span',{class:'en'},'US-based guarantor'), el('span',{class:'br'},'分支')]));
-  const g3 = segGroup([{v:'yes',label:'有'},{v:'no',label:'没有 / 不确定'}], ()=>STATE.usGuarantor, v=>STATE.usGuarantor=v, true);
+  q3.appendChild(el('div',{class:'qlabel'}, [T('是否有可用的 US guarantor（美国担保人）？','Do you have a U.S.-based guarantor you can use?'), EN?null:el('span',{class:'en'},'US-based guarantor'), el('span',{class:'br'},T('分支','Branch'))]));
+  const g3 = segGroup([{v:'yes',label:T('有','Yes')},{v:'no',label:T('没有 / 不确定','No / not sure')}], ()=>STATE.usGuarantor, v=>STATE.usGuarantor=v, true);
   q3.appendChild(g3.row); quizRefs.paints.usGuarantor=g3.paint; quizRefs.usGuarItem=q3; pad.appendChild(q3);
 
   // Q4 方案（仅无 US guarantor 时）
   const q4 = el('div',{class:'qitem'});
-  q4.appendChild(el('div',{class:'qlabel'}, ['没有 US guarantor 时，你打算走哪种方式？', el('span',{class:'en'},'guarantor service or prepay'), el('span',{class:'br'},'分支')]));
+  q4.appendChild(el('div',{class:'qlabel'}, [T('没有 US guarantor 时，你打算走哪种方式？','No U.S. guarantor — which route do you plan to take?'), EN?null:el('span',{class:'en'},'guarantor service or prepay'), el('span',{class:'br'},T('分支','Branch'))]));
   const g4 = segGroup([
-    {v:'service',label:'用担保服务',en:'Insurent / TheGuarantors'},
-    {v:'prepay',label:'预付租金',en:'prepay'}
+    {v:'service',label:T('用担保服务','Use a guarantor service'),en:'Insurent / TheGuarantors'},
+    {v:'prepay',label:T('预付租金','Prepay rent'),en:EN?null:'prepay'}
   ], ()=>STATE.noCreditPlan, v=>STATE.noCreditPlan=v, true);
   q4.appendChild(g4.row); quizRefs.paints.noCreditPlan=g4.paint; quizRefs.planItem=q4; pad.appendChild(q4);
 
   // Q5 签证
   const q5 = el('div',{class:'qitem'});
-  q5.appendChild(el('div',{class:'qlabel'}, ['签证 / 身份？', el('span',{class:'en'},'Visa / status')]));
+  q5.appendChild(el('div',{class:'qlabel'}, [T('签证 / 身份？','Visa / status?'), EN?null:el('span',{class:'en'},'Visa / status')]));
   const sel = el('select',{class:'field', onChange:(e)=>{ STATE.visa = e.target.value; }});
   VISAS.forEach(v=> sel.appendChild(el('option',{value:v, selected: v===STATE.visa? '' : null}, v)));
   sel.value = STATE.visa;
   q5.appendChild(sel); pad.appendChild(q5);
 
   // 生成按钮
-  const goBtn = el('button',{class:'go', id:'go', onClick:()=>generate(Object.assign({},STATE), {polish: polishWanted})}, '⌖ 生成我的材料清单');
+  const goBtn = el('button',{class:'go', id:'go', onClick:()=>generate(Object.assign({},STATE), {polish: polishWanted})}, T('⌖ 生成我的材料清单','⌖ Generate my checklist'));
   pad.appendChild(goBtn);
 
   // 润色开关 + 预设
   const foot = el('div',{class:'quiz-foot'});
-  foot.appendChild(el('span',{class:'preset'}, '快速套用典型情况：'));
-  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'no',visa:'F-1',noCreditPlan:'service'})}, '国际学生 · 担保服务'));
-  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'yes',visa:'F-1',noCreditPlan:'guarantor'})}, '有 US guarantor'));
-  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'no',visa:'F-1',noCreditPlan:'prepay'})}, '预付租金'));
-  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'yes',income:'yes',usGuarantor:'no',visa:'OPT / STEM-OPT',noCreditPlan:'service'})}, '有信用+收入'));
+  foot.appendChild(el('span',{class:'preset'}, T('快速套用典型情况：','Quick presets: ')));
+  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'no',visa:'F-1',noCreditPlan:'service'})}, T('国际学生 · 担保服务','Intl student · Guarantor service')));
+  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'yes',visa:'F-1',noCreditPlan:'guarantor'})}, T('有 US guarantor','Has a U.S. guarantor')));
+  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'no',income:'no',usGuarantor:'no',visa:'F-1',noCreditPlan:'prepay'})}, T('预付租金','Prepay rent')));
+  foot.appendChild(el('button',{class:'preset-b', onClick:()=>applyPreset({credit:'yes',income:'yes',usGuarantor:'no',visa:'OPT / STEM-OPT',noCreditPlan:'service'})}, T('有信用+收入','Credit + income')));
   pad.appendChild(foot);
 
   // 润色复选
@@ -776,7 +812,7 @@ function buildQuiz(){
   const cb = el('input',{type:'checkbox', id:'polishCb', style:{margin:'0 6px 0 0', cursor:'pointer'},
     onChange:(e)=>{ polishWanted = e.target.checked; }});
   const lbl = el('label',{for:'polishCb', style:{fontSize:'12.5px', color:'var(--ink-3)', cursor:'pointer', display:'inline-flex', alignItems:'center'}},
-    [cb, '（可选）连接 AI 后，把清单措辞润色得更友好']);
+    [cb, T('（可选）连接 AI 后，把清单措辞润色得更友好','(Optional) With AI connected, polish the checklist wording')]);
   polishRow.appendChild(lbl);
   pad.appendChild(polishRow);
 
@@ -788,7 +824,7 @@ function applyPreset(p){
   // 重置 select
   const sel = document.querySelector('#quiz select.field'); if(sel) sel.value = STATE.visa;
   onProfileChange();
-  toast('已套用，正在生成…');
+  toast(T('已套用，正在生成…','Preset applied — generating…'));
   generate(Object.assign({},STATE), {polish: polishWanted});
 }
 
@@ -798,12 +834,15 @@ function home(){
   clear(app);
 
   app.appendChild(el('div',{class:'hero'},
-    el('div',{class:'eyebrow'}, '签约前的最后一步 · 把材料一次列清'),
-    el('h1',null, ['几个问题，', el('br'), '生成你这一单的', el('span',{class:'em'},'签约材料清单'), '——中英对照，每条都讲清', el('span',{class:'em'},'为什么需要')]),
+    el('div',{class:'eyebrow'}, T('签约前的最后一步 · 把材料一次列清','The last step before signing · Every document, listed once')),
+    el('h1',null, [T('几个问题，','A few questions,'), el('br'), T('生成你这一单的','and out comes your '), el('span',{class:'em'},T('签约材料清单','signing checklist')), T('——中英对照，每条都讲清',' — and every item explains '), el('span',{class:'em'},T('为什么需要','why it\'s needed'))]),
     el('p',{class:'lede'},
-      '回答几个关于信用 / 收入 / 担保的小问题，自动生成个性化、中英双语的签约材料 checklist。'+
+      T('回答几个关于信用 / 收入 / 担保的小问题，自动生成个性化、中英双语的签约材料 checklist。'+
       '国际学生最常卡的 guarantor 路径会被显著标出。只列材料、不替你判断房源，'+
-      '最终一律以具体房东 / 楼盘要求为准。')
+      '最终一律以具体房东 / 楼盘要求为准。',
+      'Answer a few quick questions about credit, income, and guarantors, and get a personalized signing checklist. '+
+      'The guarantor routes that trip up international students most are clearly flagged. We only list documents — '+
+      'never judge a listing for you — and the specific landlord or building always has the final say.'))
   ));
 
   app.appendChild(aiBar());
@@ -831,6 +870,24 @@ window.CHECKLIST_DEV = {
 };
 
 home();
+
+/* ════════════════ 语言：标题 / 静态 HTML 文案 / 切换控件 ════════════════ */
+document.title = T('签约材料清单生成 · AnyHome','Lease Checklist Builder · AnyHome');
+document.documentElement.lang = EN ? 'en' : 'zh-CN';
+if(EN){
+  document.querySelectorAll('[data-en]').forEach(n=>{ n.textContent = n.getAttribute('data-en'); });
+  document.querySelectorAll('[data-en-ph]').forEach(n=>{ n.setAttribute('placeholder', n.getAttribute('data-en-ph')); });
+  document.querySelectorAll('[data-en-title]').forEach(n=>{ n.setAttribute('title', n.getAttribute('data-en-title')); });
+}
+document.querySelectorAll('#langsw button').forEach(b=>{
+  const v = b.getAttribute('data-lang');
+  if(v === (EN?'en':'zh')) b.classList.add('on');
+  b.addEventListener('click', ()=>{
+    if(v === (EN?'en':'zh')) return;
+    try{ localStorage.setItem('site.lang', v); }catch(e){}
+    location.reload();
+  });
+});
 })();
 </script>
 </body>

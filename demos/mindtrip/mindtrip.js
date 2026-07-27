@@ -11,13 +11,21 @@ const SLUG = 'mindtrip';
 const { CITIES } = window.MINDTRIP;
 
 const PACE = {
-  relaxed: { key:'relaxed', label:'松弛', per:[2,3], note:'每天 2~3 个点，留足发呆时间' },
-  medium:  { key:'medium',  label:'适中', per:[3,4], note:'每天 3~4 个点，张弛有度' },
-  packed:  { key:'packed',  label:'紧凑', per:[4,5], note:'每天 4~5 个点，把时间榨干' }
+  relaxed: { key:'relaxed', label:GG.T('松弛','Relaxed'), per:[2,3], note:GG.T('每天 2~3 个点，留足发呆时间','2–3 stops a day, with plenty of downtime') },
+  medium:  { key:'medium',  label:GG.T('适中','Medium'),  per:[3,4], note:GG.T('每天 3~4 个点，张弛有度','3–4 stops a day, a balanced rhythm') },
+  packed:  { key:'packed',  label:GG.T('紧凑','Packed'),  per:[4,5], note:GG.T('每天 4~5 个点，把时间榨干','4–5 stops a day, squeeze every hour') }
 };
 const INTERESTS  = ['美食','历史','自然','购物','亲子'];
 const SLOTS_ALL  = ['上午','中午','下午','傍晚','晚上'];
 const TYPE_COLOR = { 美食:'#e0922b', 历史:'#9b5cc2', 自然:'#2e9e7b', 购物:'#c2569b', 亲子:'#3a7bd5' };
+// 展示层翻译：类型/时段/内置 POI 名在内部一律保持中文 key（排程、查表、正则全走中文，
+// 两种语言下行程结果一致），只在渲染时经这里转换 —— 中文模式输出与改造前逐字相同。
+const TYPE_EN = { 美食:'Food', 历史:'History', 自然:'Nature', 购物:'Shopping', 亲子:'Family' };
+const SLOT_EN = { 上午:'Morning', 中午:'Noon', 下午:'Afternoon', 傍晚:'Evening', 晚上:'Night' };
+function tType(t){ return GG.T(t, TYPE_EN[t]||t); }
+function tSlot(s){ return GG.T(s, SLOT_EN[s]||s); }
+function poiName(p){ return GG.T(p.name, p.en||p.name); }
+function interestsText(){ return sel.interests.map(tType).join(' / '); }
 // 每天一种颜色（地图连线 + 图钉填色 + 行程小标）
 const DAY_COLORS = ['#e0651f','#2e9e7b','#3a7bd5','#9b5cc2','#c2569b','#d99b1f'];
 
@@ -53,9 +61,9 @@ function affinityFor(poi){
 function deriveTags(poi){
   if(Array.isArray(poi.tags) && poi.tags.length) return poi.tags.slice(0,3);
   const out = [], n = String(poi.name||'');
-  if(poi.type==='亲子') out.push('带娃友好');
-  if(/山|寺|塔|城堡|爬|稻荷|双龙|登|升降机/.test(n)) out.push('需爬坡');
-  if(/市场|夜市|商场|购物|工厂|博物馆|水族馆|料理|餐厅/.test(n)) out.push('室内/避雨');
+  if(poi.type==='亲子') out.push(GG.T('带娃友好','Kid-friendly'));
+  if(/山|寺|塔|城堡|爬|稻荷|双龙|登|升降机/.test(n)) out.push(GG.T('需爬坡','Uphill climbs'));
+  if(/市场|夜市|商场|购物|工厂|博物馆|水族馆|料理|餐厅/.test(n)) out.push(GG.T('室内/避雨','Indoor / rainy-day'));
   return out.slice(0,3);
 }
 
@@ -75,7 +83,8 @@ const AI_SYS = `你是资深当地向导兼行程规划师。给定城市与旅�
 2) 若用户写了特殊要求(带小孩/老人/腿脚不便/不吃辣/预算紧/怕晒/避雨等)，必须体现在选点与 tags 上(例如腿脚不便就避开需爬坡的点)。
 3) x,y 是相对坐标：同一片区(area)的点要靠近、不同片区要分开，整体按真实地理的相对方位铺开，别全堆中间。
 4) slots 要符合常识：寺庙/古迹/自然填白天，夜市/酒吧/夜景填晚上，餐厅填中午或晚上。
-5) 全部简体中文。`;
+`+GG.T('5) 全部简体中文。',
+  '5) Language: write "city", "blurb", "name", "area" and "tags" in natural English (use internationally common English place names); BUT "type" MUST be exactly one of 美食|历史|自然|购物|亲子, and every "slots" value MUST be exactly one of 上午|中午|下午|傍晚|晚上 — keep those enum values in Chinese verbatim.');
 
 function clampNum(v, lo, hi, dft){ v = Number(v); return isFinite(v) ? Math.max(lo, Math.min(hi, v)) : dft; }
 function sanitizePoi(p, i){
@@ -102,7 +111,7 @@ async function aiCity(cityText){
   let pois = (Array.isArray(r.pois) ? r.pois : []).map(sanitizePoi).filter(Boolean);
   // 去重名
   const seen = new Set(); pois = pois.filter(p=>{ if(seen.has(p.name)) return false; seen.add(p.name); return true; });
-  if(pois.length < 4) throw new Error('AI 返回的地点太少，换个写法或城市再试');
+  if(pois.length < 4) throw new Error(GG.T('AI 返回的地点太少，换个写法或城市再试','AI returned too few places — reword it or try another city'));
   return { name:(r.city||cityText).trim(), blurb:r.blurb||'', pois, ai:true, seed:GG.hash('ai|'+cityText) };
 }
 
@@ -185,7 +194,7 @@ function dayTheme(items){
   if(areas.length) return areas.slice(0,2).join(' · ');
   const cnt = {}; items.forEach(it=> cnt[it.poi.type]=(cnt[it.poi.type]||0)+1);
   const top = Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a])[0];
-  return top ? top+'为主' : '';
+  return top ? GG.T(top+'为主', tType(top)+'-focused') : '';
 }
 
 /* ===================== 选点 ===================== */
@@ -280,29 +289,30 @@ function focusItem(idx, source){
 /* ===================== 状态 ===================== */
 let main;
 const G = { city:null, pool:[], selected:[], locked:new Set() };
-let sel = { cityText:'京都', days:3, pace:'medium', interests:['美食','自然'], constraints:'' };
+let sel = { cityText:GG.T('京都','Kyoto'), days:3, pace:'medium', interests:['美食','自然'], constraints:'' };
 let rerollN = 0;
 
 /* ===================== AI 旅行贴士（叠加在本地行程之上） ===================== */
-const MT_SYS = '你是熟悉当地的向导。根据用户的城市行程（每天落脚点），给一段实用、个性化的旅行贴士。只输出严格 JSON：{"tips":["贴士(交通/吃什么/最佳时段/避坑等，要具体)",4到6条]}。全部简体中文、具体、别空话。';
+const MT_SYS = '你是熟悉当地的向导。根据用户的城市行程（每天落脚点），给一段实用、个性化的旅行贴士。只输出严格 JSON：{"tips":["贴士(交通/吃什么/最佳时段/避坑等，要具体)",4到6条]}。'
+  +GG.T('全部简体中文、具体、别空话。','Write every tip in natural English — specific and practical, no fluff.');
 function aiTipsBlock(userText){
   const out = GG.el('div',{class:'card pad', style:{display:'none', marginTop:'4px', background:'#fbfbf9'}});
   let loaded=false, busy=false;
   const btn = GG.el('button',{class:'btn', onClick:async()=>{
     if(busy) return;
     if(loaded){ out.style.display = out.style.display==='none'?'block':'none'; return; }
-    busy=true; const old=btn.textContent; btn.textContent='AI 生成中…'; out.style.display='block';
-    GG.clear(out); out.appendChild(GG.el('div',{class:'muted small'}, 'AI 正在写旅行贴士…'));
+    busy=true; const old=btn.textContent; btn.textContent=GG.T('AI 生成中…','AI thinking…'); out.style.display='block';
+    GG.clear(out); out.appendChild(GG.el('div',{class:'muted small'}, GG.T('AI 正在写旅行贴士…','AI is writing your travel tips…')));
     try{
       const r = await GG.llm.json(MT_SYS, userText, {max_tokens:800});
       GG.clear(out);
-      out.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'0'}}, 'AI 旅行贴士'));
+      out.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('AI 旅行贴士','AI Travel Tips')));
       out.appendChild(GG.el('ul',{style:{margin:'4px 0 0', paddingLeft:'20px', lineHeight:'1.8'}},
         (Array.isArray(r.tips)?r.tips:[]).map(t=>GG.el('li',null,String(t)))));
-      loaded=true; btn.textContent='✦ 收起贴士';
+      loaded=true; btn.textContent=GG.T('✦ 收起贴士','✦ Hide tips');
     }catch(e){ GG.clear(out); out.appendChild(GG.el('div',{class:'muted small'}, GG.llm.errMsg(e))); btn.textContent=old; }
     busy=false;
-  }}, '✨ AI 旅行贴士');
+  }}, GG.T('✨ AI 旅行贴士','✨ AI travel tips'));
   return GG.el('div',{style:{marginTop:'16px'}}, GG.el('div',{class:'center'}, btn), out);
 }
 
@@ -315,7 +325,7 @@ function start(){
       interests:(st.interests&&st.interests.length)?st.interests:['美食','自然'], constraints:st.q||'' };
     const canned = matchCanned(st.city);
     if(canned || (st.ai && GG.llm.connected())){ generate(true); return; }
-    intro(); GG.toast('这条链接是 AI 生成的城市，连上 key 后点「生成」即可复现'); return;
+    intro(); GG.toast(GG.T('这条链接是 AI 生成的城市，连上 key 后点「生成」即可复现','This link is an AI-generated city — connect a key, then hit "Generate" to reproduce it')); return;
   }
   intro();
 }
@@ -324,74 +334,76 @@ function intro(){
   GG.clear(main);
   activeIdx=null;
   main.appendChild(GG.el('div',{class:'hero'},
-    GG.el('h1', null, '想去哪？我来排行程'),
-    GG.el('p', null, '填一个城市、选节奏与方向（可写特殊要求），我排出懂行的逐时行程，并把每个落脚点画进地图。')
+    GG.el('h1', null, GG.T('想去哪？我来排行程','Where to? I\'ll plan it')),
+    GG.el('p', null, GG.T('填一个城市、选节奏与方向（可写特殊要求），我排出懂行的逐时行程，并把每个落脚点画进地图。',
+      'Name a city, pick a pace and interests (special requests welcome) — I\'ll build a savvy hour-by-hour itinerary and pin every stop on a map.'))
   ));
   main.appendChild(GG.llm.bar());
 
   const form = GG.el('div',{class:'stack', style:{marginTop:'8px'}});
 
   // 城市（文字输入 + 4 个内置快捷）
-  const cityInput = GG.el('input',{ type:'text', value:sel.cityText, placeholder:'输入城市，如 东京 / 巴黎 / 成都…',
+  const cityInput = GG.el('input',{ type:'text', value:sel.cityText, placeholder:GG.T('输入城市，如 东京 / 巴黎 / 成都…','Type a city, e.g. Tokyo / Paris / Rome…'),
     style:{width:'100%',boxSizing:'border-box',padding:'12px 14px',fontSize:'16px',borderRadius:'12px',
       border:'1px solid var(--line)',background:'var(--surface)',color:'var(--ink)'},
     oninput:e=>{ sel.cityText=e.target.value; syncCityChips(); } });
   const quick = GG.el('div',{class:'chips', style:{marginTop:'10px'}},
-    Object.keys(CITIES).map(key=> GG.el('span',{class:'chip', 'data-city':CITIES[key].name,
-      onClick:()=>{ sel.cityText=CITIES[key].name; cityInput.value=CITIES[key].name; syncCityChips(); }},
-      CITIES[key].name)));
+    Object.keys(CITIES).map(key=>{ const nm = GG.T(CITIES[key].name, CITIES[key].en);
+      return GG.el('span',{class:'chip', 'data-city':nm,
+        onClick:()=>{ sel.cityText=nm; cityInput.value=nm; syncCityChips(); }},
+        nm); }));
   function syncCityChips(){
     const cur=(sel.cityText||'').trim();
     GG.$$('.chip',quick).forEach(c=>c.classList.toggle('on', c.getAttribute('data-city')===cur));
   }
   form.appendChild(GG.el('div',{class:'card pad'},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '目的地'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('目的地','Destination')),
     cityInput, quick,
     GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}},
-      GG.llm.connected() ? '✓ 已连 AI · 任意城市都能排；点上面 4 个内置城市可离线秒出。'
-                         : '内置 4 城可直接玩；连上 AI key 后，任意城市都能排。')
+      GG.llm.connected() ? GG.T('✓ 已连 AI · 任意城市都能排；点上面 4 个内置城市可离线秒出。','✓ AI connected · any city works; the 4 built-in cities above render instantly offline.')
+                         : GG.T('内置 4 城可直接玩；连上 AI key 后，任意城市都能排。','The 4 built-in cities work right away; connect an AI key to plan any city.'))
   ));
   syncCityChips();
 
   // 天数
   form.appendChild(GG.el('div',{class:'card pad'},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '天数'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('天数','Days')),
     GG.el('div',{class:'chips'},
       [2,3,4,5].map(n=> GG.el('span',{class:'chip'+(sel.days===n?' on':''),
         onClick:e=>{ sel.days=n; GG.$$('.chip', e.currentTarget.parentNode).forEach(c=>c.classList.remove('on')); e.currentTarget.classList.add('on'); }},
-        n+' 天')))
+        GG.T(n+' 天', n+' days'))))
   ));
 
   // 节奏
   form.appendChild(GG.el('div',{class:'card pad'},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '节奏'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('节奏','Pace')),
     GG.el('div',{class:'chips'},
       Object.values(PACE).map(p=> GG.el('span',{class:'chip'+(sel.pace===p.key?' on':''), title:p.note,
         onClick:e=>{ sel.pace=p.key; GG.$$('.chip', e.currentTarget.parentNode).forEach(c=>c.classList.remove('on')); e.currentTarget.classList.add('on'); }},
         p.label))),
-    GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '松弛 2~3 点／天 · 适中 3~4 · 紧凑 4~5')
+    GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, GG.T('松弛 2~3 点／天 · 适中 3~4 · 紧凑 4~5','Relaxed 2–3 stops/day · Medium 3–4 · Packed 4–5'))
   ));
 
   // 兴趣（多选）
   form.appendChild(GG.el('div',{class:'card pad'},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '感兴趣的方向（可多选）'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('感兴趣的方向（可多选）','Interests (pick any)')),
     GG.el('div',{class:'chips'},
       INTERESTS.map(t=> GG.el('span',{class:'chip'+(sel.interests.includes(t)?' on':''),
         onClick:e=>{
           const i=sel.interests.indexOf(t);
-          if(i>=0){ if(sel.interests.length>1) sel.interests.splice(i,1); else { GG.toast('至少保留一个方向'); return; } }
+          if(i>=0){ if(sel.interests.length>1) sel.interests.splice(i,1); else { GG.toast(GG.T('至少保留一个方向','Keep at least one interest')); return; } }
           else sel.interests.push(t);
           e.currentTarget.classList.toggle('on');
         }},
         GG.el('span',{style:{display:'inline-block',width:'8px',height:'8px',borderRadius:'50%',
-          background:TYPE_COLOR[t],marginRight:'7px'}}), t)))
+          background:TYPE_COLOR[t],marginRight:'7px'}}), tType(t))))
   ));
 
   // 特殊要求
   form.appendChild(GG.el('div',{class:'card pad'},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '特殊要求（可选 · 连了 AI 才生效）'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('特殊要求（可选 · 连了 AI 才生效）','Special requests (optional · needs AI connected)')),
     GG.el('textarea',{ rows:'2', value:sel.constraints,
-      placeholder:'例：带 3 岁小孩和腿脚不便的爸妈；不吃辣；想多看自然、少排队',
+      placeholder:GG.T('例：带 3 岁小孩和腿脚不便的爸妈；不吃辣；想多看自然、少排队','e.g. traveling with a 3-year-old and parents with limited mobility; no spicy food; more nature, fewer queues'),
       style:{width:'100%',boxSizing:'border-box',padding:'11px 13px',fontSize:'15px',borderRadius:'12px',
         border:'1px solid var(--line)',background:'var(--surface)',color:'var(--ink)',resize:'vertical',lineHeight:'1.6'},
       oninput:e=>{ sel.constraints=e.target.value; } })
@@ -399,18 +411,18 @@ function intro(){
 
   main.appendChild(form);
   main.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
-    GG.el('button',{class:'btn primary lg', onClick:()=>generate(false)}, '✨ 生成我的行程 →')
+    GG.el('button',{class:'btn primary lg', onClick:()=>generate(false)}, GG.T('✨ 生成我的行程 →','✨ Build my itinerary →'))
   ));
 }
 
 /* ===================== 生成（决定走 AI 还是内置） ===================== */
 async function generate(fromLink){
   const cityText = (sel.cityText||'').trim();
-  if(!cityText){ GG.toast('先填一个想去的城市'); return; }
+  if(!cityText){ GG.toast(GG.T('先填一个想去的城市','Type a city you want to visit first')); return; }
   const cannedSlug = matchCanned(cityText);
   const wantAI = GG.llm.connected() && (!cannedSlug || sel.constraints.trim());
   if(!cannedSlug && !GG.llm.connected()){
-    GG.toast('连上 AI key 才能去任意城市，或点下面 4 个内置城市'); return;
+    GG.toast(GG.T('连上 AI key 才能去任意城市，或点下面 4 个内置城市','Connect an AI key to plan any city, or pick one of the 4 built-in cities')); return;
   }
 
   main = main || GG.mountShell(SLUG);
@@ -418,11 +430,12 @@ async function generate(fromLink){
   const stage = GG.el('div'); main.appendChild(stage); main.__stage = stage;
 
   const steps = wantAI
-    ? [ `让 AI 想想「${cityText}」有什么值得去…`,
-        sel.constraints.trim() ? `按你的要求（${sel.constraints.trim().slice(0,16)}…）挑点…` : `挑出代表性地标 + 你勾的 ${sel.interests.join(' / ')}…`,
-        '按片区分天、串顺路、配时段…', '把每个落脚点标到地图上…' ]
-    : [ '读取你的偏好…', `在「${cityText}」筛 ${sel.interests.join(' / ')}…`,
-        '按片区分天、串顺路、配时段…', '把每个落脚点标到地图上…' ];
+    ? [ GG.T(`让 AI 想想「${cityText}」有什么值得去…`, `Asking AI what's worth visiting in "${cityText}"…`),
+        sel.constraints.trim() ? GG.T(`按你的要求（${sel.constraints.trim().slice(0,16)}…）挑点…`, `Choosing spots for your requests (${sel.constraints.trim().slice(0,16)}…)…`)
+                               : GG.T(`挑出代表性地标 + 你勾的 ${interestsText()}…`, `Picking must-see landmarks + your interests: ${interestsText()}…`),
+        GG.T('按片区分天、串顺路、配时段…','Grouping by area, routing each day, assigning time slots…'), GG.T('把每个落脚点标到地图上…','Pinning every stop on the map…') ]
+    : [ GG.T('读取你的偏好…','Reading your preferences…'), GG.T(`在「${cityText}」筛 ${interestsText()}…`, `Sifting ${interestsText()} spots in "${cityText}"…`),
+        GG.T('按片区分天、串顺路、配时段…','Grouping by area, routing each day, assigning time slots…'), GG.T('把每个落脚点标到地图上…','Pinning every stop on the map…') ];
 
   let cityData;
   try{
@@ -433,11 +446,11 @@ async function generate(fromLink){
     }else{
       const c = CITIES[cannedSlug];
       await GG.thinking(stage, steps, fromLink?300:1100);
-      cityData = { name:c.name, blurb:c.blurb, pois:c.pois, map:c.map, ai:false, seed:GG.hash(cannedSlug) };
+      cityData = { name:GG.T(c.name, c.en), blurb:c.blurb, pois:c.pois, map:c.map, ai:false, seed:GG.hash(cannedSlug) };
     }
   }catch(e){
     GG.clear(main); intro();
-    GG.toast(GG.llm && GG.llm.errMsg ? GG.llm.errMsg(e) : '生成失败，换个城市或稍后再试');
+    GG.toast(GG.llm && GG.llm.errMsg ? GG.llm.errMsg(e) : GG.T('生成失败，换个城市或稍后再试','Generation failed — try another city or retry later'));
     return;
   }
 
@@ -456,25 +469,25 @@ async function generate(fromLink){
 /* ===================== 就地微调 ===================== */
 function reRender(){ const stage=main.__stage; if(!stage) return; activeIdx=null; GG.clear(stage); renderResult(stage); }
 function tweakDelete(id){
-  if(G.selected.length<=2){ GG.toast('至少保留 2 个点'); return; }
+  if(G.selected.length<=2){ GG.toast(GG.T('至少保留 2 个点','Keep at least 2 stops')); return; }
   G.selected = G.selected.filter(p=>p.id!==id); G.locked.delete(id); reRender();
 }
 function tweakSwap(id){
   const cur = G.selected.find(p=>p.id===id); if(!cur) return;
   const used = new Set(G.selected.map(p=>p.id));
   const cands = G.pool.filter(p=>!used.has(p.id));
-  if(!cands.length){ GG.toast('没有更多备选地点了'); return; }
+  if(!cands.length){ GG.toast(GG.T('没有更多备选地点了','No more alternative spots left')); return; }
   const same = cands.filter(p=>p.type===cur.type);
   const arr  = same.length ? same : cands;
   rerollN++;
   const repl = arr[Math.floor(GG.rng(GG.hash('swap|'+id+'|'+rerollN))()*arr.length)];
   G.selected = G.selected.map(p=> p.id===id ? repl : p);
   if(G.locked.has(id)){ G.locked.delete(id); G.locked.add(repl.id); }
-  GG.toast('已换成「'+repl.name+'」'); reRender();
+  GG.toast(GG.T('已换成「'+repl.name+'」','Swapped in "'+poiName(repl)+'"')); reRender();
 }
 function tweakLock(id){ if(G.locked.has(id)) G.locked.delete(id); else G.locked.add(id); reRender(); }
 function reshuffle(){
-  if(G.pool.length<=G.selected.length){ GG.toast('已经把能去的点都放进来了'); return; }
+  if(G.pool.length<=G.selected.length){ GG.toast(GG.T('已经把能去的点都放进来了','Every available spot is already in the plan')); return; }
   rerollN++;
   G.selected = pickSelection(G.pool, G.selected.length, G.locked, GG.hash('reroll|'+rerollN+'|'+sel.cityText));
   reRender();
@@ -492,19 +505,20 @@ function renderResult(stage){
 
   // 标题
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'6px'}},
-    GG.el('h1',{style:{fontSize:'26px'}}, `🗺️ ${cityName} · ${itinerary.days.length} 天行程`),
-    GG.el('p',null, `${PACE[sel.pace].label}节奏 · ${sel.interests.join(' / ')} · 共 ${itinerary.total} 个落脚点（编号与地图一一对应）`
-      + (G.city.ai && G.city.blurb ? '　·　'+G.city.blurb : ''))
+    GG.el('h1',{style:{fontSize:'26px'}}, GG.T(`🗺️ ${cityName} · ${itinerary.days.length} 天行程`, `🗺️ ${cityName} · ${itinerary.days.length}-Day Itinerary`)),
+    GG.el('p',null, GG.T(`${PACE[sel.pace].label}节奏 · ${interestsText()} · 共 ${itinerary.total} 个落脚点（编号与地图一一对应）`,
+        `${PACE[sel.pace].label} pace · ${interestsText()} · ${itinerary.total} stops (numbers match the map pins)`)
+      + (G.city.ai && G.city.blurb ? GG.T('　·　',' · ')+G.city.blurb : ''))
   ));
   if(G.city.ai){
     stage.appendChild(GG.el('div',{class:'small muted', style:{margin:'-6px 0 12px', textAlign:'center'}},
-      '✦ 地点由 AI 按你的要求挑选；时段/分天/连线由本地引擎排（可复现）'));
+      GG.T('✦ 地点由 AI 按你的要求挑选；时段/分天/连线由本地引擎排（可复现）','✦ Spots picked by AI to your requests; time slots, days and routes arranged by the local engine (reproducible)')));
   }
 
   // 地图卡
   mapSvg = buildMap(itinerary, G.city.map || genMap(G.city.seed||GG.hash(cityName)));
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '交互地图 · 点图钉或行程互相高亮'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('交互地图 · 点图钉或行程互相高亮','Interactive map · tap a pin or a row to cross-highlight')),
     mapSvg,
     GG.el('div',{class:'chips', style:{marginTop:'12px', justifyContent:'center'}},
       itinerary.days.map((d,di)=> GG.el('span',{class:'small muted', style:{display:'inline-flex',alignItems:'center',gap:'5px',marginRight:'8px'}},
@@ -514,8 +528,8 @@ function renderResult(stage){
 
   // 微调工具条
   stage.appendChild(GG.el('div',{class:'row', style:{justifyContent:'space-between',alignItems:'center',marginBottom:'10px',flexWrap:'wrap',gap:'8px'}},
-    GG.el('span',{class:'small muted'}, '每条右侧：📌锁定 · ↻换一个 · ✕删除'),
-    GG.el('button',{class:'btn', style:{padding:'7px 14px'}, onClick:reshuffle}, '🎲 换一批')
+    GG.el('span',{class:'small muted'}, GG.T('每条右侧：📌锁定 · ↻换一个 · ✕删除','Row actions: 📌 lock · ↻ swap · ✕ remove')),
+    GG.el('button',{class:'btn', style:{padding:'7px 14px'}, onClick:reshuffle}, GG.T('🎲 换一批','🎲 Reshuffle'))
   ));
 
   // 行程列表（逐时 + 微调）
@@ -538,18 +552,18 @@ function renderResult(stage){
         GG.el('div',{class:'mt-badge', style:{background:col}}, String(it.idx)),
         GG.el('div',{style:{flex:'1',minWidth:'0'}},
           GG.el('div',{class:'row', style:{gap:'8px',flexWrap:'wrap',alignItems:'baseline'}},
-            GG.el('span',{class:'small', style:{fontWeight:'700',color:'var(--ink-2)',minWidth:'34px'}}, it.slot),
-            GG.el('span',{style:{fontWeight:'650',fontSize:'16px'}}, p.name),
-            GG.el('span',{class:'small', style:{color:TYPE_COLOR[p.type]||'var(--ink-3)',fontWeight:'600'}}, p.type),
+            GG.el('span',{class:'small', style:{fontWeight:'700',color:'var(--ink-2)',minWidth:'34px'}}, tSlot(it.slot)),
+            GG.el('span',{style:{fontWeight:'650',fontSize:'16px'}}, poiName(p)),
+            GG.el('span',{class:'small', style:{color:TYPE_COLOR[p.type]||'var(--ink-3)',fontWeight:'600'}}, tType(p.type)),
             GG.el('span',{class:'small muted'}, '· '+p.hours)),
           p.blurb ? GG.el('div',{class:'small muted', style:{marginTop:'3px'}}, p.blurb) : null,
           tags.length ? GG.el('div',{class:'row', style:{gap:'6px',marginTop:'6px',flexWrap:'wrap'}},
             tags.map(t=>GG.el('span',{class:'mt-tag'}, t))) : null
         ),
         GG.el('div',{class:'mt-acts'},
-          actBtn('📌', locked?'已锁定·点击取消':'锁定必去（换一批时保留）', ()=>tweakLock(p.id), locked),
-          actBtn('↻', '换一个', ()=>tweakSwap(p.id)),
-          actBtn('✕', '删除', ()=>tweakDelete(p.id))
+          actBtn('📌', locked?GG.T('已锁定·点击取消','Locked — click to unlock'):GG.T('锁定必去（换一批时保留）','Lock as a must-go (kept when reshuffling)'), ()=>tweakLock(p.id), locked),
+          actBtn('↻', GG.T('换一个','Swap for another'), ()=>tweakSwap(p.id)),
+          actBtn('✕', GG.T('删除','Remove'), ()=>tweakDelete(p.id))
         )
       );
       items.appendChild(row);
@@ -562,7 +576,7 @@ function renderResult(stage){
   // AI 旅行贴士（连了 key 才出现）
   if(GG.llm.connected()){
     const userText = `城市：${cityName}\n行程：`+
-      itinerary.days.map(d=>'Day'+d.day+'：'+d.items.map(it=>it.poi.name).join('→')).join('；')
+      itinerary.days.map(d=>'Day'+d.day+'：'+d.items.map(it=>poiName(it.poi)).join('→')).join('；')
       + (sel.constraints.trim()? `\n特殊要求：${sel.constraints.trim()}` : '');
     stage.appendChild(aiTipsBlock(userText));
   }
@@ -570,16 +584,17 @@ function renderResult(stage){
   // 分享卡
   const shareSpec = {
     slug: SLUG,
-    title: `${cityName} ${itinerary.days.length} 天行程`,
-    subtitle: `${PACE[sel.pace].label}节奏 · ${sel.interests.join(' / ')}`,
-    tags: sel.interests,
-    note: `共 ${itinerary.total} 个落脚点，按片区分 ${itinerary.days.length} 天、串顺路，编号与地图一一对应。`,
-    rows: itinerary.days.map(d=>({ label:'Day '+d.day, value:d.items.map(it=>it.poi.name).join(' → ') }))
+    title: GG.T(`${cityName} ${itinerary.days.length} 天行程`, `${cityName} ${itinerary.days.length}-Day Itinerary`),
+    subtitle: GG.T(`${PACE[sel.pace].label}节奏 · ${interestsText()}`, `${PACE[sel.pace].label} pace · ${interestsText()}`),
+    tags: sel.interests.map(tType),
+    note: GG.T(`共 ${itinerary.total} 个落脚点，按片区分 ${itinerary.days.length} 天、串顺路，编号与地图一一对应。`,
+               `${itinerary.total} stops over ${itinerary.days.length} days — grouped by area, routed in order; numbers match the map.`),
+    rows: itinerary.days.map(d=>({ label:'Day '+d.day, value:d.items.map(it=>poiName(it.poi)).join(' → ') }))
   };
   stage.appendChild(GG.resultCard(SLUG,
-    GG.el('div',{class:'center muted small'}, '截图分享你的行程 ↓'), shareSpec));
+    GG.el('div',{class:'center muted small'}, GG.T('截图分享你的行程 ↓','Screenshot to share your itinerary ↓')), shareSpec));
   stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
-    GG.el('button',{class:'btn', onClick:()=>{ location.hash=''; intro(); }}, '↻ 换城市 / 换偏好')
+    GG.el('button',{class:'btn', onClick:()=>{ location.hash=''; intro(); }}, GG.T('↻ 换城市 / 换偏好','↻ Change city / preferences'))
   ));
 
   ensureStyle();

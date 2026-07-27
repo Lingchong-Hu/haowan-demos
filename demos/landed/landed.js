@@ -7,31 +7,31 @@
 const SLUG = 'landed';
 
 const MARKETS = [
-  {key:'美国', flag:'🇺🇸', cur:'USD'},
-  {key:'德国', flag:'🇩🇪', cur:'EUR'},
-  {key:'英国', flag:'🇬🇧', cur:'GBP'},
-  {key:'日本', flag:'🇯🇵', cur:'JPY'},
-  {key:'中东', flag:'🇦🇪', cur:'AED'},
-  {key:'巴西', flag:'🇧🇷', cur:'BRL'},
-  {key:'东南亚', flag:'🌏', cur:'USD'},
+  {key:GG.T('美国','United States'), flag:'🇺🇸', cur:'USD'},
+  {key:GG.T('德国','Germany'), flag:'🇩🇪', cur:'EUR'},
+  {key:GG.T('英国','United Kingdom'), flag:'🇬🇧', cur:'GBP'},
+  {key:GG.T('日本','Japan'), flag:'🇯🇵', cur:'JPY'},
+  {key:GG.T('中东','Middle East'), flag:'🇦🇪', cur:'AED'},
+  {key:GG.T('巴西','Brazil'), flag:'🇧🇷', cur:'BRL'},
+  {key:GG.T('东南亚','Southeast Asia'), flag:'🌏', cur:'USD'},
 ];
 const MKT = Object.fromEntries(MARKETS.map(m=>[m.key,m]));
-const DEFAULT_MARKETS = ['美国','德国','日本'];
+const DEFAULT_MARKETS = [GG.T('美国','United States'),GG.T('德国','Germany'),GG.T('日本','Japan')];
 
 const EXAMPLES = [
-  {em:'🔋', name:'迷你充电宝', cost:'35', weight:'0.2'},
-  {em:'🧴', name:'保温杯', cost:'28', weight:'0.45'},
-  {em:'🪑', name:'折叠露营椅', cost:'90', weight:'2.5'},
+  {em:'🔋', name:GG.T('迷你充电宝','Mini Power Bank'), cost:'35', weight:'0.2'},
+  {em:'🧴', name:GG.T('保温杯','Insulated Tumbler'), cost:'28', weight:'0.45'},
+  {em:'🪑', name:GG.T('折叠露营椅','Folding Camp Chair'), cost:'90', weight:'2.5'},
 ];
 
 /* 成本构成色（与图例对应） */
 const SEG = [
-  {key:'cost',     label:'出厂成本', color:'#2c5fa8'},
-  {key:'shipping', label:'物流头程', color:'#5b8def'},
-  {key:'duty',     label:'关税',     color:'#d4882b'},
-  {key:'vat',      label:'VAT/税',   color:'#c2562e'},
-  {key:'platform', label:'平台佣金', color:'#8a8a93'},
-  {key:'profit',   label:'毛利',     color:'#2d9e7b'}
+  {key:'cost',     label:GG.T('出厂成本','Ex-factory'), color:'#2c5fa8'},
+  {key:'shipping', label:GG.T('物流头程','Freight'), color:'#5b8def'},
+  {key:'duty',     label:GG.T('关税','Duty'),     color:'#d4882b'},
+  {key:'vat',      label:GG.T('VAT/税','VAT/Tax'),   color:'#c2562e'},
+  {key:'platform', label:GG.T('平台佣金','Platform fee'), color:'#8a8a93'},
+  {key:'profit',   label:GG.T('毛利','Profit'),     color:'#2d9e7b'}
 ];
 
 const SYS = [
@@ -40,7 +40,8 @@ const SYS = [
   'JSON 结构：',
   '{',
   '  "is_product": boolean,',
-  '  "product": string,            // 产品名（简体中文）',
+  GG.T('  "product": string,            // 产品名（简体中文）',
+       '  "product": string,            // product name (in English)'),
   '  "cost_rmb": number,           // 出厂成本（人民币，沿用输入）',
   '  "markets": [                  // 严格按给定市场、同序',
   '    {',
@@ -54,10 +55,12 @@ const SYS = [
   '      "suggest_price_local": number, // 建议零售价（当地货币）',
   '      "suggest_price_rmb": number,   // 建议零售价折合人民币',
   '      "margin_pct": number,     // 毛利率（百分数，已扣平台佣金后相对零售价）',
-  '      "note": string            // 简体中文：该市场定价/合规/税的一句关键提示',
+  GG.T('      "note": string            // 简体中文：该市场定价/合规/税的一句关键提示',
+       '      "note": string            // in English: one key tip on pricing/compliance/tax for this market'),
   '    }',
   '  ],',
-  '  "verdict": string             // 简体中文：综合建议先打哪个市场、为什么（结合利润与门槛）',
+  GG.T('  "verdict": string             // 简体中文：综合建议先打哪个市场、为什么（结合利润与门槛）',
+       '  "verdict": string             // in English: which market to enter first and why (margin + barriers)'),
   '}',
   '硬规则：',
   '1) markets 必须与给定市场严格对应、同序、数量一致。',
@@ -65,7 +68,7 @@ const SYS = [
   '3) 各金额要自洽：landed_cost_rmb 应≈ 出厂成本+物流+关税+进口税；margin_pct 应≈ (建议零售折人民币×(1-平台佣金) - landed_cost)/建议零售折人民币。',
   '4) 数字给合理整数或一位小数，不要给出夸张精确度；这是估算。',
   '5) 若输入不是实物商品，is_product=false，markets 空数组。',
-  '6) note/verdict/product 用简体中文。'
+  GG.T('6) note/verdict/product 用简体中文。','6) Write note/verdict/product in English.')
 ].join('\n');
 
 function buildUser(name, cost, weight, keys){
@@ -116,23 +119,23 @@ function intro(){
   selected = new Set(DEFAULT_MARKETS);
 
   main.appendChild(GG.el('div',{class:'hero'},
-    GG.el('h1', null, '同一个产品，先打哪个国家最赚'),
+    GG.el('h1', null, GG.T('同一个产品，先打哪个国家最赚','Same product — which country pays off first?')),
     GG.el('p',{class:'ld-lede'},
-      '填上产品的出厂成本和重量、选几个目标市场——AI 估算各国的到岸总成本'+
-      '（关税、VAT、平台佣金、物流）、建议零售价和毛利率，一眼看出先打哪个市场最划算。')
+      GG.T('填上产品的出厂成本和重量、选几个目标市场——AI 估算各国的到岸总成本（关税、VAT、平台佣金、物流）、建议零售价和毛利率，一眼看出先打哪个市场最划算。',
+        'Enter your product\'s ex-factory cost and weight, pick a few target markets — AI estimates each country\'s total landed cost (duty, VAT, platform fees, freight), a suggested retail price and gross margin, so you can see at a glance where to launch first.'))
   ));
 
   main.appendChild(GG.llm.bar(()=>{}));
 
-  nameEl   = GG.el('input',{class:'field', placeholder:'如 迷你充电宝'});
+  nameEl   = GG.el('input',{class:'field', placeholder:GG.T('如 迷你充电宝','e.g. Mini power bank')});
   costEl   = GG.el('input',{class:'field', type:'number', placeholder:'35', value:''});
   weightEl = GG.el('input',{class:'field', type:'number', placeholder:'0.2', value:''});
   main.appendChild(GG.el('div',{class:'ld-form'},
-    GG.el('div',{class:'ld-f'}, GG.el('label',null,'产品名'), nameEl),
-    GG.el('div',{class:'ld-f'}, GG.el('label',null,'出厂成本 ¥/件'), costEl),
-    GG.el('div',{class:'ld-f'}, GG.el('label',null,'重量 kg/件'), weightEl)));
+    GG.el('div',{class:'ld-f'}, GG.el('label',null,GG.T('产品名','Product name')), nameEl),
+    GG.el('div',{class:'ld-f'}, GG.el('label',null,GG.T('出厂成本 ¥/件','Ex-factory cost ¥/unit')), costEl),
+    GG.el('div',{class:'ld-f'}, GG.el('label',null,GG.T('重量 kg/件','Weight kg/unit')), weightEl)));
 
-  main.appendChild(GG.el('div',{class:'ld-pick-h'}, '目标市场（可多选）'));
+  main.appendChild(GG.el('div',{class:'ld-pick-h'}, GG.T('目标市场（可多选）','Target markets (pick several)')));
   const picks = GG.el('div',{class:'ld-picks'});
   MARKETS.forEach(m=>{
     const chip = GG.el('div',{class:'ld-mchip'+(selected.has(m.key)?' on':''),
@@ -145,23 +148,24 @@ function intro(){
   const egs = GG.el('div',{class:'ld-egs'});
   EXAMPLES.forEach(e=> egs.appendChild(
     GG.el('button',{class:'ld-eg', onClick:()=>{ nameEl.value=e.name; costEl.value=e.cost; weightEl.value=e.weight; run(); }},
-      GG.el('span', null, e.em), e.name+'（¥'+e.cost+'）')));
+      GG.el('span', null, e.em), e.name+GG.T('（¥'+e.cost+'）',' (¥'+e.cost+')'))));
   main.appendChild(egs);
 
-  main.appendChild(GG.el('button',{class:'btn primary lg block ld-go', onClick:run}, '🚢 算各国到岸价 & 利润'));
+  main.appendChild(GG.el('button',{class:'btn primary lg block ld-go', onClick:run}, GG.T('🚢 算各国到岸价 & 利润','🚢 Compare landed cost & profit')));
 
   resultMount = GG.el('div'); main.appendChild(resultMount);
 
   main.appendChild(GG.el('div',{class:'ld-chain', html:
-    '出海四步：选品 → <b style="color:var(--accent)">定价/选市场（你在这）</b> → 上架本地化 → 询盘成交'}));
+    GG.T('出海四步：选品 → <b style="color:var(--accent)">定价/选市场（你在这）</b> → 上架本地化 → 询盘成交',
+      'Go-global in four steps: pick a product → <b style="color:var(--accent)">price & pick markets (you are here)</b> → localize listings → close inquiries')}));
 }
 
 async function run(){
   const name=(nameEl.value||'').trim(), cost=costEl.value, weight=weightEl.value;
-  if(!name){ GG.toast('先填产品名，或点个例子'); return; }
-  if(!num(cost)){ GG.toast('填一下出厂成本（¥/件）'); return; }
+  if(!name){ GG.toast(GG.T('先填产品名，或点个例子','Enter a product name, or tap an example')); return; }
+  if(!num(cost)){ GG.toast(GG.T('填一下出厂成本（¥/件）','Enter the ex-factory cost (¥/unit)')); return; }
   const keys = MARKETS.map(m=>m.key).filter(k=>selected.has(k));
-  if(!keys.length){ GG.toast('先选至少一个目标市场'); return; }
+  if(!keys.length){ GG.toast(GG.T('先选至少一个目标市场','Pick at least one target market')); return; }
 
   GG.clear(resultMount);
   const stage = GG.el('div'); resultMount.appendChild(stage);
@@ -172,13 +176,13 @@ async function run(){
     stage.appendChild(renderResult(SAMPLE, false));
     stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'14px'}},
       GG.el('p',{class:'ld-lede', style:{textAlign:'center', margin:'0 auto'}},
-        '👆 这是离线示例样张。点上方「连接 AI 升级」填一个 Anthropic Key，'+
-        '即可对你的产品成本、你选的市场，估算真实的到岸价与利润对比。')));
-    GG.toast('未连接 AI，先看示例样张');
+        GG.T('👆 这是离线示例样张。点上方「连接 AI 升级」填一个 Anthropic Key，即可对你的产品成本、你选的市场，估算真实的到岸价与利润对比。',
+          '👆 This is an offline sample. Click "Connect AI" above and add an Anthropic key to get a real landed-cost and profit comparison for your product and your markets.'))));
+    GG.toast(GG.T('未连接 AI，先看示例样张','AI not connected — showing a sample for now'));
     return;
   }
 
-  const t = GG.thinking(stage, ['核对成本与重量…','查各国关税与税率…','加上物流与平台佣金…','算到岸价与毛利…'], 1900);
+  const t = GG.thinking(stage, [GG.T('核对成本与重量…','Checking cost and weight…'),GG.T('查各国关税与税率…','Looking up duties and tax rates…'),GG.T('加上物流与平台佣金…','Adding freight and platform fees…'),GG.T('算到岸价与毛利…','Computing landed cost and margin…')], 1900);
   let data;
   try{
     const [obj] = await Promise.all([GG.llm.json(SYS, buildUser(name,cost,weight,keys), {max_tokens:2600}), t]);
@@ -196,11 +200,11 @@ function marketCard(m, cost, isBest){
   card.appendChild(GG.el('div',{class:'ld-ch'},
     GG.el('span',{class:'ld-fl'}, m.flag),
     GG.el('span',{class:'ld-mn'}, m.market),
-    isBest ? GG.el('span',{class:'ld-best-badge'}, '★ 最划算') : null,
+    isBest ? GG.el('span',{class:'ld-best-badge'}, GG.T('★ 最划算','★ Best pick')) : null,
     GG.el('div',{class:'ld-margin'},
       GG.el('span',{class:'ld-mn-pct', style:{color: m.margin_pct>=30?'#2d9e7b':(m.margin_pct>=15?'#d4882b':'#d64545')}},
         Math.round(m.margin_pct)+'%'),
-      GG.el('span',{class:'ld-mn-l'}, '毛利率'))));
+      GG.el('span',{class:'ld-mn-l'}, GG.T('毛利率','Gross margin')))));
 
   // 成本瀑布条
   const seg = segments(m, cost);
@@ -225,13 +229,13 @@ function marketCard(m, cost, isBest){
   card.appendChild(GG.el('div',{class:'ld-prices'},
     GG.el('div',{class:'ld-price'},
       GG.el('div',{class:'pv'}, fmtLocal(m.suggest_price_local, m.currency)),
-      GG.el('div',{class:'pl'}, '建议零售（≈¥'+Math.round(m.suggest_price_rmb)+'）')),
+      GG.el('div',{class:'pl'}, GG.T('建议零售（≈¥'+Math.round(m.suggest_price_rmb)+'）','Suggested retail (≈¥'+Math.round(m.suggest_price_rmb)+')'))),
     GG.el('div',{class:'ld-price'},
       GG.el('div',{class:'pv'}, '¥'+Math.round(m.landed_cost_rmb)),
-      GG.el('div',{class:'pl'}, '到岸成本/件')),
+      GG.el('div',{class:'pl'}, GG.T('到岸成本/件','Landed cost / unit'))),
     GG.el('div',{class:'ld-price'},
       GG.el('div',{class:'pv'}, m.duty_pct+'% / '+m.vat_pct+'%'),
-      GG.el('div',{class:'pl'}, '关税 / VAT'))));
+      GG.el('div',{class:'pl'}, GG.T('关税 / VAT','Duty / VAT')))));
 
   if(m.note) card.appendChild(GG.el('div',{class:'ld-note'}, '📌 '+m.note));
   return card;
@@ -246,7 +250,9 @@ function renderResult(d, fromAI){
   const card = GG.el('div',{class:'card pad result'});
   card.appendChild(GG.llm.badge(fromAI));
   card.appendChild(GG.el('div',{class:'ld-core', style:{marginTop:'10px'}},
-    [GG.el('b', null, d.product||'你的产品'), '　出厂成本 ¥'+d.cost_rmb+'/件　·　对比 '+d.markets.length+' 个市场']));
+    [GG.el('b', null, d.product||GG.T('你的产品','Your product')),
+     GG.T('　出厂成本 ¥'+d.cost_rmb+'/件　·　对比 '+d.markets.length+' 个市场',
+       '　Ex-factory ¥'+d.cost_rmb+'/unit　·　'+d.markets.length+' markets compared')]));
 
   const best = d.markets.reduce((a,b)=> b.margin_pct>(a?a.margin_pct:-1)?b:a, null);
   const list = GG.el('div',{class:'ld-list'});
@@ -254,31 +260,36 @@ function renderResult(d, fromAI){
   card.appendChild(list);
 
   if(d.verdict) card.appendChild(GG.el('div',{class:'ld-verdict'},
-    GG.el('b', null, '先打哪个市场'), d.verdict));
+    GG.el('b', null, GG.T('先打哪个市场','Where to launch first')), d.verdict));
 
   card.appendChild(GG.el('div',{class:'ld-disc'},
-    '⚠︎ 税率/费率/物流均为 AI 估算，仅供选市场参考；实际以海关 HS 编码、目的国税务与平台最新规则为准。'));
+    GG.T('⚠︎ 税率/费率/物流均为 AI 估算，仅供选市场参考；实际以海关 HS 编码、目的国税务与平台最新规则为准。',
+      '⚠︎ Duties, fees and freight are AI estimates for market-selection reference only. Verify against the customs HS code, destination-country tax rules and the platform\'s latest policies.')));
 
   card.appendChild(GG.el('div',{class:'ld-bottom'},
-    GG.el('button',{class:'btn primary', onClick:()=>GG.copyText(fullText(d))}, '📝 复制对比'),
-    GG.el('button',{class:'btn', onClick:()=>GG.copyLink()}, '🔗 复制链接'),
+    GG.el('button',{class:'btn primary', onClick:()=>GG.copyText(fullText(d))}, GG.T('📝 复制对比','📝 Copy comparison')),
+    GG.el('button',{class:'btn', onClick:()=>GG.copyLink()}, GG.T('🔗 复制链接','🔗 Copy link')),
     GG.el('button',{class:'btn', onClick:()=>{ GG.clear(resultMount); nameEl.focus();
-      nameEl.scrollIntoView({behavior:'smooth',block:'center'}); }}, '↻ 换个产品')));
+      nameEl.scrollIntoView({behavior:'smooth',block:'center'}); }}, GG.T('↻ 换个产品','↻ Try another product'))));
   return card;
 }
 
 function fullText(d){
-  const L=['【'+(d.product||'产品')+'】各国到岸价 & 利润对比（出厂 ¥'+d.cost_rmb+'）'];
+  const L=[GG.T('【'+(d.product||'产品')+'】各国到岸价 & 利润对比（出厂 ¥'+d.cost_rmb+'）',
+    '['+(d.product||'Product')+'] Landed cost & profit by market (ex-factory ¥'+d.cost_rmb+')')];
   d.markets.forEach(m=>{
     L.push('');
-    L.push(m.flag+' '+m.market+'：毛利率 '+Math.round(m.margin_pct)+'%　到岸成本 ¥'+Math.round(m.landed_cost_rmb)+
-      '　建议零售 '+fmtLocal(m.suggest_price_local,m.currency)+'（≈¥'+Math.round(m.suggest_price_rmb)+'）');
-    L.push('  关税'+m.duty_pct+'% / VAT'+m.vat_pct+'% / 平台'+m.platform_fee_pct+'%');
+    L.push(GG.T(m.flag+' '+m.market+'：毛利率 '+Math.round(m.margin_pct)+'%　到岸成本 ¥'+Math.round(m.landed_cost_rmb)+
+      '　建议零售 '+fmtLocal(m.suggest_price_local,m.currency)+'（≈¥'+Math.round(m.suggest_price_rmb)+'）',
+      m.flag+' '+m.market+': margin '+Math.round(m.margin_pct)+'%　landed cost ¥'+Math.round(m.landed_cost_rmb)+
+      '　suggested retail '+fmtLocal(m.suggest_price_local,m.currency)+' (≈¥'+Math.round(m.suggest_price_rmb)+')'));
+    L.push(GG.T('  关税'+m.duty_pct+'% / VAT'+m.vat_pct+'% / 平台'+m.platform_fee_pct+'%',
+      '  Duty '+m.duty_pct+'% / VAT '+m.vat_pct+'% / Platform '+m.platform_fee_pct+'%'));
     if(m.note) L.push('  '+m.note);
   });
-  if(d.verdict){ L.push(''); L.push('先打哪个：'+d.verdict); }
-  L.push(''); L.push('（税率为 AI 估算，仅供参考）');
-  L.push('—— Landed 到岸价对比 · 好玩的东西  '+location.href);
+  if(d.verdict){ L.push(''); L.push(GG.T('先打哪个：','Launch first: ')+d.verdict); }
+  L.push(''); L.push(GG.T('（税率为 AI 估算，仅供参考）','(Rates are AI estimates, for reference only)'));
+  L.push(GG.T('—— Landed 到岸价对比 · 好玩的东西  ','—— Landed Cost Compare · Playground  ')+location.href);
   return L.join('\n');
 }
 
@@ -286,8 +297,8 @@ function renderNotProduct(){
   const card = GG.el('div',{class:'card pad'});
   card.appendChild(GG.el('div',{class:'ld-oops'},
     GG.el('div',{class:'big'}, '🤔'),
-    GG.el('h3', null, '这不太像一个能算到岸价的实物商品'),
-    GG.el('p', null, '填一个具体产品（如「保温杯」）和它的出厂成本试试。')));
+    GG.el('h3', null, GG.T('这不太像一个能算到岸价的实物商品','That doesn\'t look like a physical product we can price')),
+    GG.el('p', null, GG.T('填一个具体产品（如「保温杯」）和它的出厂成本试试。','Try a specific product (like "insulated tumbler") with its ex-factory cost.'))));
   return card;
 }
 
@@ -295,28 +306,28 @@ function renderError(err){
   const card = GG.el('div',{class:'card pad'});
   card.appendChild(GG.el('div',{class:'ld-oops'},
     GG.el('div',{class:'big'}, '🔌'),
-    GG.el('h3', null, '这次没成功'),
-    GG.el('p', null, GG.llm.errMsg(err)+'。点上方「连接 AI」检查 Key，或重试。')));
+    GG.el('h3', null, GG.T('这次没成功','That didn\'t work')),
+    GG.el('p', null, GG.llm.errMsg(err)+GG.T('。点上方「连接 AI」检查 Key，或重试。','. Click "Connect AI" above to check your key, or retry.'))));
   card.appendChild(GG.el('div',{class:'center', style:{marginTop:'12px'}},
-    GG.el('button',{class:'btn primary', onClick:run}, '重试')));
+    GG.el('button',{class:'btn primary', onClick:run}, GG.T('重试','Retry'))));
   return card;
 }
 
 /* ── 离线示例样张 / 开发自检 ── */
 const SAMPLE = {
-  is_product:true, product:'迷你充电宝', cost_rmb:35,
+  is_product:true, product:GG.T('迷你充电宝','Mini Power Bank'), cost_rmb:35,
   markets:[
-    { market:'美国', flag:'🇺🇸', currency:'USD', duty_pct:0, vat_pct:7, platform_fee_pct:15,
+    { market:GG.T('美国','United States'), flag:'🇺🇸', currency:'USD', duty_pct:0, vat_pct:7, platform_fee_pct:15,
       shipping_rmb:18, landed_cost_rmb:56, suggest_price_local:25.99, suggest_price_rmb:188,
-      margin_pct:43, note:'无联邦增值税但各州销售税约 7%；锂电池走海运需 UN38.3，空运受限。' },
-    { market:'德国', flag:'🇩🇪', currency:'EUR', duty_pct:3.7, vat_pct:19, platform_fee_pct:15,
+      margin_pct:43, note:GG.T('无联邦增值税但各州销售税约 7%；锂电池走海运需 UN38.3，空运受限。','No federal VAT, but state sales tax runs about 7%. Lithium batteries need UN38.3 for sea freight; air freight is restricted.') },
+    { market:GG.T('德国','Germany'), flag:'🇩🇪', currency:'EUR', duty_pct:3.7, vat_pct:19, platform_fee_pct:15,
       shipping_rmb:22, landed_cost_rmb:68, suggest_price_local:29.99, suggest_price_rmb:232,
-      margin_pct:36, note:'欧盟 VAT 19% 吃掉不少利润，且需 CE + 电池法规登记，合规门槛高。' },
-    { market:'日本', flag:'🇯🇵', currency:'JPY', duty_pct:0, vat_pct:10, platform_fee_pct:12,
+      margin_pct:36, note:GG.T('欧盟 VAT 19% 吃掉不少利润，且需 CE + 电池法规登记，合规门槛高。','EU VAT of 19% eats a big chunk of profit, and CE marking plus battery-regulation registration make compliance demanding.') },
+    { market:GG.T('日本','Japan'), flag:'🇯🇵', currency:'JPY', duty_pct:0, vat_pct:10, platform_fee_pct:12,
       shipping_rmb:20, landed_cost_rmb:60, suggest_price_local:3480, suggest_price_rmb:168,
-      margin_pct:31, note:'消费税 10%；移动电源强制 PSE 认证，无 PSE 不得销售，先把证办了再上。' }
+      margin_pct:31, note:GG.T('消费税 10%；移动电源强制 PSE 认证，无 PSE 不得销售，先把证办了再上。','10% consumption tax. Power banks require mandatory PSE certification — no PSE, no sales. Get certified before listing.') }
   ],
-  verdict:'优先美国：无关税、税率低、客单价撑得起，毛利率最高；德国利润也行但 VAT+合规重，适合站稳美国后再扩；日本必须先办 PSE。'
+  verdict:GG.T('优先美国：无关税、税率低、客单价撑得起，毛利率最高；德国利润也行但 VAT+合规重，适合站稳美国后再扩；日本必须先办 PSE。','Go US first: no duty, low taxes, price points that hold up, and the highest margin. Germany is profitable too, but heavy VAT and compliance make it a better second step once the US is solid. Japan requires PSE certification before anything else.')
 };
 window.LANDED_DEV = {
   render: (d)=>{ GG.clear(resultMount); resultMount.appendChild(renderResult(normalize(d||SAMPLE), false)); },
@@ -324,7 +335,7 @@ window.LANDED_DEV = {
   sample: SAMPLE, normalize
 };
 
-GG.login(SLUG, {co:'远帆跨境', dept:'跨境运营部', name:'林悦',
-  email:'lin.yue@yuanfan-cb.com', workspace:'到岸价测算工作台',
-  sub:'登录进入你的「到岸价测算工作台」——输入成本，算清各国到岸价与利润。'}, intro);
+GG.login(SLUG, {co:GG.T('远帆跨境','Yuanfan Global'), dept:GG.T('跨境运营部','Cross-border Ops'), name:GG.T('林悦','Lin Yue'),
+  email:'lin.yue@yuanfan-cb.com', workspace:GG.T('到岸价测算工作台','Landed Cost Workbench'),
+  sub:GG.T('登录进入你的「到岸价测算工作台」——输入成本，算清各国到岸价与利润。','Sign in to your Landed Cost Workbench — enter costs, see landed cost and profit for every market.')}, intro);
 })();

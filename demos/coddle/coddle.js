@@ -40,7 +40,7 @@ function start(){
 /* 存入成长记录（每点一次「记入」存一条快照） */
 function saveEntry(){
   const isMom = state.track==='mom', topic = curTopic();
-  const ageText = isMom ? dayLabel(state.days) : (state.months+' 个月');
+  const ageText = isMom ? dayLabel(state.days) : GG.T(state.months+' 个月', state.months+' mo');
   const stageLabel = isMom ? stageOf(state.days).label : bandOf(state.months).label;
   const d = new Date();
   const pad = n=> (n<10?'0':'')+n;
@@ -60,8 +60,8 @@ function welcome(){
   GG.clear(main);
   const head = GG.el('div',{class:'cd-top'},
     GG.el('div',{class:'cd-glyph'}, '🍼'),
-    GG.el('div',{class:'cd-brand'}, 'Coddle 育儿陪伴'),
-    GG.el('div',{class:'cd-tag'}, '照顾宝宝的人，也需要被照顾'));
+    GG.el('div',{class:'cd-brand'}, GG.T('Coddle 育儿陪伴','Coddle Parenting Companion')),
+    GG.el('div',{class:'cd-tag'}, GG.T('照顾宝宝的人，也需要被照顾','The one caring for baby needs care too')));
 
   const track = (key, emoji, title, sub)=> GG.el('button',{class:'cd-track', onClick:()=>enterTrack(key)},
     GG.el('span',{class:'cd-tk-ic'}, emoji),
@@ -71,22 +71,22 @@ function welcome(){
     GG.el('span',{class:'cd-tk-go'}, '→'));
 
   const body = GG.el('div',{class:'cd-body'},
-    GG.el('div',{class:'cd-hook', html:'凌晨三点，只有你和宝宝醒着——<b>记一句，我陪你想办法</b>'}),
+    GG.el('div',{class:'cd-hook', html:GG.T('凌晨三点，只有你和宝宝醒着——<b>记一句，我陪你想办法</b>','3 a.m., just you and the baby awake — <b>jot one line, we\'ll figure it out together</b>')}),
     GG.el('div',{class:'cd-feats'},
-      feat('👶', '宝宝怎么了 · 按月龄给指引，看发育是否在正常范围'),
-      feat('🤱', '我自己怎么办 · 产后恢复、情绪、母乳，按阶段陪你过'),
-      feat('🏪', '需要搭把手时 · 帮你找附近催乳 / 月子 / 修复 / 月嫂')),
+      feat('👶', GG.T('宝宝怎么了 · 按月龄给指引，看发育是否在正常范围','What\'s up with baby · Age-tuned guidance, with milestone ranges to check against')),
+      feat('🤱', GG.T('我自己怎么办 · 产后恢复、情绪、母乳，按阶段陪你过','What about me · Recovery, mood, breastfeeding — stage-by-stage support')),
+      feat('🏪', GG.T('需要搭把手时 · 帮你找附近催乳 / 月子 / 修复 / 月嫂','When you need a hand · Find nearby lactation, confinement, recovery and nanny help'))),
     GG.el('div',{class:'cd-tracks'},
-      track('baby','👶','宝宝怎么了','夜醒·吃奶·辅食·大运动·情绪·语言'),
-      track('mom','🤱','照顾我自己（产后）','母乳·恶露伤口·情绪·身体修复·月子·睡眠')));
+      track('baby','👶',GG.T('宝宝怎么了','What\'s up with baby'),GG.T('夜醒·吃奶·辅食·大运动·情绪·语言','Night waking · Feeding · Solids · Motor · Emotions · Language')),
+      track('mom','🤱',GG.T('照顾我自己（产后）','Caring for myself (postpartum)'),GG.T('母乳·恶露伤口·情绪·身体修复·月子·睡眠','Breastfeeding · Lochia & wounds · Mood · Recovery · Confinement · Sleep'))));
 
   main.appendChild(GG.el('div',{class:'cd-gate'},
     GG.el('div',{class:'cd-card'}, head, body),
     log.length ? GG.el('button',{class:'cd-gate-log', onClick:renderLog},
-      '📔 我的成长记录（已记 '+log.length+' 条）', GG.el('span',{class:'cd-gate-log-go'}, '→')) : null,
+      GG.T('📔 我的成长记录（已记 '+log.length+' 条）','📔 My growth journal ('+log.length+' entries)'), GG.el('span',{class:'cd-gate-log-go'}, '→')) : null,
     GG.el('div',{class:'cd-priv'},
       GG.el('span', null, '🔒'),
-      GG.el('span', null, '记录只留在你的浏览器本机，不上传服务器；演示环境不收集账号信息，附近商家为演示数据。'))));
+      GG.el('span', null, GG.T('记录只留在你的浏览器本机，不上传服务器；演示环境不收集账号信息，附近商家为演示数据。','Entries stay in your browser only — nothing is uploaded. This demo collects no account info, and nearby providers are sample data.')))));
 }
 function feat(ic, t){ return GG.el('div',{class:'cd-feat'}, GG.el('span',{class:'ic'}, ic), t); }
 
@@ -108,18 +108,18 @@ function renderTool(){
     onClick:()=>{ if(state.track!==key) enterTrack(key); }
   }, label);
   main.appendChild(GG.el('div',{class:'cd-segwrap'},
-    pill('baby','👶 宝宝'),
-    pill('mom','🤱 妈妈 · 产后'),
-    GG.el('button',{class:'cd-log-btn', title:'成长记录', onClick:renderLog}, '📔'+(log.length?' '+log.length:'')),
-    GG.el('button',{class:'cd-home', title:'回首页', onClick:welcome}, '⌂')));
+    pill('baby',GG.T('👶 宝宝','👶 Baby')),
+    pill('mom',GG.T('🤱 妈妈 · 产后','🤱 Mom · Postpartum')),
+    GG.el('button',{class:'cd-log-btn', title:GG.T('成长记录','Growth journal'), onClick:renderLog}, '📔'+(log.length?' '+log.length:'')),
+    GG.el('button',{class:'cd-home', title:GG.T('回首页','Home'), onClick:welcome}, '⌂')));
 
   main.appendChild(GG.el('div',{class:'cd-lead'},
-    isMom ? '选一个产后关注、说一句你的情况，再滑动产后天数 —— 同一件事，阶段不同，答案不同。'
-          : '选一个方面、说一句你看到的，再滑动宝宝月龄 —— 同一种情况，月龄不同，指引完全不同。'));
+    isMom ? GG.T('选一个产后关注、说一句你的情况，再滑动产后天数 —— 同一件事，阶段不同，答案不同。','Pick a postpartum topic, add a line about your situation, then slide the days — same issue, different stage, different answer.')
+          : GG.T('选一个方面、说一句你看到的，再滑动宝宝月龄 —— 同一种情况，月龄不同，指引完全不同。','Pick a topic, describe what you see in one line, then slide baby\'s age — same situation, different month, completely different guidance.')));
 
   // ① 选主题
   const topics = isMom ? MOM_TOPICS : TOPICS;
-  main.appendChild(GG.el('div',{class:'cd-step'}, isMom ? '① 你想聊哪方面？' : '① 想了解宝宝哪方面？'));
+  main.appendChild(GG.el('div',{class:'cd-step'}, isMom ? GG.T('① 你想聊哪方面？','① What would you like to talk about?') : GG.T('① 想了解宝宝哪方面？','① What do you want to know about baby?')));
   const grid = GG.el('div',{class:'cd-chips'});
   topics.forEach(t=>{
     const active = state.topicId===t.id;
@@ -129,35 +129,35 @@ function renderTool(){
   main.appendChild(grid);
 
   if(!state.topicId){
-    main.appendChild(GG.el('p',{class:'cd-muted', style:{marginTop:'14px'}}, '👆 先选一类，再继续。'));
+    main.appendChild(GG.el('p',{class:'cd-muted', style:{marginTop:'14px'}}, GG.T('👆 先选一类，再继续。','👆 Pick a category to continue.')));
     return;
   }
   const topic = curTopic();
 
   // ② 说一句
-  main.appendChild(GG.el('div',{class:'cd-step'}, '② 说一句当下的情况（可选）'));
+  main.appendChild(GG.el('div',{class:'cd-step'}, GG.T('② 说一句当下的情况（可选）','② Describe the moment in one line (optional)')));
   main.appendChild(GG.el('input',{type:'text', value:state.note, placeholder:topic.placeholder, class:'cd-input',
     onInput:(e)=>{ state.note=e.target.value; updateGuide(); }}));
 
   // ③ 滑块
   if(isMom){
-    main.appendChild(GG.el('div',{class:'cd-step'}, '③ 现在产后多少天了？（拖动看指引怎么变）'));
+    main.appendChild(GG.el('div',{class:'cd-step'}, GG.T('③ 现在产后多少天了？（拖动看指引怎么变）','③ How many days postpartum? (drag to watch the guidance change)')));
     const big = GG.el('span',{class:'cd-big'}, dayLabel(state.days));
     const stg = GG.el('span',{class:'cd-pill'}, stageOf(state.days).label);
     main.appendChild(GG.el('div',{class:'cd-row'}, big, stg));
     const slider = GG.el('input',{type:'range', min:'0', max:'180', step:'1', value:String(state.days), class:'cd-slider',
       onInput:(e)=>{ state.days=parseInt(e.target.value,10); big.textContent=dayLabel(state.days); stg.textContent=stageOf(state.days).label; updateGuide(); }});
     main.appendChild(slider);
-    main.appendChild(scaleRow(['出生','满月','3 月','6 月']));
+    main.appendChild(scaleRow([GG.T('出生','Birth'),GG.T('满月','1 mo'),GG.T('3 月','3 mo'),GG.T('6 月','6 mo')]));
   }else{
-    main.appendChild(GG.el('div',{class:'cd-step'}, '③ 宝宝月龄（拖动看指引怎么变）'));
-    const big = GG.el('span',{class:'cd-big'}, state.months+' 个月');
+    main.appendChild(GG.el('div',{class:'cd-step'}, GG.T('③ 宝宝月龄（拖动看指引怎么变）','③ Baby\'s age in months (drag to watch the guidance change)')));
+    const big = GG.el('span',{class:'cd-big'}, GG.T(state.months+' 个月', state.months+' mo'));
     const bnd = GG.el('span',{class:'cd-pill'}, bandOf(state.months).label);
     main.appendChild(GG.el('div',{class:'cd-row'}, big, bnd));
     const slider = GG.el('input',{type:'range', min:'0', max:'36', step:'1', value:String(state.months), class:'cd-slider',
-      onInput:(e)=>{ state.months=parseInt(e.target.value,10); big.textContent=state.months+' 个月'; bnd.textContent=bandOf(state.months).label; updateGuide(); }});
+      onInput:(e)=>{ state.months=parseInt(e.target.value,10); big.textContent=GG.T(state.months+' 个月', state.months+' mo'); bnd.textContent=bandOf(state.months).label; updateGuide(); }});
     main.appendChild(slider);
-    main.appendChild(scaleRow(['出生','1 岁','2 岁','3 岁']));
+    main.appendChild(scaleRow([GG.T('出生','Birth'),GG.T('1 岁','1 yr'),GG.T('2 岁','2 yr'),GG.T('3 岁','3 yr')]));
   }
 
   // ④ 指引容器
@@ -165,7 +165,7 @@ function renderTool(){
   updateGuide();
 }
 
-function dayLabel(d){ const w=Math.floor(d/7); return '产后 '+d+' 天'+(w>0?'（第 '+(w+1)+' 周）':''); }
+function dayLabel(d){ const w=Math.floor(d/7); return GG.T('产后 '+d+' 天'+(w>0?'（第 '+(w+1)+' 周）':''), 'Day '+d+' postpartum'+(w>0?' (week '+(w+1)+')':'')); }
 function scaleRow(labels){
   const r = GG.el('div',{class:'cd-scale'});
   labels.forEach(l=> r.appendChild(GG.el('span', null, l)));
@@ -192,7 +192,7 @@ function updateGuide(){
 
   const cell = isMom ? topic.byStage[stageOf(state.days).id] : topic.byBand[bandOf(state.months).id];
   const stageLabel = isMom ? stageOf(state.days).label : bandOf(state.months).label;
-  const headRight = isMom ? dayLabel(state.days).replace('产后 ','') : state.months+' 个月';
+  const headRight = isMom ? dayLabel(state.days).replace(GG.T('产后 ',' postpartum'),'') : GG.T(state.months+' 个月', state.months+' mo');
 
   const sectionRow = (title, text)=> GG.el('div',{class:'cd-sec'},
     GG.el('div',{class:'cd-sec-t'}, title),
@@ -204,38 +204,38 @@ function updateGuide(){
       GG.el('span',{class:'cd-pill solid'}, stageLabel)),
     // 宝宝发育里程碑（仅发育类主题）
     (!isMom && topic.milestones) ? milestoneTimeline(topic) : null,
-    sectionRow(isMom?'这个阶段的情况':'这个阶段的典型表现', cell.read),
-    sectionRow('给你的指引', cell.guide),
-    sectionRow('小贴士', cell.tip),
+    sectionRow(isMom?GG.T('这个阶段的情况','At this stage'):GG.T('这个阶段的典型表现','Typical at this stage'), cell.read),
+    sectionRow(GG.T('给你的指引','Your guidance'), cell.guide),
+    sectionRow(GG.T('小贴士','Quick tip'), cell.tip),
     // 教学视频（占位，保留位置）
     topic.video ? videoFrame(topic, stageLabel) : null,
     // 妈妈轨：就医红线
     (isMom && topic.redflag) ? GG.el('div',{class:'cd-redflag'},
-      GG.el('div',{class:'cd-rf-t'}, '⚠️ 这些情况要就医'),
+      GG.el('div',{class:'cd-rf-t'}, GG.T('⚠️ 这些情况要就医','⚠️ When to see a doctor')),
       GG.el('p',{class:'cd-rf-p'}, topic.redflag)) : null
   );
 
   // shareSpec
   const shareSpec = {
     slug: SLUG,
-    title: (isMom?'产后指引 · ':'月龄指引 · ')+topic.label,
+    title: GG.T((isMom?'产后指引 · ':'月龄指引 · ')+topic.label, (isMom?'Postpartum guide · ':'Age guide · ')+topic.label),
     subtitle: stageLabel,
     tags: [topic.label, stageLabel],
     note: cell.guide,
     rows: [
-      { label:isMom?'情况':'典型表现', value:cell.read },
-      { label:'建议', value:cell.guide },
-      { label:'小贴士', value:cell.tip },
+      { label:isMom?GG.T('情况','Situation'):GG.T('典型表现','Typical signs'), value:cell.read },
+      { label:GG.T('建议','Advice'), value:cell.guide },
+      { label:GG.T('小贴士','Tip'), value:cell.tip },
     ],
     copyText: [
-      '【'+(isMom?'产后指引 · ':'月龄指引 · ')+topic.label+'】',
+      GG.T('【'+(isMom?'产后指引 · ':'月龄指引 · ')+topic.label+'】', '['+(isMom?'Postpartum guide · ':'Age guide · ')+topic.label+']'),
       stageLabel,
-      state.note.trim()? '你写的：“'+state.note.trim()+'”' : null,
-      '· '+(isMom?'情况':'典型表现')+'：'+cell.read,
-      '· 建议：'+cell.guide,
-      '· 小贴士：'+cell.tip,
-      isMom&&topic.redflag? '· 就医红线：'+topic.redflag : null,
-      '', '—— Coddle 育儿陪伴 · Demo  '+location.href
+      state.note.trim()? GG.T('你写的：“'+state.note.trim()+'”', 'You wrote: “'+state.note.trim()+'”') : null,
+      '· '+(isMom?GG.T('情况','Situation'):GG.T('典型表现','Typical signs'))+GG.T('：',': ')+cell.read,
+      '· '+GG.T('建议：','Advice: ')+cell.guide,
+      '· '+GG.T('小贴士：','Tip: ')+cell.tip,
+      isMom&&topic.redflag? '· '+GG.T('就医红线：','See a doctor if: ')+topic.redflag : null,
+      '', GG.T('—— Coddle 育儿陪伴 · Demo  ','— Coddle Parenting Companion · Demo  ')+location.href
     ].filter(Boolean).join('\n')
   };
 
@@ -243,12 +243,12 @@ function updateGuide(){
 
   // 记入成长记录（每条问询存一笔，攒成成长路径）
   const recBtn = GG.el('button',{class:'cd-rec-btn', onClick:()=>{
-    saveEntry(); recBtn.textContent='✓ 已记入成长记录'; recBtn.disabled=true; updateLogCount();
-    GG.toast('已记入成长记录 ✓');
-  }}, '＋ 记入这一条');
+    saveEntry(); recBtn.textContent=GG.T('✓ 已记入成长记录','✓ Saved to journal'); recBtn.disabled=true; updateLogCount();
+    GG.toast(GG.T('已记入成长记录 ✓','Saved to your growth journal ✓'));
+  }}, GG.T('＋ 记入这一条','＋ Save this entry'));
   box.appendChild(GG.el('div',{class:'cd-rec-row'},
     recBtn,
-    GG.el('button',{class:'cd-rec-link', onClick:renderLog}, '📔 成长记录'+(log.length?'（'+log.length+'）':''))));
+    GG.el('button',{class:'cd-rec-link', onClick:renderLog}, GG.T('📔 成长记录'+(log.length?'（'+log.length+'）':''), '📔 Journal'+(log.length?' ('+log.length+')':'')))));
 
   // 妈妈轨：附近服务导流
   if(isMom && topic.needs) mountServices(box, topic);
@@ -257,8 +257,8 @@ function updateGuide(){
   mountAdvice(box, topic, isMom);
 
   box.appendChild(GG.el('p',{class:'cd-muted center', style:{marginTop:'10px'}},
-    isMom? '↑ 拖动上面的「产后天数」—— 同一件事，阶段不同，指引会明显变化。'
-         : '↑ 拖动上面的「月龄」—— 同一种情况，指引会随月龄明显改变。'));
+    isMom? GG.T('↑ 拖动上面的「产后天数」—— 同一件事，阶段不同，指引会明显变化。','↑ Drag the postpartum-days slider above — same issue, different stage, noticeably different guidance.')
+         : GG.T('↑ 拖动上面的「月龄」—— 同一种情况，指引会随月龄明显改变。','↑ Drag the age slider above — watch the guidance shift with every month.')));
 }
 
 /* ───────── 宝宝发育里程碑：正常范围 + 可点「会了/还没」───────── */
@@ -266,14 +266,14 @@ function milestoneTimeline(topic){
   const m = state.months, MAX=36;
   const pct = x => (Math.max(0,Math.min(MAX,x))/MAX*100);
   const wrap = GG.el('div',{class:'cd-tl'});
-  wrap.appendChild(GG.el('div',{class:'cd-tl-cap'}, '🧭 发育里程碑 · 看看是不是在正常范围（点一下告诉我「会了 / 还没」）'));
+  wrap.appendChild(GG.el('div',{class:'cd-tl-cap'}, GG.T('🧭 发育里程碑 · 看看是不是在正常范围（点一下告诉我「会了 / 还没」）','🧭 Milestones · See if baby\'s in the normal range (tap to mark "Got it / Not yet")')));
 
   // 顶部时间轴 + 当前月龄 playhead
   const axis = GG.el('div',{class:'cd-tl-axis'});
   axis.appendChild(GG.el('div',{class:'cd-tl-line'}));
   const head = GG.el('div',{class:'cd-tl-head', style:{left:pct(m)+'%'}},
     GG.el('div',{class:'cd-tl-head-dot'}),
-    GG.el('div',{class:'cd-tl-head-lbl'}, m+'月'));
+    GG.el('div',{class:'cd-tl-head-lbl'}, m+GG.T('月','mo')));
   axis.appendChild(head);
   wrap.appendChild(axis);
 
@@ -288,13 +288,13 @@ function milestoneTimeline(topic){
       GG.el('div',{class:'cd-ms-now', style:{left:pct(m)+'%'}}));
 
     let stat, cls;
-    if(mark==='yes'){ stat='✓ 已达成'; cls='ok'; }
+    if(mark==='yes'){ stat=GG.T('✓ 已达成','✓ Achieved'); cls='ok'; }
     else if(mark==='no'){
-      if(m>=ms.hi){ stat='已超过常见窗口 · 可和儿保医生聊聊'; cls='warn'; flagged++; }
-      else if(m>=ms.lo){ stat='还在正常窗口，别急'; cls='soft'; }
-      else { stat='还没到，正常'; cls='mut'; }
+      if(m>=ms.hi){ stat=GG.T('已超过常见窗口 · 可和儿保医生聊聊','Past the typical window — worth a chat with your pediatrician'); cls='warn'; flagged++; }
+      else if(m>=ms.lo){ stat=GG.T('还在正常窗口，别急','Still in the normal window — no rush'); cls='soft'; }
+      else { stat=GG.T('还没到，正常','Not due yet — all normal'); cls='mut'; }
     } else {
-      stat = (m<ms.lo)?('常在 '+ms.lo+'–'+ms.hi+' 月'):(m<ms.hi?('正值窗口 '+ms.lo+'–'+ms.hi+' 月'):('多在 '+ms.lo+'–'+ms.hi+' 月达成'));
+      stat = (m<ms.lo)?GG.T('常在 '+ms.lo+'–'+ms.hi+' 月','Usually at '+ms.lo+'–'+ms.hi+' mo'):(m<ms.hi?GG.T('正值窗口 '+ms.lo+'–'+ms.hi+' 月','In the window now ('+ms.lo+'–'+ms.hi+' mo)'):GG.T('多在 '+ms.lo+'–'+ms.hi+' 月达成','Most achieve by '+ms.lo+'–'+ms.hi+' mo'));
       cls='mut';
     }
 
@@ -303,18 +303,18 @@ function milestoneTimeline(topic){
       GG.el('div',{class:'cd-ms-name'}, ms.label),
       band,
       GG.el('div',{class:'cd-ms-act'},
-        GG.el('button',{class:'cd-ms-btn'+(mark==='yes'?' on ok':''), onClick:()=>toggle('yes')}, '会了'),
-        GG.el('button',{class:'cd-ms-btn'+(mark==='no'?' on no':''), onClick:()=>toggle('no')}, '还没')),
+        GG.el('button',{class:'cd-ms-btn'+(mark==='yes'?' on ok':''), onClick:()=>toggle('yes')}, GG.T('会了','Got it')),
+        GG.el('button',{class:'cd-ms-btn'+(mark==='no'?' on no':''), onClick:()=>toggle('no')}, GG.T('还没','Not yet'))),
       GG.el('div',{class:'cd-ms-stat '+cls}, stat));
     wrap.appendChild(row);
   });
 
   if(flagged>0){
     wrap.appendChild(GG.el('div',{class:'cd-tl-note warn'},
-      '有 '+flagged+' 项已超过多数宝宝的窗口。每个孩子节奏不同，多数仍是正常的；若你不放心，下次儿保体检时和医生聊聊最稳妥。'));
+      GG.T('有 '+flagged+' 项已超过多数宝宝的窗口。每个孩子节奏不同，多数仍是正常的；若你不放心，下次儿保体检时和医生聊聊最稳妥。',flagged+' item(s) are past most babies\' window. Every child keeps their own pace and most are still fine — if you\'re unsure, mentioning it at the next checkup is the safest move.')));
   }else{
     wrap.appendChild(GG.el('div',{class:'cd-tl-note'},
-      '发育有个体差异，范围是「多数宝宝」的窗口，不是及格线。落在窗口内就别太焦虑。'));
+      GG.T('发育有个体差异，范围是「多数宝宝」的窗口，不是及格线。落在窗口内就别太焦虑。','Development varies — these ranges are "most babies" windows, not pass lines. Inside the window, breathe easy.')));
   }
   return wrap;
 }
@@ -332,45 +332,45 @@ function entryRow(e){
   return GG.el('div',{class:'cd-log-item'},
     GG.el('div',{class:'cd-log-dot'+(e.track==='mom'?' mom':'')}),
     GG.el('div',{class:'cd-log-body'},
-      GG.el('div',{class:'cd-log-metarow'}, e.dateText+'　'+(e.track==='mom'?'🤱 产后':'👶 宝宝')),
+      GG.el('div',{class:'cd-log-metarow'}, e.dateText+'　'+(e.track==='mom'?GG.T('🤱 产后','🤱 Mom'):GG.T('👶 宝宝','👶 Baby'))),
       GG.el('div',{class:'cd-log-mainrow'}, e.emoji+' '+e.label, GG.el('span',{class:'cd-log-age'}, e.ageText)),
       e.note ? GG.el('div',{class:'cd-log-noterow'}, '“'+e.note+'”')
-             : GG.el('div',{class:'cd-log-noterow muted'}, '（没写备注）')),
-    GG.el('button',{class:'cd-log-del', title:'删除', onClick:()=>{ log=log.filter(x=>x.id!==e.id); saveStore(); renderLog(); }}, '✕'));
+             : GG.el('div',{class:'cd-log-noterow muted'}, GG.T('（没写备注）','(no note)'))),
+    GG.el('button',{class:'cd-log-del', title:GG.T('删除','Delete'), onClick:()=>{ log=log.filter(x=>x.id!==e.id); saveStore(); renderLog(); }}, '✕'));
 }
 function clearBtn(){
   let armed=false;
   const b=GG.el('button',{class:'cd-clear-btn', onClick:()=>{
-    if(!armed){ armed=true; b.textContent='再点一次确认清空'; b.classList.add('arm');
-      setTimeout(()=>{ armed=false; b.textContent='清空'; b.classList.remove('arm'); },2600); return; }
-    log=[]; saveStore(); GG.toast('已清空成长记录'); renderLog();
-  }}, '清空');
+    if(!armed){ armed=true; b.textContent=GG.T('再点一次确认清空','Tap again to confirm'); b.classList.add('arm');
+      setTimeout(()=>{ armed=false; b.textContent=GG.T('清空','Clear all'); b.classList.remove('arm'); },2600); return; }
+    log=[]; saveStore(); GG.toast(GG.T('已清空成长记录','Journal cleared')); renderLog();
+  }}, GG.T('清空','Clear all'));
   return b;
 }
 function renderLog(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'cd-segwrap'},
-    GG.el('button',{class:'cd-seg', onClick:()=> state.track?renderTool():welcome()}, '← 返回'),
-    GG.el('div',{class:'cd-log-title'}, '📔 成长记录'),
-    GG.el('button',{class:'cd-home', title:'回首页', onClick:welcome}, '⌂')));
+    GG.el('button',{class:'cd-seg', onClick:()=> state.track?renderTool():welcome()}, GG.T('← 返回','← Back')),
+    GG.el('div',{class:'cd-log-title'}, GG.T('📔 成长记录','📔 Growth journal')),
+    GG.el('button',{class:'cd-home', title:GG.T('回首页','Home'), onClick:welcome}, '⌂')));
 
   if(!log.length){
     main.appendChild(GG.el('div',{class:'cd-log-empty'},
       GG.el('div',{class:'cd-log-empty-ic'}, '🌱'),
-      GG.el('p',{style:{fontWeight:'700', fontSize:'16px', margin:'6px 0'}}, '还没有记录'),
-      GG.el('p',{class:'cd-muted'}, '在指引页点「＋ 记入这一条」，把每一次用心都存下来，慢慢攒成一条成长路径。'),
-      GG.el('button',{class:'cd-ai-btn', style:{marginTop:'12px'}, onClick:()=> state.track?renderTool():welcome()}, '去记第一笔 →')));
+      GG.el('p',{style:{fontWeight:'700', fontSize:'16px', margin:'6px 0'}}, GG.T('还没有记录','No entries yet')),
+      GG.el('p',{class:'cd-muted'}, GG.T('在指引页点「＋ 记入这一条」，把每一次用心都存下来，慢慢攒成一条成长路径。','Tap "＋ Save this entry" on any guidance page — every moment of care adds up to a growth path.')),
+      GG.el('button',{class:'cd-ai-btn', style:{marginTop:'12px'}, onClick:()=> state.track?renderTool():welcome()}, GG.T('去记第一笔 →','Save your first entry →'))));
     return;
   }
 
   const sorted = log.slice().sort((a,b)=>b.ts-a.ts);
   main.appendChild(GG.el('div',{class:'cd-log-summary'},
-    GG.el('div', null, GG.el('b',{style:{fontSize:'18px'}}, log.length+' 次记录'),
-      GG.el('span',{class:'cd-muted'}, '　自 '+fmtDate(sorted[sorted.length-1].ts))),
-    GG.el('div',{class:'cd-muted', style:{marginTop:'3px'}}, '每一条都是你用心陪伴的印记 —— 导出成一张「成长路径」，留作纪念。')));
+    GG.el('div', null, GG.el('b',{style:{fontSize:'18px'}}, GG.T(log.length+' 次记录',log.length+' entries')),
+      GG.el('span',{class:'cd-muted'}, GG.T('　自 '+fmtDate(sorted[sorted.length-1].ts),'　since '+fmtDate(sorted[sorted.length-1].ts)))),
+    GG.el('div',{class:'cd-muted', style:{marginTop:'3px'}}, GG.T('每一条都是你用心陪伴的印记 —— 导出成一张「成长路径」，留作纪念。','Every entry is a mark of your care — export them as a "growth path" keepsake.'))));
 
   main.appendChild(GG.el('div',{class:'cd-log-actions'},
-    GG.el('button',{class:'cd-export-btn', onClick:exportGrowthPath}, '🌱 导出成长路径（图片）'),
+    GG.el('button',{class:'cd-export-btn', onClick:exportGrowthPath}, GG.T('🌱 导出成长路径（图片）','🌱 Export growth path (image)')),
     clearBtn()));
 
   const list = GG.el('div',{class:'cd-log-list'});
@@ -388,7 +388,7 @@ function drawGrowthCanvas(){
   const shown=sorted.slice(-14);
   const reached=reachedMilestones();
   const anyBaby = shown.some(e=>e.track==='baby') || reached.length>0;
-  const title = anyBaby ? '宝宝的成长路径' : '我的产后恢复之路';
+  const title = anyBaby ? GG.T('宝宝的成长路径','Baby\'s growth path') : GG.T('我的产后恢复之路','My postpartum recovery road');
   const W=720, scale=2, padX=46, headerH=164, rowH=80;
   const msH = reached.length ? 96 : 0;
   const H = headerH + 40 + shown.length*rowH + (msH? msH+14 : 0) + 64 + 56;
@@ -401,8 +401,8 @@ function drawGrowthCanvas(){
   ctx.fillStyle='#fff';
   ctx.font=F('800',40); ctx.fillText('🌱 '+title, padX, 76);
   const range = sorted.length ? (fmtDate(sorted[0].ts)+'  –  '+fmtDate(sorted[sorted.length-1].ts)) : '';
-  ctx.globalAlpha=.96; ctx.font=F('500',20); ctx.fillText(range+'   ·   共 '+log.length+' 次用心记录', padX, 110);
-  ctx.globalAlpha=.9; ctx.font=F('500',15); ctx.fillText('Coddle 育儿陪伴 · 成长记录', padX, 138);
+  ctx.globalAlpha=.96; ctx.font=F('500',20); ctx.fillText(GG.T(range+'   ·   共 '+log.length+' 次用心记录',range+'   ·   '+log.length+' entries of loving care'), padX, 110);
+  ctx.globalAlpha=.9; ctx.font=F('500',15); ctx.fillText(GG.T('Coddle 育儿陪伴 · 成长记录','Coddle Parenting Companion · Growth journal'), padX, 138);
   ctx.globalAlpha=1;
   // timeline
   const y = headerH + 40, lineX = padX + 8;
@@ -412,50 +412,50 @@ function drawGrowthCanvas(){
     const cy=y+i*rowH, tx=lineX+24;
     ctx.fillStyle=acc; ctx.beginPath(); ctx.arc(lineX, cy, 6, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(lineX, cy, 2.4, 0, Math.PI*2); ctx.fill();
-    ctx.fillStyle=ink3; ctx.font=F('600',14); ctx.fillText(e.dateText+'   '+(e.track==='mom'?'🤱 产后':'👶 宝宝'), tx, cy-12);
+    ctx.fillStyle=ink3; ctx.font=F('600',14); ctx.fillText(e.dateText+'   '+(e.track==='mom'?GG.T('🤱 产后','🤱 Mom'):GG.T('👶 宝宝','👶 Baby')), tx, cy-12);
     ctx.fillStyle=ink; ctx.font=F('740',20); ctx.fillText(fitText(ctx, e.emoji+' '+e.label+'  ·  '+e.ageText, W-tx-padX), tx, cy+10);
     if(e.note){ ctx.fillStyle=ink2; ctx.font=F('400',16); ctx.fillText(fitText(ctx, '“'+e.note+'”', W-tx-padX), tx, cy+32); }
   });
   let by = y + shown.length*rowH + 6;
   if(msH){
     ctx.fillStyle='#fbeef4'; roundRect(ctx, padX, by, W-padX*2, msH-12, 14); ctx.fill();
-    ctx.fillStyle=acc; ctx.font=F('740',18); ctx.fillText('🏆 这一路，'+(anyBaby?'宝宝':'你')+'学会了', padX+18, by+30);
+    ctx.fillStyle=acc; ctx.font=F('740',18); ctx.fillText(GG.T('🏆 这一路，'+(anyBaby?'宝宝':'你')+'学会了','🏆 Along the way, '+(anyBaby?'baby':'you')+' learned'), padX+18, by+30);
     ctx.fillStyle=ink; ctx.font=F('600',17); ctx.fillText(fitText(ctx, reached.join('  ·  '), W-padX*2-36), padX+18, by+58);
     by += msH-12 + 14;
   }
   by += 36;
   ctx.textAlign='center';
   ctx.fillStyle=ink2; ctx.font=F('600',19);
-  ctx.fillText(anyBaby?'每一次记录，都是你陪他长大的证明。':'每一次记录，都是你好好爱自己的证明。', W/2, by);
+  ctx.fillText(anyBaby?GG.T('每一次记录，都是你陪他长大的证明。','Every entry is proof you were there as they grew.'):GG.T('每一次记录，都是你好好爱自己的证明。','Every entry is proof you took good care of yourself.'), W/2, by);
   ctx.fillStyle=ink3; ctx.font=F('500',13.5);
-  ctx.fillText('由 Coddle 育儿陪伴生成 · 仅作交互演示，非医疗建议', W/2, H-22);
+  ctx.fillText(GG.T('由 Coddle 育儿陪伴生成 · 仅作交互演示，非医疗建议','Made with Coddle Parenting Companion · Interactive demo only, not medical advice'), W/2, H-22);
   ctx.textAlign='left';
   return c;
 }
 function exportGrowthPath(){
-  if(!log.length){ GG.toast('还没有记录可导出'); return; }
+  if(!log.length){ GG.toast(GG.T('还没有记录可导出','No entries to export yet')); return; }
   const c = drawGrowthCanvas(); c.className='cd-ov-canvas';
   const overlay = GG.el('div',{class:'cd-ov', onClick:(ev)=>{ if(ev.target===overlay) overlay.remove(); }},
     GG.el('div',{class:'cd-ov-card'},
-      GG.el('div',{class:'cd-ov-h'}, '🌱 你的成长路径'),
+      GG.el('div',{class:'cd-ov-h'}, GG.T('🌱 你的成长路径','🌱 Your growth path')),
       c,
       GG.el('div',{class:'cd-ov-row'},
-        GG.el('button',{class:'cd-ai-btn', onClick:()=>GG.downloadCanvas(c,'成长路径')}, '⬇️ 存成图片'),
-        GG.el('button',{class:'cd-seg', onClick:()=>GG.copyCanvas(c)}, '📷 复制图片'),
-        GG.el('button',{class:'cd-seg', onClick:()=>overlay.remove()}, '关闭'))));
+        GG.el('button',{class:'cd-ai-btn', onClick:()=>GG.downloadCanvas(c,GG.T('成长路径','growth-path'))}, GG.T('⬇️ 存成图片','⬇️ Save as image')),
+        GG.el('button',{class:'cd-seg', onClick:()=>GG.copyCanvas(c)}, GG.T('📷 复制图片','📷 Copy image')),
+        GG.el('button',{class:'cd-seg', onClick:()=>overlay.remove()}, GG.T('关闭','Close')))));
   document.body.appendChild(overlay);
 }
 
 /* ───────── 教学视频框（占位：保留教学视频位置，上线后替换为播放器）───────── */
 function videoFrame(topic, stageLabel){
-  return GG.el('div',{class:'cd-video', onClick:()=>GG.toast('教学视频即将上线（演示）')},
+  return GG.el('div',{class:'cd-video', onClick:()=>GG.toast(GG.T('教学视频即将上线（演示）','Tutorial videos coming soon (demo)'))},
     GG.el('div',{class:'cd-video-frame'},
-      GG.el('div',{class:'cd-video-soon'}, '即将上线'),
+      GG.el('div',{class:'cd-video-soon'}, GG.T('即将上线','Coming soon')),
       GG.el('div',{class:'cd-video-play'}, '▶'),
-      GG.el('div',{class:'cd-video-dur'}, '🎬 教学视频 · 约 2 分钟')),
+      GG.el('div',{class:'cd-video-dur'}, GG.T('🎬 教学视频 · 约 2 分钟','🎬 Tutorial · ~2 min'))),
     GG.el('div',{class:'cd-video-meta'},
       GG.el('div',{class:'cd-video-title'}, topic.video),
-      GG.el('div',{class:'cd-video-sub'}, '为「'+stageLabel+'」准备 · 上线后点这里看「具体怎么做」')));
+      GG.el('div',{class:'cd-video-sub'}, GG.T('为「'+stageLabel+'」准备 · 上线后点这里看「具体怎么做」','Made for “'+stageLabel+'” · Tap here after launch for the step-by-step'))));
 }
 
 /* ───────── 妈妈轨：附近服务导流（演示商家）───────── */
@@ -464,8 +464,8 @@ function mountServices(box, topic){
   if(!list.length) return;
   const sec = GG.el('div',{class:'cd-svc-sec'});
   sec.appendChild(GG.el('div',{class:'cd-svc-cap'},
-    GG.el('span', null, '🏪 需要搭把手？附近这些可以帮你'),
-    GG.el('span',{class:'cd-svc-tag'}, '演示商家')));
+    GG.el('span', null, GG.T('🏪 需要搭把手？附近这些可以帮你','🏪 Need a hand? These nearby services can help')),
+    GG.el('span',{class:'cd-svc-tag'}, GG.T('演示商家','Sample providers'))));
   list.forEach(s=>{
     sec.appendChild(GG.el('div',{class:'cd-svc'},
       GG.el('div',{class:'cd-svc-main'},
@@ -475,17 +475,17 @@ function mountServices(box, topic){
           GG.el('span',{class:'cd-svc-pill'}, '★ '+s.rating),
           GG.el('span',{class:'cd-svc-pill'}, '📍 '+s.dist),
           GG.el('span',{class:'cd-svc-pill price'}, s.price))),
-      GG.el('button',{class:'cd-svc-cta', onClick:()=>GG.toast('已发送咨询给「'+s.name+'」（演示）')}, '预约咨询')));
+      GG.el('button',{class:'cd-svc-cta', onClick:()=>GG.toast(GG.T('已发送咨询给「'+s.name+'」（演示）','Inquiry sent to “'+s.name+'” (demo)'))}, GG.T('预约咨询','Book a consult'))));
   });
   if(topic.id==='mood'){
     sec.appendChild(GG.el('div',{class:'cd-svc-help'},
-      '如果情绪已经影响到吃饭睡觉、或出现伤害自己/宝宝的念头，请立刻联系家人并就医，或拨打 12320 卫生热线、当地心理援助热线——这不是矫情，是该被认真对待的求助。'));
+      GG.T('如果情绪已经影响到吃饭睡觉、或出现伤害自己/宝宝的念头，请立刻联系家人并就医，或拨打 12320 卫生热线、当地心理援助热线——这不是矫情，是该被认真对待的求助。','If your mood is affecting eating or sleeping, or you have thoughts of harming yourself or your baby, contact family and seek medical help now — or call the 12320 health hotline or your local mental health line. This is not being dramatic; it is a call for help that deserves to be taken seriously.')));
   }
   box.appendChild(sec);
 }
 
 /* ───────── AI 个性化层（连 key 才出现，按需触发）───────── */
-const CODDLE_SYS = '你是温柔、专业、不制造焦虑的育儿与产后陪伴顾问。家长会给出：场景是「宝宝(按月龄)」还是「妈妈产后(按产后天数)」、具体关注方面、阶段、以及一句记录。请针对这条具体记录与阶段给贴心、可执行的指引。只输出严格 JSON：{"summary":"一句温暖回应这条记录","advice":["3条针对性建议"],"tip":"一条小贴士"}。全部简体中文，温柔、具体、不堆砌；涉及健康时提醒必要情况找医生，但不诊断、不开药。';
+const CODDLE_SYS = '你是温柔、专业、不制造焦虑的育儿与产后陪伴顾问。家长会给出：场景是「宝宝(按月龄)」还是「妈妈产后(按产后天数)」、具体关注方面、阶段、以及一句记录。请针对这条具体记录与阶段给贴心、可执行的指引。只输出严格 JSON：{"summary":"一句温暖回应这条记录","advice":["3条针对性建议"],"tip":"一条小贴士"}。'+GG.T('全部简体中文','summary、advice、tip 等所有用户可见字段一律用温柔、地道的英文返回')+'，温柔、具体、不堆砌；涉及健康时提醒必要情况找医生，但不诊断、不开药。';
 function aiUser(topic, isMom){
   const stage = isMom ? stageOf(state.days).label : bandOf(state.months).label;
   return (isMom?'场景：妈妈产后\n关注：':'场景：宝宝\n观察：')+topic.label
@@ -498,24 +498,24 @@ function renderAdvice(body, obj){
   const advice = (Array.isArray(obj.advice)?obj.advice:[]).map(String).filter(Boolean);
   if(advice.length) body.appendChild(GG.el('ul',{class:'cd-ai-ul'}, advice.map(t=>GG.el('li', null, t))));
   if(obj.tip) body.appendChild(GG.el('p',{class:'cd-muted', style:{margin:'10px 0 0'}}, '💡 '+String(obj.tip)));
-  if(!advice.length && !obj.summary) body.appendChild(GG.el('p',{class:'cd-muted', style:{margin:'0'}}, '这次没生成出建议，上面的指引不受影响。'));
+  if(!advice.length && !obj.summary) body.appendChild(GG.el('p',{class:'cd-muted', style:{margin:'0'}}, GG.T('这次没生成出建议，上面的指引不受影响。','No advice came through this time — the guidance above still stands.')));
 }
 function mountAdvice(box, topic, isMom){
   if(!GG.llm || !GG.llm.connected()) return;
   const aiBody = GG.el('div');
   const aiBtn = GG.el('button',{class:'cd-ai-btn', onClick:()=>{
     aiBtn.disabled=true; GG.clear(aiBody);
-    aiBody.appendChild(GG.el('p',{class:'cd-muted', style:{margin:'8px 0 0'}}, 'AI 正在针对你这条记录想建议…'));
+    aiBody.appendChild(GG.el('p',{class:'cd-muted', style:{margin:'8px 0 0'}}, GG.T('AI 正在针对你这条记录想建议…','AI is thinking through your entry…')));
     GG.llm.json(CODDLE_SYS, aiUser(topic,isMom), {max_tokens:700})
-      .then(obj=>{ renderAdvice(aiBody,obj); aiBtn.disabled=false; aiBtn.textContent='↻ 重新生成'; })
+      .then(obj=>{ renderAdvice(aiBody,obj); aiBtn.disabled=false; aiBtn.textContent=GG.T('↻ 重新生成','↻ Regenerate'); })
       .catch(e=>{ GG.clear(aiBody); aiBody.appendChild(GG.el('p',{class:'cd-muted', style:{margin:'8px 0 0'}},
-        'AI 建议没拿到（'+(e&&e.code||'NET')+'），上面的指引不受影响。')); aiBtn.disabled=false; });
-  }}, '✨ 让 AI 针对你这条记录给建议');
+        GG.T('AI 建议没拿到（'+(e&&e.code||'NET')+'），上面的指引不受影响。','Couldn\'t fetch AI advice ('+(e&&e.code||'NET')+') — the guidance above still stands.'))); aiBtn.disabled=false; });
+  }}, GG.T('✨ 让 AI 针对你这条记录给建议','✨ Get AI advice on this entry'));
   box.appendChild(GG.el('div',{class:'cd-ai'},
     GG.el('div',{class:'cd-row', style:{justifyContent:'space-between', alignItems:'center'}},
-      GG.el('div',{class:'cd-ai-cap'}, 'AI 个性化指引'),
+      GG.el('div',{class:'cd-ai-cap'}, GG.T('AI 个性化指引','AI personalized guidance')),
       GG.llm.badge(true)),
-    GG.el('p',{class:'cd-muted', style:{margin:'2px 0 8px'}}, '结合你写的记录和当前阶段，让 AI 给更具体的建议。'),
+    GG.el('p',{class:'cd-muted', style:{margin:'2px 0 8px'}}, GG.T('结合你写的记录和当前阶段，让 AI 给更具体的建议。','AI combines your note and the current stage for more specific advice.')),
     aiBtn, aiBody));
 }
 

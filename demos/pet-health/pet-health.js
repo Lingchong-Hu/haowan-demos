@@ -106,19 +106,19 @@ function buildReport(metrics, part){
     score -= GG.clamp(red*180, 0, 55);
     score -= GG.clamp(yel*900, 0, 25);
     if(red < 0.06){ items.push(obs.rednessLow); }
-    else if(red < 0.16){ items.push(obs.rednessMid); findings.push('结膜轻度发红'); }
-    else { items.push(obs.rednessHigh); findings.push('结膜明显充血'); }
+    else if(red < 0.16){ items.push(obs.rednessMid); findings.push(GG.T('结膜轻度发红','Mild conjunctival redness')); }
+    else { items.push(obs.rednessHigh); findings.push(GG.T('结膜明显充血','Marked conjunctival redness')); }
     if(yel < 0.004){ items.push(obs.dischargeNone); }
-    else { items.push(obs.dischargeSome); findings.push('眼角分泌物'); }
-    items.push('瞳孔对光区域清晰，未见明显浑浊');  // 固定正向项
+    else { items.push(obs.dischargeSome); findings.push(GG.T('眼角分泌物','Eye-corner discharge')); }
+    items.push(GG.T('瞳孔对光区域清晰，未见明显浑浊','Pupil and light-reflex area look clear, no visible cloudiness'));  // 固定正向项
   } else {
     const red = metrics.redRatio, scale = metrics.scaleRatio;
     score -= GG.clamp(red*220, 0, 50);
     score -= GG.clamp(scale*700, 0, 22);
     if(red < 0.04){ items.push(obs.rednessLow); items.push(obs.spotsLow); }
-    else { items.push(obs.rednessHigh); items.push(obs.spotsHigh); findings.push('皮肤红斑'); }
+    else { items.push(obs.rednessHigh); items.push(obs.spotsHigh); findings.push(GG.T('皮肤红斑','Skin red patches')); }
     if(scale < 0.03){ items.push(obs.scaleLow); }
-    else { items.push(obs.scaleHigh); findings.push('皮屑偏多'); }
+    else { items.push(obs.scaleHigh); findings.push(GG.T('皮屑偏多','Excess dander')); }
   }
   score = Math.round(GG.clamp(score, 12, 99));
   const triage = TRIAGE.find(t=>score>=t.min) || TRIAGE[TRIAGE.length-1];
@@ -130,7 +130,7 @@ function buildReport(metrics, part){
 }
 
 /* ---------- AI 护理建议层（附加：像素分析永远本地，连了 key 才叠加个性化护理建议；非兽医诊断） ---------- */
-const PETHEALTH_SYS = '你是有经验的宠物护理顾问（不是兽医、不做确诊）。下面是用户给宠物某部位拍照自检的结果（健康分、读到的指标、观察项、分级建议）。请给出针对性的家庭护理建议与观察要点。只输出严格 JSON：{"summary":"一句话点评目前状况","care":["3条具体的家庭护理/观察建议"],"vet":"一句话——出现什么情况必须尽快就医"}。你不是兽医、不做确诊，全部简体中文。';
+const PETHEALTH_SYS = '你是有经验的宠物护理顾问（不是兽医、不做确诊）。下面是用户给宠物某部位拍照自检的结果（健康分、读到的指标、观察项、分级建议）。请给出针对性的家庭护理建议与观察要点。只输出严格 JSON：{"summary":"一句话点评目前状况","care":["3条具体的家庭护理/观察建议"],"vet":"一句话——出现什么情况必须尽快就医"}。你不是兽医、不做确诊，'+GG.T('全部简体中文。','summary/care/vet 的值一律用英文（English）输出。');
 function aiAdvice(rep, partLabel){
   const user = `检查部位：${partLabel}\n健康分：${rep.score}/100（${rep.triage.level}）\n读到的指标：发红${rep.metrics.redPct}%、异常迹象${rep.metrics.extraPct}%\n观察项：${rep.items.join('；')}\n发现：${rep.findings.join('、')||'未见明显异常'}\n系统建议：${rep.triage.advice}`;
   return GG.llm.json(PETHEALTH_SYS, user, {max_tokens:700});
@@ -141,21 +141,21 @@ function petBullets(arr){
 }
 function mountAdvice(stage, rep, partLabel){
   if(!GG.llm.connected()) return;
-  const body = GG.el('div', null, GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 正在结合这份报告给护理建议…'));
+  const body = GG.el('div', null, GG.el('p',{class:'small muted', style:{margin:'0'}}, GG.T('AI 正在结合这份报告给护理建议…','AI is turning this report into care advice…')));
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'3px solid var(--accent)'}},
     GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
-      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ AI 护理建议'),
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('✨ AI 护理建议','✨ AI Care Advice')),
       GG.llm.badge(true)),
     body));
   aiAdvice(rep, partLabel).then(obj=>{
     GG.clear(body);
     if(obj.summary) body.appendChild(GG.el('p',{style:{margin:'0 0 10px', fontWeight:'600'}}, String(obj.summary)));
     const care = (Array.isArray(obj.care)?obj.care:[]).map(String).filter(Boolean);
-    if(care.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '家庭护理')); body.appendChild(petBullets(care)); }
-    if(obj.vet) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '⚠︎ 需就医：'+String(obj.vet)));
-    if(!care.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, '这次没生成出建议，自检报告不受影响。'));
+    if(care.length){ body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, GG.T('家庭护理','Home care'))); body.appendChild(petBullets(care)); }
+    if(obj.vet) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, GG.T('⚠︎ 需就医：','⚠︎ See a vet: ')+String(obj.vet)));
+    if(!care.length && !obj.summary) body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, GG.T('这次没生成出建议，自检报告不受影响。','No advice came back this time — your self-check report is unaffected.')));
   }).catch(e=>{ GG.clear(body);
-    body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, 'AI 建议没拿到（'+(e&&e.code||'NET')+'），自检报告不受影响。')); });
+    body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0'}}, GG.T('AI 建议没拿到（','AI advice unavailable (')+(e&&e.code||'NET')+GG.T('），自检报告不受影响。','), your self-check report is unaffected.'))); });
 }
 
 /* ---------- ＋1：健康档案 / 复查趋势（单次打分 → 在好转还是在恶化） ----------
@@ -167,8 +167,8 @@ function nowMs(){ return Date.now(); }
 function seedLog(){
   const d = 4*24*3600*1000;
   const log = {
-    eye:[  { score:61, redPct:14, extraPct:1, findings:['结膜轻度发红'], level:'建议预约', tone:'warn', srcLabel:'样例首检', t: nowMs()-d, seed:true } ],
-    skin:[ { score:57, redPct:11, extraPct:9, findings:['皮屑偏多'],   level:'建议预约', tone:'warn', srcLabel:'样例首检', t: nowMs()-d, seed:true } ],
+    eye:[  { score:61, redPct:14, extraPct:1, findings:[GG.T('结膜轻度发红','Mild conjunctival redness')], level:GG.T('建议预约','Book a checkup'), tone:'warn', srcLabel:GG.T('样例首检','Sample first check'), t: nowMs()-d, seed:true } ],
+    skin:[ { score:57, redPct:11, extraPct:9, findings:[GG.T('皮屑偏多','Excess dander')],   level:GG.T('建议预约','Book a checkup'), tone:'warn', srcLabel:GG.T('样例首检','Sample first check'), t: nowMs()-d, seed:true } ],
   };
   try{ localStorage.setItem(LOG_KEY, JSON.stringify(log)); }catch(e){}
   return log;
@@ -185,7 +185,7 @@ function pushRecord(part, rep, srcLabel){
   log[part] = (log[part]||[]).concat([{
     score:rep.score, redPct:rep.metrics.redPct, extraPct:rep.metrics.extraPct,
     findings:rep.findings.slice(), level:rep.triage.level, tone:rep.triage.tone,
-    srcLabel:srcLabel||'本次自检', t: nowMs()
+    srcLabel:srcLabel||GG.T('本次自检','This self-check'), t: nowMs()
   }]);
   if(log[part].length > 12) log[part] = log[part].slice(-12);
   saveLog(log);
@@ -193,7 +193,7 @@ function pushRecord(part, rep, srcLabel){
 }
 function agoText(t){
   const ms = nowMs()-t, d=Math.floor(ms/86400000), h=Math.floor(ms/3600000), m=Math.floor(ms/60000);
-  if(d>=1) return d+' 天前'; if(h>=1) return h+' 小时前'; return m>=1 ? m+' 分钟前' : '刚刚';
+  if(d>=1) return GG.T(d+' 天前', d+(d>1?' days ago':' day ago')); if(h>=1) return GG.T(h+' 小时前', h+(h>1?' hours ago':' hour ago')); return m>=1 ? GG.T(m+' 分钟前', m+(m>1?' minutes ago':' minute ago')) : GG.T('刚刚','just now');
 }
 function trendCompare(prev, rep){
   const dScore = rep.score - prev.score;
@@ -201,11 +201,14 @@ function trendCompare(prev, rep){
   const dExtra = rep.metrics.extraPct - prev.extraPct;
   let dir, verdict, tone;
   if(dScore >= 6){ dir='up'; tone='good';
-    verdict = '较上次好转（健康分 '+prev.score+' → '+rep.score+'，+'+dScore+'）。当前的护理方向看起来有效，继续保持并定期复查。'; }
+    verdict = GG.T('较上次好转（健康分 '+prev.score+' → '+rep.score+'，+'+dScore+'）。当前的护理方向看起来有效，继续保持并定期复查。',
+                   'Improved since last check (health score '+prev.score+' → '+rep.score+', +'+dScore+'). The current care routine seems to be working — keep it up and recheck regularly.'); }
   else if(dScore <= -6){ dir='down'; tone='bad';
-    verdict = '较上次变差（健康分 '+prev.score+' → '+rep.score+'，'+dScore+'）。自检数值在往坏的方向走——别再"再观察看看"了，建议尽快带去面诊。'; }
+    verdict = GG.T('较上次变差（健康分 '+prev.score+' → '+rep.score+'，'+dScore+'）。自检数值在往坏的方向走——别再"再观察看看"了，建议尽快带去面诊。',
+                   'Worse than last check (health score '+prev.score+' → '+rep.score+', '+dScore+'). The numbers are trending the wrong way — stop waiting it out and get an in-person vet exam soon.'); }
   else { dir='flat'; tone='warn';
-    verdict = '较上次基本持平（健康分 '+prev.score+' → '+rep.score+'）。变化不明显，按原计划继续观察、过两天再复查一次。'; }
+    verdict = GG.T('较上次基本持平（健康分 '+prev.score+' → '+rep.score+'）。变化不明显，按原计划继续观察、过两天再复查一次。',
+                   'About the same as last check (health score '+prev.score+' → '+rep.score+'). No clear change — keep observing as planned and recheck in a couple of days.'); }
   return { dScore, dRed, dExtra, dir, tone, verdict, prev };
 }
 function sparkline(records, w, h){
@@ -229,8 +232,8 @@ function archiveCard(){
   if(!parts.length) return null;
   const card = GG.el('div',{class:'card pad', style:{marginTop:'4px'}},
     GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
-      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🗂 健康档案'),
-      GG.el('button',{class:'btn ghost small', style:{padding:'4px 10px'}, onClick:()=>{ clearLog(); intro(); }}, '清空')));
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('🗂 健康档案','🗂 Health Record')),
+      GG.el('button',{class:'btn ghost small', style:{padding:'4px 10px'}, onClick:()=>{ clearLog(); intro(); }}, GG.T('清空','Clear'))));
   parts.forEach(p=>{
     const recs = log[p.id], last = recs[recs.length-1], spark = sparkline(recs);
     card.appendChild(GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center', gap:'12px', padding:'11px 0 2px', borderTop:'1px solid var(--line)'}},
@@ -238,10 +241,10 @@ function archiveCard(){
         GG.el('span',{style:{fontSize:'20px', flex:'none'}}, p.emoji),
         GG.el('div', null,
           GG.el('div',{style:{fontWeight:'650'}}, p.label),
-          GG.el('div',{class:'small muted'}, '上次 '+last.score+' 分 · '+agoText(last.t)+(last.seed?' · 样例':'')))),
+          GG.el('div',{class:'small muted'}, GG.T('上次 ','Last ')+last.score+GG.T(' 分',' pts')+' · '+agoText(last.t)+(last.seed?GG.T(' · 样例',' · sample'):'')))),
       GG.el('div',{class:'row', style:{gap:'12px', alignItems:'center'}},
-        spark || GG.el('span',{class:'small muted'}, '复查后看趋势'),
-        GG.el('button',{class:'btn small', style:{padding:'6px 12px', flex:'none'}, onClick:()=>{ curPart=p.id; intro(); }}, '🔁 复查'))));
+        spark || GG.el('span',{class:'small muted'}, GG.T('复查后看趋势','Recheck to see the trend')),
+        GG.el('button',{class:'btn small', style:{padding:'6px 12px', flex:'none'}, onClick:()=>{ curPart=p.id; intro(); }}, GG.T('🔁 复查','🔁 Recheck')))));
   });
   return card;
 }
@@ -249,19 +252,19 @@ function trendCard(tr, recs, part){
   const arrow = tr.dir==='up'?'▲':tr.dir==='down'?'▼':'▬';
   const col = toneColor(tr.tone);
   const spark = sparkline(recs, 160, 40);
-  const metricName = part==='eye' ? '发红' : '红斑';
-  const extraName  = part==='eye' ? '分泌物' : '皮屑';
+  const metricName = part==='eye' ? GG.T('发红','Redness') : GG.T('红斑','Red patches');
+  const extraName  = part==='eye' ? GG.T('分泌物','Discharge') : GG.T('皮屑','Dander');
   function deltaPill(label, d){               // 指标下降=异常变少=好（绿）；上升=红
     const good = d <= 0, sign = d>0?'+':'';
     return GG.el('span',{class:'pill', style:{background: d===0?'var(--surface)':(good?'#e8f6f0':'#fdecea'), color: d===0?'var(--ink-3)':(good?'#2e9e7b':'#d8503f')}}, label+' '+sign+d+'%');
   }
   return GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'4px solid '+col, background: tr.dir==='up'?'#f1faf6':tr.dir==='down'?'#fdf3f1':'#fff8ee'}},
     GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center'}},
-      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '📈 较上次复查'),
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('📈 较上次复查','📈 Since last recheck')),
       spark || GG.el('span')),
     GG.el('div',{class:'row', style:{alignItems:'baseline', gap:'10px', margin:'4px 0 8px'}},
       GG.el('span',{style:{fontWeight:'800', fontSize:'26px', color:col}}, arrow+' '+(tr.dScore>0?'+':'')+tr.dScore),
-      GG.el('span',{class:'small muted'}, '健康分 '+tr.prev.score+' → '+(tr.prev.score+tr.dScore)+' · 距上次 '+agoText(tr.prev.t)+(tr.prev.seed?'（样例基线）':''))),
+      GG.el('span',{class:'small muted'}, GG.T('健康分 ','Health score ')+tr.prev.score+' → '+(tr.prev.score+tr.dScore)+GG.T(' · 距上次 ',' · last check ')+agoText(tr.prev.t)+(tr.prev.seed?GG.T('（样例基线）',' (sample baseline)'):''))),
     GG.el('div',{class:'kpi', style:{marginBottom:'10px', gap:'8px', flexWrap:'wrap'}},
       deltaPill(metricName, tr.dRed), deltaPill(extraName, tr.dExtra)),
     GG.el('p',{style:{margin:'0', color:'var(--ink-2)', lineHeight:'1.6'}}, tr.verdict));
@@ -276,8 +279,8 @@ function intro(){
   GG.clear(main);
   curPart = curPart || 'eye';
   main.appendChild(GG.el('div',{class:'hero'},
-    GG.el('h1', null, '给宠物拍张照，做个健康自检'),
-    GG.el('p', null, '选一个检查部位，拍照或直接点本地样图，我会真实读取图像像素，给出健康分、观察项和就医建议。每次自检都会自动存进健康档案——复查时直接告诉你：比上次是好转还是恶化。连上 AI 再加一份个性化护理建议。')
+    GG.el('h1', null, GG.T('给宠物拍张照，做个健康自检','Snap a photo of your pet for a quick health self-check')),
+    GG.el('p', null, GG.T('选一个检查部位，拍照或直接点本地样图，我会真实读取图像像素，给出健康分、观察项和就医建议。每次自检都会自动存进健康档案——复查时直接告诉你：比上次是好转还是恶化。连上 AI 再加一份个性化护理建议。','Pick an area to check, take a photo or just tap a built-in sample image — the app reads the actual image pixels and returns a health score, an observation checklist, and vet-visit guidance. Every self-check is saved to the health record automatically, so on a recheck it tells you right away whether things are better or worse than last time. Connect AI for an extra layer of personalized care advice.'))
   ));
   main.appendChild(GG.llm.bar());
   const arch = archiveCard(); if(arch) main.appendChild(arch);   // ＋1：健康档案（复查趋势入口）
@@ -298,7 +301,7 @@ function intro(){
     body.appendChild(GG.el('p',{class:'small muted', style:{margin:'0 0 12px'}}, part.hint));
 
     // 本地样图（离线主路径）
-    body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, '点一张本地样图，立即分析'));
+    body.appendChild(GG.el('div',{class:'section-t', style:{marginTop:'4px'}}, GG.T('点一张本地样图，立即分析','Tap a sample image to analyze it instantly')));
     const grid = GG.el('div',{style:{display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:'12px'}});
     SAMPLES[curPart].forEach(s=>{
       const c=document.createElement('canvas'); c.width=150; c.height=120;
@@ -316,8 +319,8 @@ function intro(){
       onChange:e=>{ const f=e.target.files[0]; if(f) loadFile(f, curPart); }});
     body.appendChild(GG.el('div',{class:'center', style:{marginTop:'16px'}},
       fileInput,
-      GG.el('button',{class:'btn', onClick:()=>fileInput.click()}, '📷 用自己的照片（可选）'),
-      GG.el('p',{class:'small muted', style:{marginTop:'10px'}}, '照片只在你的浏览器本地处理，不上传任何服务器。')
+      GG.el('button',{class:'btn', onClick:()=>fileInput.click()}, GG.T('📷 用自己的照片（可选）','📷 Use your own photo (optional)')),
+      GG.el('p',{class:'small muted', style:{marginTop:'10px'}}, GG.T('照片只在你的浏览器本地处理，不上传任何服务器。','Photos are processed locally in your browser — nothing is uploaded to any server.'))
     ));
   }
 
@@ -338,7 +341,7 @@ function loadFile(f, part){
     if(ar>tar){ sh=img.height; sw=sh*tar; sx=(img.width-sw)/2; sy=0; }
     else { sw=img.width; sh=sw/tar; sx=0; sy=(img.height-sh)/2; }
     c.getContext('2d').drawImage(img,sx,sy,sw,sh,0,0,W,H);
-    run(c, c.toDataURL('image/png'), part, '你的照片');
+    run(c, c.toDataURL('image/png'), part, GG.T('你的照片','Your photo'));
   }; img.src=reader.result; };
   reader.readAsDataURL(f);
 }
@@ -346,7 +349,7 @@ function loadFile(f, part){
 async function run(canvas, dataURL, part, srcLabel){
   GG.clear(main);
   const stage=GG.el('div'); main.appendChild(stage);
-  await GG.thinking(stage, ['读取图像像素…','检测发红/异常区域…','量化关键指标…','生成健康报告…'], 1500);
+  await GG.thinking(stage, [GG.T('读取图像像素…','Reading image pixels…'),GG.T('检测发红/异常区域…','Detecting redness / abnormal areas…'),GG.T('量化关键指标…','Quantifying key metrics…'),GG.T('生成健康报告…','Building the health report…')], 1500);
   const metrics = analyze(canvas, part);
   const report = buildReport(metrics, part);
   GG.clear(stage);
@@ -359,14 +362,14 @@ function toneColor(tone){ return tone==='good'?'var(--good)':tone==='warn'?'var(
 function renderResult(stage, rep, dataURL, part, srcLabel){
   const partLabel = PARTS.find(p=>p.id===part).label;
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
-    GG.el('h1',{style:{fontSize:'24px'}}, '🐾 '+partLabel+'自检报告')));
+    GG.el('h1',{style:{fontSize:'24px'}}, '🐾 '+partLabel+GG.T('自检报告',' Self-Check Report'))));
 
   // 头部：预览 + 健康分
   stage.appendChild(GG.el('div',{class:'card pad', style:{display:'flex', gap:'18px', alignItems:'center', flexWrap:'wrap', marginBottom:'16px',
       background:'linear-gradient(160deg,var(--accent-soft),#fff 60%)'}},
     GG.el('img',{src:dataURL, alt:srcLabel, style:{width:'108px', height:'84px', borderRadius:'14px', objectFit:'cover', boxShadow:'var(--sh-1)'}}),
     GG.el('div',{style:{flex:'1', minWidth:'180px'}},
-      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '健康分'),
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('健康分','Health score')),
       GG.el('div',{class:'score-ring'},
         GG.el('div',{class:'bignum', style:{color:toneColor(rep.triage.tone)}}, String(rep.score)),
         GG.el('div',{class:'small muted'}, '/ 100')),
@@ -384,18 +387,18 @@ function renderResult(stage, rep, dataURL, part, srcLabel){
   }
 
   // 量化指标条
-  const m1Label = part==='eye' ? '发红区域占比' : '红斑区域占比';
-  const m2Label = part==='eye' ? '分泌物迹象' : '皮屑迹象';
+  const m1Label = part==='eye' ? GG.T('发红区域占比','Red area coverage') : GG.T('红斑区域占比','Red-patch coverage');
+  const m2Label = part==='eye' ? GG.T('分泌物迹象','Discharge signs') : GG.T('皮屑迹象','Dander signs');
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '从图像里读到的指标'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('从图像里读到的指标','Metrics read from the image')),
     bar(m1Label, rep.metrics.redPct),
     bar(m2Label, rep.metrics.extraPct),
-    GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, '以上数值来自对图像像素的真实统计（发红像素 / 异常高亮点的占比）。')
+    GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}}, GG.T('以上数值来自对图像像素的真实统计（发红像素 / 异常高亮点的占比）。','These numbers come from real pixel-level statistics on the image (share of red pixels / abnormal bright spots).'))
   ));
 
   // 观察项清单
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '观察项清单'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('观察项清单','Observation checklist')),
     GG.el('div',{class:'stack', style:{gap:'10px'}},
       rep.items.map(it=> GG.el('div',{class:'row', style:{alignItems:'flex-start', gap:'10px'}},
         GG.el('span',{style:{color:'var(--accent)', flex:'none', marginTop:'2px'}}, '•'),
@@ -404,7 +407,7 @@ function renderResult(stage, rep, dataURL, part, srcLabel){
 
   // 就医建议
   stage.appendChild(GG.el('div',{class:'card pad', style:{marginBottom:'16px', borderLeft:'4px solid '+toneColor(rep.triage.tone)}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '就医建议'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('就医建议','Vet-visit guidance')),
     GG.el('div',{style:{fontWeight:'680', fontSize:'18px', color:toneColor(rep.triage.tone), marginBottom:'4px'}}, rep.triage.level),
     GG.el('p',{style:{margin:'0', color:'var(--ink-2)'}}, rep.triage.advice)
   ));
@@ -413,19 +416,19 @@ function renderResult(stage, rep, dataURL, part, srcLabel){
   mountAdvice(stage, rep, partLabel);
 
   // 结果卡（含「非诊断」免责 + 分享栏）
-  const subtitle = partLabel + ' · ' + (rep.findings.length ? '发现：'+rep.findings.join('、') : '未见明显异常');
+  const subtitle = partLabel + ' · ' + (rep.findings.length ? GG.T('发现：','Findings: ')+rep.findings.join(GG.T('、',', ')) : GG.T('未见明显异常','No obvious abnormalities'));
   const shareSpec = {
-    slug: SLUG, title:'宠物健康自检',
-    big:{ value:rep.score, label:'健康分' },
+    slug: SLUG, title:GG.T('宠物健康自检','Pet Health Self-Check'),
+    big:{ value:rep.score, label:GG.T('健康分','Health score') },
     subtitle,
-    rows: rep.items.map((it,i)=>({ label:'观察项'+(i+1), value:it })),
+    rows: rep.items.map((it,i)=>({ label:GG.T('观察项','Item ')+(i+1), value:it })),
     note: rep.triage.advice,
     tags:[partLabel, rep.triage.level],
   };
-  stage.appendChild(GG.resultCard(SLUG, GG.el('div',{class:'center muted small'}, '存图分享这份自检报告 ↓'), shareSpec));
+  stage.appendChild(GG.resultCard(SLUG, GG.el('div',{class:'center muted small'}, GG.T('存图分享这份自检报告 ↓','Save and share this self-check report ↓')), shareSpec));
 
   stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
-    GG.el('button',{class:'btn', onClick:()=>{ start(); }}, '↻ 再检查一处')));
+    GG.el('button',{class:'btn', onClick:()=>{ start(); }}, GG.T('↻ 再检查一处','↻ Check another area'))));
 }
 
 function bar(label, pct){

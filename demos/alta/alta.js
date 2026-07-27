@@ -2,13 +2,22 @@
    ① 授权连接淘宝（演示：模拟订单）→ 自动导入你买过的服饰当衣橱；
    ② 上传一件你想穿的单品 → AI 以它为核心配整套；
    ③ 选场合 → AI 出整套 look + 缺的单品「直接给购买链接」（导购分佣闭环）。
-   契合度 / 成套 / 缺口排序全本地确定性；连 key 再叠 AI 搭配与话术。 */
+   契合度 / 成套 / 缺口排序全本地确定性；连 key 再叠 AI 搭配与话术。
+   i18n：slot / styleTags 是内部比较 key（保持中文不译），展示处经 slotName/tagName 映射。 */
 (function(){
 const SLUG='alta';
 const {WARDROBE, OCCASIONS} = window.ALTA;
 const SLOTS = ['上装','下装','外套','鞋','配饰'];
 const REQUIRED = ['上装','下装','鞋'];           // 必须凑齐；外套/配饰按场合可选
 const BY_KEY = Object.fromEntries(WARDROBE.map(w=>[w.key, w]));
+// 展示用双语映射（内部 key 一律保持中文，仅渲染时翻译）
+const SLOT_EN = {'上装':'Top','下装':'Bottoms','外套':'Outerwear','鞋':'Shoes','配饰':'Accessories'};
+const TAG_EN = {'基础':'basic','清爽':'clean','百搭':'versatile','街头':'street','活力':'lively','休闲':'casual',
+  '正式':'formal','干练':'sharp','极简':'minimal','优雅':'elegant','约会':'date-ready','精致':'refined',
+  '温柔':'soft','通勤':'office','文艺':'artsy','运动':'sporty','舒适':'comfy','派对':'party','甜美':'sweet',
+  '出游':'getaway','商务休闲':'business-casual','经典':'classic','商务':'business','保暖':'warm'};
+const slotName = s => (GG.EN && SLOT_EN[s]) ? SLOT_EN[s] : s;
+const tagName  = t => (GG.EN && TAG_EN[t])  ? TAG_EN[t]  : t;
 // 「连接淘宝」演示导入的一组「买过的服饰订单」（覆盖各部位、够搭多种场合）
 const PURCHASES = ['tee_white','shirt_silk','knit','jeans','trousers','skirt_aline',
   'blazer','trench','loafers','sneakers','heels','tote','watch'];
@@ -59,7 +68,7 @@ function buildOutfit(occ){
 function applyPins(outfit, reasons, occ){
   uploads.forEach(up=>{
     const i = reasons.findIndex(r=> r.slot===up.slot);
-    const rec = {slot:up.slot, item:up, hits:[], pinned:true, why:'你上传的、最想穿的，这套就以它为核心'};
+    const rec = {slot:up.slot, item:up, hits:[], pinned:true, why:GG.T('你上传的、最想穿的，这套就以它为核心','Your upload — the piece you most want to wear, so this look is built around it')};
     if(i>=0) reasons[i] = rec; else reasons.push(rec);
     outfit[up.slot] = up;
   });
@@ -77,14 +86,19 @@ function reasonLine(occ, reasons){
   const top = reasons.filter(r=>['上装','下装','鞋'].includes(r.slot) && !r.pinned).slice(0,3)
     .map(r=> r.item.label).join(' + ');
   const flavor = {
-    work:'通勤要利落得体', date:'约会走优雅路线', interview:'面试求最正式稳妥',
-    sport:'运动图轻便透气', weekend:'出游主打轻松好动', wedding:'婚礼宾客要精致不抢镜'
-  }[occ.key] || (occ.label+'场合');
-  return top ? `${flavor}，所以挑了 ${top}。` : `${flavor}，按你现有的单品配了这一套。`;
+    work:GG.T('通勤要利落得体','Work calls for clean and put-together'),
+    date:GG.T('约会走优雅路线','Date night leans elegant'),
+    interview:GG.T('面试求最正式稳妥','Interviews want your most polished, safest look'),
+    sport:GG.T('运动图轻便透气','Workouts are all about light and breathable'),
+    weekend:GG.T('出游主打轻松好动','Weekends run easy and ready to move'),
+    wedding:GG.T('婚礼宾客要精致不抢镜','Wedding guests should look refined without stealing the show')
+  }[occ.key] || GG.T(occ.label+'场合', 'For '+occ.label);
+  return top ? GG.T(`${flavor}，所以挑了 ${top}。`, `${flavor}, so I went with the ${top}.`)
+             : GG.T(`${flavor}，按你现有的单品配了这一套。`, `${flavor} — I styled this from what you already own.`);
 }
 
 /* ---------- AI 通路（连了 key 让模型从你拥有的单品里搭整套并解释；没连退回本地契合度引擎） ---------- */
-const ALTA_SYS = '你是私人穿搭师。用户给你 ta 衣橱里现有的单品（每行 key｜名称/部位/正式度1-5/风格标签）和今天的场合，请只用这些单品搭一整套：上装、下装、鞋必选；外套、配饰按场合需要可选。只输出严格 JSON：{"reason":"一句话整体搭配思路，要点明场合","items":[{"slot":"上装/下装/外套/鞋/配饰 之一","key":"必须是用户单品列表里的 key","why":"选它的理由,18字内"}],"tip":"一条额外造型小贴士"}。只能用用户提供的 key，每个部位最多一件，全部简体中文。';
+const ALTA_SYS = '你是私人穿搭师。用户给你 ta 衣橱里现有的单品（每行 key｜名称/部位/正式度1-5/风格标签）和今天的场合，请只用这些单品搭一整套：上装、下装、鞋必选；外套、配饰按场合需要可选。只输出严格 JSON：{"reason":"一句话整体搭配思路，要点明场合","items":[{"slot":"上装/下装/外套/鞋/配饰 之一","key":"必须是用户单品列表里的 key","why":"选它的理由,18字内"}],"tip":"一条额外造型小贴士"}。只能用用户提供的 key，每个部位最多一件，' + GG.T('全部简体中文。', '"reason"、"why"、"tip" must be written in natural, fashion-savvy English; keep "slot" and "key" values exactly as given (do not translate them).');
 
 async function getOutfit(occ, useAI){
   let outfit=null, reasons=null, rline='', tip='', ai=false;
@@ -109,7 +123,7 @@ async function getOutfit(occ, useAI){
   if(!outfit){ const r = buildOutfit(occ); outfit=r.outfit; reasons=r.reasons; ai=false; }
   applyPins(outfit, reasons, occ);
   if(!rline) rline = reasonLine(occ, reasons);
-  if(uploads.length) rline = '以你上传的单品为核心，' + rline;
+  if(uploads.length) rline = GG.T('以你上传的单品为核心，', 'Built around the piece you uploaded — ') + rline;
   return {outfit, reasons, rline, tip, _ai:ai};
 }
 
@@ -120,10 +134,10 @@ function formalityScale(reasons, occ){
   const avg = items.reduce((a,it)=>a+(it.formality||3),0)/items.length;
   const [lo,hi] = occ.want.form;
   const pct = v => ((GG.clamp(v,1,5)-1)/4)*100;
-  const labels = ['极休闲','休闲','适中','正式','极正式'];
+  const labels = [GG.T('极休闲','Ultra casual'), GG.T('休闲','Casual'), GG.T('适中','Balanced'), GG.T('正式','Formal'), GG.T('极正式','Ultra formal')];
   const inBand = avg>=lo && avg<=hi;
   return GG.el('div',{class:'card pad', style:{marginTop:'12px'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '正式度匹配'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('正式度匹配','Formality match')),
     GG.el('div',{style:{position:'relative', height:'30px', margin:'14px 0 6px'}},
       GG.el('div',{style:{position:'absolute', top:'13px', left:'0', right:'0', height:'4px', borderRadius:'2px', background:'var(--line)'}}),
       GG.el('div',{style:{position:'absolute', top:'10px', left:pct(lo)+'%', width:(pct(hi)-pct(lo))+'%', height:'10px', borderRadius:'5px', background:'var(--accent-soft)', border:'1px solid var(--accent)'}}),
@@ -132,8 +146,11 @@ function formalityScale(reasons, occ){
     GG.el('div',{class:'row', style:{justifyContent:'space-between'}},
       labels.map(l=>GG.el('span',{class:'small muted', style:{fontSize:'11px'}}, l))),
     GG.el('p',{class:'small muted', style:{margin:'10px 0 0'}},
-      `这套平均正式度 ${avg.toFixed(1)}/5，${occ.label}的理想区间是 ${lo}–${hi}。`+
-      (inBand?'正好落在区间内 ✓' : (avg<lo?'比场合偏休闲了一点。':'比场合偏正式了一点。')))
+      GG.T(`这套平均正式度 ${avg.toFixed(1)}/5，${occ.label}的理想区间是 ${lo}–${hi}。`,
+           `This look averages ${avg.toFixed(1)}/5 on formality; the sweet spot for ${occ.label} is ${lo}–${hi}. `)+
+      (inBand?GG.T('正好落在区间内 ✓','Right in the zone ✓')
+             : (avg<lo?GG.T('比场合偏休闲了一点。','A touch more laid-back than the occasion calls for.')
+                      :GG.T('比场合偏正式了一点。','A touch dressier than the occasion calls for.'))))
   );
 }
 
@@ -180,16 +197,16 @@ function wardrobeGaps(curOcc){
 
 // 淘宝搜同款链接（演示：通用关键词搜索，不含任何个人信息）
 function taobaoLink(item){
-  const kw = [item.label].concat((item.styleTags||[]).slice(0,1)).join(' ');
+  const kw = [item.label].concat((item.styleTags||[]).slice(0,1).map(tagName)).join(' ');
   return 'https://s.taobao.com/search?q=' + encodeURIComponent(kw);
 }
 function buyLink(item, cls){
-  const a = GG.el('a',{class:cls||'btn', style:{textDecoration:'none', whiteSpace:'nowrap'}}, '🛒 去淘宝看同款 →');
+  const a = GG.el('a',{class:cls||'btn', style:{textDecoration:'none', whiteSpace:'nowrap'}}, GG.T('🛒 去淘宝看同款 →','🛒 Shop similar on Taobao →'));
   a.href = taobaoLink(item); a.target='_blank'; a.rel='noopener';
   return a;
 }
 
-const GAP_SYS = '你是私人衣橱顾问。用户给你 ta 最该补的一件单品和补上后能升级的场合，请用一句话(26字内)说明为什么值得补、怎么搭，要点到场合；务实不浮夸，别劝人买大牌。只输出严格 JSON：{"pitch":"一句话"}。简体中文。';
+const GAP_SYS = '你是私人衣橱顾问。用户给你 ta 最该补的一件单品和补上后能升级的场合，请用一句话(26字内)说明为什么值得补、怎么搭，要点到场合；务实不浮夸，别劝人买大牌。只输出严格 JSON：{"pitch":"一句话"}。' + GG.T('简体中文。', 'Write "pitch" in one short sentence of natural, fashion-savvy English.');
 async function gapPitch(top, occNames){
   try{
     const w = top.w;
@@ -204,22 +221,23 @@ async function gapPitch(top, occNames){
 function gapCard(occ){
   const gaps = wardrobeGaps(occ);
   const card = GG.el('div',{class:'card pad', style:{marginTop:'16px', borderTop:'3px solid var(--accent)'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '🛒 补这一件，升级更多场合 · AI 帮你挑 + 直达购买'));
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('🛒 补这一件，升级更多场合 · AI 帮你挑 + 直达购买','🛒 Add one piece, unlock more occasions · AI-picked, shop direct')));
   if(!gaps.length){
     card.appendChild(GG.el('p',{class:'small muted', style:{margin:'8px 0 0'}},
-      '你买过的这些衣服，已经能把各个场合都接住了 ✓ 暂时没有明显缺口。'));
+      GG.T('你买过的这些衣服，已经能把各个场合都接住了 ✓ 暂时没有明显缺口。','The clothes you already own have every occasion covered ✓ No obvious gaps right now.')));
     return card;
   }
   const top = gaps[0];
   const occNames = top.ups.map(u=> u.occ.label);
   const pitchEl = GG.el('p',{style:{margin:'4px 0 0', color:'var(--ink-2)', lineHeight:'1.6'}},
-    `补上${top.w.label}，${occNames.join('、')}都能更到位。`);
+    GG.T(`补上${top.w.label}，${occNames.join('、')}都能更到位。`,
+         `Add the ${top.w.label} and ${occNames.join(', ')} all step up a notch.`));
   card.appendChild(GG.el('div',{style:{display:'flex', gap:'14px', alignItems:'center', marginTop:'10px'}},
     GG.el('div',{style:{fontSize:'34px', flex:'none', width:'46px', textAlign:'center'}}, top.w.emoji),
     GG.el('div',{style:{flex:'1', minWidth:'0'}},
       GG.el('div',{class:'row', style:{gap:'8px', flexWrap:'wrap', alignItems:'center'}},
-        GG.el('h3',{style:{fontSize:'17px'}}, '最该补：'+top.w.label),
-        GG.el('span',{class:'pill', style:{background:'var(--accent)', color:'#fff', padding:'2px 9px', borderRadius:'999px', fontSize:'12px', fontWeight:'700'}}, '升级 '+top.ups.length+' 个场合')),
+        GG.el('h3',{style:{fontSize:'17px'}}, GG.T('最该补：','Top pick: ')+top.w.label),
+        GG.el('span',{class:'pill', style:{background:'var(--accent)', color:'#fff', padding:'2px 9px', borderRadius:'999px', fontSize:'12px', fontWeight:'700'}}, GG.T('升级 '+top.ups.length+' 个场合', 'Levels up '+top.ups.length+(top.ups.length>1?' occasions':' occasion')))),
       pitchEl)
   ));
   card.appendChild(GG.el('div',{class:'chips', style:{marginTop:'10px'}},
@@ -227,21 +245,22 @@ function gapCard(occ){
       (u.cur?'▸ ':'')+u.occ.emoji+' '+u.occ.label))));
   card.appendChild(GG.el('div',{class:'row', style:{gap:'10px', marginTop:'12px', flexWrap:'wrap'}},
     buyLink(top.w, 'btn primary'),
-    GG.el('button',{class:'btn', onClick:()=>{ picked.add(top.w.key); GG.toast('已把「'+top.w.label+'」加入试搭'); showResult(occ, false); }},
-      '＋ 先在这套里试搭')));
+    GG.el('button',{class:'btn', onClick:()=>{ picked.add(top.w.key); GG.toast(GG.T('已把「'+top.w.label+'」加入试搭', 'Added the '+top.w.label+' to try on')); showResult(occ, false); }},
+      GG.T('＋ 先在这套里试搭','＋ Try it in this look first'))));
   if(gaps.length>1){
     const moreWrap = GG.el('div',{style:{marginTop:'14px'}},
-      GG.el('div',{class:'small muted', style:{marginBottom:'6px'}}, '也可以补：'));
+      GG.el('div',{class:'small muted', style:{marginBottom:'6px'}}, GG.T('也可以补：','Also worth adding:')));
     gaps.slice(1,3).forEach(g=>{
       moreWrap.appendChild(GG.el('div',{class:'row', style:{justifyContent:'space-between', alignItems:'center', gap:'8px', padding:'6px 0'}},
         GG.el('span',{style:{fontSize:'14px'}}, g.w.emoji+' '+g.w.label+'　',
-          GG.el('span',{class:'small muted'}, '升级 '+g.ups.length+' 个场合')),
+          GG.el('span',{class:'small muted'}, GG.T('升级 '+g.ups.length+' 个场合', 'levels up '+g.ups.length+(g.ups.length>1?' occasions':' occasion')))),
         buyLink(g.w, 'btn ghost')));
     });
     card.appendChild(moreWrap);
   }
   card.appendChild(GG.el('p',{class:'small muted', style:{margin:'12px 0 0', lineHeight:'1.55'}},
-    '🔗 演示：链接跳转淘宝搜索同类商品；真实产品可接「带返佣的商品直链」，搭配即导购（CPS 分成）。'));
+    GG.T('🔗 演示：链接跳转淘宝搜索同类商品；真实产品可接「带返佣的商品直链」，搭配即导购（CPS 分成）。',
+         '🔗 Demo: links open a Taobao search for similar items. A real product would plug in commission-earning deep links — every styled look doubles as a shoppable storefront (CPS revenue share).')));
   if(GG.llm.connected()){
     gapPitch(top, occNames).then(p=>{ if(p) pitchEl.textContent = '✨ '+p; }).catch(()=>{});
   }
@@ -272,13 +291,15 @@ function welcome(){
   main.appendChild(GG.el('div',{class:'gate'},
     GG.el('div',{class:'gate-head'},
       GG.el('div',{class:'gate-glyph'}, '👗'),
-      GG.el('div',{class:'gate-name'}, '场合穿搭'),
-      GG.el('div',{class:'gate-tag'}, '连淘宝 + 上传 · AI 配整套')),
+      GG.el('div',{class:'gate-name'}, GG.T('场合穿搭','Occasion Styling')),
+      GG.el('div',{class:'gate-tag'}, GG.T('连淘宝 + 上传 · AI 配整套','Link Taobao + upload · AI styles the full look'))),
     GG.el('div',{class:'gate-body'},
-      GG.el('div',{class:'gate-hook'}, '把你买过的衣服，变成会搭配的衣橱。'),
-      GG.el('p',{class:'gate-sub'}, '授权连接淘宝，自动把你买过的服饰导入成数字衣橱；再传一件最近想穿的，AI 以它为核心配整套，缺的单品直接给购买链接。'),
-      GG.el('button',{class:'gate-cta', onClick:()=>{ GG.clear(main); sourceStage(); }}, '👗 开始搭配 →'),
-      GG.el('div',{class:'gate-priv'}, '🔒 只读服饰订单、不读支付信息、不上传服务器 · 演示使用模拟订单数据')
+      GG.el('div',{class:'gate-hook'}, GG.T('把你买过的衣服，变成会搭配的衣橱。','Turn the clothes you already bought into a closet that styles itself.')),
+      GG.el('p',{class:'gate-sub'}, GG.T('授权连接淘宝，自动把你买过的服饰导入成数字衣橱；再传一件最近想穿的，AI 以它为核心配整套，缺的单品直接给购买链接。',
+        "Authorize Taobao to auto-import your past fashion purchases into a digital closet. Then upload one piece you can't wait to wear — AI builds the full look around it, with direct shopping links for anything missing.")),
+      GG.el('button',{class:'gate-cta', onClick:()=>{ GG.clear(main); sourceStage(); }}, GG.T('👗 开始搭配 →','👗 Start styling →')),
+      GG.el('div',{class:'gate-priv'}, GG.T('🔒 只读服饰订单、不读支付信息、不上传服务器 · 演示使用模拟订单数据',
+        '🔒 Reads fashion orders only — no payment info, nothing uploaded · Demo runs on simulated order data'))
     )
   ));
 }
@@ -301,8 +322,9 @@ function start(){
 function sourceStage(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
-    GG.el('h1', null, '把你买过的衣服导进来'),
-    GG.el('p', null, '连接淘宝，自动把你买过的服饰变成数字衣橱；再传一件最近想穿的，我以它为核心配整套。')
+    GG.el('h1', null, GG.T('把你买过的衣服导进来','Bring in the clothes you already own')),
+    GG.el('p', null, GG.T('连接淘宝，自动把你买过的服饰变成数字衣橱；再传一件最近想穿的，我以它为核心配整套。',
+      "Connect Taobao to turn your past purchases into a digital closet, then upload one piece you're itching to wear — I'll build the whole look around it."))
   ));
 
   // 待指定部位的上传照片
@@ -311,15 +333,15 @@ function sourceStage(){
       GG.el('div',{class:'row', style:{gap:'12px', alignItems:'center'}},
         GG.el('div',{class:'alta-thumb', style:{width:'56px', height:'56px'}}, GG.el('img',{src:pendingImg})),
         GG.el('div',{style:{flex:'1'}},
-          GG.el('div',{style:{fontWeight:'700'}}, '这件穿在哪个部位？'),
-          GG.el('div',{class:'small muted'}, '选好我就把它当成「最想穿的」，配整套时围着它搭。'))),
+          GG.el('div',{style:{fontWeight:'700'}}, GG.T('这件穿在哪个部位？','Which category does this piece go in?')),
+          GG.el('div',{class:'small muted'}, GG.T('选好我就把它当成「最想穿的」，配整套时围着它搭。',"Pick one and I'll treat it as your must-wear — the whole look gets styled around it.")))),
       GG.el('div',{class:'chips', style:{marginTop:'12px'}},
         SLOTS.map(slot=> GG.el('span',{class:'chip', onClick:()=>{
-          uploads.push({key:'up_'+(uploads.length+1)+'_'+slot, label:'上传的'+slot, slot, formality:3, warmth:1, styleTags:[], img:pendingImg, _upload:true});
-          pendingImg=null; GG.toast('已加入：你想搭的'+slot); sourceStage();
-        }}, slot))),
+          uploads.push({key:'up_'+(uploads.length+1)+'_'+slot, label:GG.T('上传的'+slot, 'Uploaded '+slotName(slot)), slot, formality:3, warmth:1, styleTags:[], img:pendingImg, _upload:true});
+          pendingImg=null; GG.toast(GG.T('已加入：你想搭的'+slot, 'Added: your must-wear '+slotName(slot))); sourceStage();
+        }}, slotName(slot)))),
       GG.el('div',{class:'center', style:{marginTop:'10px'}},
-        GG.el('button',{class:'btn ghost', onClick:()=>{ pendingImg=null; sourceStage(); }}, '取消'))
+        GG.el('button',{class:'btn ghost', onClick:()=>{ pendingImg=null; sourceStage(); }}, GG.T('取消','Cancel')))
     );
     main.appendChild(pick);
   }
@@ -327,16 +349,16 @@ function sourceStage(){
   // 动作卡 A：连接淘宝
   const taoBody = imported
     ? GG.el('div',{style:{flex:'1'}},
-        GG.el('div',{style:{fontWeight:'700'}}, '✓ 已连接淘宝，导入 '+[...picked].length+' 件服饰'),
-        GG.el('div',{class:'small muted', style:{marginTop:'2px'}}, '下面是你的数字衣橱，可点 × 删掉不想要的。'),
+        GG.el('div',{style:{fontWeight:'700'}}, GG.T('✓ 已连接淘宝，导入 '+[...picked].length+' 件服饰', '✓ Taobao connected — '+[...picked].length+' pieces imported')),
+        GG.el('div',{class:'small muted', style:{marginTop:'2px'}}, GG.T('下面是你的数字衣橱，可点 × 删掉不想要的。',"Here's your digital closet — tap × to remove anything you don't want.")),
         GG.el('button',{class:'btn ghost', style:{marginTop:'10px', padding:'4px 12px', fontSize:'13px'},
-          onClick:()=>{ picked.clear(); imported=false; sourceStage(); }}, '重新导入'))
+          onClick:()=>{ picked.clear(); imported=false; sourceStage(); }}, GG.T('重新导入','Re-import')))
     : GG.el('div',{style:{flex:'1'}},
-        GG.el('div',{style:{fontWeight:'700'}}, '连接淘宝，自动导入买过的衣服'),
+        GG.el('div',{style:{fontWeight:'700'}}, GG.T('连接淘宝，自动导入买过的衣服',"Connect Taobao to auto-import what you've bought")),
         GG.el('div',{class:'small muted', style:{marginTop:'2px', lineHeight:'1.6'}},
-          '🔒 只读服饰类订单、不读支付/地址信息、不上传服务器。'),
-        GG.el('div',{class:'small', style:{margin:'2px 0 0', color:'var(--ink-soft,#8a8a93)'}}, '（演示：使用模拟订单数据）'),
-        GG.el('button',{class:'btn primary', style:{marginTop:'12px'}, onClick:importTaobao}, '🛒 连接并导入 →'));
+          GG.T('🔒 只读服饰类订单、不读支付/地址信息、不上传服务器。','🔒 Reads fashion orders only — no payment or address info, nothing uploaded.')),
+        GG.el('div',{class:'small', style:{margin:'2px 0 0', color:'var(--ink-soft,#8a8a93)'}}, GG.T('（演示：使用模拟订单数据）','(Demo: simulated order data)')),
+        GG.el('button',{class:'btn primary', style:{marginTop:'12px'}, onClick:importTaobao}, GG.T('🛒 连接并导入 →','🛒 Connect & import →')));
   main.appendChild(GG.el('div',{class:'alta-src', style:{marginTop:'18px'}},
     GG.el('div',{class:'ic'}, '🛒'), taoBody));
 
@@ -347,22 +369,22 @@ function sourceStage(){
   main.appendChild(GG.el('div',{class:'alta-src', style:{marginTop:'12px'}},
     GG.el('div',{class:'ic'}, '📷'),
     GG.el('div',{style:{flex:'1'}},
-      GG.el('div',{style:{fontWeight:'700'}}, '上传一件你最想穿的'),
-      GG.el('div',{class:'small muted', style:{marginTop:'2px', lineHeight:'1.6'}}, '有今天就想穿的单品？传张照片，我以它为核心把整套配好。'),
-      GG.el('button',{class:'btn', style:{marginTop:'12px'}, onClick:()=> fileIn.click()}, '📷 选择照片上传'),
+      GG.el('div',{style:{fontWeight:'700'}}, GG.T('上传一件你最想穿的','Upload the piece you most want to wear')),
+      GG.el('div',{class:'small muted', style:{marginTop:'2px', lineHeight:'1.6'}}, GG.T('有今天就想穿的单品？传张照片，我以它为核心把整套配好。',"Got something you're dying to wear today? Snap a photo and I'll style the whole look around it.")),
+      GG.el('button',{class:'btn', style:{marginTop:'12px'}, onClick:()=> fileIn.click()}, GG.T('📷 选择照片上传','📷 Choose a photo')),
       fileIn)));
 
   // 已有单品展示
   const have = haveItems();
   if(have.length){
     const box = GG.el('div',{class:'card pad', style:{marginTop:'16px'}},
-      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '你的数字衣橱（'+have.length+' 件）'));
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('你的数字衣橱（'+have.length+' 件）', 'Your digital closet ('+have.length+(have.length>1?' pieces)':' piece)'))));
     if(uploads.length){
       const upRow = GG.el('div',{class:'row', style:{gap:'10px', flexWrap:'wrap', marginBottom:'10px'}});
       uploads.forEach((u,idx)=>{
         upRow.appendChild(GG.el('div',{class:'row', style:{gap:'8px', alignItems:'center', padding:'6px 10px 6px 6px', border:'1px solid var(--accent)', borderRadius:'999px', background:'var(--accent-soft)'}},
           GG.el('div',{class:'alta-thumb', style:{width:'32px', height:'32px'}}, GG.el('img',{src:u.img})),
-          GG.el('span',{class:'small', style:{fontWeight:'700', color:'var(--accent)'}}, '想搭 · '+u.slot),
+          GG.el('span',{class:'small', style:{fontWeight:'700', color:'var(--accent)'}}, GG.T('想搭 · '+u.slot, 'Must-wear · '+slotName(u.slot))),
           GG.el('span',{style:{cursor:'pointer', color:'var(--ink-3)', fontWeight:'700'}, onClick:()=>{ uploads.splice(idx,1); sourceStage(); }}, '×')));
       });
       box.appendChild(upRow);
@@ -380,11 +402,13 @@ function sourceStage(){
   const miss = missingRequired();
   const footer = GG.el('div',{class:'center', style:{marginTop:'20px'}});
   const tip = GG.el('div',{class:'small muted center', style:{marginBottom:'10px'}},
-    have.length ? (miss.length? '还差：'+miss.join(' / ')+'（搭整套至少要上装/下装/鞋，连一下淘宝就齐了）' : '衣橱齐了，去选场合 →')
-                : '先连接淘宝导入，或上传一件想搭的');
+    have.length ? (miss.length? GG.T('还差：'+miss.join(' / ')+'（搭整套至少要上装/下装/鞋，连一下淘宝就齐了）',
+                                     "Still missing: "+miss.map(slotName).join(' / ')+" (a full look needs a top, bottoms and shoes — one Taobao sync fills them in)")
+                              : GG.T('衣橱齐了，去选场合 →',"Closet's ready — pick an occasion →"))
+                : GG.T('先连接淘宝导入，或上传一件想搭的','Connect Taobao to import, or upload a piece to style'));
   footer.appendChild(tip);
   footer.appendChild(GG.el('button',{class:'btn primary lg', disabled: miss.length>0,
-    onClick: miss.length? null : occasionStage}, '选场合，开始搭配 →'));
+    onClick: miss.length? null : occasionStage}, GG.T('选场合，开始搭配 →','Pick an occasion, start styling →')));
   main.appendChild(footer);
 }
 
@@ -393,24 +417,24 @@ async function importTaobao(){
   GG.clear(main);
   const stage = GG.el('div'); main.appendChild(stage);
   await GG.thinking(stage, [
-    '正在向淘宝请求授权…（演示）',
-    '读取你的服饰类订单…',
-    '识别每件的部位与风格…',
-    '整理进你的数字衣橱…'
+    GG.T('正在向淘宝请求授权…（演示）','Requesting Taobao authorization… (demo)'),
+    GG.T('读取你的服饰类订单…','Reading your fashion order history…'),
+    GG.T('识别每件的部位与风格…','Tagging each piece by category and style…'),
+    GG.T('整理进你的数字衣橱…','Filing everything into your digital closet…')
   ], 1500);
   PURCHASES.forEach(k=> picked.add(k));
   imported = true;
-  GG.toast('已从你的淘宝订单导入 '+PURCHASES.length+' 件服饰');
+  GG.toast(GG.T('已从你的淘宝订单导入 '+PURCHASES.length+' 件服饰', 'Imported '+PURCHASES.length+' pieces from your Taobao orders'));
   sourceStage();
 }
 
 // 读取上传的照片 → 转 dataURL → 进入「指定部位」
 function onFile(file){
   if(!file){ return; }
-  if(!/^image\//.test(file.type)){ GG.toast('请选择一张图片'); return; }
+  if(!/^image\//.test(file.type)){ GG.toast(GG.T('请选择一张图片','Please choose an image')); return; }
   const reader = new FileReader();
   reader.onload = e=>{ pendingImg = e.target.result; sourceStage(); window.scrollTo(0,0); };
-  reader.onerror = ()=> GG.toast('图片读取失败，换一张试试');
+  reader.onerror = ()=> GG.toast(GG.T('图片读取失败，换一张试试',"Couldn't read that image — try another one"));
   reader.readAsDataURL(file);
 }
 
@@ -418,8 +442,8 @@ function onFile(file){
 function occasionStage(){
   GG.clear(main);
   main.appendChild(GG.el('div',{class:'hero'},
-    GG.el('h1', null, '今天去哪儿？'),
-    GG.el('p', null, '同一个衣橱，换个场合，我会搭出不一样的整套。')
+    GG.el('h1', null, GG.T('今天去哪儿？','Where are you headed today?')),
+    GG.el('p', null, GG.T('同一个衣橱，换个场合，我会搭出不一样的整套。',"Same closet, different occasion — I'll style a whole different look."))
   ));
   main.appendChild(GG.llm.bar());
   const grid = GG.el('div',{class:'chips', style:{marginTop:'18px', justifyContent:'center'}});
@@ -430,7 +454,7 @@ function occasionStage(){
   });
   main.appendChild(grid);
   main.appendChild(GG.el('div',{class:'center', style:{marginTop:'18px'}},
-    GG.el('button',{class:'btn ghost', onClick:sourceStage}, '← 改衣橱')
+    GG.el('button',{class:'btn ghost', onClick:sourceStage}, GG.T('← 改衣橱','← Edit closet'))
   ));
 }
 
@@ -449,10 +473,11 @@ async function showResult(occ, fromLink){
   let res;
   if(!fromLink){
     const think = GG.thinking(stage, [
-      `锁定场合：${occ.label}…`,
-      `翻你买过的 ${[...picked].length} 件单品${uploads.length?'、加上你想搭的':''}…`,
-      useAI?'AI 逐件挑、组一整套…':'逐个部位算契合度…',
-      '组出一整套、找还差哪件…'
+      GG.T(`锁定场合：${occ.label}…`, `Locking in the occasion: ${occ.label}…`),
+      GG.T(`翻你买过的 ${[...picked].length} 件单品${uploads.length?'、加上你想搭的':''}…`,
+           `Combing through your ${[...picked].length} pieces${uploads.length?' — plus your upload':''}…`),
+      useAI?GG.T('AI 逐件挑、组一整套…','AI is hand-picking every piece into one look…'):GG.T('逐个部位算契合度…','Scoring fit for each category…'),
+      GG.T('组出一整套、找还差哪件…',"Building the full look, spotting what's missing…")
     ], useAI?1900:1500);
     const [r] = await Promise.all([getOutfit(occ, useAI), think]); res = r;
   } else {
@@ -462,7 +487,7 @@ async function showResult(occ, fromLink){
   GG.clear(stage);
 
   stage.appendChild(GG.el('div',{class:'hero', style:{paddingTop:'8px'}},
-    GG.el('h1',{style:{fontSize:'24px'}}, `${occ.emoji} ${occ.label}　这套穿`)));
+    GG.el('h1',{style:{fontSize:'24px'}}, GG.T(`${occ.emoji} ${occ.label}　这套穿`, `${occ.emoji} ${occ.label} — wear this`))));
   stage.appendChild(GG.el('div',{class:'center', style:{margin:'0 0 12px'}}, GG.llm.badge(!!res._ai)));
 
   // 整套展示：每个部位一行
@@ -474,10 +499,10 @@ async function showResult(occ, fromLink){
       GG.el('div',{style:{flex:'1', minWidth:'0'}},
         GG.el('div',{class:'row', style:{justifyContent:'space-between', gap:'8px', flexWrap:'wrap'}},
           GG.el('div',{class:'row', style:{gap:'8px'}},
-            GG.el('span',{class:'pill', style:{background:'var(--accent)', color:'#fff', fontWeight:'700', padding:'3px 10px', borderRadius:'999px', fontSize:'12px'}}, r.slot),
+            GG.el('span',{class:'pill', style:{background:'var(--accent)', color:'#fff', fontWeight:'700', padding:'3px 10px', borderRadius:'999px', fontSize:'12px'}}, slotName(r.slot)),
             GG.el('h3',{style:{fontSize:'18px'}}, it.label)),
-          r.pinned ? GG.el('span',{class:'pill', style:{background:'var(--accent-soft)', color:'var(--accent)', fontWeight:'700', padding:'3px 10px', borderRadius:'999px', fontSize:'12px'}}, '📷 你想搭的')
-                   : (r.hits && r.hits.length? GG.el('span',{class:'small muted'}, '契合：'+r.hits.slice(0,2).join('、')) : null)
+          r.pinned ? GG.el('span',{class:'pill', style:{background:'var(--accent-soft)', color:'var(--accent)', fontWeight:'700', padding:'3px 10px', borderRadius:'999px', fontSize:'12px'}}, GG.T('📷 你想搭的','📷 Your must-wear'))
+                   : (r.hits && r.hits.length? GG.el('span',{class:'small muted'}, GG.T('契合：'+r.hits.slice(0,2).join('、'), 'Fits: '+r.hits.slice(0,2).map(tagName).join(' · '))) : null)
         ),
         r.why ? GG.el('p',{class:'small muted', style:{margin:'4px 0 0'}}, r.why) : null
       )
@@ -485,7 +510,7 @@ async function showResult(occ, fromLink){
   });
 
   const note = GG.el('div',{class:'card pad', style:{background:`linear-gradient(160deg,var(--accent-soft),#fff 60%)`}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '搭配理由'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('搭配理由','Why this works')),
     GG.el('div',{style:{fontSize:'16px', fontWeight:'600'}}, rline)
   );
 
@@ -493,9 +518,9 @@ async function showResult(occ, fromLink){
 
   const shareSpec = {
     slug:SLUG,
-    title: occ.label+' 穿搭',
-    subtitle:'从你买过的衣服搭出',
-    rows: reasons.map(r=>({label:r.slot, value:r.item.label})),
+    title: GG.T(occ.label+' 穿搭', occ.label+' look'),
+    subtitle:GG.T('从你买过的衣服搭出','Styled from clothes you already own'),
+    rows: reasons.map(r=>({label:slotName(r.slot), value:r.item.label})),
     tags: [occ.label],
     note: rline
   };
@@ -503,7 +528,7 @@ async function showResult(occ, fromLink){
   stage.appendChild(note);
   if(tip){
     stage.appendChild(GG.el('div',{class:'card pad', style:{marginTop:'12px', borderLeft:'3px solid var(--accent)'}},
-      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '✨ 造型师小贴士'),
+      GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('✨ 造型师小贴士',"✨ Stylist's tip")),
       GG.el('p',{style:{margin:'0', color:'var(--ink-2)', lineHeight:'1.7'}}, tip)));
   }
   const fscale = formalityScale(reasons, occ);
@@ -512,11 +537,11 @@ async function showResult(occ, fromLink){
   stage.appendChild(list);
   stage.appendChild(gapCard(occ));   // ＋1：缺的单品，AI 推荐 + 购买链接
   stage.appendChild(GG.resultCard(SLUG,
-    GG.el('div',{class:'center muted small'}, '截图分享这套穿搭 ↓'), shareSpec));
+    GG.el('div',{class:'center muted small'}, GG.T('截图分享这套穿搭 ↓','Screenshot & share this look ↓')), shareSpec));
 
   // 换场合 → 立刻重算出不同整套
   const others = GG.el('div',{class:'card pad', style:{marginTop:'16px'}},
-    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, '同一衣橱，换个场合试试'),
+    GG.el('div',{class:'section-t', style:{marginTop:'0'}}, GG.T('同一衣橱，换个场合试试','Same closet — try another occasion')),
     GG.el('div',{class:'chips'},
       OCCASIONS.filter(o=> o.key!==occ.key).map(o=>
         GG.el('span',{class:'chip', onClick:()=> showResult(o, false)}, o.emoji+' '+o.label)))
@@ -524,7 +549,7 @@ async function showResult(occ, fromLink){
   stage.appendChild(others);
 
   stage.appendChild(GG.el('div',{class:'center', style:{marginTop:'16px'}},
-    GG.el('button',{class:'btn ghost', onClick:()=>{ location.hash=''; sourceStage(); }}, '↻ 改衣橱重来')
+    GG.el('button',{class:'btn ghost', onClick:()=>{ location.hash=''; sourceStage(); }}, GG.T('↻ 改衣橱重来','↻ Edit closet & start over'))
   ));
 }
 
