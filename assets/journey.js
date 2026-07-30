@@ -65,6 +65,25 @@
     var _l = null; try { _l = localStorage.getItem('site.lang'); } catch (e) {}
     en = (_l === 'en') || (_l !== 'zh' && (navigator.language || 'en').toLowerCase().indexOf('zh') !== 0);
   }
+  function rewriteThoughtClassicLinks() {
+    if (mode !== 'thought') return;
+    try {
+      if (sessionStorage.getItem('gg-journey') !== '1') return;
+    } catch (e) { return; }
+    var routes = {
+      '../index.html':          ['../explore-a.html',          '旅程大厅', 'Tour hub'],
+      '../index.html#projects': ['../explore-a.html#dirs',     '旅程项目', 'Projects (tour)'],
+      '../index.html#thoughts': ['../explore-a.html#thoughts', '旅程思考', 'Essays (tour)'],
+      '../index.html#about':    ['../explore-a.html#about',    '旅程团队', 'Team (tour)'],
+      '../index.html#contact':  ['../explore-a.html#contact',  '去旅程里联系', 'Contact (tour)']
+    };
+    Array.from(document.querySelectorAll('a[href]')).forEach(function (a) {
+      var route = routes[a.getAttribute('href')];
+      if (!route) return;
+      a.setAttribute('href', route[0]);
+      a.textContent = route[en ? 2 : 1];
+    });
+  }
   var LABEL = mode === 'site'
     ? (en ? '🧭 <span>Guided tour</span>' : '🧭 <span>旅程式浏览</span>')
     : (en ? '🧭 <span>Back to tour</span>' : '🧭 <span>继续旅程</span>');
@@ -114,6 +133,11 @@
   });
 
   function mount() { document.body.appendChild(btn); fit(); }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', rewriteThoughtClassicLinks, { once: true });
+  } else {
+    rewriteThoughtClassicLinks();
+  }
   if (document.body) mount();
   else document.addEventListener('DOMContentLoaded', mount);
 })();

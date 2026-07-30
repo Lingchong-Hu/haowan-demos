@@ -32,7 +32,10 @@
   } catch (e) {}
 
   try {
-    if (fromJourney && !sessionStorage.getItem(KEY)) sessionStorage.setItem(KEY, 'free');
+    if (fromJourney) {
+      sessionStorage.setItem('gg-journey', '0');
+      if (!sessionStorage.getItem(KEY)) sessionStorage.setItem(KEY, 'free');
+    }
     if (IN_IFRAME || location.hash || sameOrigin || sessionStorage.getItem(KEY)) return;
   } catch (e) { return; }   /* storage 不可用的极端环境:宁可不弹,不打扰 */
 
@@ -103,7 +106,10 @@
       '</div><p class="gg-ec-note">' + T.note + '</p></div>';
 
     function choose(mode) {
-      try { sessionStorage.setItem(KEY, mode); } catch (e) {}
+      try {
+        sessionStorage.setItem(KEY, mode);
+        if (mode === 'free') sessionStorage.setItem('gg-journey', '0');
+      } catch (e) {}
       hit('entry-choice-' + mode);
       if (mode === 'journey') { location.href = 'explore-a.html'; return; }
       scrim.remove();

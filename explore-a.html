@@ -7,6 +7,9 @@
 <title>旅程 · 好玩的东西</title>
 <meta name="description" content="互动版入口 A：大厅出发，有限选择一步步引导——四个板块、四个项目方向、行业、再到像故事一样讲给你听的每个 demo。" />
 <script src="assets/i18n.js"></script>
+<script>
+try { sessionStorage.setItem('gg-journey', '1'); } catch (e) {}
+</script>
 <!-- ═══════════════════════════════════════════════════════════════════
      互动版入口 · A 版「旅程」v2 —— 大厅-支线 选择机（state machine，非长滚动页）
      · 大厅 = 4 张浮动选项卡（认识团队/逛项目/读思考/找到我），走完一支自动回大厅
@@ -208,6 +211,10 @@ const c = S.contact;
 /* —— i18n：window.LANG 由 assets/i18n.js 提前设好；data.js 已按语言换好 S/P —— */
 const EN = window.LANG === 'en';
 const T = (zh, en) => (EN && en != null) ? en : zh;
+function leaveJourney() {
+  try { sessionStorage.setItem('gg-journey', '0'); } catch (e) {}
+}
+$$('footer a[href]').forEach(a => a.addEventListener('click', leaveJourney));
 /* 面包屑公共标签 */
 const L = {
   hub: T('⌂ 大厅', '⌂ Hub'), about: T('认识团队', 'About the team'),
@@ -445,7 +452,10 @@ function scHub() {
     <div class="hint">${T('✦ 有限的选择，走不丢——顶栏随时能回到任何一层', '✦ A few choices at a time, impossible to get lost — the top bar takes you back to any level')}</div>`);
   $$('.ocard', sc).forEach(b => b.onclick = () => go([b.dataset.go]));
   const free = $('.freebar a', sc);
-  if (free) free.onclick = () => hit('exp-a-free');   /* keepalive，跳转前也能送达 */
+  if (free) free.onclick = () => {
+    leaveJourney();
+    hit('exp-a-free');
+  };   /* keepalive，跳转前也能送达 */
 }
 
 /* —— 认识团队（故事流 + 自动回大厅） —— */

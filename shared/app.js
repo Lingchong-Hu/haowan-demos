@@ -85,6 +85,17 @@ GG.disclaimer = function(slug){
 };
 
 /* ---------------- shell ---------------- */
+GG.backLink = function(slug){
+  var inJourney = false;
+  try{ inJourney = sessionStorage.getItem('gg-journey') === '1'; }catch(e){}
+  var href = '../../index.html'; /* journey-smart */
+  var label = GG.T(' 好玩的东西', ' Playground');
+  if(inJourney){
+    href = '../../explore-a.html#story/'+encodeURIComponent(slug);
+    label = GG.T(' 回到旅程', ' Back to tour');
+  }
+  return GG.el('a',{class:'back', href:href}, '←', GG.el('span',{class:'back-label'}, label));
+};
 GG.mountShell = function(slug, opts={}){
   const m = GG.meta(slug);
   document.documentElement.style.setProperty('--accent', m.accent||'#e8543f');
@@ -94,7 +105,7 @@ GG.mountShell = function(slug, opts={}){
   GG.clear(app);
   const bar = GG.el('div',{class:'topbar'},
     GG.el('div',{class:'row'},
-      GG.el('a',{class:'back', href:'../../index.html'}, '←', GG.el('span',{class:'back-label'}, GG.T(' 好玩的东西', ' Playground'))),
+      GG.backLink(slug),
       GG.el('div',{class:'ttl'}, GG.el('span',{class:'em'}, m.emoji||'✨'), m.title||slug),
       GG.el('div',{class:'spacer'}),
       m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null,
@@ -131,7 +142,7 @@ GG.login = function(slug, opts, onEnter){
   GG.clear(app);
   app.appendChild(GG.el('div',{class:'topbar'},
     GG.el('div',{class:'row'},
-      GG.el('a',{class:'back', href:'../../index.html'}, '←', GG.el('span',{class:'back-label'}, GG.T(' 好玩的东西', ' Playground'))),
+      GG.backLink(slug),
       GG.el('div',{class:'ttl'}, GG.el('span',{class:'em'}, m.emoji||'✨'), m.title||slug),
       GG.el('div',{class:'spacer'}),
       m.industry ? GG.el('span',{class:'badge-industry'}, m.industry) : null,
