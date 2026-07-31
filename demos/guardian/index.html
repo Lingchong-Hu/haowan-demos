@@ -19,11 +19,16 @@
   "use strict";
   var LS_KEY = "site.lang";
   var SW_ID = "__lang_sw__";
-  var lang = null;
-  try { lang = localStorage.getItem(LS_KEY); } catch (e) {}
-  if (lang !== "zh" && lang !== "en") {
-    lang = /^zh/i.test(navigator.language || "") ? "zh" : "en";
+  /* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+  function resolveSiteLang(){
+    try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+    try{
+      var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+      if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+    }catch(e){}
+    return 'en';
   }
+  var lang = resolveSiteLang();
 
   /* ---------- language switcher (shown in both modes) ---------- */
   function buildSwitcher() {

@@ -60,10 +60,18 @@
   style.textContent = css;
   document.head.appendChild(style);
 
+  /* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+  function resolveSiteLang(){
+    try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+    try{
+      var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+      if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+    }catch(e){}
+    return 'en';
+  }
   var en = window.LANG === 'en';
   if (window.LANG !== 'en' && window.LANG !== 'zh') {   /* demo/思考页无 i18n.js——读同一份偏好 */
-    var _l = null; try { _l = localStorage.getItem('site.lang'); } catch (e) {}
-    en = (_l === 'en') || (_l !== 'zh' && (navigator.language || 'en').toLowerCase().indexOf('zh') !== 0);
+    en = resolveSiteLang() === 'en';
   }
   function rewriteThoughtClassicLinks() {
     if (mode !== 'thought') return;

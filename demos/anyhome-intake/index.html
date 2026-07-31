@@ -272,8 +272,16 @@ body{font-family:var(--sans); color:var(--ink); background:var(--paper);
 "use strict";
 
 /* ════════════════ i18n 助手（自包含；全站语言偏好统一存 localStorage['site.lang']） ════════════════ */
-let LANG=''; try{ LANG = localStorage.getItem('site.lang') || ''; }catch(e){}
-if(LANG!=='zh' && LANG!=='en') LANG = /^zh/i.test(navigator.language||'') ? 'zh' : 'en';
+/* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+function resolveSiteLang(){
+  try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+  try{
+    var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+  }catch(e){}
+  return 'en';
+}
+let LANG = resolveSiteLang();
 const EN = LANG==='en';
 const T = function(zh,en){ return EN ? en : zh; };
 

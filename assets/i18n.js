@@ -1,7 +1,7 @@
 /* ════════════════════════════════════════════════════════════════
    好玩的东西 · 门户国际化（i18n）——唯一语言事实源
    ───────────────────────────────────────────────────────────────
-   ▸ 新访客按浏览器语言（中文浏览器→中文，其它→英文）；点顶栏 EN / 中文 切换并记住选择。
+   ▸ 新访客按中国时区→中文、其它→英文；点顶栏 EN / 中文 切换并记住选择。
    ▸ 语言存 localStorage['site.lang']（手动选择永远优先）；切换时重载页面（最稳）。
    ▸ 本文件必须在 <head> 里「同步」加载，且早于 data.js 与页内渲染脚本，
      这样 window.LANG 在 data.js 决定用中/英数据时已就绪。
@@ -10,12 +10,16 @@
    ▸ data.js 末尾据 window.LANG 把 SITE/PROJECTS 换成 SITE_EN/PROJECTS_EN。
    ════════════════════════════════════════════════════════════════ */
 (function () {
-  var LANG;
-  try { var s = localStorage.getItem('site.lang'); if (s === 'en' || s === 'zh') LANG = s; } catch (e) {}
-  if (!LANG) {                                      // 无手动选择 → 按浏览器语言（中文→中文，其它→英文）
-    var nav = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-    LANG = nav.indexOf('zh') === 0 ? 'zh' : 'en';
+  /* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+  function resolveSiteLang(){
+    try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+    try{
+      var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+      if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+    }catch(e){}
+    return 'en';
   }
+  var LANG = resolveSiteLang();
   window.LANG = LANG;
   document.documentElement.lang = (LANG === 'zh' ? 'zh-CN' : 'en');
 

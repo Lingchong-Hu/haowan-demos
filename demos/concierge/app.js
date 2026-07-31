@@ -12,9 +12,17 @@
    ════════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
-  /* —— 站点语言偏好（全站统一 localStorage['site.lang']：'zh' | 'en'；无值时按浏览器语言）—— */
-  let LANG; try { LANG = localStorage.getItem('site.lang'); } catch (_) { LANG = null; }
-  if (LANG !== 'zh' && LANG !== 'en') LANG = /^zh/i.test(navigator.language || '') ? 'zh' : 'en';
+  /* —— 站点语言偏好（全站统一 localStorage['site.lang']：'zh' | 'en'）—— */
+  /* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+  function resolveSiteLang(){
+    try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+    try{
+      var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+      if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+    }catch(e){}
+    return 'en';
+  }
+  let LANG = resolveSiteLang();
   const EN = LANG === 'en';
   const T = (zh, en) => (EN ? en : zh);
 

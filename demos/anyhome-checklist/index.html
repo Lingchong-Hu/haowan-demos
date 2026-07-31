@@ -246,10 +246,17 @@ select.field:focus, input.field:focus{outline:none; border-color:var(--brand); b
 (function(){
 "use strict";
 
-/* ── 语言助手（自包含，无 GG）：偏好统一存 localStorage['site.lang']（'zh'|'en'）──
-   无值时按 navigator.language：中文 → zh，其余 → en。 */
-let __lang; try{ __lang = localStorage.getItem('site.lang'); }catch(e){ __lang = null; }
-if(__lang!=='zh' && __lang!=='en') __lang = /^zh/i.test(navigator.language||'') ? 'zh' : 'en';
+/* ── 语言助手（自包含，无 GG）：偏好统一存 localStorage['site.lang']（'zh'|'en'）── */
+/* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+function resolveSiteLang(){
+  try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+  try{
+    var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+  }catch(e){}
+  return 'en';
+}
+let __lang = resolveSiteLang();
 const EN = __lang==='en';
 function T(zh,en){ return EN ? en : zh; }
 

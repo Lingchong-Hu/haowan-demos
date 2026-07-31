@@ -45,11 +45,16 @@ GG.$$ = (s,r)=> Array.from((r||document).querySelectorAll(s));
 GG.clear = n => { while(n.firstChild) n.removeChild(n.firstChild); return n; };
 
 /* ---------------- 语言（与门户 i18n.js 共用同一偏好 localStorage['site.lang']；同源全站生效） ---------------- */
-GG.LANG = (function(){
+/* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+function resolveSiteLang(){
   try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
-  var nav = (navigator.language||'en').toLowerCase();
-  return nav.indexOf('zh')===0 ? 'zh' : 'en';
-})();
+  try{
+    var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+  }catch(e){}
+  return 'en';
+}
+GG.LANG = resolveSiteLang();
 GG.EN = GG.LANG === 'en';
 GG.T = function(zh, en){ return (GG.EN && en != null) ? en : zh; };
 GG.setLang = function(v){ try{ localStorage.setItem('site.lang', v); }catch(e){} location.reload(); };

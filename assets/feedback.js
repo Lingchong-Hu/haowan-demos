@@ -21,11 +21,19 @@
 (function () {
   if (window.GGFB) return;
 
+  /* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+  function resolveSiteLang(){
+    try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+    try{
+      var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+      if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+    }catch(e){}
+    return 'en';
+  }
+
   // 门户页由 i18n.js 设 window.LANG；demo / 独立页没有 i18n.js——用同一份偏好补齐
   if (window.LANG !== 'en' && window.LANG !== 'zh') {
-    var _l = null; try { _l = localStorage.getItem('site.lang'); } catch (e) {}
-    window.LANG = (_l === 'en' || _l === 'zh') ? _l
-      : ((navigator.language || 'en').toLowerCase().indexOf('zh') === 0 ? 'zh' : 'en');
+    window.LANG = resolveSiteLang();
   }
 
   // 本地预览（tools/serve.py 带 mock 接口）走同源；线上走 Cloudflare Worker

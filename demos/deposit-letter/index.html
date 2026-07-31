@@ -350,8 +350,16 @@ select.fin{cursor:pointer}
 
 <script>
 /* ════════════════ 语言（全站统一：localStorage['site.lang']）════════════════ */
-const LANG=(function(){ try{ const v=localStorage.getItem('site.lang'); if(v==='zh'||v==='en') return v; }catch(e){}
-  return /^zh/i.test(navigator.language||'')?'zh':'en'; })();
+/* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
+function resolveSiteLang(){
+  try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+  try{
+    var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+    if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+  }catch(e){}
+  return 'en';
+}
+const LANG=resolveSiteLang();
 const EN=LANG==='en';
 const T=(zh,en)=>EN?en:zh;
 

@@ -105,12 +105,14 @@
 
   /* ---------------- language preference ---------------- */
   var LS_KEY = "site.lang";
+  /* 语言默认:手动选择 > 中国时区→中文 > 英文(navigator.language 不再参与) */
   function getLang() {
-    var v = null;
-    try { v = localStorage.getItem(LS_KEY); } catch (e) {}
-    if (v === "zh" || v === "en") return v;
-    var n = (navigator.language || "").toLowerCase();
-    return n.indexOf("zh") === 0 ? "zh" : "en";
+    try{ var s = localStorage.getItem('site.lang'); if(s==='en'||s==='zh') return s; }catch(e){}
+    try{
+      var tz = (Intl.DateTimeFormat().resolvedOptions().timeZone) || '';
+      if(/^Asia\/(Shanghai|Urumqi|Chongqing|Harbin|Kashgar|Hong_Kong|Macau|Taipei)$/i.test(tz)) return 'zh';
+    }catch(e){}
+    return 'en';
   }
   var LANG = getLang();
 
