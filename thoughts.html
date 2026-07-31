@@ -53,8 +53,8 @@
   const $ = id => document.getElementById(id);
 
   $("lede").textContent = window.LANG === 'en'
-    ? `${T.length} essays on intent, data, safety, human nature, org design, and the dev process — most with a play-along interactive version.`
-    : `${T.length} 篇关于意图、数据、安全、人性、组织与开发流程的思考——多数附一个可「边玩边读」的互动版。`;
+    ? `${T.length} essays on entrepreneurship, intent, data, safety, human nature, org design, and the dev process — most with a play-along interactive version.`
+    : `${T.length} 篇关于创业、意图、数据、安全、人性、组织与开发流程的思考——多数附一个可「边玩边读」的互动版。`;
 
   $("grid").innerHTML = T.map(t => {
     const badge = t.play ? `<span class="play-badge">${window.t('th.badge')}</span>` : "";

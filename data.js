@@ -44,6 +44,15 @@ window.SITE = {
   // ▸ featured:true 的才在首页「一些思考」展示；其余仍是上线页面，靠各篇内部的相互链接访问。
   thoughts: [
     {
+      kicker: "Thinking · 创业",
+      title: "沙滩中央的冰淇淋摊",
+      desc: "硅谷式融资如何倒置了「先验证、再生长」的创业逻辑？当投资人、创始人和人才都在理性地追逐最优解，为什么最后可能合成一场集体归零。这是我这几年走过、看过、踩过之后的现场笔记。",
+      href: "thoughts/beach-stall.html",
+      play: "thoughts/beach-stall-play.html",
+      featured: true,
+      date: "2026-07-30"
+    },
+    {
       kicker: "Thinking · 意图",
       title: "意图，才是下一个输入",
       desc: "脑机接口、眼动、语音、肌电……炫酷的新输入设备，都败给了同一件事——习惯的惯性。真正的胜负手不在换设备，在读懂你此刻想做什么。这就是 intnt。",
@@ -1432,6 +1441,15 @@ window.SITE_EN = {
   },
 
   thoughts: [
+    {
+      kicker: "Thinking · Entrepreneurship",
+      title: "The Ice-Cream Stalls in the Middle of the Beach",
+      desc: "Why Silicon Valley-style fundraising inverts the logic of building — and how investors, founders, and talent can each act rationally yet add up to a collective zero. Field notes from what I have seen, tried, and learned.",
+      href: "thoughts/beach-stall.html",
+      play: "thoughts/beach-stall-play.html",
+      featured: true,
+      date: "2026-07-30"
+    },
     {
       kicker: "Thinking · Intent",
       title: "Intent is the next input",

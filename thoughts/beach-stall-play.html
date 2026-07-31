@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f7f3ee" />
+<title>沙滩中央的冰淇淋摊 · 互动版 · 好玩的东西</title>
+<meta name="description" content="边滚边玩：让理性的冰淇淋摊一个个挤进沙滩中央，算一算大团队和创始人加 AI 的跑道，亲手证伪找工 Agent，再决定每个角色该何时进场。" />
+<!-- 字体已本地化（Fraunces 自托管 + CJK 系统字体栈），见 assets/style.css -->
+<link rel="stylesheet" href="../assets/style.css" />
+<style>
+/* ════════ beach-stall 互动版局部样式 ════════ */
+.play{--bad:#c24532;--good:#3f7d5a;--warn:#bd8126;--sea:#b9dce4;--sand:#efd7a2}
+.play b,.play strong{font-weight:600}
+.play-hero{padding:30px 0 8px;max-width:780px;margin:0 auto}
+.play-hero h1{font-size:clamp(30px,5.4vw,48px);margin:6px 0 10px}
+.play-hero .dek{font-size:18px;color:var(--ink-soft);font-family:var(--serif);line-height:1.7}
+.play-hero .byline{font-size:13px;color:var(--ink-soft);margin-top:9px}
+.play-hero .scroll-hint{margin-top:18px;font-size:13px;color:var(--accent);letter-spacing:.04em;
+  display:inline-flex;align-items:center;gap:8px}
+.play-hero .scroll-hint .ar{animation:bs-bob 1.4s ease-in-out infinite}
+@keyframes bs-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(4px)}}
+.play-sec{max-width:780px;margin:0 auto;padding:48px 0}
+.play-sec + .play-sec{border-top:1px solid var(--line)}
+.play .sec-lede{font-size:19px;line-height:1.85;color:#3f3832;font-family:var(--serif);margin-bottom:26px}
+.play .sec-lede b{color:var(--ink)}
+.play .sec-foot{margin-top:22px;font-size:15.5px;line-height:1.8;color:#473f38;
+  padding:15px 20px;background:var(--bg-2);border-radius:12px}
+.play .sec-foot b{color:var(--accent)}
+.play .reveal{transition:opacity .7s ease,transform .7s ease}
+.play .reveal.armed{opacity:0;transform:translateY(22px)}
+.play .reveal.armed.in{opacity:1;transform:none}
+.play .widget{background:var(--card);border:1px solid var(--line);border-radius:18px;
+  padding:26px;box-shadow:0 22px 50px -34px rgba(60,40,25,.45)}
+.play .w-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+.play .w-head h3{font-size:21px;font-family:var(--serif)}
+.play .w-tag{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#fff;
+  background:var(--accent);border-radius:999px;padding:5px 12px;white-space:nowrap}
+.play .mini-note{font-size:12.5px;color:var(--ink-soft);line-height:1.65}
+.play .sim-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+.play button{font-family:var(--sans)}
+.play .action{border:0;border-radius:11px;padding:11px 16px;font-size:13.5px;font-weight:600;cursor:pointer}
+.play .action.primary{background:var(--accent);color:#fff}
+.play .action.ghost{background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.play .action:active{transform:scale(.98)}
+
+/* 沙滩 */
+.beach-shell{border:1px solid #dfc58d;border-radius:16px;overflow:hidden;background:var(--sand)}
+.beach-sea{height:28px;background:linear-gradient(180deg,#a9d3dd,var(--sea));position:relative}
+.beach-sea::after{content:"";position:absolute;left:0;right:0;bottom:-5px;height:10px;
+  background:radial-gradient(12px 7px at 8px 0,#fff 45%,transparent 49%) 0 0/22px 10px repeat-x;opacity:.8}
+.beach-track{height:188px;position:relative;touch-action:none;cursor:crosshair;
+  background:linear-gradient(180deg,#f3dda9,#ebcc8d)}
+.beach-track::before{content:"← 海滩左端";position:absolute;left:10px;bottom:8px;font-size:10px;color:#8f774c}
+.beach-track::after{content:"海滩右端 →";position:absolute;right:10px;bottom:8px;font-size:10px;color:#8f774c}
+.beach-center{position:absolute;left:50%;top:0;bottom:0;border-left:1px dashed rgba(130,82,35,.38)}
+.beach-center span{position:absolute;top:7px;left:6px;color:#8f6234;font-size:10px;white-space:nowrap}
+.guest{position:absolute;top:43px;width:6px;height:6px;border-radius:50%;background:#6d877a;transform:translateX(-50%);
+  transition:opacity .25s,background .25s}
+.guest.lost{background:#b55f50;opacity:.35}
+.stall{position:absolute;transform:translateX(-50%);border:1px solid rgba(117,72,27,.25);border-radius:10px;
+  background:#fff9ec;color:#5a3d21;padding:6px 8px;cursor:grab;box-shadow:0 5px 12px rgba(103,67,31,.15);
+  font-size:18px;line-height:1;transition:left .3s ease,bottom .2s ease,box-shadow .2s}
+.stall.sel{outline:2px solid var(--accent);box-shadow:0 7px 18px rgba(150,70,30,.28)}
+.stall small{display:block;font-size:9px;margin-top:4px;color:#775c3d;white-space:nowrap}
+.beach-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:14px}
+.beach-stat{background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px}
+.beach-stat b{display:block;color:var(--accent);font-family:var(--display);font-size:20px}
+.beach-stat span{font-size:11px;color:var(--ink-soft)}
+.stall-flows{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;font-size:11px;color:var(--ink-soft)}
+.stall-flows span{background:var(--bg-2);border-radius:999px;padding:4px 8px}
+
+/* 跑道 */
+.run-controls{display:grid;grid-template-columns:1fr 1fr;gap:14px 18px}
+.run-control{background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:13px 14px}
+.run-control label{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:10px}
+.run-control output{color:var(--accent);font-weight:600}
+.play input[type=range]{width:100%;appearance:none;-webkit-appearance:none;height:6px;border-radius:999px;
+  background:var(--bg-2);outline:none;cursor:pointer}
+.play input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;
+  background:var(--accent);border:3px solid #fff;box-shadow:0 3px 8px rgba(120,50,20,.4)}
+.run-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.run-card{border:1px solid var(--line);border-radius:14px;padding:17px;background:var(--bg)}
+.run-card.lean{border-color:#9cb5a4;background:#f2f7f3}
+.run-card h4{font-family:var(--serif);font-size:17px;margin-bottom:12px}
+.run-number{font-family:var(--display);font-size:34px;color:var(--bad);line-height:1}
+.run-card.lean .run-number{color:var(--good)}
+.run-label{font-size:11px;color:var(--ink-soft);margin:5px 0 13px}
+.run-detail{font-size:12px;line-height:1.7;color:var(--ink-soft)}
+.run-loop{margin-top:10px;font-weight:600;color:var(--ink);font-size:13px}
+
+/* 证伪管道 */
+.pipe-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:14px;flex-wrap:wrap}
+.pipe-count{font-size:12px;color:var(--ink-soft);background:var(--bg-2);padding:6px 10px;border-radius:999px}
+.pipeline{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;position:relative}
+.pipe-card{min-height:160px;text-align:left;border:1.5px solid var(--line);border-radius:12px;background:var(--bg);
+  padding:13px 11px;cursor:pointer;color:var(--ink);position:relative;transition:all .2s}
+.pipe-card:hover{border-color:var(--accent-soft);transform:translateY(-2px)}
+.pipe-card.ok{border-color:#8faf99;background:#eff6f1}
+.pipe-card.warn{border-color:#d8b26d;background:#fff8e8}
+.pipe-card.bad{border-color:#d38a7d;background:#fcedea}
+.pipe-card.dead:not(.bad){opacity:.32;filter:grayscale(.7)}
+.pipe-no{font-size:10px;color:var(--accent);font-weight:700;letter-spacing:.1em}
+.pipe-card h4{font-size:13px;line-height:1.4;margin:8px 0}
+.pipe-reality{font-size:11px;line-height:1.55;color:var(--ink-soft)}
+.pipe-status{position:absolute;right:8px;top:8px;font-size:13px}
+.pipe-verdict{margin-top:14px;border-radius:12px;padding:13px 15px;font-size:13px;line-height:1.65}
+.pipe-verdict.idle{background:var(--bg-2);color:var(--ink-soft)}
+.pipe-verdict.good{background:#eaf4ed;color:#315f43}
+.pipe-verdict.bad{background:#f9e5e1;color:#8f3023}
+
+/* 招人时间轴 */
+.role-picker{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}
+.role-card{border:1.5px solid var(--line);border-radius:12px;background:var(--bg);padding:11px;text-align:left;
+  cursor:pointer;color:var(--ink);min-height:76px}
+.role-card.sel{border-color:var(--accent);background:var(--card);box-shadow:0 8px 20px rgba(130,70,35,.11)}
+.role-card.good{border-color:#8faf99}
+.role-card.bad{border-color:#d38a7d}
+.role-card .rn{font-weight:600;font-size:13px}
+.role-card .rp{font-size:10.5px;color:var(--ink-soft);margin-top:5px;line-height:1.45}
+.mile-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+.mile{border:1px dashed var(--line);border-radius:13px;background:var(--card);padding:12px 9px;min-height:116px;
+  cursor:pointer;color:var(--ink);text-align:left}
+.mile:hover{border-color:var(--accent-soft)}
+.mile .mn{font-size:10px;color:var(--accent);font-weight:700}
+.mile h4{font-size:12.5px;line-height:1.4;margin:6px 0}
+.mile .placed{font-size:10.5px;color:var(--ink-soft);line-height:1.55}
+.hire-result{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.hire-metric{border:1px solid var(--line);border-radius:11px;background:var(--bg-2);padding:12px}
+.hire-metric b{display:block;font-family:var(--display);font-size:22px;color:var(--accent)}
+.hire-metric span{font-size:11px;color:var(--ink-soft)}
+.hire-msg{margin-top:12px;font-size:12.5px;line-height:1.65;color:var(--ink-soft)}
+
+.play-close{max-width:780px;margin:0 auto;padding:50px 0 12px;text-align:center;border-top:1px solid var(--line)}
+.play-close blockquote{font-family:var(--serif);font-size:clamp(20px,3.4vw,28px);line-height:1.65;margin:0 auto 28px}
+.play-close blockquote b{color:var(--accent);font-style:normal}
+@media(max-width:680px){
+  .play .widget{padding:18px 15px}
+  .run-controls,.run-compare,.hire-result{grid-template-columns:1fr}
+  .pipeline{grid-template-columns:1fr 1fr}
+  .pipe-card{min-height:132px}
+  .role-picker{grid-template-columns:1fr 1fr}
+  .mile-grid{grid-template-columns:1fr 1fr}
+  .beach-track{height:210px}
+}
+@media(max-width:420px){
+  .pipeline,.role-picker,.mile-grid{grid-template-columns:1fr}
+  .pipe-card,.mile{min-height:auto}
+}
+</style>
+<script>document.documentElement.classList.add('nav-ready')</script>
+<script defer src="../assets/site.js"></script>
+<script defer src="../assets/feedback.js"></script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects">项目</a>
+      <a href="../index.html#thoughts">思考</a>
+      <a href="../index.html#about">关于</a>
+    </div>
+  </div>
+</nav>
+
+<main class="play">
+  <header class="play-hero wrap">
+    <a class="back" href="../index.html#thoughts">← 全部思考</a>
+    <div class="mode-toggle">
+      <a href="beach-stall.html">📖 原文</a>
+      <a href="beach-stall-play.html" class="is-active">✦ 互动版</a>
+    </div>
+    <div class="kicker">Thinking · 创业 · 边玩边读</div>
+    <h1>沙滩中央的冰淇淋摊</h1>
+    <p class="dek">不用先相信结论——摆摊、算跑道、亲手把一个找工 Agent 证伪，再决定每个角色该什么时候进场。</p>
+    <p class="byline">胡凌冲 · 2026-07-30</p>
+    <div class="scroll-hint"><span class="ar">↓</span> 往下滚，四个论点都能亲手验证</div>
+  </header>
+
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">投资人理性地买幂律故事，创始人理性地讲故事，人才理性地涌进热门叙事。<b>每一方都没做错什么，沙滩中央却会越来越挤。</b></p>
+    <div class="widget">
+      <div class="w-head"><span class="w-tag">摆摊实验</span><h3>都理性，为什么会一起变穷？</h3></div>
+      <p class="mini-note">客人均匀站在海滩上，距离最近的摊超过耐心半径就不买。先点选一个摊，再点沙滩或直接拖动；然后逐个加入“理性竞争者”。私利评分看当轮可争取客流，也奖励中心可见性；每次新摊入场，旧摊会按观察到的客流向中心搬一步。</p>
+      <div class="beach-shell" style="margin-top:15px">
+        <div class="beach-sea"></div>
+        <div class="beach-track" id="beachTrack" aria-label="可摆放冰淇淋摊的沙滩">
+          <div class="beach-center"><span>沙滩中央</span></div>
+          <div id="beachGuests"></div>
+          <div id="beachStalls"></div>
+        </div>
+      </div>
+      <div class="beach-stats">
+        <div class="beach-stat"><b id="stallN">2</b><span>冰淇淋摊</span></div>
+        <div class="beach-stat"><b id="servedN">0</b><span>全沙滩成交</span></div>
+        <div class="beach-stat"><b id="lostN">0</b><span>因太远而流失</span></div>
+        <div class="beach-stat"><b id="centerN">0%</b><span>摊位中心聚集度</span></div>
+      </div>
+      <div class="stall-flows" id="stallFlows"></div>
+      <div class="sim-actions">
+        <button class="action primary" id="addStall" type="button">＋ 加入一个理性竞争者</button>
+        <button class="action ghost" id="resetBeach" type="button">↺ 回到两个分散的摊</button>
+      </div>
+    </div>
+    <p class="sec-foot" id="beachCaption">两个摊分守左右，覆盖了大部分客人。现在开始加入竞争者，看私利最优的位置怎样反过来缩小整片海滩的成交。</p>
+  </section>
+
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">很多团队不是因为产品需要钱才融资，而是因为先搭了团队和场地，才产生“必须融资才能活”的需要。<b>烧钱合理化了融资，融资又制造了烧钱。</b></p>
+    <div class="widget">
+      <div class="w-head"><span class="w-tag">跑道计算器</span><h3>同样 120 万，能买几次验证？</h3></div>
+      <div class="run-controls">
+        <div class="run-control">
+          <label for="teamRange"><span>团队人数</span><output id="teamOut">8 人</output></label>
+          <input id="teamRange" type="range" min="2" max="18" value="8" />
+        </div>
+        <div class="run-control">
+          <label for="salaryRange"><span>人均月薪</span><output id="salaryOut">¥30,000</output></label>
+          <input id="salaryRange" type="range" min="15000" max="60000" step="1000" value="30000" />
+        </div>
+        <div class="run-control">
+          <label for="rentRange"><span>场地月租</span><output id="rentOut">¥30,000</output></label>
+          <input id="rentRange" type="range" min="0" max="100000" step="5000" value="30000" />
+        </div>
+        <div class="run-control">
+          <label for="aiRange"><span>Claude / Codex 账户</span><output id="aiOut">3 个</output></label>
+          <input id="aiRange" type="range" min="1" max="12" value="3" />
+        </div>
+      </div>
+      <div class="run-compare">
+        <div class="run-card">
+          <h4>先搭大团队</h4>
+          <div class="run-number" id="bigMonths">—</div>
+          <div class="run-label">个月跑道</div>
+          <div class="run-detail" id="bigBurn">—</div>
+          <div class="run-loop" id="bigLoops">—</div>
+        </div>
+        <div class="run-card lean">
+          <h4>两位创始人 + AI</h4>
+          <div class="run-number" id="leanMonths">—</div>
+          <div class="run-label">个月跑道</div>
+          <div class="run-detail" id="leanBurn">—</div>
+          <div class="run-loop" id="leanLoops">—</div>
+        </div>
+      </div>
+      <p class="mini-note" style="margin-top:14px">简化模型：一轮需求验证按 1.5 个月计算；轻装模式不计创始人工资和办公室，只计 AI 账户与最低运营开支。这不是财务预测，而是把机会成本摊在桌面上。</p>
+    </div>
+    <p class="sec-foot" id="runCaption">拖动数字。真正昂贵的不是某一次失败，而是团队大到让你失去承认失败和重新开始的自由。</p>
+  </section>
+
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">“找工作很繁琐”只是观察，不是产品成立的证据。一个 Agent 必须连续穿过五道门；<b>任何一环红灯，都可能在技术或需求上把整条链证伪。</b></p>
+    <div class="widget">
+      <div class="w-head"><span class="w-tag">逐环翻牌</span><h3>把找工 Agent 做出来，再让现实回答</h3></div>
+      <div class="pipe-top">
+        <div>
+          <b id="pipeIdea">假设 1 · 自动找工作 Agent</b>
+          <p class="mini-note">依次点开五环。每张现实卡有多种可能，黄灯可以补课，红灯会让全链熄灭。</p>
+        </div>
+        <span class="pipe-count">已烧掉 <b id="loopUsed">0</b> 轮验证</span>
+      </div>
+      <div class="pipeline" id="pipeline"></div>
+      <div class="pipe-verdict idle" id="pipeVerdict">还没有验证。故事里的箭头都很顺，现实要一环一环点开。</div>
+      <div class="sim-actions">
+        <button class="action primary" id="pivotBtn" type="button">换一个需求重跑 →</button>
+        <button class="action ghost" id="pipeReset" type="button">↺ 重置本轮</button>
+      </div>
+      <p class="mini-note" id="pivotBudget" style="margin-top:12px"></p>
+    </div>
+    <p class="sec-foot"><b>支付，而不是支付意愿。</b>“做出来我可能会用”不是绿灯；真实用户把钱付进来，才说明你验证的不是礼貌、好奇或对新技术的兴奋。</p>
+  </section>
+
+  <section class="play-sec wrap reveal">
+    <p class="sec-lede">早期团队不是越完整越专业。需求风险项目最先要的是创始人、AI 和真实用户；等支付、迭代方向与增长管道出现，专业角色才按需进场。</p>
+    <div class="widget">
+      <div class="w-head"><span class="w-tag">安排进场</span><h3>这个人，应该在哪个里程碑加入？</h3></div>
+      <p class="mini-note">先点角色，再点时间轴阶段。放早了会缩短跑道；放在需求真正需要它的阶段会打勾。技术顾问是例外：任何阶段接入都合法。</p>
+      <div class="role-picker" id="rolePicker" style="margin-top:16px"></div>
+      <div class="mile-grid" id="mileGrid"></div>
+      <div class="hire-result">
+        <div class="hire-metric"><b id="placedN">0 / 6</b><span>已安排角色</span></div>
+        <div class="hire-metric"><b id="penaltyN">0.0 月</b><span>过早招人损失的跑道</span></div>
+      </div>
+      <div class="hire-msg" id="hireMsg">先选一张角色卡，再选择它的进场时点。</div>
+      <div class="sim-actions"><button class="action ghost" id="hireReset" type="button">↺ 重新排一次</button></div>
+    </div>
+    <p class="sec-foot">创始人在这个时代更像演唱会的指挥家：<b>不是先把所有乐手养在台上，而是在音乐走到那里时，把缺的资源准确接进来。</b></p>
+  </section>
+
+  <section class="play-close wrap reveal">
+    <blockquote>不是先拥有一支公司，才有资格寻找需求。<br>是先找到真实支付，<b>公司才开始有理由长出来</b>。</blockquote>
+    <a class="btn btn-primary" href="../index.html#contact">把你的真实需求讲给我们 →</a>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap"><p><a href="../index.html">← 回到首页</a> &nbsp;·&nbsp; <a href="beach-stall.html">读纯文字原文 📖</a></p></div>
+</footer>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); };
+  var clamp = function(v,a,b){ return Math.max(a,Math.min(b,v)); };
+  var yuan = function(n){ return "¥" + Math.round(n).toLocaleString("zh-CN"); };
+
+  /* ═══ 1. 沙滩模拟器 ═══ */
+  (function(){
+    var GUESTS = Array.from({length:49},function(_,i){ return 2 + i * 2; });
+    var PATIENCE = 17;
+    var stalls, selected, dragId = null;
+
+    function reset(){
+      stalls = [{id:1,x:24},{id:2,x:76}];
+      selected = 1;
+      render();
+    }
+    function flowsFor(list){
+      var flows = list.map(function(){ return 0; });
+      var served = [];
+      GUESTS.forEach(function(g){
+        var ds = list.map(function(s){ return Math.abs(s.x-g); });
+        var md = Math.min.apply(null,ds);
+        if (md > PATIENCE){ served.push(false); return; }
+        var winners = [];
+        ds.forEach(function(d,i){ if (Math.abs(d-md)<0.01) winners.push(i); });
+        winners.forEach(function(i){ flows[i] += 1/winners.length; });
+        served.push(true);
+      });
+      return {flows:flows,served:served,total:served.filter(Boolean).length};
+    }
+    function entrantScore(x){
+      var probe = stalls.concat([{id:999,x:x}]);
+      var r = flowsFor(probe);
+      var own = r.flows[r.flows.length-1];
+      var visibility = 19 * (1-Math.abs(x-50)/50);
+      return own + visibility;
+    }
+    function addCompetitor(){
+      if (stalls.length >= 10) return;
+      stalls.forEach(function(s){ s.x += (50-s.x)*0.2; });
+      var bestX=50,best=-Infinity;
+      for(var x=4;x<=96;x+=2){
+        var score=entrantScore(x);
+        if(score>best){best=score;bestX=x;}
+      }
+      var id=stalls.length+1;
+      stalls.push({id:id,x:bestX});
+      selected=id;
+      render();
+    }
+    function render(){
+      var r=flowsFor(stalls);
+      $("beachGuests").innerHTML=GUESTS.map(function(g,i){
+        return '<span class="guest'+(r.served[i]?'':' lost')+'" style="left:'+g+'%" title="'+(r.served[i]?'成交':'太远，离开')+'"></span>';
+      }).join("");
+      $("beachStalls").innerHTML=stalls.map(function(s,i){
+        return '<button type="button" class="stall'+(s.id===selected?' sel':'')+'" data-id="'+s.id+
+          '" style="left:'+s.x+'%;bottom:'+(36+(i%3)*29)+'px" aria-label="冰淇淋摊 '+s.id+'，位置 '+Math.round(s.x)+'">'+
+          '🍦<small>'+Math.round(r.flows[i]*10)/10+' 位客人</small></button>';
+      }).join("");
+      $("stallN").textContent=stalls.length;
+      $("servedN").textContent=r.total+" / "+GUESTS.length;
+      $("lostN").textContent=GUESTS.length-r.total;
+      var avg=stalls.reduce(function(sum,s){return sum+Math.abs(s.x-50);},0)/stalls.length;
+      var cluster=Math.round(100-clamp(avg/38*100,0,100));
+      $("centerN").textContent=cluster+"%";
+      $("stallFlows").innerHTML=r.flows.map(function(f,i){
+        return "<span>摊 "+(i+1)+"："+(Math.round(f*10)/10)+" 单</span>";
+      }).join("");
+      if(stalls.length>2){
+        $("beachCaption").innerHTML="现在有 <b>"+stalls.length+"</b> 个摊，中心聚集度 <b>"+cluster+
+          "%</b>；全沙滩成交 <b>"+r.total+"</b> 单。每个摊都在追自己的可见客流，边缘客人却正在从市场里消失。";
+      }else{
+        $("beachCaption").textContent="两个摊分守左右，覆盖了大部分客人。现在开始加入竞争者，看私利最优的位置怎样反过来缩小整片海滩的成交。";
+      }
+      $("addStall").disabled=stalls.length>=10;
+      $("addStall").textContent=stalls.length>=10?"沙滩中央已经挤满了":"＋ 加入一个理性竞争者";
+    }
+    $("beachStalls").addEventListener("pointerdown",function(e){
+      var b=e.target.closest(".stall"); if(!b)return;
+      selected=+b.dataset.id; dragId=selected; render(); e.preventDefault();
+    });
+    window.addEventListener("pointermove",function(e){
+      if(dragId==null)return;
+      var rect=$("beachTrack").getBoundingClientRect();
+      var s=stalls.find(function(x){return x.id===dragId;});
+      if(s){s.x=clamp((e.clientX-rect.left)/rect.width*100,2,98);render();}
+    });
+    window.addEventListener("pointerup",function(){dragId=null;});
+    $("beachTrack").addEventListener("click",function(e){
+      if(e.target.closest(".stall"))return;
+      var rect=this.getBoundingClientRect();
+      var s=stalls.find(function(x){return x.id===selected;});
+      if(s){s.x=clamp((e.clientX-rect.left)/rect.width*100,2,98);render();}
+    });
+    $("addStall").addEventListener("click",addCompetitor);
+    $("resetBeach").addEventListener("click",reset);
+    reset();
+  })();
+
+  /* ═══ 2. 跑道计算器 ═══ */
+  var leanRunway=0;
+  var updatePivotBudget=function(){};
+  (function(){
+    var ids=["teamRange","salaryRange","rentRange","aiRange"];
+    function render(){
+      var team=+$("teamRange").value,salary=+$("salaryRange").value;
+      var rent=+$("rentRange").value,ai=+$("aiRange").value;
+      var capital=1200000;
+      var bigBurn=team*salary+rent+ai*1400+12000;
+      var leanBurn=ai*1400+6000;
+      var bigMonths=capital/bigBurn;
+      leanRunway=capital/leanBurn;
+      $("teamOut").textContent=team+" 人";
+      $("salaryOut").textContent=yuan(salary);
+      $("rentOut").textContent=yuan(rent);
+      $("aiOut").textContent=ai+" 个";
+      $("bigMonths").textContent=bigMonths.toFixed(1);
+      $("leanMonths").textContent=leanRunway.toFixed(1);
+      $("bigBurn").textContent="每月烧掉 "+yuan(bigBurn);
+      $("leanBurn").textContent="每月烧掉 "+yuan(leanBurn)+"（创始人暂不领工资）";
+      $("bigLoops").textContent="约能完成 "+Math.floor(bigMonths/1.5)+" 轮验证";
+      $("leanLoops").textContent="约能完成 "+Math.floor(leanRunway/1.5)+" 轮验证";
+      $("runCaption").innerHTML="同样的启动资金，大团队跑道 <b>"+bigMonths.toFixed(1)+
+        "</b> 个月，轻装模式约 <b>"+leanRunway.toFixed(1)+"</b> 个月。真正昂贵的不是某次失败，而是失去重新开始的自由。";
+      updatePivotBudget();
+    }
+    ids.forEach(function(id){$(id).addEventListener("input",render);});
+    render();
+  })();
+
+  /* ═══ 3. 证伪管道 ═══ */
+  var pipelineLoops=0;
+  (function(){
+    var ideas=["自动找工作 Agent","行业文档协作台","餐厅采购对账助手","留学生租房材料助手"];
+    var run=0;
+    var states=[-1,-1,-1,-1,-1];
+    var STAGES=[
+      {name:"实时抓取岗位数据",results:[
+        {s:"ok",t:"开放 API 可用，但字段不统一，需要清洗。"},
+        {s:"warn",t:"官方 API 延迟 24 小时，“实时”承诺要降级。"},
+        {s:"bad",t:"关键平台没有公开入口，数据覆盖不足。"}]},
+      {name:"数据源合规",results:[
+        {s:"bad",t:"平台条款禁止自动抓取，合规红灯。"},
+        {s:"warn",t:"只能购买授权数据，成本需要重新核算。"},
+        {s:"ok",t:"已取得合作方书面授权，可持续使用。"}]},
+      {name:"用户背景画像",results:[
+        {s:"warn",t:"简历不足以表达偏好，需要用户补充大量信息。"},
+        {s:"ok",t:"用户愿意校正画像，推荐会越用越准。"},
+        {s:"bad",t:"敏感信息不能按当前方案保存，核心匹配失效。"}]},
+      {name:"匹配推荐",results:[
+        {s:"ok",t:"推荐前十里有六个被用户收藏。"},
+        {s:"warn",t:"相关不等于想投，用户仍要逐个判断。"},
+        {s:"bad",t:"用户认为推荐比自己搜索更差，不愿继续。"}]},
+      {name:"一键申请",results:[
+        {s:"bad",t:"站点验证码与反自动化机制让代理提交不可持续。"},
+        {s:"warn",t:"只能半自动填表，最后一步仍需用户确认。"},
+        {s:"ok",t:"目标平台允许授权提交，并返回可追踪状态。"}]}
+    ];
+    function statusIcon(s){return s==="ok"?"✓":s==="warn"?"!":s==="bad"?"×":"?";}
+    function reveal(i){
+      var options=STAGES[i].results;
+      states[i]=(states[i]+1)%options.length;
+      render();
+    }
+    function render(){
+      var firstBad=states.findIndex(function(v,i){return v>=0&&STAGES[i].results[v].s==="bad";});
+      $("pipeline").innerHTML=STAGES.map(function(stage,i){
+        var val=states[i],res=val>=0?stage.results[val]:null;
+        var dead=firstBad>=0&&i>firstBad;
+        return '<button type="button" class="pipe-card '+(res?res.s:"")+(dead?" dead":"")+'" data-i="'+i+'">'+
+          '<span class="pipe-status">'+statusIcon(res?res.s:"")+'</span><span class="pipe-no">0'+(i+1)+'</span>'+
+          '<h4>'+stage.name+'</h4><div class="pipe-reality">'+(res?res.t:"点击翻开现实卡")+"</div></button>";
+      }).join("");
+      Array.from($("pipeline").querySelectorAll(".pipe-card")).forEach(function(b){
+        b.addEventListener("click",function(){reveal(+b.dataset.i);});
+      });
+      var opened=states.filter(function(x){return x>=0;}).length;
+      var verdict=$("pipeVerdict");
+      if(firstBad>=0){
+        verdict.className="pipe-verdict bad";
+        verdict.innerHTML="第 <b>"+(firstBad+1)+"</b> 环出现红灯：<b>"+STAGES[firstBad].name+
+          "</b>。全链熄灭——这不是团队不够努力，而是当前实现路径已经被现实证伪。";
+      }else if(opened===STAGES.length){
+        verdict.className="pipe-verdict good";
+        verdict.innerHTML="五环暂时都能走通。下一道、也是最硬的门：<b>真实用户是否已经支付</b>。";
+      }else{
+        verdict.className="pipe-verdict idle";
+        verdict.textContent=opened?"已经翻开 "+opened+" 环。没有红灯不等于成立，继续往下验证。":"还没有验证。故事里的箭头都很顺，现实要一环一环点开。";
+      }
+      $("loopUsed").textContent=pipelineLoops;
+      $("pipeIdea").textContent="假设 "+(run+1)+" · "+ideas[run%ideas.length];
+      updatePivotBudget();
+    }
+    function pivot(){
+      pipelineLoops++;
+      run++;
+      states=[-1,-1,-1,-1,-1];
+      render();
+    }
+    updatePivotBudget=function(){
+      var remain=Math.max(0,Math.floor(leanRunway/1.5)-pipelineLoops);
+      if($("pivotBudget")) $("pivotBudget").textContent="按上面的轻装跑道估算，即使已经 pivot "+pipelineLoops+
+        " 次，仍约有 "+remain+" 轮低成本验证空间。便宜的失败，才换得来诚实的转向。";
+    };
+    $("pivotBtn").addEventListener("click",pivot);
+    $("pipeReset").addEventListener("click",function(){states=[-1,-1,-1,-1,-1];render();});
+    render();
+  })();
+
+  /* ═══ 4. 招人时间轴 ═══ */
+  (function(){
+    var MILES=["Demo 跑通","首个真实支付","迭代方向明确","增长管道跑通"];
+    var ROLES=[
+      {id:"eng",name:"工程师",ideal:2,cost:1.4,why:"方向明确后接替创始人的技术工作"},
+      {id:"mkt",name:"Marketing",ideal:3,cost:1.2,why:"有产品和管道后放大市场"},
+      {id:"hr",name:"HR",ideal:3,cost:0.9,why:"团队真正开始扩张时再建立组织"},
+      {id:"sales",name:"Sales",ideal:2,cost:1.1,why:"先由创始人卖出第一单，再复制销售"},
+      {id:"fund",name:"融资负责人",ideal:2,cost:1.0,why:"方向明确后为扩市场和团队供血"},
+      {id:"advisor",name:"技术顾问",ideal:null,cost:0,why:"按需审查，任何阶段都可以接入"}
+    ];
+    var selected="eng",placed={},lastMsg="";
+    function stateFor(r){
+      var p=placed[r.id];
+      if(p==null)return "";
+      if(r.ideal==null||p===r.ideal)return "good";
+      return p<r.ideal?"bad":"";
+    }
+    function penalty(){
+      return ROLES.reduce(function(sum,r){
+        var p=placed[r.id];
+        return sum+(p!=null&&r.ideal!=null&&p<r.ideal?(r.ideal-p)*r.cost:0);
+      },0);
+    }
+    function place(stage){
+      var r=ROLES.find(function(x){return x.id===selected;});
+      if(!r)return;
+      placed[r.id]=stage;
+      if(r.ideal==null) lastMsg="技术顾问放在任何阶段都合法：他按需审查，不需要先成为固定编制。";
+      else if(stage<r.ideal) lastMsg=r.name+"进场偏早：在 "+MILES[stage]+" 阶段，它还没有足够明确的问题可解决，跑道先被工资吃掉了。";
+      else if(stage===r.ideal) lastMsg="放对了：等到“"+MILES[stage]+"”，"+r.name+"的专业性开始有明确的放大对象。";
+      else lastMsg=r.name+"放得偏晚：不会提前烧跑道，但可能错过放大已经验证过的机会。";
+      render();
+    }
+    function render(){
+      $("rolePicker").innerHTML=ROLES.map(function(r){
+        var p=placed[r.id],st=stateFor(r);
+        return '<button type="button" class="role-card '+(r.id===selected?"sel ":"")+st+'" data-id="'+r.id+'">'+
+          '<div class="rn">'+(st==="good"?"✓ ":st==="bad"?"! ":"")+r.name+'</div><div class="rp">'+
+          (p==null?r.why:"已放在："+MILES[p])+"</div></button>";
+      }).join("");
+      Array.from($("rolePicker").querySelectorAll(".role-card")).forEach(function(b){
+        b.addEventListener("click",function(){selected=b.dataset.id;render();});
+      });
+      $("mileGrid").innerHTML=MILES.map(function(m,i){
+        var here=ROLES.filter(function(r){return placed[r.id]===i;}).map(function(r){return r.name;});
+        return '<button type="button" class="mile" data-i="'+i+'"><span class="mn">阶段 0'+(i+1)+'</span><h4>'+m+
+          '</h4><div class="placed">'+(here.length?here.join(" · "):"点这里放入所选角色")+"</div></button>";
+      }).join("");
+      Array.from($("mileGrid").querySelectorAll(".mile")).forEach(function(b){
+        b.addEventListener("click",function(){place(+b.dataset.i);});
+      });
+      $("placedN").textContent=Object.keys(placed).length+" / "+ROLES.length;
+      $("penaltyN").textContent=penalty().toFixed(1)+" 月";
+      $("hireMsg").textContent=lastMsg||"当前选中“"+ROLES.find(function(r){return r.id===selected;}).name+"”。点一个里程碑安排它进场。";
+    }
+    $("hireReset").addEventListener("click",function(){placed={};selected="eng";lastMsg="";render();});
+    render();
+  })();
+
+  /* ═══ 滚动渐入：默认可见，JS 成功后才武装 ═══ */
+  (function(){
+    var els=document.querySelectorAll(".reveal");
+    if(!("IntersectionObserver" in window))return;
+    Array.prototype.forEach.call(els,function(el){el.classList.add("armed");});
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){if(en.isIntersecting){en.target.classList.add("in");io.unobserve(en.target);}});
+    },{threshold:.08});
+    Array.prototype.forEach.call(els,function(el){io.observe(el);});
+  })();
+})();
+</script>
+</body>
+</html>
