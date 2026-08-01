@@ -361,6 +361,7 @@ function resolveSiteLang(){
 }
 const LANG=resolveSiteLang();
 const EN=LANG==='en';
+document.documentElement.lang=EN?'en':'zh-CN';
 const T=(zh,en)=>EN?en:zh;
 
 /* ════════════════ 小工具 ════════════════ */
@@ -994,7 +995,6 @@ function renderStatuteChip(){
 
 /* ════════════════ 语言应用：标题 / 切换控件 / 静态 data-en 替换 ════════════════ */
 (function applyLang(){
-  document.documentElement.lang=EN?'en':'zh-CN';
   document.title=T('把押金追回来 · 押金异议函生成器','Get Your Deposit Back · Deposit Demand Letter Generator');
   const sw=$('#langsw');
   if(sw) $$('button',sw).forEach(b=>{

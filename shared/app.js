@@ -56,6 +56,7 @@ function resolveSiteLang(){
 }
 GG.LANG = resolveSiteLang();
 GG.EN = GG.LANG === 'en';
+document.documentElement.lang = GG.EN ? 'en' : 'zh-CN';
 GG.T = function(zh, en){ return (GG.EN && en != null) ? en : zh; };
 GG.setLang = function(v){ try{ localStorage.setItem('site.lang', v); }catch(e){} location.reload(); };
 GG.langToggle = function(){

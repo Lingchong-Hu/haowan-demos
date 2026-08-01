@@ -31,9 +31,18 @@
     return 'en';
   }
 
-  // 门户页由 i18n.js 设 window.LANG；demo / 独立页没有 i18n.js——用同一份偏好补齐
+  /* 注入挂件跟随正文语言；页面未声明时才退回全站默认。 */
+  function resolveWidgetLang(){
+    var lang = '';
+    try { lang = (document.documentElement.lang || '').toLowerCase(); } catch (e) {}
+    if (lang.indexOf('zh') === 0) return 'zh';
+    if (lang.indexOf('en') === 0) return 'en';
+    return resolveSiteLang();
+  }
+
+  // 门户页由 i18n.js 设 window.LANG；demo / 独立页按正文 lang 补齐，缺失时再走全站默认
   if (window.LANG !== 'en' && window.LANG !== 'zh') {
-    window.LANG = resolveSiteLang();
+    window.LANG = resolveWidgetLang();
   }
 
   // 本地预览（tools/serve.py 带 mock 接口）走同源；线上走 Cloudflare Worker

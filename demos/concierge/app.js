@@ -24,6 +24,7 @@
   }
   let LANG = resolveSiteLang();
   const EN = LANG === 'en';
+  document.documentElement.lang = EN ? 'en' : 'zh-CN';
   const T = (zh, en) => (EN ? en : zh);
 
   const C = window.YUE_CONFIG;
@@ -322,7 +323,6 @@
   input.focus();
 
   /* ---------------- 双语：EN 时应用静态 data-en* 文案 ---------------- */
-  document.documentElement.lang = EN ? 'en' : 'zh';
   if (EN) {
     document.querySelectorAll('[data-en]').forEach((n) => { n.textContent = n.getAttribute('data-en'); });
     document.querySelectorAll('[data-en-ph]').forEach((n) => { n.placeholder = n.getAttribute('data-en-ph'); });

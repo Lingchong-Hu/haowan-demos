@@ -258,6 +258,7 @@ function resolveSiteLang(){
 }
 let __lang = resolveSiteLang();
 const EN = __lang==='en';
+document.documentElement.lang = EN ? 'en' : 'zh-CN';
 function T(zh,en){ return EN ? en : zh; }
 
 /* ════════════════ 工具（照抄 _SHARED.md，勿改） ════════════════ */
@@ -880,7 +881,6 @@ home();
 
 /* ════════════════ 语言：标题 / 静态 HTML 文案 / 切换控件 ════════════════ */
 document.title = T('签约材料清单生成 · AnyHome','Lease Checklist Builder · AnyHome');
-document.documentElement.lang = EN ? 'en' : 'zh-CN';
 if(EN){
   document.querySelectorAll('[data-en]').forEach(n=>{ n.textContent = n.getAttribute('data-en'); });
   document.querySelectorAll('[data-en-ph]').forEach(n=>{ n.setAttribute('placeholder', n.getAttribute('data-en-ph')); });

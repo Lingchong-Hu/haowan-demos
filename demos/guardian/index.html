@@ -29,6 +29,7 @@
     return 'en';
   }
   var lang = resolveSiteLang();
+  document.documentElement.lang = lang === "en" ? "en" : "zh-CN";
 
   /* ---------- language switcher (shown in both modes) ---------- */
   function buildSwitcher() {
@@ -595,7 +596,6 @@
     };
   }
 
-  document.documentElement.lang = "en";
   syncTitle();
   walk(document.documentElement);
   window.__ovlTr = trText; /* debug hook */

@@ -115,6 +115,7 @@
     return 'en';
   }
   var LANG = getLang();
+  document.documentElement.lang = LANG === "en" ? "en" : "zh-CN";
 
   /* ---------------- language switcher (shown in BOTH languages) ---------------- */
   function mountSwitcher() {
@@ -262,8 +263,6 @@
     attributes: true,
     attributeFilter: ATTRS
   });
-
-  document.documentElement.setAttribute("lang", "en");
 
   function initial() { walk(document.documentElement); }
   if (document.readyState === "loading") {

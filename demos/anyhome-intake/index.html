@@ -283,6 +283,7 @@ function resolveSiteLang(){
 }
 let LANG = resolveSiteLang();
 const EN = LANG==='en';
+document.documentElement.lang = EN ? 'en' : 'zh-CN';
 const T = function(zh,en){ return EN ? en : zh; };
 
 /* ════════════════ 工具（照抄 _SHARED.md，勿改实现） ════════════════ */
@@ -1066,7 +1067,6 @@ window.INTAKE_DEV = {
 
 /* ════════════════ 启动 ════════════════ */
 document.title = T('AnyHome · 帮你理清楚租房需求','AnyHome · Get your rental needs sorted');
-document.documentElement.lang = EN ? 'en' : 'zh-CN';
 // 静态 HTML 文案：EN 时应用 data-en / data-en-ph / data-en-title
 if(EN){
   document.querySelectorAll('[data-en]').forEach(n=>{ n.textContent = n.getAttribute('data-en'); });

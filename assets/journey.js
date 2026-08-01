@@ -69,10 +69,15 @@
     }catch(e){}
     return 'en';
   }
-  var en = window.LANG === 'en';
-  if (window.LANG !== 'en' && window.LANG !== 'zh') {   /* demo/思考页无 i18n.js——读同一份偏好 */
-    en = resolveSiteLang() === 'en';
+  /* 注入挂件跟随正文语言；页面未声明时才退回全站默认。 */
+  function resolveWidgetLang(){
+    var lang = '';
+    try { lang = (document.documentElement.lang || '').toLowerCase(); } catch (e) {}
+    if (lang.indexOf('zh') === 0) return 'zh';
+    if (lang.indexOf('en') === 0) return 'en';
+    return resolveSiteLang();
   }
+  var en = resolveWidgetLang() === 'en';
   function rewriteThoughtClassicLinks() {
     if (mode !== 'thought') return;
     try {
