@@ -28,7 +28,17 @@
   const T = (zh, en) => (EN ? en : zh);
 
   const C = window.YUE_CONFIG;
-  const KEY_LS = 'saltwater_anthropic_key';
+  const KEY_LS = 'haowan_anthropic_key';
+  const LEGACY_KEY_LS = 'saltwater_anthropic_key';
+  function migrateLegacyKey(store) {
+    try {
+      const shared = store.getItem(KEY_LS) || '';
+      const legacy = store.getItem(LEGACY_KEY_LS) || '';
+      if (legacy && !shared) store.setItem(KEY_LS, legacy);
+      store.removeItem(LEGACY_KEY_LS);
+    } catch (_) {}
+  }
+  migrateLegacyKey(localStorage);
 
   const $ = (s) => document.querySelector(s);
   const thread = $('#thread');

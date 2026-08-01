@@ -234,6 +234,8 @@
       var ct2 = el('input');
       ct2.placeholder = en ? 'WeChat / email' : '微信 / 邮箱';
       ct2.maxLength = 120;
+      var err2 = el('p', 'gg-fb-err', '');
+      err2.style.display = 'none';
       var yes = el('button', 'gg-fb-send', en ? 'Leave it — talk to me' : '留下，等你们来聊 →');
       var no = el('button', 'gg-fb-note', en ? 'Maybe later' : '这次先不了');
       no.style.cssText = 'display:block;margin:8px auto 0;background:none;border:0;cursor:pointer;text-decoration:underline';
@@ -241,12 +243,26 @@
         var v = ct2.value.trim();
         if (!v) { ct2.focus(); return; }
         yes.disabled = true;
+        err2.style.display = 'none';
         post('/feedback', { slug: SLUG, text: '[补充联系方式] ' + origText.slice(0, 40), contact: v })
-          .catch(function () {})
-          .then(function () { showOk(); });
+          .then(function (r) {
+            if (!r || !r.ok) throw new Error('HTTP_FAIL');
+            return r.json();
+          })
+          .then(function (r) {
+            if (!r || !r.ok) throw new Error((r && r.error) || 'fail');
+            showOk();
+          })
+          .catch(function () {
+            yes.disabled = false;
+            err2.textContent = t.fail; err2.style.display = '';
+            ct2.focus();
+          });
       };
       no.onclick = showOk;
-      panel.appendChild(h2); panel.appendChild(sub); panel.appendChild(ct2);
+      panel.appendChild(h2); panel.appendChild(sub);
+      panel.appendChild(err2);
+      panel.appendChild(ct2);
       panel.appendChild(yes); panel.appendChild(no);
       ct2.focus();
     }

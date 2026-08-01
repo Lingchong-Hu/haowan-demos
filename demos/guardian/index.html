@@ -61,6 +61,75 @@
   if (document.body) buildSwitcher();
   else document.addEventListener("DOMContentLoaded", buildSwitcher);
 
+  /* ---------- emergency-action disclaimer (both languages; bundle untouched) ---------- */
+  var EM_NOTICE_ID = "guardian-emergency-demo-notice";
+  var emNoticeObserver = null;
+  var emNoticeScheduled = false;
+  function emergencyNoticeText() {
+    return /^en\b/i.test(document.documentElement.lang || "")
+      ? "Demo sandbox: no real 120/emergency call is made"
+      : "演示沙盘:不会真实拨打或对接 120";
+  }
+  function emergencyNoticeTarget() {
+    var nodes = document.querySelectorAll("button,h1,h2,h3,h4,p");
+    var re = /120|一键通|急救|emergency|one-touch|simulated dispatch/i;
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      if (node.id === EM_NOTICE_ID || !re.test((node.textContent || "").trim())) continue;
+      var target = node.closest && node.closest('[role="dialog"],.modal,.sheet,.card,.panel');
+      if (target) return target;
+    }
+    return null;
+  }
+  function mountEmergencyNotice() {
+    emNoticeScheduled = false;
+    if (!document.body) return;
+    var notice = document.getElementById(EM_NOTICE_ID);
+    if (!notice) {
+      notice = document.createElement("div");
+      notice.id = EM_NOTICE_ID;
+      notice.setAttribute("role", "note");
+      notice.setAttribute("data-no-i18n", "");
+    }
+    var noticeText = emergencyNoticeText();
+    if (notice.textContent !== noticeText) notice.textContent = noticeText;
+    var target = emergencyNoticeTarget();
+    try {
+      if (target) {
+        var targetStyle =
+          "position:relative;z-index:2;margin:0 0 12px;padding:9px 12px;border:1px solid var(--alert,#b94a3d);" +
+          "border-radius:10px;background:var(--alert-soft,#fff1ef);color:var(--alert,#8f3028);" +
+          "font:700 12px/1.45 system-ui,sans-serif;text-align:center;";
+        if (notice.getAttribute("style") !== targetStyle) notice.setAttribute("style", targetStyle);
+        if (notice.parentNode !== target) target.insertBefore(notice, target.firstChild);
+      } else {
+        var fallbackStyle =
+          "position:fixed;left:50%;top:8px;transform:translateX(-50%);z-index:2147483646;" +
+          "max-width:calc(100vw - 24px);padding:9px 13px;border:1px solid var(--alert,#b94a3d);" +
+          "border-radius:10px;background:var(--alert-soft,#fff1ef);color:var(--alert,#8f3028);" +
+          "box-shadow:0 5px 20px rgba(0,0,0,.12);font:700 12px/1.45 system-ui,sans-serif;text-align:center;";
+        if (notice.getAttribute("style") !== fallbackStyle) notice.setAttribute("style", fallbackStyle);
+        if (notice.parentNode !== document.body) document.body.appendChild(notice);
+      }
+    } catch (e) {
+      try { if (notice.parentNode !== document.body) document.body.appendChild(notice); } catch (_) {}
+    }
+  }
+  function scheduleEmergencyNotice() {
+    if (emNoticeScheduled) return;
+    emNoticeScheduled = true;
+    window.setTimeout(mountEmergencyNotice, 0);
+  }
+  function startEmergencyNotice() {
+    mountEmergencyNotice();
+    if (typeof MutationObserver === "function" && !emNoticeObserver) {
+      emNoticeObserver = new MutationObserver(scheduleEmergencyNotice);
+      emNoticeObserver.observe(document.body, { childList: true, subtree: true });
+    }
+  }
+  if (document.body) startEmergencyNotice();
+  else document.addEventListener("DOMContentLoaded", startEmergencyNotice);
+
   if (lang !== "en") return; /* zh mode: nothing below runs */
 
   /* ---------- exact dictionary: full runtime text-node contents ---------- */
@@ -89,7 +158,7 @@
     "同楼，步行 1 分钟": "Same building, 1-min walk",
     "社区网格员 · 曹杨新村街道": "Community grid worker · Caoyang Xincun Subdistrict",
     "工作日 08:00–20:00 在岗": "On duty weekdays 08:00–20:00",
-    "急救中心": "Emergency center (120)",
+    "急救中心": "Simulated emergency center (demo)",
     "上海": "Shanghai", "普陀区 · 曹杨新村": "Putuo District · Caoyang Xincun",
     "曹杨新村街道": "Caoyang Xincun Subdistrict",
     "曹杨新村街道 · 三网格": "Caoyang Xincun Subdistrict · Grid 3",
@@ -121,7 +190,7 @@
     /* levels */
     "安好": "All good", "留意": "Watch", "待确认": "Awaiting check-in",
     "子女介入": "Family step-in", "邻里响应": "Neighbor response",
-    "社区网格员": "Community grid worker", "急救协助": "Emergency assistance",
+    "社区网格员": "Community grid worker", "急救协助": "Simulated emergency assistance (demo)",
     /* timeline / toasts (static) */
     "请秀兰报平安后仍未回应，需要你来看看": "No response after the check-in request — please step in",
     "小敏想知道您今天好不好": "Xiaomin wants to know how you're doing today",
@@ -134,8 +203,8 @@
     "秀兰按下了求助，请尽快联系她": "Xiulan pressed Help — contact her right away",
     "好的，您没事就好": "Okay — glad you're all right",
     "秀兰取消了求助，她没事": "Xiulan cancelled the help request — she's fine",
-    "，并对接「一键通」通道": ", linked to the \"One-Touch\" channel",
-    "已请求急救协助（120）": "Emergency assistance (120) requested",
+    "，并对接「一键通」通道": ", with a simulated \"One-Touch\" handoff (demo)",
+    "已请求急救协助（120）": "Simulated 120 dispatch requested (demo)",
     "已出发，正在前往": "Set off — on the way",
     "已到达，正在核实": "Arrived — verifying",
     "上门确认平安，守护解除": "Visit confirmed safe — guardianship cleared",
@@ -186,12 +255,12 @@
     "夜间更宽松": "More relaxed at night",
     "夜间（22–7 点）阈值自动放宽，避免睡觉误报": "Thresholds auto-relax at night (22:00–07:00) to avoid false alarms during sleep",
     "智能家居与平台": "Smart home & platforms",
-    "对接上海养老平台「一键通」": "Connect to Shanghai eldercare platform \"One-Touch\"",
-    "急救升级时联动社区一键通通道": "Link the community One-Touch channel on emergency escalation",
+    "对接上海养老平台「一键通」": "Simulate Shanghai eldercare platform \"One-Touch\" handoff",
+    "急救升级时联动社区一键通通道": "Simulate the community One-Touch handoff on emergency escalation",
     "守护网络与升级": "Guardian network & escalation",
     "决定升级阶梯怎么走。": "Decide how the escalation ladder works.",
     "启用社区网格员层": "Enable community grid-worker tier",
-    "关闭后，邻里无法处理时可直接请急救（跳过网格员）": "If off, emergency services can be requested directly when neighbors cannot help (skipping the grid worker)",
+    "关闭后，邻里无法处理时可直接请急救（跳过网格员）": "If off, a simulated emergency dispatch can be requested when neighbors cannot help (skipping the grid worker)",
     "隐私与数据": "Privacy & data",
     "默认最小化采集，尊重老人。": "Minimal data collection by default, respecting the elder.",
     "位置守护": "Location guardianship",
@@ -251,8 +320,8 @@
     "王阿姨正在前往，保持手机畅通。": "Auntie Wang is on her way — keep your phone handy.",
     "查看": "View",
     "社区网格员处理中": "Community grid worker handling it",
-    "已请求急救协助": "Emergency assistance requested",
-    "正在通过「一键通」对接急救。": "Connecting to emergency services via \"One-Touch\".",
+    "已请求急救协助": "Simulated emergency dispatch requested (demo)",
+    "正在通过「一键通」对接急救。": "Simulated 120 dispatch via \"One-Touch\" (demo).",
     /* health record */
     "健康档案": "Health record", "紧急医疗卡": "Emergency medical card",
     "可出示给急救": "Show to responders",
@@ -289,15 +358,15 @@
     "，今天午后比平时安静一些": ", though this afternoon is a bit quieter than usual",
     /* network */
     "守护网络": "Guardian network",
-    "升级时先提醒家人，确认联系不上才请邻里 → 社区网格员 → 急救，绝不自动越级。": "Escalation alerts family first; only when they're confirmed unreachable does it go neighbor → community grid worker → emergency services. It never skips a level automatically.",
+    "升级时先提醒家人，确认联系不上才请邻里 → 社区网格员 → 急救，绝不自动越级。": "Escalation alerts family first; only when they're confirmed unreachable does the demo proceed neighbor → community grid worker → simulated emergency dispatch. It never skips a level automatically.",
     "微信邀请（占位）": "WeChat invite (placeholder)",
     "＋ 邀请新成员（微信）": "+ Invite a member (WeChat)",
     "首页": "Home", "节律": "Rhythm", "升级": "Escalate", "网络": "Network",
     /* escalation center */
-    "确认请求急救协助？": "Confirm emergency assistance request?",
-    "将通过「一键通」对接 120。请确认确实联系不上、且邻里/网格员也无法处理。": "This connects to 120 via \"One-Touch\". Confirm she is truly unreachable and neighbors / the grid worker cannot help.",
+    "确认请求急救协助？": "Confirm simulated emergency request?",
+    "将通过「一键通」对接 120。请确认确实联系不上、且邻里/网格员也无法处理。": "This demo simulates a 120 dispatch via \"One-Touch\". Confirm she is truly unreachable and neighbors / the grid worker cannot help.",
     "先不用，继续等等": "Not yet — keep waiting",
-    "确认请求急救": "Confirm emergency request",
+    "确认请求急救": "Confirm simulated emergency request",
     "升级中心": "Escalation Center",
     "系统不会自动联系任何人，每一步都由你决定。": "The system never contacts anyone automatically — every step is your call.",
     "目前一切正常": "All is well right now",
@@ -309,10 +378,10 @@
     "还是不放心，请社区网格员 →": "Still worried — request the community grid worker →",
     "③ 社区网格员": "③ Community grid worker",
     "由街道社区网格员上门探访（中国特色兜底层）。": "A subdistrict grid worker makes a home visit (China's community safety-net tier).",
-    "仍需要，请求急救协助 →": "Still needed — request emergency assistance →",
-    "④ 急救协助": "④ Emergency assistance",
-    "已通过「一键通」对接 120，紧急医疗卡已就绪。": "Connected to 120 via \"One-Touch\"; the emergency medical card is ready.",
-    "前面都无法处理时，才请求急救。": "Request emergency services only when earlier steps cannot resolve it.",
+    "仍需要，请求急救协助 →": "Still needed — simulate emergency dispatch →",
+    "④ 急救协助": "④ Simulated emergency dispatch (demo)",
+    "已通过「一键通」对接 120，紧急医疗卡已就绪。": "Simulated 120 dispatch (demo); the emergency medical card is ready.",
+    "前面都无法处理时，才请求急救。": "Simulate emergency dispatch only when earlier steps cannot resolve it.",
     "一旦回应「我很好」，所有升级会立刻解除。": " — once she responds \"I'm fine\", every escalation clears immediately.",
     "已派单，等待网格员接收": "Dispatched — awaiting the grid worker",
     "网格员已接单": "Grid worker accepted",
@@ -370,7 +439,7 @@
     "子女端 → 升级中心": "Family view → Escalation Center",
     "，手动逐级：联系不上 → 邻里 → ": ", then escalate manually: unreachable → neighbor → ",
     "社区网格员（派单）": "community grid worker (dispatch)",
-    " → 急救。": " → emergency services.",
+    " → 急救。": " → simulated emergency dispatch (demo).",
     "网格员端": "Grid-worker view",
     " 接单、上门、确认平安 —— 整个守护闭环解除。": " to accept, visit, and confirm safe — closing the whole guardianship loop.",
     /* substring-oriented fragments (dynamic sentence parts) */
@@ -384,8 +453,8 @@
     " 已接单": " accepted the task",
     "已到达，正在上门核实": "has arrived and is verifying in person",
     "上门确认秀兰平安，守护已解除": "confirmed in person that Xiulan is safe — guardianship cleared",
-    " 反馈：需进一步协助，建议请求急救": " reports: further assistance needed — emergency assistance recommended",
-    "反馈：需进一步协助，建议请求急救": " reports: further assistance needed — emergency assistance recommended",
+    " 反馈：需进一步协助，建议请求急救": " reports: further assistance needed — simulated emergency dispatch recommended (demo)",
+    "反馈：需进一步协助，建议请求急救": " reports: further assistance needed — simulated emergency dispatch recommended (demo)",
     "已接到上门探访请求。": " has received the home-visit request.",
     "最近活动 ": "Last activity ",
     "都有在用": " all in use",

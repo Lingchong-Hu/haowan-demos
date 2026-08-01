@@ -9,6 +9,7 @@
 (function(){
 const SLUG = 'dinner';
 const F = window.FOOD;
+const STORE_API = window.FOOD_STATE;
 const ING = F.ING, STAPLES = F.STAPLES;
 const STORE = 'food_state_v1';
 const DIFF = { easy:GG.T('简单','Easy'), medium:GG.T('中等','Medium'), hard:GG.T('有点挑战','A bit tricky') };
@@ -227,12 +228,9 @@ function injectStyle(){
 }
 
 /* ════════ 状态 / localStorage ════════ */
-function load(){ try{ return JSON.parse(localStorage.getItem(STORE)); }catch(e){ return null; } }
-function save(){ try{ localStorage.setItem(STORE, JSON.stringify(state)); }catch(e){} }
-function freshState(){
-  return { fridge: F.FRIDGE_SEED.map(x=>Object.assign({}, x)),
-    shopping:[], saved:{yuan:86, kg:3.2}, mode:'tonight', seen:true };
-}
+function load(){ try{ return STORE_API.load(localStorage, STORE, F); }catch(e){ return null; } }
+function save(){ try{ STORE_API.save(localStorage, STORE, state); }catch(e){} }
+function freshState(){ return STORE_API.fresh(F); }
 
 /* ════════ 新鲜度引擎 ════════ */
 function shelfOf(key){ return (ING[key] && ING[key].shelf) || 14; }
@@ -247,19 +245,23 @@ function band(it){
 function bandColor(b){ return b? (b.k==='red'?'var(--bad)':b.k==='yellow'?'var(--warn)':'var(--good)') : 'var(--good)'; }
 function ringPct(it){ const d=daysLeft(it), s=shelfOf(it.key); return Math.max(0, Math.min(100, Math.round(d/s*100))); }
 function findItem(key){ return state.fridge.find(it=>it.key===key); }
+function itemName(it){ return STORE_API.ingredientName(it, F, GG.LANG); }
+function itemUnit(it){ return STORE_API.unitText(it, F, GG.LANG); }
+function shoppingName(it){ return STORE_API.shoppingName(it, F, GG.LANG); }
+function shoppingCat(it){ return STORE_API.shoppingCat(it, F); }
 function urgent(){
   return state.fridge.filter(it=>!it.staple && it.n>0)
     .map(it=>({it, b:band(it), d:daysLeft(it)}))
     .filter(o=>o.b && o.b.k!=='green').sort((a,b)=>a.d-b.d);
 }
-function urgentLabels(){ return urgent().map(o=>(ING[o.it.key]||{}).label).filter(Boolean); }
+function urgentLabels(){ return urgent().map(o=>itemName(o.it)).filter(Boolean); }
 function fridgeKeySet(){
-  const s=new Set(); state.fridge.forEach(it=>{ if(it.n>0) s.add(it.key); }); STAPLES.forEach(k=>s.add(k)); return s;
+  const s=new Set(); state.fridge.forEach(it=>{ if(it.n>0 && it.key) s.add(it.key); }); STAPLES.forEach(k=>s.add(k)); return s;
 }
 
 /* ════════ 名称/品类工具 ════════ */
 function guessEmoji(name){
-  for(const k in ING){ if(ING[k].label && name.indexOf(ING[k].label)>=0) return ING[k].emoji; }
+  const known = mapKey(name); if(known) return ING[known].emoji;
   const map={鸡胸:'🍗',鸡腿:'🍗',鸡:'🍗',牛:'🐄',三文鱼:'🐟',鱼:'🐟',虾:'🦐',豆腐:'🧈',西兰花:'🥦',生菜:'🥬',
     菠菜:'🥬',面包:'🍞',米:'🍚',饭:'🍚',面:'🍜',燕麦:'🥣',牛奶:'🥛',酸奶:'🍶',香蕉:'🍌',蓝莓:'🫐',牛油果:'🥑',
     花生:'🥜',核桃:'🥜',玉米:'🌽',土豆:'🥔',洋葱:'🧅',胡萝卜:'🥕',番茄:'🍅',黄瓜:'🥒',青椒:'🫑',香菇:'🍄',
@@ -282,10 +284,12 @@ function isCondiment(name){
     || (GG.EN && /\b(salt|oil|soy sauce|sugar|vinegar|chili|chile|sichuan pepper(corn)?s?|black pepper|white pepper|garlic|ginger|scallion|cooking wine|starch|honey|sesame)\b/i.test(name));
 }
 function nameInFridge(name){
-  return state.fridge.some(it=>it.n>0 && ING[it.key] && ING[it.key].label && name.indexOf(ING[it.key].label)>=0)
-    || STAPLES.some(k=> ING[k] && name.indexOf(ING[k].label)>=0);
+  const key=mapKey(name);
+  if(key) return state.fridge.some(it=>it.n>0 && it.key===key) || STAPLES.includes(key);
+  const raw=String(name||'').trim().toLocaleLowerCase();
+  return !!raw && state.fridge.some(it=>it.n>0 && !it.key && String(it.rawName||'').trim().toLocaleLowerCase()===raw);
 }
-function mapKey(name){ for(const k in ING){ if(ING[k].label && name.indexOf(ING[k].label)>=0) return k; } return null; }
+function mapKey(name){ return STORE_API.findKeyByName(name, F); }
 function guessCat(name){
   const k=mapKey(name); if(k) return ING[k].cat;
   if(isCondiment(name)) return '调料';
@@ -403,7 +407,7 @@ function recipeFromMeal(m){
   return {
     is_food:true, dish_name:m.name, one_line:weekTagline(m), time_minutes:null, servings:1, difficulty:null,
     source:'week', source_snippet:'',
-    ingredients: m.ingredients.map(x=>({name:x.name, emoji:guessEmoji(x.name), have:nameInFridge(x.name), amount:''})),
+    ingredients: m.ingredients.map(x=>({name:x.name, key:mapKey(x.name), emoji:guessEmoji(x.name), have:nameInFridge(x.name), amount:''})),
     steps:[]
   };
 }
@@ -418,7 +422,7 @@ function normalizeRecipe(d, source){
   const ICONSET=['knife','pan','pot','oven','mix','timer','plate','flame'];
   const ings=(Array.isArray(d.ingredients)?d.ingredients:[]).filter(x=>x&&x.name).map(x=>({
     name:String(x.name), amount:x.amount?String(x.amount):'', emoji:(x.emoji&&String(x.emoji))||guessEmoji(String(x.name)),
-    have:nameInFridge(String(x.name))
+    key:(x.key&&ING[x.key])?x.key:mapKey(String(x.name)), have:nameInFridge(String(x.name))
   }));
   const steps=(Array.isArray(d.steps)?d.steps:[]).filter(x=>x&&(x.title||x.detail)).map(x=>({
     title:String(x.title||''), detail:String(x.detail||''),
@@ -438,12 +442,13 @@ function missingForRecipe(rec){ return rec.ingredients.filter(ig=>!ig.have && !i
 function cookDish(rec){
   let savedYuan=0, savedKg=0; const savedNames=[];
   rec.ingredients.forEach(ig=>{
-    let it = ig.key ? findItem(ig.key) : state.fridge.find(f=>ING[f.key] && ING[f.key].label && ig.name.indexOf(ING[f.key].label)>=0);
+    const knownKey = ig.key || mapKey(ig.name);
+    let it = knownKey ? findItem(knownKey) : state.fridge.find(f=>!f.key && String(f.rawName||'')===String(ig.name||''));
     if(!it || it.staple || it.n<=0) return;
     const wasUrgent = band(it) && band(it).k!=='green';
     it.n -= 1;
     if(it.n<=0){
-      if(wasUrgent){ const m=ING[it.key]||{}; savedYuan += m.price||0; savedKg += (m.g||0)/1000; savedNames.push(m.label||it.key); }
+      if(wasUrgent){ const m=ING[it.key]||{}; savedYuan += m.price||0; savedKg += (m.g||0)/1000; savedNames.push(itemName(it)); }
       state.fridge = state.fridge.filter(f=>f!==it);
     }
   });
@@ -453,19 +458,17 @@ function cookDish(rec){
   return { savedYuan, savedKg, savedNames };
 }
 function addToShopping(items){
-  items.forEach(x=>{
-    const name=typeof x==='string'?x:x.name;
-    const cat=(typeof x==='object'&&x.cat)||guessCat(name);
-    const ex=state.shopping.find(s=>s.name===name);
-    if(ex) ex.n=(ex.n||1)+1; else state.shopping.push({name, cat, n:1});
-  });
+  STORE_API.addToShopping(state, (items||[]).map(x=>{
+    if(typeof x==='string') return {name:x, cat:guessCat(x)};
+    if(x && x.key) return x;
+    return Object.assign({}, x, {cat:(x&&x.cat)||guessCat(x&&x.name)});
+  }), F);
   save();
 }
 function buyItem(s){
-  const key=mapKey(s.name);
-  if(key){ const ex=findItem(key); if(ex){ ex.n+=(s.n||1); ex.days=0; } else state.fridge.push({key, n:s.n||1, unit:GG.T('新买','Just bought'), days:0}); }
-  state.shopping=state.shopping.filter(x=>x!==s);
+  const bought=STORE_API.buyItem(state, s);
   save();
+  return bought;
 }
 
 /* ════════ 视觉：插画盘 + 步骤图标（复用 dinner 的画法） ════════ */
@@ -665,9 +668,9 @@ function fridgeGrid(){
   state.fridge.filter(it=>!it.staple && it.n>0).sort((a,b)=>daysLeft(a)-daysLeft(b)).forEach(it=>{
     const m=ING[it.key]||{}, b=band(it);
     grid.appendChild(el('button',{class:'kt-cell', onClick:()=>itemMenu(it)},
-      el('div',{class:'kt-ring', style:{background:'conic-gradient('+bandColor(b)+' '+ringPct(it)+'%, var(--line-2) 0)'}}, el('span',{class:'em'}, m.emoji||'🍽️')),
-      el('div',{class:'kt-cellnm'}, m.label||it.key),
-      el('div',{class:'kt-cellq'}, it.unit||('×'+it.n)),
+      el('div',{class:'kt-ring', style:{background:'conic-gradient('+bandColor(b)+' '+ringPct(it)+'%, var(--line-2) 0)'}}, el('span',{class:'em'}, m.emoji||guessEmoji(itemName(it)))),
+      el('div',{class:'kt-cellnm'}, itemName(it)),
+      el('div',{class:'kt-cellq'}, itemUnit(it)),
       b? el('div',{class:'kt-cellb kt-'+b.k}, b.txt):null
     ));
   });
@@ -680,8 +683,8 @@ function fridgeGrid(){
 function itemMenu(it){
   const m=ING[it.key]||{}, b=band(it);
   const ov=overlay(el('div',null,
-    el('div',{class:'kt-ovtitle'}, (m.emoji||'')+' '+(m.label||it.key)),
-    el('div',{class:'kt-ovsub'}, GG.T('现在 ','Now ')+(it.unit||('×'+it.n))+' · '+(b?b.txt:GG.T('新鲜','fresh'))),
+    el('div',{class:'kt-ovtitle'}, (m.emoji||guessEmoji(itemName(it)))+' '+itemName(it)),
+    el('div',{class:'kt-ovsub'}, GG.T('现在 ','Now ')+itemUnit(it)+' · '+(b?b.txt:GG.T('新鲜','fresh'))),
     el('div',{class:'kt-ovacts'},
       el('button',{class:'btn', onClick:()=>{ it.n=Math.max(0,it.n-1); if(it.n<=0) state.fridge=state.fridge.filter(f=>f!==it); save(); ov.remove(); app(); }}, GG.T('用掉一些','Use some')),
       el('button',{class:'btn', onClick:()=>{ it.days=0; save(); GG.toast(GG.T('标记为刚补的 ✓','Marked as freshly restocked ✓')); ov.remove(); app(); }}, GG.T('刚补·标新鲜','Restocked · mark fresh')),
@@ -692,7 +695,7 @@ function addItemPrompt(){
   const present=new Set(state.fridge.map(f=>f.key));
   const chips=el('div',{class:'chips'});
   Object.keys(ING).filter(k=>!present.has(k) && !STAPLES.includes(k)).forEach(k=>{ const m=ING[k];
-    chips.appendChild(el('button',{class:'chip', onClick:()=>{ state.fridge.push({key:k,n:1,unit:GG.T('新加','Just added'),days:0}); save(); closeOverlays(); app(); }}, (m.emoji||'')+' '+m.label)); });
+    chips.appendChild(el('button',{class:'chip', onClick:()=>{ state.fridge.push({key:k,n:1,unitCode:'added',days:0}); save(); closeOverlays(); app(); }}, (m.emoji||'')+' '+m.label)); });
   overlay(el('div',null, el('div',{class:'kt-ovtitle'},GG.T('加点什么进冰箱','Add something to the fridge')), el('div',{class:'kt-ovsub'},GG.T('（这些你冰箱里现在没有）','(things your fridge doesn’t have right now)')), el('div',{style:{marginTop:'12px'}}, chips)));
 }
 
@@ -724,7 +727,7 @@ function renderTonight(mount){
   if(ins){ const m=ING[ins.key]||{};
     mount.appendChild(el('div',{class:'kt-insight'},
       el('span',null, GG.T('💡 再买 '+(m.emoji||'')+(m.label||ins.key)+'，今晚能做的从 '+ins.now+' 道 → '+ins.after+' 道','💡 Buy '+(m.emoji||'')+(m.label||ins.key)+' and tonight’s options go from '+ins.now+' → '+ins.after+' dishes')),
-      el('button',{class:'kt-ilink', onClick:()=>{ addToShopping([{name:m.label||ins.key, cat:m.cat}]); GG.toast(GG.T('已加入购物清单 🛒','Added to shopping list 🛒')); app(); }}, GG.T('加入清单','Add to list'))));
+      el('button',{class:'kt-ilink', onClick:()=>{ addToShopping([{key:ins.key}]); GG.toast(GG.T('已加入购物清单 🛒','Added to shopping list 🛒')); app(); }}, GG.T('加入清单','Add to list'))));
   }
   mount.appendChild(el('div',{class:'kt-h2'}, GG.T('冰箱现在能配出的菜 · '+dishes.length+' 道','Dishes your fridge can make · '+dishes.length)));
   const list=el('div',{class:'kt-dishlist'});
@@ -751,13 +754,13 @@ function dishRow(d){
         d.urgentUse.length? el('span',{class:'kt-badge urg'}, GG.T('🔴 用掉先吃我','🔴 Uses eat-me-first')):null),
       d.missing.length? el('div',{class:'kt-drmiss'}, GG.T('还差：','Still missing: ')+d.missing.map(k=>(ING[k]||{}).label||k).join(GG.T('、',', ')),
         el('button',{class:'kt-ilink', onClick:(e)=>{ e.stopPropagation();
-          addToShopping(d.missing.map(k=>({name:(ING[k]||{}).label||k, cat:(ING[k]||{}).cat}))); GG.toast(GG.T('缺的已进清单 🛒','Missing items added to list 🛒')); app(); }}, GG.T('加入清单','Add to list'))):null),
+          addToShopping(d.missing.map(k=>({key:k}))); GG.toast(GG.T('缺的已进清单 🛒','Missing items added to list 🛒')); app(); }}, GG.T('加入清单','Add to list'))):null),
     el('span',{class:'kt-dishgo'}, '›'));
   return row;
 }
 async function aiTonight(){
   if(!GG.llm.connected()){ GG.toast(GG.T('先连接 AI','Connect AI first')); return; }
-  const have=state.fridge.filter(it=>it.n>0).map(it=>(ING[it.key]||{}).label).filter(Boolean);
+  const have=state.fridge.filter(it=>it.n>0).map(itemName).filter(Boolean);
   GG.toast(GG.T('✨ AI 用你冰箱里的现想中…','✨ AI is improvising from your fridge…'));
   try{
     const obj=await GG.llm.json(SYS_FROM_FRIDGE, '冰箱现有：'+have.join('、')+'。优先用掉快坏的：'+(urgentLabels().join('、')||'无'), {max_tokens:1200});
@@ -845,7 +848,7 @@ function renderRecipe(rec, opts){
   const miss=missingForRecipe(rec);
   card.appendChild(el('div',{class:'kt-rdiff '+(miss.length?'has':'ok')},
     el('span',null, miss.length? (GG.T('🛒 这道菜你冰箱缺 '+miss.length+' 样：','🛒 Your fridge is missing '+miss.length+' for this dish: ')+miss.map(x=>x.name).join(GG.T('、',', '))) : GG.T('✓ 这道菜的主料你冰箱都有','✓ Your fridge has all the main ingredients')),
-    miss.length? el('button',{class:'kt-ilink', onClick:()=>{ addToShopping(miss.map(x=>({name:x.name}))); GG.toast(GG.T('缺的已进清单 🛒','Missing items added to list 🛒')); }}, GG.T('加入购物清单','Add to shopping list')):null));
+    miss.length? el('button',{class:'kt-ilink', onClick:()=>{ addToShopping(miss.map(x=>x.key?{key:x.key}:{name:x.name})); GG.toast(GG.T('缺的已进清单 🛒','Missing items added to list 🛒')); }}, GG.T('加入购物清单','Add to shopping list')):null));
   card.appendChild(el('div',{class:'kt-rh'}, GG.T('要买什么 · '+rec.ingredients.length+' 样','Ingredients · '+rec.ingredients.length)));
   const ig=el('div',{class:'kt-rings'});
   rec.ingredients.forEach(x=> ig.appendChild(el('div',{class:'kt-ring2'+(x.have?' have':'')},
@@ -909,11 +912,11 @@ function renderShopping(mount){
     el('div',{class:'small muted'}, GG.T(state.shopping.reduce((a,s)=>a+(s.n||1),0)+' 样待买',state.shopping.reduce((a,s)=>a+(s.n||1),0)+' to buy')),
     el('button',{class:'kt-flink', onClick:()=>{ state.shopping.slice().forEach(s=>buyItem(s)); GG.toast(GG.T('全部买到，已回填冰箱 🧊','All bought — fridge restocked 🧊')); app(); }}, GG.T('全部买到 → 回填冰箱','All bought → restock fridge'))));
   ['蔬菜','蛋白','肉蛋','主食','调料','其他'].forEach(cat=>{
-    const items=state.shopping.filter(s=>s.cat===cat); if(!items.length) return;
+    const items=state.shopping.filter(s=>shoppingCat(s)===cat); if(!items.length) return;
     card.appendChild(el('div',{class:'kt-shopcat'}, catLabel(cat)));
     items.forEach(s=> card.appendChild(el('div',{class:'kt-shopitem'},
-      el('button',{class:'kt-check', title:GG.T('买到了','Bought it'), onClick:()=>{ const back=!!mapKey(s.name); buyItem(s); GG.toast(back?GG.T('已回填冰箱 🧊','Restocked into the fridge 🧊'):GG.T('已买到 ✓','Bought ✓')); app(); }}, '○'),
-      el('span',{class:'kt-shopnm'}, s.name+(s.n>1?' ×'+s.n:'')),
+      el('button',{class:'kt-check', title:GG.T('买到了','Bought it'), onClick:()=>{ buyItem(s); GG.toast(GG.T('已回填冰箱 🧊','Restocked into the fridge 🧊')); app(); }}, '○'),
+      el('span',{class:'kt-shopnm'}, shoppingName(s)+(s.n>1?' ×'+s.n:'')),
       el('button',{class:'kt-shopdel', title:GG.T('删除','Delete'), onClick:()=>{ state.shopping=state.shopping.filter(x=>x!==s); save(); app(); }}, '×'))));
   });
   mount.appendChild(card);

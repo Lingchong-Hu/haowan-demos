@@ -1,8 +1,10 @@
 /* 今天吃什么 — 融合数据层（window.FOOD）。
    一个「吃饭大脑」，三个入口共用一条冰箱库存主线：
      ING        食材主数据：key -> {label,emoji,cat,shelf(冷藏可放天数),price¥,g克}
+     ING_NAMES  食材双语名：key -> {zh,en}，用于语言无关存档与旧快照反查
      STAPLES    常备调料 key（冰箱一直有，不进「先吃我」）
-     FRIDGE_SEED 冰箱初始库存：{key,n,unit,days(入库至今天数)}；新鲜度 = shelf - days
+     UNIT_TEXT  库存单位双语表：unitCode -> {zh,en}
+     FRIDGE_SEED 冰箱初始库存：{key,n,unitCode,days(入库至今天数)}；新鲜度 = shelf - days
      RECIPES    今晚引擎菜谱（原 ollie）：{name,emoji,minutes,blurb,need:[key],steps:[文字]}
      MEALS      一周引擎菜池（原 mealplan）：{name,meal,goalFit,tags,ingredients:[{name,cat}]}
      EXAMPLES   示例菜谱数据（原灵感档遗留，现仅 FOOD_DEV 自检用）：{em,label,text, recipe:{离线菜谱契约}}——离线即可出真菜谱
@@ -52,33 +54,60 @@ window.FOOD = (function(){
     scallion: {label:T('葱','Scallion'),     emoji:'🌿', cat:'调料', shelf:10, price:1, g:50},
   };
 
+  /* 持久层只认 key；这张双语表专供旧 name 反查与当前语言显示。 */
+  const ING_NAMES = {
+    tomato:{zh:'番茄',en:'Tomato'}, potato:{zh:'土豆',en:'Potato'}, onion:{zh:'洋葱',en:'Onion'},
+    pepper:{zh:'青椒',en:'Bell pepper'}, cucumber:{zh:'黄瓜',en:'Cucumber'}, cabbage:{zh:'白菜',en:'Cabbage'},
+    mushroom:{zh:'香菇',en:'Shiitake'}, carrot:{zh:'胡萝卜',en:'Carrot'}, corn:{zh:'玉米',en:'Corn'},
+    spinach:{zh:'菠菜',en:'Spinach'}, egg:{zh:'鸡蛋',en:'Egg'}, chicken:{zh:'鸡肉',en:'Chicken'},
+    pork:{zh:'猪肉',en:'Pork'}, beef:{zh:'牛肉',en:'Beef'}, shrimp:{zh:'虾',en:'Shrimp'}, tofu:{zh:'豆腐',en:'Tofu'},
+    milk:{zh:'牛奶',en:'Milk'}, yogurt:{zh:'酸奶',en:'Yogurt'}, rice:{zh:'米饭',en:'Rice'},
+    noodle:{zh:'面条',en:'Noodles'}, flour:{zh:'面粉',en:'Flour'}, bread:{zh:'面包',en:'Bread'},
+    soy:{zh:'生抽',en:'Soy sauce'}, salt:{zh:'盐',en:'Salt'}, oil:{zh:'食用油',en:'Cooking oil'},
+    sugar:{zh:'糖',en:'Sugar'}, vinegar:{zh:'醋',en:'Vinegar'}, chili:{zh:'辣椒',en:'Chili'},
+    garlic:{zh:'蒜',en:'Garlic'}, ginger:{zh:'姜',en:'Ginger'}, scallion:{zh:'葱',en:'Scallion'},
+  };
+
   // 常备调料：默认一直在冰箱里，不算缺料、不进「先吃我」
   const STAPLES = ['soy','salt','oil','sugar','vinegar','chili','garlic','ginger','scallion'];
 
   /* ───────── 冰箱初始库存 ─────────
      days = 入库至今天数；新鲜度 daysLeft = ING.shelf - days。
      精心配比：3 样🔴该先吃 + 4 样🟡这两天 + 一批🟢新鲜，让「先吃我」一上来就有戏。 */
+  const UNIT_TEXT = {
+    'seed:spinach':{zh:'1 把',en:'1 bunch'}, 'seed:mushroom':{zh:'1 盒',en:'1 box'},
+    'seed:milk':{zh:'剩 ~30%',en:'~30% left'}, 'seed:tomato':{zh:'3 个',en:'3 pcs'},
+    'seed:tofu':{zh:'1 盒',en:'1 box'}, 'seed:chicken':{zh:'1 块',en:'1 piece'},
+    'seed:rice':{zh:'剩一碗',en:'1 bowl left'}, 'seed:egg':{zh:'5 个',en:'5 pcs'},
+    'seed:pepper':{zh:'2 个',en:'2 pcs'}, 'seed:carrot':{zh:'2 根',en:'2 pcs'},
+    'seed:cucumber':{zh:'2 根',en:'2 pcs'}, 'seed:scallion':{zh:'一小把',en:'a small bunch'},
+    'seed:garlic':{zh:'一头',en:'1 head'}, 'seed:ginger':{zh:'一块',en:'1 knob'},
+    'seed:oil':{zh:'一瓶',en:'1 bottle'}, 'seed:salt':{zh:'一罐',en:'1 jar'},
+    'seed:soy':{zh:'一瓶',en:'1 bottle'}, 'seed:sugar':{zh:'一罐',en:'1 jar'},
+    'seed:vinegar':{zh:'一瓶',en:'1 bottle'},
+    bought:{zh:'新买',en:'Just bought'}, added:{zh:'新加',en:'Just added'},
+  };
   const FRIDGE_SEED = [
-    {key:'spinach',  n:1, unit:T('1 把','1 bunch'),    days:3},  // shelf3 → 今天就该吃 🔴
-    {key:'mushroom', n:1, unit:T('1 盒','1 box'),    days:3},  // shelf4 → 明天 🔴
-    {key:'milk',     n:1, unit:T('剩 ~30%','~30% left'), days:6},  // shelf7 → 明天 🔴
-    {key:'tomato',   n:3, unit:T('3 个','3 pcs'),    days:5},  // shelf7 → 2 天 🟡
-    {key:'tofu',     n:1, unit:T('1 盒','1 box'),    days:2},  // shelf4 → 2 天 🟡
-    {key:'chicken',  n:1, unit:T('1 块','1 piece'),    days:1},  // shelf3 → 2 天 🟡
-    {key:'rice',     n:1, unit:T('剩一碗','1 bowl left'),  days:1},  // shelf3 → 2 天 🟡（剩饭）
-    {key:'egg',      n:5, unit:T('5 个','5 pcs'),    days:4},  // shelf21 → 还久 🟢
-    {key:'pepper',   n:2, unit:T('2 个','2 pcs'),    days:2},  // 🟢
-    {key:'carrot',   n:2, unit:T('2 根','2 pcs'),    days:5},  // 🟢
-    {key:'cucumber', n:2, unit:T('2 根','2 pcs'),    days:2},  // 🟢
+    {key:'spinach',  n:1, unitCode:'seed:spinach',  days:3},  // shelf3 → 今天就该吃 🔴
+    {key:'mushroom', n:1, unitCode:'seed:mushroom', days:3},  // shelf4 → 明天 🔴
+    {key:'milk',     n:1, unitCode:'seed:milk',     days:6},  // shelf7 → 明天 🔴
+    {key:'tomato',   n:3, unitCode:'seed:tomato',   days:5},  // shelf7 → 2 天 🟡
+    {key:'tofu',     n:1, unitCode:'seed:tofu',     days:2},  // shelf4 → 2 天 🟡
+    {key:'chicken',  n:1, unitCode:'seed:chicken',  days:1},  // shelf3 → 2 天 🟡
+    {key:'rice',     n:1, unitCode:'seed:rice',     days:1},  // shelf3 → 2 天 🟡（剩饭）
+    {key:'egg',      n:5, unitCode:'seed:egg',      days:4},  // shelf21 → 还久 🟢
+    {key:'pepper',   n:2, unitCode:'seed:pepper',   days:2},  // 🟢
+    {key:'carrot',   n:2, unitCode:'seed:carrot',   days:5},  // 🟢
+    {key:'cucumber', n:2, unitCode:'seed:cucumber', days:2},  // 🟢
     // 常备调料（折叠展示，不参与新鲜度）
-    {key:'scallion', n:1, unit:T('一小把','a small bunch'),  days:3, staple:true},
-    {key:'garlic',   n:1, unit:T('一头','1 head'),    days:6, staple:true},
-    {key:'ginger',   n:1, unit:T('一块','1 knob'),    days:6, staple:true},
-    {key:'oil',      n:1, unit:T('一瓶','1 bottle'),    days:8, staple:true},
-    {key:'salt',     n:1, unit:T('一罐','1 jar'),    days:8, staple:true},
-    {key:'soy',      n:1, unit:T('一瓶','1 bottle'),    days:8, staple:true},
-    {key:'sugar',    n:1, unit:T('一罐','1 jar'),    days:8, staple:true},
-    {key:'vinegar',  n:1, unit:T('一瓶','1 bottle'),    days:8, staple:true},
+    {key:'scallion', n:1, unitCode:'seed:scallion', days:3, staple:true},
+    {key:'garlic',   n:1, unitCode:'seed:garlic',   days:6, staple:true},
+    {key:'ginger',   n:1, unitCode:'seed:ginger',   days:6, staple:true},
+    {key:'oil',      n:1, unitCode:'seed:oil',      days:8, staple:true},
+    {key:'salt',     n:1, unitCode:'seed:salt',     days:8, staple:true},
+    {key:'soy',      n:1, unitCode:'seed:soy',      days:8, staple:true},
+    {key:'sugar',    n:1, unitCode:'seed:sugar',    days:8, staple:true},
+    {key:'vinegar',  n:1, unitCode:'seed:vinegar',  days:8, staple:true},
   ];
 
   /* ───────── 今晚引擎菜谱（原 ollie，need 引用 ING 的 key） ───────── */
@@ -289,5 +318,5 @@ window.FOOD = (function(){
         source_snippet:T('浇上熬足时间的螺蛳汤底，加腐竹、炸花生、青菜和一颗入味的卤蛋','ladle on the long-simmered broth, add bean curd sticks, fried peanuts, greens and a braised egg') } },
   ];
 
-  return { ING, STAPLES, FRIDGE_SEED, RECIPES, MEALS, EXAMPLES };
+  return { ING, ING_NAMES, STAPLES, UNIT_TEXT, FRIDGE_SEED, RECIPES, MEALS, EXAMPLES };
 })();

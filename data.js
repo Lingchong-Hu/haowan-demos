@@ -36,7 +36,7 @@ window.SITE = {
            "真正值钱的，是把需求落地的能力——它的落地性、稳定性与自动化程度，" +
            "考验的是一支团队能不能把 AI 大模型的原生能力，结构化地接到具体的行业需求上。",
     facts: ["Iterant AI 创始人", "Penn · MCIT '25", "Philadelphia"],
-    site: "https://lingchong-hu.github.io/",
+    site: "https://lingchonghu.com/",
     siteLabel: "个人网站 ↗"
   },
 
@@ -1436,7 +1436,7 @@ window.SITE_EN = {
     role: "Founder, Iterant AI",
     blurb: "We are experimenting with new AI-native org structures, teaching the team new AI development workflows as we go. I would rather validate product value with real revenue than exchange a grand narrative for a large check. What's actually worth something is the ability to take a requirement all the way to delivery — the completeness, stability, and degree of automation is what reveals whether a team can connect the raw capability of large AI models, in a structured way, to concrete industry needs.",
     facts: ["Founder, Iterant AI", "Penn · MCIT '25", "Philadelphia"],
-    site: "https://lingchong-hu.github.io/",
+    site: "https://lingchonghu.com/",
     siteLabel: "Personal site ↗"
   },
 

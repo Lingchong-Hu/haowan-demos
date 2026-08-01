@@ -296,15 +296,25 @@ function askContact(box, slug, origText) {
     <small>${T('我们需求侧的同学想和你聊聊你的场景——不推销，就是真的想懂你这行。', 'Someone on our demand side would love to talk through your scenario — no sales pitch, we just want to understand your field.')}</small>
     <div class="row" style="margin-top:8px"><input placeholder="${T('微信 / 邮箱', 'WeChat / email')}" maxlength="120" />
     <button class="btn btn-p">${T('留下，等你们来聊 →', 'Leave it — talk to me →')}</button></div>
+    <div class="err" style="display:none"></div>
     <button class="navlink" style="margin-top:6px">${T('这次先不了', 'Maybe later')}</button>`;
-  const inp = $('input', box), yes = $('.btn-p', box), no = $('.navlink', box);
+  const inp = $('input', box), yes = $('.btn-p', box), no = $('.navlink', box), err = $('.err', box);
   yes.onclick = () => {
     const v = inp.value.trim();
     if (!v) return inp.focus();
-    yes.disabled = true;
+    yes.disabled = true; err.style.display = 'none';
     post('/feedback', { slug, text: '[补充联系方式] ' + origText.slice(0, 40), contact: v })
-      .catch(() => {})
-      .then(() => { box.innerHTML = `<div class="ok">${T('收到，等我们来联系你 🤝', 'Got it — we will reach out 🤝')}</div>`; });
+      .then(async res => {
+        if (!res || !res.ok) throw new Error('feedback http error');
+        const data = await res.json();
+        if (!data || data.ok !== true) throw new Error('feedback business error');
+        box.innerHTML = `<div class="ok">${T('收到，等我们来联系你 🤝', 'Got it — we will reach out 🤝')}</div>`;
+      })
+      .catch(() => {
+        yes.disabled = false;
+        err.textContent = T('联系方式没发出去，请稍后重试；刚才填写的内容还在。', 'Your contact was not sent. Please try again — your input is still here.');
+        err.style.display = '';
+      });
   };
   no.onclick = () => { box.innerHTML = `<div class="ok">${T('好嘞，随时欢迎再来 🙌', 'No problem — come back anytime 🙌')}</div>`; };
 }
@@ -317,16 +327,28 @@ function armNotes(root, slug) {
 
 /* ═══════════ 路由（hash 支持返回键/刷新/直链） ═══════════ */
 const stage = $('#stage');
-let storyTimer = null, cdTimer = null, finishFn = null;
+let storyTimer = null, cdTimer = null, finishFn = null, cancelCountdownWatch = null;
 /* 快进：全局只挂一次，永远只作用于"当前"故事（finishFn 随场景更换） */
 stage.addEventListener('pointerdown', e => {
   if (e.target.closest('.fin') || e.target.closest('.ask') || e.target.closest('mark.gg-nt')) return;
   if (storyTimer && finishFn) finishFn();
 });
-const visited = new Set(JSON.parse(sessionStorage.getItem('exp-a-visited') || '[]'));
+let visitedWritable = true;
+let visited;
+try {
+  const savedVisited = JSON.parse(sessionStorage.getItem('exp-a-visited') || '[]');
+  if (!Array.isArray(savedVisited)) throw new TypeError('exp-a-visited must be an array');
+  visited = new Set(savedVisited);
+} catch (e) {
+  visited = new Set();
+  visitedWritable = false;
+}
 function markVisited(key) {
   visited.add(key);
-  sessionStorage.setItem('exp-a-visited', JSON.stringify([...visited]));
+  if (visitedWritable) {
+    try { sessionStorage.setItem('exp-a-visited', JSON.stringify([...visited])); }
+    catch (e) { visitedWritable = false; }
+  }
   $('#scoreN').textContent = ['about', 'demos', 'thoughts', 'contact'].filter(k => visited.has(k)).length;
 }
 let rendered = null;                       /* 已渲染的路径串，用来吞掉自己触发的 hashchange */
@@ -334,13 +356,25 @@ function go(parts) {                       /* parts: ['story','probe'] 等 */
   location.hash = '/' + parts.map(encodeURIComponent).join('/');
   render(parts);
 }
+function replaceRoute(parts) {             /* 非法地址只替换当前历史项，避免“后退→非法→再推回退”的陷阱 */
+  const hash = '#/' + parts.map(encodeURIComponent).join('/');
+  history.replaceState(null, '', location.pathname + location.search + hash);
+  render(parts);
+}
 addEventListener('hashchange', () => {
   const parts = parseHash();
+  if (!parts) return replaceRoute([]);
   if (parts.join('/') !== rendered) render(parts);
 });
 function parseHash() {
   const h = location.hash.replace(/^#\/?/, '');
-  return h ? h.split('/').map(decodeURIComponent) : [];
+  if (!h) return [];
+  const parts = [];
+  for (const part of h.split('/')) {
+    try { parts.push(decodeURIComponent(part)); }
+    catch (e) { return null; }
+  }
+  return parts;
 }
 
 /* 面包屑 */
@@ -393,26 +427,41 @@ function sentences(html, max) {
 function countdown(card, secs) {
   let n = secs;
   const num = $('.cd-n', card);
-  cdTimer = setInterval(() => {
-    n--; if (num) num.textContent = n;
-    if (n <= 0) { clearInterval(cdTimer); cdTimer = null; go([]); }
-  }, 1000);
+  const events = ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart', 'focusin'];
+  const cleanup = () => {
+    events.forEach(type => document.removeEventListener(type, cancel, true));
+    document.removeEventListener('visibilitychange', cancel, true);
+    if (cancelCountdownWatch === cleanup) cancelCountdownWatch = null;
+  };
+  const isHomeAction = e => {
+    const home = e && e.target && e.target.closest && e.target.closest('[data-home]');
+    return !!home && (e.type === 'pointerdown' || e.type === 'touchstart' ||
+      (e.type === 'keydown' && (e.key === 'Enter' || e.key === ' ')));
+  };
   const cancel = e => {
-    if (e && e.target.closest('.btn')) return;      /* 点按钮不算"想留下" */
+    if (e && e.type === 'visibilitychange' && !document.hidden) return;
+    if (isHomeAction(e)) return;
     if (cdTimer) {
       clearInterval(cdTimer); cdTimer = null;
       const m = $('.msg', card);
       if (m) m.innerHTML = T('不急，慢慢看 ☕<small>想走的时候点右边</small>', 'No rush ☕<small>Use the button whenever you are ready</small>');
     }
-    stage.removeEventListener('pointerdown', cancel, true);
+    cleanup();
   };
-  setTimeout(() => stage.addEventListener('pointerdown', cancel, true), 60);
+  events.forEach(type => document.addEventListener(type, cancel, true));
+  document.addEventListener('visibilitychange', cancel, true);
+  cancelCountdownWatch = cleanup;
+  cdTimer = setInterval(() => {
+    n--; if (num) num.textContent = n;
+    if (n <= 0) { clearInterval(cdTimer); cdTimer = null; cleanup(); go([]); }
+  }, 1000);
 }
 
 /* ═══════════ 各场景 ═══════════ */
 function clearTimers() {
   if (storyTimer) { clearInterval(storyTimer); storyTimer = null; }
   if (cdTimer) { clearInterval(cdTimer); cdTimer = null; }
+  if (cancelCountdownWatch) cancelCountdownWatch();
   finishFn = null;
   $$('.skipnote').forEach(el => el.remove());
 }
@@ -564,7 +613,7 @@ function scTeam() {
   armNotes(sc, 'exp-a-team');
 }
 function scMember(i) {
-  const m = TEAM[i]; if (!m) return go(['team']);
+  const m = TEAM[i]; if (!m) return replaceRoute(['team']);
   hit('exp-a-member' + i);
   const short = m.name.split(' ·')[0];
   crumbs([[L.hub, []], [L.about, ['about']], [L.team, ['team']], [short, null]]);
@@ -625,7 +674,7 @@ function scDirs() {
   $$('[data-home]', sc).forEach(b => b.onclick = () => go([]));
 }
 function scDir(i) {
-  const d = DIRS[i]; if (!d) return go(['dirs']);
+  const d = DIRS[i]; if (!d) return replaceRoute(['dirs']);
   hit('exp-a-dir' + i);
   crumbs([[L.hub, []], [L.dirs, ['dirs']], [d.short, null]]);
   const sc = setScene(`
@@ -651,7 +700,7 @@ function scDir(i) {
 }
 function scCat(i, cat) {
   const d = DIRS[i], list = byCat(cat);
-  if (!d || !list.length) return go(['dirs']);
+  if (!d || !list.length) return replaceRoute(['dirs']);
   crumbs([[L.hub, []], [L.dirs, ['dirs']], [d.short, ['dir', String(i)]], [cat, null]]);
   const sc = setScene(`
     <div class="kick">${d.emoji} ${d.short} · ${cat}</div>
@@ -670,7 +719,7 @@ function scCat(i, cat) {
 
 /* —— demo 故事场景：流式文字，像讲故事 —— */
 function scStory(id) {
-  const p = P.find(x => x.id === id); if (!p) return go(['dirs']);
+  const p = P.find(x => x.id === id); if (!p) return replaceRoute(['dirs']);
   hit('exp-a-s-' + id);
   const di = DIRS.findIndex(d => d.cats.includes(p.cat));
   const d = DIRS[di] || DIRS[2];
@@ -738,13 +787,69 @@ function scThoughts() {
 }
 /* 单篇思考：抓原文逐句流式讲；「展开读全文」把完整原文迁入旅程内阅读，不出旅程；
    互动版同标签进入（那边左下角有🧭罗盘随时回来）；支持 #thought/<slug> 直链（罗盘回程用） */
+function thoughtHrefRoute(raw, baseHref) {
+  let base, url;
+  try {
+    base = new URL(baseHref, location.href);
+    url = new URL(raw, base);
+  } catch (e) {
+    return { href: raw, external: true };
+  }
+  const siteRoot = new URL('../', base);
+  if (url.origin === siteRoot.origin) {
+    const thought = S.thoughts.find(item => {
+      try { return new URL(item.href, location.href).pathname === url.pathname && !url.search && !url.hash; }
+      catch (e) { return false; }
+    });
+    if (thought) {
+      const name = url.pathname.slice(url.pathname.lastIndexOf('/') + 1).replace(/\.html$/, '');
+      return { href: '#thought/' + encodeURIComponent(name), external: false };
+    }
+    const indexPath = new URL('index.html', siteRoot).pathname;
+    const classicRoutes = {
+      '': '#/', '#projects': '#dirs', '#thoughts': '#thoughts', '#about': '#about', '#contact': '#contact'
+    };
+    if (url.pathname === indexPath && !url.search && Object.prototype.hasOwnProperty.call(classicRoutes, url.hash)) {
+      return { href: classicRoutes[url.hash], external: false };
+    }
+    if (!url.search && !url.hash && url.pathname === new URL('demos.html', siteRoot).pathname) {
+      return { href: '#dirs', external: false };
+    }
+    if (!url.search && !url.hash && url.pathname === new URL('thoughts.html', siteRoot).pathname) {
+      return { href: '#thoughts', external: false };
+    }
+  }
+  return { href: url.href, external: true };
+}
+function rewriteThoughtHtml(html, baseHref) {
+  const doc = new DOMParser().parseFromString('<body>' + (html || '') + '</body>', 'text/html');
+  const root = doc.body;
+  $$('[href], [src]', root).forEach(el => {
+    if (el.hasAttribute('src')) {
+      try { el.setAttribute('src', new URL(el.getAttribute('src'), new URL(baseHref, location.href)).href); }
+      catch (e) {}
+    }
+    if (el.hasAttribute('href')) {
+      const route = thoughtHrefRoute(el.getAttribute('href'), baseHref);
+      el.setAttribute('href', route.href);
+      if (route.external && el.tagName === 'A') {
+        el.setAttribute('target', '_blank');
+        el.setAttribute('rel', 'noopener');
+      } else if (el.tagName === 'A') {
+        el.removeAttribute('target');
+        el.removeAttribute('rel');
+      }
+    }
+  });
+  return root.innerHTML;
+}
 async function scThought(i) {
-  if (isNaN(+i)) {                            /* #thought/<slug> → 按原文文件名找下标 */
+  if (!/^(0|[1-9]\d*)$/.test(String(i))) {    /* #thought/<slug> → 按原文文件名找下标 */
     const s = String(i);
     i = S.thoughts.findIndex(x => (x.href || '').endsWith('/' + s + '.html'));
   }
   i = +i;
-  const t = S.thoughts[i]; if (!t) return go(['thoughts']);
+  const t = S.thoughts[i]; if (!t) return replaceRoute(['thoughts']);
   hit('exp-a-th' + i);
   markVisited('thoughts');
   const short = t.title.length > 9 ? t.title.slice(0, 8) + '…' : t.title;
@@ -759,9 +864,10 @@ async function scThought(i) {
   let fullHtml = '';                          /* 完整原文正文，展开时迁入旅程内阅读 */
   try {
     const res = await fetch(t.href);
+    if (!res.ok) throw new Error('thought fetch failed');
     const doc = new DOMParser().parseFromString(await res.text(), 'text/html');
     const bodyEl = doc.querySelector('.article .body') || doc.querySelector('main') || doc.body;
-    fullHtml = bodyEl ? bodyEl.innerHTML : '';
+    fullHtml = bodyEl ? rewriteThoughtHtml(bodyEl.innerHTML, t.href) : '';
     if (EN) {                                 /* 原文是中文——英文模式不流式混入中文句子 */
       if (fullHtml) beats = beats.concat([{ cls: 'dim',
         html: 'The full essay (written in Chinese) is right below — no need to leave the tour.' }]);
@@ -836,22 +942,26 @@ function scContact() {
 
 /* ═══════════ 路由表 ═══════════ */
 function render(parts) {
+  if (!Array.isArray(parts)) return replaceRoute([]);
   rendered = parts.join('/');
   const [k, a, b] = parts;
-  if (k === 'about') return scAbout();
-  if (k === 'team') return scTeam();
-  if (k === 'member') return scMember(+a);
-  if (k === 'dirs') return scDirs();
-  if (k === 'dir') return scDir(+a);
-  if (k === 'cat') return scCat(+a, b);
-  if (k === 'story') return scStory(a);
-  if (k === 'thoughts') return scThoughts();
-  if (k === 'thought') return scThought(a);
-  if (k === 'contact') return scContact();
-  return scHub();
+  const index = raw => /^(0|[1-9]\d*)$/.test(String(raw)) ? +raw : NaN;
+  if (!parts.length) return scHub();
+  if (k === 'about' && parts.length === 1) return scAbout();
+  if (k === 'team' && parts.length === 1) return scTeam();
+  if (k === 'member' && parts.length === 2) return scMember(index(a));
+  if (k === 'dirs' && parts.length === 1) return scDirs();
+  if (k === 'dir' && parts.length === 2) return scDir(index(a));
+  if (k === 'cat' && parts.length === 3) return scCat(index(a), b);
+  if (k === 'story' && parts.length === 2) return scStory(a);
+  if (k === 'thoughts' && parts.length === 1) return scThoughts();
+  if (k === 'thought' && parts.length === 2) return scThought(a);
+  if (k === 'contact' && parts.length === 1) return scContact();
+  return replaceRoute([]);
 }
 markVisited('');            /* 初始化探索度显示 */
-render(parseHash());
+const initialRoute = parseHash();
+initialRoute ? render(initialRoute) : replaceRoute([]);
 </script>
 <script defer src="assets/feedback.js"></script>
 </body>
