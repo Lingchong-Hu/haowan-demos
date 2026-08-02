@@ -11,7 +11,7 @@
   'use strict';
   if (window.__GGJ) return; window.__GGJ = 1;
 
-  var path = location.pathname, m, mode = null, base = '', slug = '';
+  var path = location.pathname, m, mode = null, base = '', slug = '', sitePage = '';
   if ((m = path.match(/^(.*)\/demos\/([^/]+)\//))) {
     mode = 'demo'; base = m[1] || ''; slug = m[2];
   } else if ((m = path.match(/^(.*)\/ongoing\/([^/]+)\.html$/))) {
@@ -19,7 +19,7 @@
   } else if ((m = path.match(/^(.*)\/thoughts\/([^/]+)\.html$/))) {
     mode = 'thought'; base = m[1] || ''; slug = m[2].replace(/-play$/, '');
   } else if ((m = path.match(/^(.*)\/(demos|thoughts|ongoing|team|project)\.html$/))) {
-    mode = 'site'; base = m[1] || '';
+    mode = 'site'; base = m[1] || ''; sitePage = m[2];
   }
   if (!mode) return;
   var J = base + '/explore-a.html';
@@ -82,19 +82,40 @@
   }
   var en = resolveWidgetLang() === 'en';
   function rewriteThoughtClassicLinks() {
-    if (mode !== 'thought' && mode !== 'ongoing') return;
+    var ongoingList = mode === 'site' && sitePage === 'ongoing';
+    if (mode !== 'thought' && mode !== 'ongoing' && !ongoingList) return;
     try {
       if (sessionStorage.getItem('gg-journey') !== '1') return;
     } catch (e) { return; }
-    var routes = {
+    var nestedRoutes = {
       '../index.html':          ['../explore-a.html',          '旅程大厅', 'Tour hub'],
       '../index.html#projects': ['../explore-a.html#dirs',     '旅程项目', 'Projects (tour)'],
       '../index.html#thoughts': ['../explore-a.html#thoughts', '旅程思考', 'Essays (tour)'],
       '../index.html#about':    ['../explore-a.html#about',    '旅程团队', 'Team (tour)'],
       '../index.html#contact':  ['../explore-a.html#contact',  '去旅程里联系', 'Contact (tour)']
     };
+    var rootRoutes = {
+      'index.html':          ['explore-a.html',          '旅程大厅', 'Tour hub'],
+      'index.html#projects': ['explore-a.html#dirs',     '旅程项目', 'Projects (tour)'],
+      'index.html#thoughts': ['explore-a.html#thoughts', '旅程思考', 'Essays (tour)'],
+      'index.html#about':    ['explore-a.html#about',    '旅程团队', 'Team (tour)'],
+      'index.html#contact':  ['explore-a.html#contact',  '去旅程里联系', 'Contact (tour)'],
+      'demos.html':          ['explore-a.html#dirs',     '旅程项目', 'Projects (tour)'],
+      'thoughts.html':       ['explore-a.html#thoughts', '旅程思考', 'Essays (tour)'],
+      'ongoing.html':        ['explore-a.html#ongoing',  '旅程在建项目', 'Ongoing projects (tour)']
+    };
+    var routes = ongoingList ? rootRoutes : nestedRoutes;
     Array.from(document.querySelectorAll('a[href]')).forEach(function (a) {
-      var route = routes[a.getAttribute('href')];
+      var href = a.getAttribute('href');
+      var route = routes[href];
+      /* ongoing 详情正文里的思考内链,旅程会话内直接回到对应讲述场景;经典访客不改。 */
+      if (!route && mode === 'ongoing') {
+        var thought = href && href.match(/^\.\.\/thoughts\/([^/]+)\.html$/);
+        if (thought) {
+          a.setAttribute('href', '../explore-a.html#thought/' + encodeURIComponent(thought[1].replace(/-play$/, '')));
+          return;
+        }
+      }
       if (!route) return;
       a.setAttribute('href', route[0]);
       a.textContent = route[en ? 2 : 1];
