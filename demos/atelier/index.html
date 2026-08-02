@@ -273,6 +273,51 @@
 })();
 
   </script><!-- /atl-i18n-overlay -->
+
+  <script data-atl-demo-prefill>
+/* ATELIER 演示预填 — 登录门面自动填入示例手机号/验证码，免观众手动输入。
+   不改编译 bundle：登录框是 React 受控 input，用原生 value setter + 派发
+   input/change 事件写值，React 才会同步 state。仅命中登录页那两个框（按
+   placeholder 精确匹配，中英文都覆盖），其余输入框一律不动。 */
+(function () {
+  "use strict";
+  if (typeof window === "undefined") return;
+  var PHONE = "13800138000";   /* 11 位示例号（maxlength 11，无空格） */
+  var CODE  = "123456";        /* 演示：任意 6 位验证码即可通过 */
+
+  function reactSet(el, val) {
+    var desc = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, "value");
+    if (desc && desc.set) desc.set.call(el, val); else el.value = val;
+    el.dispatchEvent(new Event("input", { bubbles: true }));
+    el.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  function kindOf(el) {
+    if (!el || el.tagName !== "INPUT") return null;
+    var p = el.getAttribute("placeholder") || "";
+    if (/11\s*位手机号|11-digit phone/i.test(p)) return "phone";
+    if (/6\s*位验证码|6-digit code/i.test(p)) return "code";
+    return null;
+  }
+  var done = new WeakSet();
+  function fill() {
+    var els = document.getElementsByTagName("input");
+    for (var i = 0; i < els.length; i++) {
+      var el = els[i];
+      if (done.has(el) || el.value) continue;
+      var k = kindOf(el);
+      if (k === "phone") { reactSet(el, PHONE); done.add(el); }
+      else if (k === "code") { reactSet(el, CODE); done.add(el); }
+    }
+  }
+  var mo = new MutationObserver(function () { fill(); });
+  function start() {
+    fill();
+    mo.observe(document.documentElement, { childList: true, subtree: true });
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  else start();
+})();
+  </script><!-- /atl-demo-prefill -->
 </head>
   <body>
     <div id="root"></div>
