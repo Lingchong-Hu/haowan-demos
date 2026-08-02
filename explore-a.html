@@ -75,7 +75,7 @@ h2{font:600 clamp(27px,4.8vw,40px)/1.28 var(--serif)}
 
 /* ---------- 选项卡（大厅/方向/行业 通用） ---------- */
 .cards{display:grid;gap:16px;margin-top:40px}
-.cards.n4{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
+.cards.n4,.cards.n5{grid-template-columns:repeat(auto-fit,minmax(210px,1fr))}
 .cards.slim{grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
 .ocard{position:relative;text-align:left;background:var(--card);border:1px solid var(--line);
   border-radius:20px;padding:24px 22px 20px;cursor:pointer;font-family:var(--sans);color:var(--ink);
@@ -96,7 +96,7 @@ h2{font:600 clamp(27px,4.8vw,40px)/1.28 var(--serif)}
   background:var(--accent-soft);border-radius:999px;padding:3px 9px}
 .ocard .cnt{position:absolute;top:13px;right:15px;font:600 11.5px var(--sans);color:var(--accent-soft)}
 .hint{margin-top:40px;color:var(--ink-soft);font-size:13px;text-align:center}
-/* 大厅第五个小选项：不跟旅程，去经典整站自由翻 */
+/* 大厅五条旅程支线之后的小选项：不跟旅程，去经典整站自由翻 */
 .freebar{margin-top:22px;text-align:center}
 .freebar a{display:inline-flex;align-items:center;gap:8px;font:600 13.5px var(--sans);
   color:var(--ink-soft);border:1px dashed var(--line);border-radius:999px;padding:10px 20px;
@@ -162,6 +162,9 @@ h2{font:600 clamp(27px,4.8vw,40px)/1.28 var(--serif)}
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .lcard .arr{color:var(--accent);font-weight:700;flex:none}
 .lcard .n{font:600 12px var(--sans);color:var(--accent-soft);flex:none}
+.lcard .stage-badge{display:inline-flex;font:600 10.5px var(--sans);color:var(--accent);
+  background:color-mix(in srgb,var(--accent) 8%,var(--card));border:1px solid var(--accent-soft);
+  border-radius:999px;padding:3px 8px;margin-bottom:7px}
 .stack{display:flex;flex-direction:column;gap:11px;margin-top:32px;max-width:640px}
 .stack>*:nth-child(1){animation-delay:.05s}.stack>*:nth-child(2){animation-delay:.11s}
 .stack>*:nth-child(3){animation-delay:.17s}.stack>*:nth-child(4){animation-delay:.23s}
@@ -192,7 +195,7 @@ footer a{color:var(--accent);text-decoration:none}
 <div class="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
 <div class="topbar">
   <div class="crumbs" id="crumbs"></div>
-  <div class="score"><span id="scoreLbl">已探索</span> <b id="scoreN">0</b>/4</div>
+  <div class="score"><span id="scoreLbl">已探索</span> <b id="scoreN">0</b>/5</div>
   <span class="lang-toggle" role="group" aria-label="Language"><button type="button" data-lang-btn="en">EN</button><button type="button" data-lang-btn="zh">中文</button></span>
 </div>
 <main id="stage"></main>
@@ -219,7 +222,8 @@ $$('footer a[href]').forEach(a => a.addEventListener('click', leaveJourney));
 const L = {
   hub: T('⌂ 大厅', '⌂ Hub'), about: T('认识团队', 'About the team'),
   team: T('完整团队', 'Full team'), dirs: T('逛项目', 'Projects'),
-  thoughts: T('读思考', 'Essays'), contact: T('找到我', 'Find me')
+  thoughts: T('读思考', 'Essays'), ongoing: T('在建项目', 'Ongoing projects'),
+  contact: T('找到我', 'Find me')
 };
 if (EN) {
   document.title = 'Tour · Playground';
@@ -335,6 +339,7 @@ stage.addEventListener('pointerdown', e => {
 });
 let visitedWritable = true;
 let visited;
+const VISIT_KEYS = ['about', 'demos', 'thoughts', 'ongoing', 'contact'];
 try {
   const savedVisited = JSON.parse(sessionStorage.getItem('exp-a-visited') || '[]');
   if (!Array.isArray(savedVisited)) throw new TypeError('exp-a-visited must be an array');
@@ -349,7 +354,7 @@ function markVisited(key) {
     try { sessionStorage.setItem('exp-a-visited', JSON.stringify([...visited])); }
     catch (e) { visitedWritable = false; }
   }
-  $('#scoreN').textContent = ['about', 'demos', 'thoughts', 'contact'].filter(k => visited.has(k)).length;
+  $('#scoreN').textContent = VISIT_KEYS.filter(k => visited.has(k)).length;
 }
 let rendered = null;                       /* 已渲染的路径串，用来吞掉自己触发的 hashchange */
 function go(parts) {                       /* parts: ['story','probe'] 等 */
@@ -481,9 +486,9 @@ function scHub() {
     <div style="text-align:center">
       <div class="kick">${T('好玩的东西 · 互动版', 'Playground · Interactive')}</div>
       <h1>${T('接下来的几分钟，<br>你想怎么逛？', 'For the next few minutes,<br>how would you like to explore?')}</h1>
-      <p class="lead" style="margin:14px auto 0">${T(`${P.length} 个能亲手点的行业 Demo、${S.thoughts.length} 篇思考、一支精英敏捷团队——每走完一站，都会带你回到这里。`, `${P.length} hands-on industry demos, ${S.thoughts.length} essays, and one elite agile team — after every stop you come right back here.`)}</p>
+      <p class="lead" style="margin:14px auto 0">${T(`${P.length} 个能亲手点的行业 Demo、${S.thoughts.length} 篇思考、${(S.ongoing || []).length} 个在建项目和一支精英敏捷团队——每走完一站，都会带你回到这里。`, `${P.length} hands-on industry demos, ${S.thoughts.length} essays, ${(S.ongoing || []).length} ongoing projects, and one elite agile team — after every stop you come right back here.`)}</p>
     </div>
-    <div class="cards n4">
+    <div class="cards n5">
       <button class="ocard" data-go="about">${badge('about')}
         <div class="em">👋</div><h3>${T('先认识团队', 'Meet the team first')}</h3>
         <p>${T('谁在做这些东西，为什么用现金收入而不是叙事验证价值。', 'Who builds all this, and why we validate with cash revenue instead of narratives.')}</p><div class="go">${goTxt}</div></button>
@@ -493,6 +498,9 @@ function scHub() {
       <button class="ocard" data-go="thoughts">${badge('thoughts')}
         <div class="em">💡</div><h3>${T('读几篇思考', 'Read a few essays')}</h3>
         <p>${T('意图、数据、安全、人性——AI 到底怎么落地。', 'Intent, data, safety, human nature — how AI actually lands.')}</p><div class="go">${goTxt}</div></button>
+      <button class="ocard" data-go="ongoing">${badge('ongoing')}
+        <div class="em">🚧</div><h3>${T('看看在建项目', 'See ongoing projects')}</h3>
+        <p>${T('正在验证、还没做完的东西，也把判断和风险先摊开。', 'Work still under validation — unfinished, with the judgments and risks left visible.')}</p><div class="go">${goTxt}</div></button>
       <button class="ocard" data-go="contact">${badge('contact')}
         <div class="em">✉️</div><h3>${T('找到我', 'Find me')}</h3>
         <p>${T('合作、需求、想法，或者只是打个招呼。', 'Collaborations, needs, ideas — or just say hi.')}</p><div class="go">${goTxt}</div></button>
@@ -767,6 +775,34 @@ function scStory(id) {
   armNotes(sc, 'exp-a-s-' + id);
 }
 
+/* —— 在建项目：先讲为什么公开未完成，再进入两张数据驱动项目卡 —— */
+function scOngoing() {
+  hit('exp-a-ongoing');
+  markVisited('ongoing');
+  crumbs([[L.hub, []], [L.ongoing, null]]);
+  const items = S.ongoing || [];
+  const sc = setScene(`<div class="kick">${T('第四站 · 正在建', 'Stop 4 · Under construction')}</div><div id="mount"></div>`);
+  const beats = [
+    { cls: 'tagline', html: T('Ongoing · 先验证，再生长', 'Ongoing · validate first, then grow') },
+    { cls: 'big', html: T('有些东西，值得在做完之前就摊开。', 'Some things are worth showing before they are finished.') },
+    { html: T(
+      `Demo 是已经能玩的；这里还有 ${items.length} 个项目正在建。我们走的，就是<a href="#thought/beach-stall" style="color:var(--accent)">《沙滩中央的冰淇淋摊》</a>里那条谦逊的路：先把需求、市场和技术风险交给现实验证，再让产品慢慢长出来。`,
+      `The demos are already playable; ${items.length} more projects are still being built. We are following the humble path from <a href="#thought/beach-stall" style="color:var(--accent)">The Ice-Cream Stalls in the Middle of the Beach</a>: let reality test the demand, market, and technical risks first — then let the product grow.`) }
+  ];
+  const done = `
+    <div class="stack">
+      ${items.map(item => `<a class="lcard" href="${item.href}">
+        <div class="t"><span class="stage-badge">${item.stage}</span><h4>${item.title}</h4><p>${item.tagline}</p></div>
+        <span class="arr">${T('进去看 →', 'Step inside →')}</span></a>`).join('')}
+    </div>
+    <div class="navrow"><button class="navlink" data-home>${T('⌂ 回大厅', '⌂ Back to hub')}</button></div>`;
+  $('#mount', sc).appendChild(playStory(beats, done, {
+    pace: 1050,
+    onDone: () => $$('[data-home]', sc).forEach(b => b.onclick = () => go([]))
+  }));
+  armNotes(sc, 'exp-a-ongoing');
+}
+
 /* —— 思考：列表 → 每篇都是流式故事场景 —— */
 function scThoughts() {
   hit('exp-a-thoughts');
@@ -920,11 +956,11 @@ function scContact() {
   hit('exp-a-contact');
   markVisited('contact');
   crumbs([[L.hub, []], [L.contact, null]]);
-  const n = ['about', 'demos', 'thoughts', 'contact'].filter(k => visited.has(k)).length;
+  const n = VISIT_KEYS.filter(k => visited.has(k)).length;
   const sc = setScene(`
     <div class="kick">${T('终点站 · 找到我', 'Last stop · Find me')}</div>
     <h2>${T('要不要留下点什么？', 'Care to leave something behind?')}</h2>
-    <p class="lead">${n >= 4 ? T('四站全走完了——你是认真的访客 🏅 ', 'You walked all four stops — a serious visitor 🏅 ') : ''}${c.intro}</p>
+    <p class="lead">${n >= 5 ? T('五站全走完了——你是认真的访客 🏅 ', 'You walked all five stops — a serious visitor 🏅 ') : ''}${c.intro}</p>
     <div class="contactrow">
       <button class="copybtn" data-copy="${c.wechatId}">${T(`微信 ${c.wechatId} · 点击复制`, `WeChat ${c.wechatId} · click to copy`)}</button>
       <a class="copybtn" href="mailto:${c.email}">✉️ ${c.email}</a>
@@ -956,6 +992,7 @@ function render(parts) {
   if (k === 'story' && parts.length === 2) return scStory(a);
   if (k === 'thoughts' && parts.length === 1) return scThoughts();
   if (k === 'thought' && parts.length === 2) return scThought(a);
+  if (k === 'ongoing' && parts.length === 1) return scOngoing();
   if (k === 'contact' && parts.length === 1) return scContact();
   return replaceRoute([]);
 }

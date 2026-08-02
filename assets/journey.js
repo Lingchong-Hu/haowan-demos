@@ -2,7 +2,7 @@
    v2:不再只挂 demo 页,按上下文挂载——
      · /demos/<slug>/…      demo 页(原有):讲述 → 项目目录 → 大厅
      · /thoughts/<x>.html   思考原文/互动版:这篇的讲述 → 读思考 → 大厅
-     · /ongoing/<x>.html    在建项目详情:site 罗盘;旅程会话内接管经典导航
+     · /ongoing/<x>.html    在建项目详情:讲述 → 在建项目支线 → 大厅
      · demos/thoughts/ongoing/team/project.html 经典站点页:大厅 → 逛项目 → 读思考
    index.html 不挂(已有导航入口 + 首访双模式选择浮层),旅程页本身与后台也不挂。
    由 feedback.js 自动加载(data-gg-j 防重);零依赖、纯注入,不动页面自身代码。
@@ -11,11 +11,11 @@
   'use strict';
   if (window.__GGJ) return; window.__GGJ = 1;
 
-  var path = location.pathname, m, mode = null, base = '', slug = '', ongoingDetail = false;
+  var path = location.pathname, m, mode = null, base = '', slug = '';
   if ((m = path.match(/^(.*)\/demos\/([^/]+)\//))) {
     mode = 'demo'; base = m[1] || ''; slug = m[2];
   } else if ((m = path.match(/^(.*)\/ongoing\/([^/]+)\.html$/))) {
-    mode = 'site'; base = m[1] || ''; ongoingDetail = true;
+    mode = 'ongoing'; base = m[1] || ''; slug = m[2];
   } else if ((m = path.match(/^(.*)\/thoughts\/([^/]+)\.html$/))) {
     mode = 'thought'; base = m[1] || ''; slug = m[2].replace(/-play$/, '');
   } else if ((m = path.match(/^(.*)\/(demos|thoughts|ongoing|team|project)\.html$/))) {
@@ -82,7 +82,7 @@
   }
   var en = resolveWidgetLang() === 'en';
   function rewriteThoughtClassicLinks() {
-    if (mode !== 'thought' && !ongoingDetail) return;
+    if (mode !== 'thought' && mode !== 'ongoing') return;
     try {
       if (sessionStorage.getItem('gg-journey') !== '1') return;
     } catch (e) { return; }
@@ -120,6 +120,11 @@
         en ? 'Back to this essay’s story' : '回到这篇的讲述',
         en ? 'The guided version of this essay' : '这篇思考的旅程讲述场景') +
       row(J + '#thoughts', '💡', en ? 'All essays (tour)' : '读思考', en ? 'Pick the next one to hear' : '挑下一篇听') +
+      row(J, '⌂', en ? 'Tour hub' : '旅程大厅');
+    if (mode === 'ongoing') return '<div class="hd">' + hd + '</div>' +
+      row(J + '#ongoing', '←',
+        en ? 'Back to ongoing projects' : '回到在建项目的讲述',
+        en ? 'See what is still being validated' : '继续看正在验证、还没做完的东西') +
       row(J, '⌂', en ? 'Tour hub' : '旅程大厅');
     return '<div class="hd">' + (en ? '🧭 Prefer being guided?' : '🧭 想被带着逛?') + '</div>' +
       row(J, '⌂', en ? 'Tour hub' : '旅程大厅', en ? 'Team, demos & essays, step by step' : '团队、项目、思考,一步步讲给你听') +
