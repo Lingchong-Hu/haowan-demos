@@ -99,6 +99,26 @@ window.SITE = {
     }
   ],
 
+  // 在建项目（独立于 PROJECTS / Demo 画廊）
+  ongoing: [
+    {
+      slug: "form-assist",
+      title: "填表助手",
+      tagline: "替代留学机构重复网申填表工作的本地优先 agent。",
+      stage: "进行中 · 逻辑验证阶段",
+      href: "ongoing/form-assist.html",
+      date: "2026-07-30"
+    },
+    {
+      slug: "pms",
+      title: "PMS",
+      tagline: "为短租房东整合房源、日历、订单与运营工作的一体化管理系统。",
+      stage: "进行中 · 高保真原型可试",
+      href: "ongoing/pms.html",
+      date: "2026-07-30"
+    }
+  ],
+
   // 联系 / 留下想法
   // ▸ wechatId：填你的微信号（主推，手机/电脑都能复制后搜索添加）
   // ▸ email：填长期邮箱（school 邮箱 10 月过期，已换个人 Gmail）
@@ -1493,6 +1513,25 @@ window.SITE_EN = {
       href: "thoughts/dev-process.html",
       play: "thoughts/dev-process-play.html",
       featured: true
+    }
+  ],
+
+  ongoing: [
+    {
+      slug: "form-assist",
+      title: "Form Assist",
+      tagline: "A local-first agent for the repetitive application-form work inside study-abroad agencies.",
+      stage: "Ongoing · validating the logic",
+      href: "ongoing/form-assist.html",
+      date: "2026-07-30"
+    },
+    {
+      slug: "pms",
+      title: "PMS",
+      tagline: "An all-in-one system for short-term rental hosts to manage listings, calendars, bookings, and operations.",
+      stage: "Ongoing · prototype available to try",
+      href: "ongoing/pms.html",
+      date: "2026-07-30"
     }
   ],
 

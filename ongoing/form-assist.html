@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f7f3ee" />
+<title>填表助手 · 在建项目 · 好玩的东西</title>
+<meta name="description" content="替代留学机构重复网申填表工作的本地优先 agent：需求、市场、技术判断与交互演示。" />
+<link rel="stylesheet" href="../assets/style.css" />
+<script src="../assets/i18n.js"></script>
+<script>document.documentElement.classList.add('nav-ready')</script>
+<script defer src="../assets/site.js"></script>
+<script defer src="../assets/feedback.js"></script>
+<style>
+.ongoing-page{max-width:940px;margin:0 auto;padding:28px 0 84px}
+.ongoing-head{max-width:760px;padding:24px 0 34px}
+.ongoing-head h1{font-size:clamp(34px,6vw,58px);line-height:1.12;margin:10px 0}
+.ongoing-head .tagline{font:400 clamp(17px,2.5vw,22px)/1.7 var(--serif);color:var(--ink-soft)}
+.stage-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px;font-size:13px;color:var(--ink-soft)}
+.stage-badge{display:inline-flex;align-items:center;gap:8px;color:var(--accent);background:#fbeee6;
+  border:1px solid var(--accent-soft);border-radius:999px;padding:6px 12px;font-weight:600}
+.stage-badge::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(180,84,46,.12)}
+.ongoing-sec{padding:42px 0;border-top:1px solid var(--line)}
+.ongoing-sec h2{font-size:clamp(24px,4vw,34px);margin-bottom:18px}
+.ongoing-sec .body{max-width:760px;font-size:16.5px;line-height:1.9;color:#403832}
+.ongoing-sec .body p+p{margin-top:18px}
+.ongoing-sec .body a{color:var(--accent)}
+.judgment{margin-top:22px;padding:20px 22px;border-left:3px solid var(--accent);background:var(--card);border-radius:0 12px 12px 0}
+.demo-shell{margin-top:24px;border:1px solid var(--line);border-radius:18px;background:var(--card);padding:22px;box-shadow:0 24px 54px -40px rgba(60,40,25,.45)}
+.demo-toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:18px}
+.school-tabs{display:flex;gap:8px;padding:4px;background:var(--bg-2);border:1px solid var(--line);border-radius:10px}
+.school-tabs button{border:0;background:transparent;color:var(--ink-soft);font:600 13px var(--sans);padding:9px 13px;border-radius:7px;cursor:pointer}
+.school-tabs button.active{background:var(--card);color:var(--ink);box-shadow:0 3px 10px rgba(60,40,25,.1)}
+.assist-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(170px,.7fr) minmax(0,1.15fr);gap:14px;align-items:start}
+.demo-panel{border:1px solid var(--line);border-radius:13px;background:#fffdfa;padding:16px;min-width:0}
+.demo-panel h3{font:650 15px var(--sans);margin-bottom:4px}
+.demo-panel .panel-note{font-size:11.5px;color:var(--ink-soft);margin-bottom:13px}
+.source-item{border:1px solid transparent;border-radius:8px;padding:8px 9px;transition:.25s;background:var(--bg)}
+.source-item+.source-item{margin-top:7px}
+.source-item .k{font-size:10.5px;color:var(--ink-soft);letter-spacing:.05em}
+.source-item .v{font-size:13px;font-weight:600;overflow-wrap:anywhere}
+.source-item.mapped{border-color:var(--sage);background:#f0f4ed}
+.map-rail{display:flex;flex-direction:column;gap:7px;min-height:230px}
+.map-empty{font-size:12px;color:var(--ink-soft);text-align:center;padding:52px 8px}
+.map-row{font-size:11px;line-height:1.45;padding:8px;border-radius:8px;border:1px solid var(--line);background:var(--bg);animation:mapIn .3s ease both}
+.map-row b{display:block;color:var(--accent);font-weight:650}.map-row.review{border-color:#d8aa4e;background:#fff9e9}
+@keyframes mapIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.mock-form{display:grid;gap:10px}.mock-form.layout-b{grid-template-columns:1fr 1fr}.mock-form.layout-b label:last-child{grid-column:1/-1}
+.mock-form label{display:block;font-size:11px;color:var(--ink-soft)}
+.mock-form input,.mock-form textarea{display:block;width:100%;margin-top:5px;border:1px solid var(--line);border-radius:8px;background:#fff;padding:9px 10px;
+  color:var(--ink);font:500 12px/1.4 var(--sans);transition:.25s;resize:none}
+.mock-form textarea{min-height:70px}.mock-form input.filled,.mock-form textarea.filled{border-color:var(--sage);background:#f0f4ed}
+.mock-form input.review,.mock-form textarea.review{border-color:#d8aa4e;background:#fff9e9}
+.review-note{display:none;margin-top:12px;font-size:12px;color:#84651f;background:#fff9e9;border:1px solid #ead29a;border-radius:8px;padding:9px}
+.review-note.show{display:block}.demo-legend{margin-top:14px;font-size:11.5px;color:var(--ink-soft)}
+@media(max-width:780px){.assist-grid{grid-template-columns:1fr}.map-rail{min-height:0}.map-empty{padding:18px}.mock-form.layout-b{grid-template-columns:1fr}.mock-form.layout-b label:last-child{grid-column:auto}}
+@media(max-width:720px){.ongoing-page{padding-top:12px}.ongoing-sec{padding:34px 0}.demo-shell{padding:16px}.demo-toolbar .btn{width:100%;justify-content:center}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html" data-i18n="nav.brand">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects" data-i18n="nav.projects">项目</a>
+      <a href="../index.html#thoughts" data-i18n="nav.thoughts">思考</a>
+      <a href="../index.html#about" data-i18n="nav.about">关于</a>
+      <span class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en">EN</button>
+        <button type="button" data-lang-btn="zh">中文</button>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<main class="ongoing-page wrap">
+  <header class="ongoing-head">
+    <div class="kicker" id="kicker"></div>
+    <h1 id="title"></h1>
+    <p class="tagline" id="tagline"></p>
+    <div class="stage-row"><span class="stage-badge" id="stage"></span><span>2026-07-30</span></div>
+  </header>
+
+  <section class="ongoing-sec"><h2 id="demand-title"></h2><div class="body" id="demand"></div></section>
+  <section class="ongoing-sec"><h2 id="market-title"></h2><div class="body" id="market"></div></section>
+  <section class="ongoing-sec"><h2 id="tech-title"></h2><div class="body" id="tech"></div></section>
+  <section class="ongoing-sec">
+    <h2 id="demo-title"></h2>
+    <div class="body"><p id="demo-intro"></p></div>
+    <div class="demo-shell">
+      <div class="demo-toolbar">
+        <div class="school-tabs" id="school-tabs"></div>
+        <button class="btn btn-primary" id="autofill" type="button"></button>
+      </div>
+      <div class="assist-grid">
+        <div class="demo-panel"><h3 id="profile-title"></h3><div class="panel-note" id="profile-note"></div><div id="profile"></div></div>
+        <div class="demo-panel"><h3 id="map-title"></h3><div class="map-rail" id="map-rail" aria-live="polite"></div></div>
+        <div class="demo-panel"><h3 id="form-title"></h3><div class="panel-note" id="form-note"></div><div class="mock-form" id="mock-form"></div><div class="review-note" id="review-note"></div></div>
+      </div>
+      <div class="demo-legend" id="legend"></div>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><p><a href="../index.html" data-i18n="demos.back">← 回到首页</a></p></div></footer>
+
+<script>
+const COPY = {
+  zh: {
+    title:'填表助手', kicker:'Ongoing · 留学申请服务', stage:'进行中 · 逻辑验证阶段',
+    tagline:'替代留学机构「填表老师」的网申自动填写 agent：一份学生资料，本地保存，适配不同学校的网申页面。',
+    heads:['① 需求分析','② 市场分析','③ 项目技术分析','④ Demo 演示'],
+    demand:[
+      '我们看到的不是一个偶发的小麻烦，而是一段每年按季节重复出现的生产流程。留学机构要把每个学生同一套资料——成绩单、教育与活动经历、推荐人、文书信息——反复录入几十所学校彼此不同的网申系统。旺季里，填表老师的时间直接决定机构还能不能继续接单；而一次姓名、成绩或推荐人信息的错填，代价可能远高于这项工作的技术难度。',
+      '这里最容易被忽略的需求是隐私。学生资料集中包含身份、成绩与申请策略，机构并不愿意把整套数据交给一个陌生云端。因此「本地保存」不是我们顺手选择的技术偏好，而是产品能不能进入真实工作流的一部分。我们的判断是：先把资料留在机构控制的设备上，再让自动化只取完成当前表单所需的字段，信任门槛才有可能降下来。'
+    ],
+    market:[
+      '留学申请服务本身已经是成熟的付费市场，填表也是机构内部公认的重复劳动。我们不需要先教育客户承认这项工作存在；真正要验证的是，他们是否愿意把这段流程交给软件，以及节省下来的旺季人力是否足以支持持续付费。',
+      '现有浏览器表单填充插件大多依赖静态字段名：姓名对姓名、邮箱对邮箱。可学校网申不是同一张表换个皮肤，同一个概念会被拆分、改名、换顺序，甚至藏在不同步骤里。大模型第一次让系统有机会理解「这个问题在问什么」，再把它对应到学生数据，而不是死记某个网页的选择器。这个能力打开了窗口，但窗口不等于市场已经成立。'
+    ],
+    tech:[
+      '我们正在验证的实现链路是：本地数据层保存学生档案；字段语义映射由模型理解表单标签与档案字段的关系；浏览器自动化负责把值写进页面；提交前必须经过人工 review。最后一步不是妥协，而是边界——系统负责消灭重复输入，人继续对申请负责。',
+      '目前最大的风险也很明确：不同学校网申系统的反自动化机制，以及平台条款是否允许这种操作。任何一环亮红灯，都可能证伪当前实现路径，而不是留给「以后优化」。这正是我们在<a href="../thoughts/beach-stall.html">《沙滩中央的冰淇淋摊》</a>里写过的证伪管道：便宜地把链路跑到会断的地方，然后决定是换技术路径、缩小需求，还是停止。'
+    ],
+    judgment:'我们的判断：要验证的不是「AI 会不会填 input」，而是本地隐私、跨站语义映射、平台规则与人审责任能不能共同组成一条可交付的链。',
+    demoIntro:'下面只演示核心逻辑：同一份本地学生档案，面对字段命名和布局不同的两所学校，系统按语义建立映射；黄色字段不会擅自替人决定，而是留给填表老师确认。',
+    schools:['A 大学','B 大学'], auto:'自动填写', profileTitle:'本地学生档案', profileNote:'Mock 数据 · 保存在当前设备', mapTitle:'语义映射',
+    formNote:'模拟网申 · 不会提交', formTitle:['A 大学网申','B 大学网申'], empty:'点击「自动填写」后显示字段关系',
+    review:'黄色字段需要填表老师人工确认后才能继续。', legend:'绿色 = 高置信度自动填入　·　黄色 = 已找到对应关系，但需要人工确认',
+    source:{fullName:['姓名','陈雨宁'],gpa:['GPA','3.86 / 4.00'],recommender:['推荐人','李文教授 · liwen@example.edu'],experience:['经历','机器人社团负责人，组织 12 人团队']},
+    forms:[
+      {layout:'a',fields:[['Applicant legal name','fullName','陈雨宁',false],['Cumulative GPA','gpa','3.86 / 4.00',false],['Recommender contact','recommender','liwen@example.edu',true],['Leadership experience','experience','机器人社团负责人，组织 12 人团队',true]]},
+      {layout:'b',fields:[['Family / given name','fullName','陈 / 雨宁',true],['Grade point average','gpa','3.86 / 4.00',false],['Referee email','recommender','liwen@example.edu',false],['Describe one activity','experience','机器人社团负责人，组织 12 人团队',true]]}
+    ]
+  },
+  en: {
+    title:'Form Assist', kicker:'Ongoing · Study-abroad services', stage:'Ongoing · validating the logic',
+    tagline:'An application-form agent for study-abroad agencies: keep one student record locally and adapt it to different university portals.',
+    heads:['① Demand analysis','② Market analysis','③ Technical analysis','④ Demo'],
+    demand:[
+      'We are not looking at an occasional nuisance, but a production process that returns every application season. Agencies repeatedly enter the same transcript, education and activity history, recommender details, and essay metadata into dozens of incompatible university systems. During peak season, form-filling capacity directly limits how many students an agency can serve; a single error in a name, grade, or recommender can cost far more than the technical difficulty of typing it.',
+      'Privacy is part of the demand. A student record combines identity, grades, and application strategy, and agencies are reluctant to hand the full dataset to an unfamiliar cloud service. Local storage is therefore not an engineering preference. Our hypothesis is that the record must remain on a device the agency controls, while automation reads only the fields needed for the current form.'
+    ],
+    market:[
+      'Study-abroad application services are already a mature paid market, and form entry is recognized repetitive labor inside agencies. We do not need to persuade customers that the work exists. We need to learn whether they will delegate it to software, and whether the peak-season labor saved supports recurring payment.',
+      'Most browser autofill tools depend on static field names. University portals are not one form with different skins: the same idea is split, renamed, reordered, and distributed across steps. Language models create the first credible chance to understand what a question means and map it to a student record rather than memorizing selectors. That opens a window; it does not prove a market.'
+    ],
+    tech:[
+      'The chain we are testing is: a local data layer for the student record; semantic field mapping between portal labels and that record; browser automation to execute the fill; and a mandatory human review before submission. The last step is the boundary, not a compromise: software removes repeated entry while a person remains accountable for the application.',
+      'The largest risks are explicit: anti-automation mechanisms across university portals and compliance with platform terms. A red light at either step may falsify this implementation path. This is the falsification pipeline described in <a href="../thoughts/beach-stall.html">The Ice-Cream Stalls in the Middle of the Beach</a>: run the chain cheaply until it breaks, then change the path, narrow the demand, or stop.'
+    ],
+    judgment:'Our judgment: the question is not whether AI can fill an input. It is whether local privacy, cross-site semantic mapping, platform rules, and human accountability can form one deliverable chain.',
+    demoIntro:'This mock shows only the core logic: one local student profile, two differently named and arranged university forms, semantic mapping between them, and yellow fields reserved for human confirmation.',
+    schools:['University A','University B'], auto:'Auto-fill', profileTitle:'Local student profile', profileNote:'Mock data · stays on this device', mapTitle:'Semantic mapping',
+    formNote:'Mock application · nothing is submitted', formTitle:['University A application','University B application'], empty:'Click “Auto-fill” to reveal field mappings',
+    review:'Yellow fields require staff review before the workflow can continue.', legend:'Green = high-confidence fill　·　Yellow = mapped, but requires human confirmation',
+    source:{fullName:['Name','Yuning Chen'],gpa:['GPA','3.86 / 4.00'],recommender:['Recommender','Prof. Wen Li · liwen@example.edu'],experience:['Experience','Led a 12-person robotics club team']},
+    forms:[
+      {layout:'a',fields:[['Applicant legal name','fullName','Yuning Chen',false],['Cumulative GPA','gpa','3.86 / 4.00',false],['Recommender contact','recommender','liwen@example.edu',true],['Leadership experience','experience','Led a 12-person robotics club team',true]]},
+      {layout:'b',fields:[['Family / given name','fullName','Chen / Yuning',true],['Grade point average','gpa','3.86 / 4.00',false],['Referee email','recommender','liwen@example.edu',false],['Describe one activity','experience','Led a 12-person robotics club team',true]]}
+    ]
+  }
+};
+const C = COPY[window.LANG === 'en' ? 'en' : 'zh'];
+const $ = id => document.getElementById(id);
+document.title = `${C.title} · ${window.LANG === 'en' ? 'Ongoing Projects · Playground' : '在建项目 · 好玩的东西'}`;
+document.querySelector('meta[name="description"]').content = C.tagline;
+$('kicker').textContent=C.kicker;$('title').textContent=C.title;$('tagline').textContent=C.tagline;$('stage').textContent=C.stage;
+['demand','market','tech','demo'].forEach((id,i)=>$(id+'-title').textContent=C.heads[i]);
+$('demand').innerHTML=C.demand.map(x=>`<p>${x}</p>`).join('');
+$('market').innerHTML=C.market.map(x=>`<p>${x}</p>`).join('');
+$('tech').innerHTML=C.tech.map(x=>`<p>${x}</p>`).join('')+`<div class="judgment"><b>${C.judgment}</b></div>`;
+$('demo-intro').textContent=C.demoIntro;$('profile-title').textContent=C.profileTitle;$('profile-note').textContent=C.profileNote;
+$('map-title').textContent=C.mapTitle;$('form-note').textContent=C.formNote;$('review-note').textContent=C.review;$('legend').textContent=C.legend;
+$('autofill').textContent=C.auto;
+
+const sourceKeys=['fullName','gpa','recommender','experience'];
+$('profile').innerHTML=sourceKeys.map(k=>`<div class="source-item" id="src-${k}"><div class="k">${C.source[k][0]}</div><div class="v">${C.source[k][1]}</div></div>`).join('');
+let school=0, timers=[];
+function resetDemo(){
+  timers.forEach(clearTimeout);timers=[];$('autofill').disabled=false;
+  document.querySelectorAll('.source-item').forEach(x=>x.classList.remove('mapped'));
+  document.querySelectorAll('#mock-form input, #mock-form textarea').forEach(x=>{x.value='';x.classList.remove('filled','review');});
+  $('map-rail').innerHTML=`<div class="map-empty">${C.empty}</div>`;
+  $('review-note').classList.remove('show');
+}
+function renderSchool(){
+  $('school-tabs').innerHTML=C.schools.map((name,i)=>`<button type="button" data-school="${i}" class="${i===school?'active':''}">${name}</button>`).join('');
+  $('form-title').textContent=C.formTitle[school];
+  const spec=C.forms[school];$('mock-form').className='mock-form layout-'+spec.layout;
+  $('mock-form').innerHTML=spec.fields.map((f,i)=>`<label>${f[0]}${f[3]?' · ?':''}<${f[0].includes('experience')||f[0].includes('activity')?'textarea':'input'} id="target-${i}" readonly></${f[0].includes('experience')||f[0].includes('activity')?'textarea':'input'}></label>`).join('');
+  document.querySelectorAll('[data-school]').forEach(b=>b.onclick=()=>{school=+b.dataset.school;renderSchool();});
+  resetDemo();
+}
+function autoFill(){
+  resetDemo();$('autofill').disabled=true;$('map-rail').innerHTML='';
+  C.forms[school].fields.forEach((f,i)=>timers.push(setTimeout(()=>{
+    const source=$('src-'+f[1]), target=$('target-'+i);source.classList.add('mapped');target.value=f[2];target.classList.add(f[3]?'review':'filled');
+    $('map-rail').insertAdjacentHTML('beforeend',`<div class="map-row${f[3]?' review':''}"><b>${C.source[f[1]][0]} → ${f[0]}</b>${f[3]?C.review:''}</div>`);
+    if(f[3])$('review-note').classList.add('show');
+    if(i===C.forms[school].fields.length-1)$('autofill').disabled=false;
+  },i*480)));
+}
+$('autofill').onclick=autoFill;renderSchool();
+</script>
+</body>
+</html>

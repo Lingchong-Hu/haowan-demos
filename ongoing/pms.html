@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f7f3ee" />
+<title>PMS · 在建项目 · 好玩的东西</title>
+<meta name="description" content="短租房东的一体化管理系统：需求、市场、技术判断与前端原型接入位。" />
+<link rel="stylesheet" href="../assets/style.css" />
+<script src="../assets/i18n.js"></script>
+<script>document.documentElement.classList.add('nav-ready')</script>
+<script defer src="../assets/site.js"></script>
+<script defer src="../assets/feedback.js"></script>
+<style>
+.ongoing-page{max-width:940px;margin:0 auto;padding:28px 0 84px}
+.ongoing-head{max-width:760px;padding:24px 0 34px}
+.ongoing-head h1{font-size:clamp(34px,6vw,58px);line-height:1.12;margin:10px 0}
+.ongoing-head .tagline{font:400 clamp(17px,2.5vw,22px)/1.7 var(--serif);color:var(--ink-soft)}
+.stage-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:20px;font-size:13px;color:var(--ink-soft)}
+.stage-badge{display:inline-flex;align-items:center;gap:8px;color:var(--accent);background:#fbeee6;
+  border:1px solid var(--accent-soft);border-radius:999px;padding:6px 12px;font-weight:600}
+.stage-badge::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(180,84,46,.12)}
+.ongoing-sec{padding:42px 0;border-top:1px solid var(--line)}
+.ongoing-sec h2{font-size:clamp(24px,4vw,34px);margin-bottom:18px}
+.ongoing-sec .body{max-width:760px;font-size:16.5px;line-height:1.9;color:#403832}
+.ongoing-sec .body p+p{margin-top:18px}
+.tech-flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:22px}
+.tech-flow span{font-size:12.5px;padding:7px 11px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink-soft)}
+.tech-flow b{color:var(--accent-soft);font-weight:500}
+.prototype-mount{margin-top:24px}
+.proto-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:10px}
+.proto-bar .t{font:650 15px var(--sans)}
+.proto-bar a{font:600 13.5px var(--sans);color:var(--accent);text-decoration:none;border:1px solid var(--accent-soft);border-radius:999px;padding:7px 14px}
+.proto-bar a:hover{background:#fbeee6}
+.proto-frame{width:100%;height:clamp(430px,78vh,860px);border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 10px 30px rgba(63,44,28,.08)}
+.proto-note{margin-top:10px;font-size:13px;color:var(--ink-soft);line-height:1.7}
+@media(max-width:720px){.ongoing-page{padding-top:12px}.ongoing-sec{padding:34px 0}.proto-frame{height:clamp(380px,70vh,760px)}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="../index.html" data-i18n="nav.brand">好玩的东西</a>
+    <div class="nav-links">
+      <a href="../index.html#projects" data-i18n="nav.projects">项目</a>
+      <a href="../index.html#thoughts" data-i18n="nav.thoughts">思考</a>
+      <a href="../index.html#about" data-i18n="nav.about">关于</a>
+      <span class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en">EN</button>
+        <button type="button" data-lang-btn="zh">中文</button>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<main class="ongoing-page wrap">
+  <header class="ongoing-head">
+    <div class="kicker" id="kicker"></div>
+    <h1 id="title"></h1>
+    <p class="tagline" id="tagline"></p>
+    <div class="stage-row"><span class="stage-badge" id="stage"></span><span>2026-07-30</span></div>
+  </header>
+  <section class="ongoing-sec"><h2 id="demand-title"></h2><div class="body" id="demand"></div></section>
+  <section class="ongoing-sec"><h2 id="market-title"></h2><div class="body" id="market"></div></section>
+  <section class="ongoing-sec"><h2 id="tech-title"></h2><div class="body" id="tech"></div><div class="tech-flow" id="tech-flow"></div></section>
+  <section class="ongoing-sec">
+    <h2 id="demo-title"></h2><div class="body"><p id="demo-copy"></p></div>
+    <!-- PMS-PROTOTYPE-MOUNT -->
+    <div class="prototype-mount" id="pms-prototype-mount">
+      <div class="proto-bar"><span class="t" id="mount-title"></span><a id="proto-open" href="pms-prototype.html" target="_blank" rel="noopener"></a></div>
+      <iframe class="proto-frame" id="proto-frame" src="pms-prototype.html" loading="lazy"></iframe>
+      <p class="proto-note" id="mount-copy"></p>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><p><a href="../index.html" data-i18n="demos.back">← 回到首页</a></p></div></footer>
+
+<script>
+const COPY={
+  zh:{
+    title:'PMS',kicker:'Ongoing · 短租运营',stage:'进行中 · 高保真原型可试',tagline:'给短租房东的一体化管理系统：把分散在平台、表格和聊天群里的房源运营收回一个工作台。',
+    heads:['① 需求分析','② 市场分析','③ 项目技术分析','④ Demo 演示'],
+    demand:[
+      '我们接触到的短租房东，很少只在一个地方工作。Airbnb、Booking 和本地渠道各自维护房源、价格与日历；订单在平台里，清洁和维修在聊天群里，账务又回到 Excel。房源只有一套时，人还能靠记忆补齐系统之间的缝。规模到几套房以后，一次漏同步、一次忘记安排清洁，就足以把当月省下来的工具费全部赔回去。',
+      '所以我们的需求判断不是「房东需要更多功能」，而是房东需要一个可信的运营主界面：今天有哪些入住和退房，哪套房待清洁，什么维修还没关闭，钱从哪里进、又花到了哪里。它首先要减少切换和遗漏，其次才是做更漂亮的报表。'
+    ],
+    market:[
+      '短租供给端正在变得更专业，中小房东与小型管理团队仍然是数量庞大的一层。海外成熟 PMS 已经证明多平台聚合是长期需求，但成熟并不代表所有场景都被服务好。中文房东可能同时面对海外平台、本地协作人员、跨币种账务和不同沟通习惯，产品的语言、流程与服务方式都存在适配空隙。',
+      '我们不会在这里编造一个精确市场规模。当前更重要的验证是切口：中小房东最愿意先为什么付钱，是防止日历冲突、减少清洁调度，还是把账务从表格里拿出来。只有真实使用与支付能告诉我们，所谓「一体化」应该从哪一个最痛的闭环长出来。'
+    ],
+    tech:[
+      '产品能力可以展开得很宽：多平台房源、日历和订单聚合；清洁与维修排班；账务与经营报表；以及用 AI 回答租客的高频问题。但我们不准备一开始就把所有模块和所有房东塞进同一套复杂权限系统。',
+      '架构上的第一步是单房东、单账号的最小闭环。先让一个真实房东能看到一致的订单与任务状态，完成一次入住到退房、清洁、记账的完整循环，再决定哪些平台连接值得工程化。多租户、团队权限和更复杂的财务能力，都应该在这个闭环被证明以后进入。'
+    ],
+    flow:['房源 / 日历 / 订单','清洁与维修','账务与报表','AI 租客应答'],
+    demo:'高保真原型（演示版）已接入下方：从订单、对账、票据到 Statement、外勤与动态定价，可以直接点开逛。桌面宽屏体验最佳，也可以全屏单独打开。',
+    openLabel:'全屏打开 ↗',
+    mountTitle:'PMS 高保真原型 · 演示版',mountCopy:'原型是自包含的单页演示，不发出任何网络请求；页面中的房源、订单、金额均为虚构演示数据。'
+  },
+  en:{
+    title:'PMS',kicker:'Ongoing · Short-term rental operations',stage:'Ongoing · prototype available to try',tagline:'An all-in-one system for short-term rental hosts, bringing operations scattered across platforms, spreadsheets, and group chats into one workspace.',
+    heads:['① Demand analysis','② Market analysis','③ Technical analysis','④ Demo'],
+    demand:[
+      'The short-term rental hosts we meet rarely work in one place. Listings, prices, and calendars live separately across Airbnb, Booking, and local channels; bookings remain inside platforms; cleaning and maintenance move through group chats; accounting returns to Excel. With one unit, memory can bridge those gaps. With several, one missed sync or forgotten cleaning task can erase a month of software savings.',
+      'Our demand hypothesis is therefore not that hosts need more features. They need one trustworthy operating view: today’s arrivals and departures, units awaiting cleaning, open repairs, and where money entered and left. Reducing context switching and omissions comes before prettier reporting.'
+    ],
+    market:[
+      'The supply side of short-term rentals is becoming more professional, while small hosts and compact management teams remain a large layer. Mature overseas PMS products have established the durability of multi-platform aggregation, but maturity does not mean every workflow is served. Chinese-speaking hosts may combine global platforms, local contractors, multiple currencies, and different communication habits, leaving room in language, workflow, and service design.',
+      'We will not invent a precise market-size number here. The useful question now is the wedge: what will a small host pay for first — preventing calendar conflicts, coordinating cleaners, or moving accounting out of spreadsheets? Only real use and payment can tell us where an “all-in-one” product should begin.'
+    ],
+    tech:[
+      'The capability surface can become broad: aggregated listings, calendars, and bookings; cleaning and maintenance scheduling; accounting and operating reports; and AI answers to frequent guest questions. We do not intend to begin by placing every module and every host inside a complex permission system.',
+      'The architectural first step is a single-host, single-account minimum loop. One real host should see consistent booking and task state and complete one cycle from arrival through departure, cleaning, and accounting. Only then do we decide which platform connections deserve engineering investment. Multi-tenancy, team permissions, and deeper finance belong after that loop is proven.'
+    ],
+    flow:['Listings / calendars / bookings','Cleaning & maintenance','Accounting & reports','AI guest replies'],
+    demo:'The high-fidelity prototype (demo build) is embedded below — orders, reconciliation, bills, statements, field ops, and dynamic pricing are all clickable. Best on a wide desktop screen, or open it full screen.',
+    openLabel:'Open full screen ↗',
+    mountTitle:'PMS high-fidelity prototype · demo build',mountCopy:'The prototype is a self-contained single-page demo that makes no network requests; every listing, booking, and figure inside is fictional demo data. Its UI is currently Chinese-first.'
+  }
+};
+const C=COPY[window.LANG==='en'?'en':'zh'];const $=id=>document.getElementById(id);
+document.title=`PMS · ${window.LANG==='en'?'Ongoing Projects · Playground':'在建项目 · 好玩的东西'}`;
+document.querySelector('meta[name="description"]').content=C.tagline;
+$('kicker').textContent=C.kicker;$('title').textContent=C.title;$('tagline').textContent=C.tagline;$('stage').textContent=C.stage;
+['demand','market','tech','demo'].forEach((id,i)=>$(id+'-title').textContent=C.heads[i]);
+$('demand').innerHTML=C.demand.map(x=>`<p>${x}</p>`).join('');$('market').innerHTML=C.market.map(x=>`<p>${x}</p>`).join('');$('tech').innerHTML=C.tech.map(x=>`<p>${x}</p>`).join('');
+$('tech-flow').innerHTML=C.flow.map((x,i)=>`${i?'<b>→</b>':''}<span>${x}</span>`).join('');
+$('demo-copy').textContent=C.demo;$('mount-title').textContent=C.mountTitle;$('mount-copy').textContent=C.mountCopy;
+$('proto-open').textContent=C.openLabel;$('proto-frame').title=C.mountTitle;
+</script>
+</body>
+</html>

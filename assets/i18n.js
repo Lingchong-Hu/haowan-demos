@@ -30,6 +30,7 @@
     'nav.featured':    { zh: '精选',         en: 'Featured' },
     'nav.allDemos':    { zh: '全部 Demo',    en: 'All Demos' },
     'nav.allThoughts': { zh: '全部思考',     en: 'All Essays' },
+    'nav.ongoing':     { zh: '在建项目',     en: 'Ongoing' },
     'nav.thoughts':    { zh: '思考',         en: 'Essays' },
     'nav.about':       { zh: '关于',         en: 'About' },
     'nav.contact':     { zh: '联系',         en: 'Contact' },
@@ -40,6 +41,7 @@
     'title.demos':    { zh: '全部 Demo · 好玩的东西',   en: 'All Demos · Playground' },
     'title.project':  { zh: '项目 · 好玩的东西',        en: 'Project · Playground' },
     'title.thoughts': { zh: '全部思考 · 好玩的东西',    en: 'All Essays · Playground' },
+    'title.ongoing':  { zh: '在建项目 · 好玩的东西',    en: 'Ongoing Projects · Playground' },
     'title.team':     { zh: '团队 · 好玩的东西',        en: 'Team · Playground' },
 
     /* ── 首页 ── */
@@ -49,6 +51,10 @@
     'idx.thoughts.h2':  { zh: '一些思考', en: 'A few essays' },
     'idx.thoughts.note':{ zh: '关于意图、数据、安全、人性，与 AI 到底怎么落地',
                           en: 'On intent, data, safety, human nature — and how AI actually ships.' },
+    'idx.ongoing.h2':   { zh: '正在做的事', en: 'What we are building now' },
+    'idx.ongoing.note': { zh: '还没有被包装成答案，先把正在验证的判断摊开给你看',
+                          en: 'Not packaged as finished answers — just the hypotheses we are testing in public.' },
+    'idx.ongoing.cta':  { zh: '查看在建项目 →', en: 'See ongoing projects →' },
     'idx.contact.h2':   { zh: '联系 · 留下你的想法', en: 'Contact · leave a note' },
     'idx.contact.note': { zh: '想合作、想做点什么、或有具体需求都欢迎',
                           en: 'Collaborations, ideas, or concrete needs — all welcome.' },
@@ -94,6 +100,11 @@
     'th.badge':  { zh: '✦ 互动版', en: '✦ interactive' },
     'th.play':   { zh: '边玩边读 →', en: 'Read + play →' },
     'th.read':   { zh: '阅读 →', en: 'Read →' },
+
+    /* ── 在建项目列表 ── */
+    'ongoing.kicker': { zh: '在建项目 · 正在验证', en: 'Ongoing Projects · under validation' },
+    'ongoing.h1':     { zh: '在建项目', en: 'Ongoing Projects' },
+    'ongoing.open':   { zh: '查看正在验证什么 →', en: 'See what we are validating →' },
 
     /* ── 联系卡片（首页脚本用）── */
     'c.wechat':  { zh: '微信', en: 'WeChat' },

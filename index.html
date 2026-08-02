@@ -26,6 +26,7 @@
       <a href="explore-a.html" data-i18n="nav.journey">🧭 旅程式浏览</a>
       <a href="#projects" data-i18n="nav.featured">精选</a>
       <a href="demos.html" data-i18n="nav.allDemos">全部 Demo</a>
+      <a href="ongoing.html" data-i18n="nav.ongoing">在建项目</a>
       <a href="thoughts.html" data-i18n="nav.allThoughts">全部思考</a>
       <a href="#thoughts" data-i18n="nav.thoughts">思考</a>
       <a href="#about" data-i18n="nav.about">关于</a>
@@ -71,6 +72,15 @@
   <div class="more-row">
     <a class="btn btn-primary" id="proj-more" href="demos.html"></a>
   </div>
+</section>
+
+<!-- 在建项目：轻量入口，不并入 Demo 计数 -->
+<section class="wrap" id="ongoing-preview">
+  <div class="section-head">
+    <h2 data-i18n="idx.ongoing.h2">正在做的事</h2>
+    <span class="note" data-i18n="idx.ongoing.note">还没有被包装成答案，先把正在验证的判断摊开给你看</span>
+  </div>
+  <div class="intro-card" id="ongoing-card" style="margin-top:24px"></div>
 </section>
 
 <!-- 思考 -->
@@ -182,6 +192,16 @@
       <div class="tags">${tags}</div>
       <div class="go">${p.direct ? window.t('card.try') : window.t('card.view')}</div></a>`;
   }).join("");
+
+  // 在建项目轻量入口（独立于 PROJECTS，不参与 Demo 计数）
+  const ongoing = S.ongoing || [];
+  $("ongoing-card").innerHTML = `
+    <div class="who">
+      <div class="name">${ongoing.map(x => x.title).join(' · ')}</div>
+      <div class="role">${ongoing.map(x => x.stage).join('　/　')}</div>
+      <p>${ongoing.map(x => x.tagline).join(window.LANG === 'en' ? ' ' : ' ')}</p>
+    </div>
+    <a class="btn btn-ghost" href="ongoing.html">${window.t('idx.ongoing.cta')}</a>`;
 
   // 思考卡片（首页只渲染 featured；全部进 thoughts.html）
   $("thought-more").textContent = window.LANG === 'en'

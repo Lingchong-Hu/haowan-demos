@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#f7f3ee" />
+<title data-i18n="title.ongoing">在建项目 · 好玩的东西</title>
+<meta name="description" content="我们正在验证的产品判断：填表助手与短租房东 PMS。" />
+<link rel="stylesheet" href="assets/style.css" />
+<script src="assets/i18n.js"></script>
+<script>document.documentElement.classList.add('nav-ready')</script>
+<script defer src="assets/site.js"></script>
+<script defer src="assets/feedback.js"></script>
+<style>
+.ongoing-stage{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+  color:var(--accent);background:#fbeee6;border:1px solid var(--accent-soft);border-radius:999px;
+  padding:4px 10px;margin-bottom:12px}
+.ongoing-stage::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
+.ongoing-date{margin-top:10px;font-size:12px;color:var(--ink-soft)}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap">
+    <a class="brand" href="index.html" data-i18n="nav.brand">好玩的东西</a>
+    <div class="nav-links">
+      <a href="index.html#projects" data-i18n="nav.featured">精选</a>
+      <a href="demos.html" data-i18n="nav.allDemos">全部 Demo</a>
+      <a href="ongoing.html" data-i18n="nav.ongoing">在建项目</a>
+      <a href="thoughts.html" data-i18n="nav.allThoughts">全部思考</a>
+      <a href="index.html#about" data-i18n="nav.about">关于</a>
+      <a href="index.html#contact" data-i18n="nav.contact">联系</a>
+      <span class="lang-toggle" role="group" aria-label="Language">
+        <button type="button" data-lang-btn="en">EN</button>
+        <button type="button" data-lang-btn="zh">中文</button>
+      </span>
+    </div>
+  </div>
+</nav>
+
+<header class="hero wrap" style="padding-bottom:18px">
+  <div class="kicker" data-i18n="ongoing.kicker">在建项目 · 正在验证</div>
+  <h1 data-i18n="ongoing.h1">在建项目</h1>
+  <p class="lede" id="lede"></p>
+</header>
+
+<section class="wrap" style="padding-top:0">
+  <div class="thoughts" id="grid"></div>
+</section>
+
+<footer>
+  <div class="wrap"><p><a href="index.html" data-i18n="demos.back">← 回到首页</a></p></div>
+</footer>
+
+<script src="data.js"></script>
+<script>
+const items = ((window.SITE || {}).ongoing) || [];
+const $ = id => document.getElementById(id);
+const EN = window.LANG === 'en';
+document.querySelector('meta[name="description"]').content = EN
+  ? 'The product hypotheses we are actively testing: Form Assist and a PMS for short-term rental hosts.'
+  : '我们正在验证的产品判断：填表助手与短租房东 PMS。';
+$("lede").textContent = EN
+  ? `${items.length} projects are still being built. We are publishing the demand, market, and technical judgments before they harden into polished answers.`
+  : `${items.length} 个项目还在生长。我们把需求、市场和技术判断先摊开，保留那些尚未被现实验证的部分。`;
+$("grid").innerHTML = items.map(item => `<a class="tcard" href="${item.href}">
+  <div class="ongoing-stage">${item.stage}</div>
+  <div class="ck">Ongoing · ${item.slug}</div>
+  <h3>${item.title}</h3>
+  <p>${item.tagline}</p>
+  <div class="ongoing-date">${item.date}</div>
+  <div class="go">${window.t('ongoing.open')}</div>
+</a>`).join('');
+</script>
+</body>
+</html>

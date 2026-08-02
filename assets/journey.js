@@ -2,7 +2,8 @@
    v2:不再只挂 demo 页,按上下文挂载——
      · /demos/<slug>/…      demo 页(原有):讲述 → 项目目录 → 大厅
      · /thoughts/<x>.html   思考原文/互动版:这篇的讲述 → 读思考 → 大厅
-     · demos/thoughts/team/project.html 经典站点页:大厅 → 逛项目 → 读思考
+     · /ongoing/<x>.html    在建项目详情:site 罗盘;旅程会话内接管经典导航
+     · demos/thoughts/ongoing/team/project.html 经典站点页:大厅 → 逛项目 → 读思考
    index.html 不挂(已有导航入口 + 首访双模式选择浮层),旅程页本身与后台也不挂。
    由 feedback.js 自动加载(data-gg-j 防重);零依赖、纯注入,不动页面自身代码。
    另职责:demo 页大屏自适应 zoom(满屏 100vh 布局的 demo 除外)。 */
@@ -10,12 +11,14 @@
   'use strict';
   if (window.__GGJ) return; window.__GGJ = 1;
 
-  var path = location.pathname, m, mode = null, base = '', slug = '';
+  var path = location.pathname, m, mode = null, base = '', slug = '', ongoingDetail = false;
   if ((m = path.match(/^(.*)\/demos\/([^/]+)\//))) {
     mode = 'demo'; base = m[1] || ''; slug = m[2];
+  } else if ((m = path.match(/^(.*)\/ongoing\/([^/]+)\.html$/))) {
+    mode = 'site'; base = m[1] || ''; ongoingDetail = true;
   } else if ((m = path.match(/^(.*)\/thoughts\/([^/]+)\.html$/))) {
     mode = 'thought'; base = m[1] || ''; slug = m[2].replace(/-play$/, '');
-  } else if ((m = path.match(/^(.*)\/(demos|thoughts|team|project)\.html$/))) {
+  } else if ((m = path.match(/^(.*)\/(demos|thoughts|ongoing|team|project)\.html$/))) {
     mode = 'site'; base = m[1] || '';
   }
   if (!mode) return;
@@ -79,7 +82,7 @@
   }
   var en = resolveWidgetLang() === 'en';
   function rewriteThoughtClassicLinks() {
-    if (mode !== 'thought') return;
+    if (mode !== 'thought' && !ongoingDetail) return;
     try {
       if (sessionStorage.getItem('gg-journey') !== '1') return;
     } catch (e) { return; }
